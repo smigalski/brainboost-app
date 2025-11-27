@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Fortschritt erfassen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Fortschritt eintragen</h1>
+    {% if lesson %}
+        <p class="muted">Für Termin am {{ lesson.date|date:"d.m.Y" }} um {{ lesson.time|time:"H:i" }} ({{ lesson.student.user.username }})</p>
+    {% else %}
+        <p class="muted">Wähle einen Termin und hinterlasse Feedback.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Speichern</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'progress' %}">Abbrechen</a>
+    </form>
+</div>
+{% endblock %}

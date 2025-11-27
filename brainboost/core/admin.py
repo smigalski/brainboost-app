@@ -1,0 +1,83 @@
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
+
+from .models import (
+    CustomUser,
+    ParentProfile,
+    StudentProfile,
+    TutorProfile,
+    Lesson,
+    ProgressEntry,
+)
+
+
+@admin.register(CustomUser)
+class CustomUserAdmin(UserAdmin):
+    model = CustomUser
+    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
+    list_filter = ("role", "is_staff", "is_superuser", "is_active")
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
+        (_("Role"), {"fields": ("role",)}),
+        (
+            _("Permissions"),
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+    )
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "password1",
+                    "password2",
+                    "role",
+                    "is_staff",
+                    "is_active",
+                ),
+            },
+        ),
+    )
+
+
+@admin.register(ParentProfile)
+class ParentProfileAdmin(admin.ModelAdmin):
+    list_display = ("user",)
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "zoom_link")
+    filter_horizontal = ("parents",)
+
+
+@admin.register(TutorProfile)
+class TutorProfileAdmin(admin.ModelAdmin):
+    list_display = ("user",)
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ("date", "time", "student", "tutor", "status", "duration_minutes")
+    list_filter = ("status", "date", "tutor")
+    search_fields = ("student__user__username", "tutor__user__username")
+
+
+@admin.register(ProgressEntry)
+class ProgressEntryAdmin(admin.ModelAdmin):
+    list_display = ("lesson", "rating", "created_at")
+    list_filter = ("rating", "created_at")
+    search_fields = ("lesson__student__user__username", "lesson__tutor__user__username")

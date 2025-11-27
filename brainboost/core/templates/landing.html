@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}BrainBoost | Landing{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Willkommen bei BrainBoost!</h1>
+    <p class="muted">Nachhilfe mit Herz, Struktur und klaren Ergebnissen.</p>
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Einloggen</button>
+    </form>
+    <div style="margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,183,0,0.55);background:linear-gradient(120deg, rgba(255,215,97,0.25), rgba(255,255,255,0.92));box-shadow:0 12px 24px rgba(0,0,0,0.08);display:flex;align-items:flex-start;gap:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,183,0,0.22);color:var(--accent, #d88700);font-weight:800;font-size:1rem;">!</span>
+        <div>
+            <div style="font-weight:800;color:var(--accent, #d88700);text-transform:uppercase;font-size:0.82rem;letter-spacing:0.05em;">Wichtiger Hinweis</div>
+            <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">Die Registrierung erfolgt direkt gemeinsam mit deinem Tutor/Nachhilfelehrer.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card info-card">
+    
+    <div class="info-tile">
+        <h3>Über BrainBoost</h3>
+        <p class="tile-placeholder"><strong>BrainBoost</strong> wurde von 2025 von Kiara Puppe gegründet und stellt eine digitale und professionelle <strong>Nachhilfeplattform</strong> dar. 
+            BrainBoost verbindet die anschreitende Digitalisierung des Lerncharakters mit traditionellen Lernmethoden. <strong>KI</strong> und andere intelligente Tools gefährden 
+            das Lernen von Kindern und Jugendlichen wie sie bereits vermutlich wissen. Um dem entgegenzuwirken, hilft BrainBoost einen KI-gerechten Umgang mit eigenständigem Lernen! Damit ihre Kinder das Beste für ihre <strong>Zukunft</strong> erhalten!</p>
+
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg, rgba(44,138,138,0.12), rgba(255,201,40,0.22));box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.04);">
+            <span class="badge info">Preis &amp; Qualität</span>
+            <p style="margin:0;font-weight:800;color:var(--accent);line-height:1.4;">Wir verbinden günstige und faire Preise mit professioneller digitalisierter Nachhilfe!</p>
+        </div>
+        <p class="tile-placeholder">Sind Sie <strong>Elternteil, Schüler oder Student</strong> und möchten alle Details zur Lernvereinbarung wissen? Dann einmal per E-Mail oder WhatsApp mich kontaktieren und sich die Vereinbarung zusenden lassen! <a href="{% url 'contact' %}">Hier</a></p>
+    </div>
+</div>
+
+
+<div class="card">
+          
+    <div class="info-tile">
+        <div class="tile-header">
+                        <h3>Unser Angebot</h3>
+            <span class="tagline">Nur wenige Plätze · Sei schnell!</span>
+        </div>
+        <p class="tile-placeholder"></p>
+        <img class="location-image" src="{% static 'design/Angebot.png' %}" alt="BrainBoost Angebot">
+    </div>
+</div> 
+
+
+
+<div class="card">
+    
+    <div class="info-tile">
+        <h3>Lernorte</h3>
+        <p>Klicken, um Google Maps zu öffnen</p>
+        <a class="map-link" href="https://www.google.com/maps/search/?api=1&query=Karl-Schmidt-Stra%C3%9Fe+20,+38114+Braunschweig" target="_blank" rel="noreferrer noopener">
+            <img class="location-image" src="{% static 'design/KarteOrte.png' %}" alt="Lernorte auf der Karte">
+        </a>
+        <p class="tile-placeholder">Weitere Lernorte: Beim Schüler/Studenten und online!</p>
+    </div>
+</div> 
+
+
+
+<div class="card">
+     
+    <div class="info-tile">
+        <h3>Preistabelle</h3>
+        <img class="location-image" src="{% static 'design/MinutenEuro.png' %}" alt="BrainBoost Preisübersicht">
+        <p class="tile-placeholder"></p>
+    </div>
+</div>
+
+
+<div class="card">
+    
+    <div class="info-tile">
+        <h3>Tutor werden!</h3>
+        <p class="tile-placeholder">Studierst vielleicht Lernamt? Suchst du nach einem gutbezahlten und selbständigem Studentenjob?
+            Dann kontakiere gerne Kiara, um weitere Details zu besprechen! Wenn zu viele Nachhilfeschüler auf einen Tutor zufallen, dann sind wir betrebt einen neuen Tutor zu finden! Vielleicht hast du Glück, einfach anschreiben! <a href="{% url 'contact' %}">Hier</a>
+        </p>
+    </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="de">
+<link>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BrainBoost{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=999">
+    <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
+</head>
+<body>
+    <div class="hero-bg"></div>
+    <header class="topbar">
+        <a class="brand brand-link" href="{% url 'landing_page' %}">
+            <div class="brand-icon">
+                <img src="/static/design/LogoPNG.png" alt="icon">
+            </div>
+            <div class="brand-text">
+                <span class="brand-title">BrainBoost by Kiara Puppe</span>
+                <span class="brand-sub">Nachhilfe</span>
+            </div>
+        </a>
+        <nav class="nav-links">
+            {% with request.resolver_match.url_name as current %}
+                <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
+                <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Fortschritt</a>
+                <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
+            {% endwith %}
+            {% if request.user.is_authenticated %}
+                <a class="pill" href="{% url 'logout' %}">Ausloggen</a>
+            {% else %}
+                <a class="pill" href="{% url 'login' %}">Einloggen</a>
+            {% endif %}
+        </nav>
+    </header>
+<main class="page">
+    {% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+    <div class="footer-content">
+        <div class="footer-brand">© {% now "Y" %} BrainBoost by Kiara Puppe</div>
+        <div class="footer-links">
+            <a href="{% url 'contact' %}">Kontakt</a>
+            <a href="{% url 'impressum' %}">Impressum</a>
+            <a href="{% url 'impressum' %}">Datenschutz</a>
+            <a href="{% url 'impressum' %}">AGB</a>
+            <a href="{% url 'impressum' %}">Cookies</a>
+        </div>
+    </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

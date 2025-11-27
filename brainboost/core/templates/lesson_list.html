@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Termine{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h1>Termine</h1>
+            <p class="muted">Geplante und vergangene Termine.</p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            {% if request.user.role == 'tutor' %}
+                <a class="button" href="{% url 'lesson_create' %}">+ Neuer Termin</a>
+            {% endif %}
+            <a class="button" href="?when=upcoming">Zukünftig</a>
+            <a class="button" style="background: var(--teal);" href="?when=past">Vergangenheit</a>
+        </div>
+    </div>
+    <ul class="list" style="margin-top:16px;">
+        {% for lesson in lessons %}
+            <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
+                <div>
+                    <strong>{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
+                    <div class="muted">{{ lesson.duration_minutes }} Minuten</div>
+                    <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
+                    <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
+                    {% if lesson.location_address %}
+                        <div class="muted">Adresse: {{ lesson.location_address }}</div>
+                    {% endif %}
+                    {% with dist=lesson.computed_distance_km %}
+                        {% if dist %}
+                            <div class="muted">Entfernung: {{ dist }} km</div>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="muted">Student/Schüler: {{ lesson.student.user.username }} · Tutor: {{ lesson.tutor.user.username }}</div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                        {{ lesson.get_status_display }}
+                    </span>
+                    {% if lesson.id in editable_ids %}
+                        <div style="margin-top:6px;">
+                            <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
+                        </div>
+                    {% endif %}
+                    {% if request.user.role == 'tutor' %}
+                        <div style="margin-top:6px;">
+                            <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Fortschritt hinzufügen</a>
+                        </div>
+                        <div style="margin-top:6px;">
+                            <a class="button" style="padding:6px 10px; background: var(--red);" href="{% url 'lesson_cancel' lesson.id %}">Stornieren</a>
+                        </div>
+                    {% elif lesson.id in cancelable_ids %}
+                        <div style="margin-top:6px;">
+                            <a class="button" style="padding:6px 10px; background: var(--red);" href="{% url 'lesson_cancel' lesson.id %}">Stornieren</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </li>
+        {% empty %}
+            <li>Keine Termine gefunden.</li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
+</div>
+
+<div class="card">
+    <div id="calendar-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div>
+            <h2>Wochenübersicht</h2>
+            <p class="muted">{{ week_start|date:"d.m.Y" }} – {{ week_end|date:"d.m.Y" }}</p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <a class="button week-nav" href="?offset={{ week_offset|add:'-1' }}">← Vorherige Woche</a>
+            <a class="button week-nav" style="background: var(--teal);" href="?offset=0">Aktuelle Woche</a>
+            <a class="button week-nav" href="?offset={{ week_offset|add:'1' }}">Nächste Woche →</a>
+        </div>
+    </div>
+    <div id="calendar-card" class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top:12px;">
+        {% for day in week_days %}
+            <div class="card" style="box-shadow:none; border:1px solid rgba(0,0,0,0.04);">
+                <strong>{{ day.date|date:"l, d.m.Y" }}</strong>
+                <ul class="list" style="margin-top:10px;">
+                    {% for lesson in day.lessons %}
+                        <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
+                            <div>
+                                <div><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
+                                <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
+                                <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
+                                {% if lesson.location_address %}
+                                    <div class="muted">Adresse: {{ lesson.location_address }}</div>
+                                {% endif %}
+                                {% with dist=lesson.computed_distance_km %}
+                                    {% if dist %}
+                                        <div class="muted">Entfernung: {{ dist }} km</div>
+                                    {% endif %}
+                                {% endwith %}
+                                <div class="muted">Student: {{ lesson.student.user.username }}</div>
+                                <div class="muted">Tutor: {{ lesson.tutor.user.username }}</div>
+                            </div>
+                            <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                                {{ lesson.get_status_display }}
+                            </span>
+                        </li>
+                    {% empty %}
+                        <li>Keine Termine.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function bindWeekNav() {
+    document.querySelectorAll('.week-nav').forEach(link => {
+        link.removeEventListener('click', handleWeekNav);
+        link.addEventListener('click', handleWeekNav);
+    });
+}
+
+async function handleWeekNav(e) {
+    e.preventDefault();
+    const url = e.currentTarget.getAttribute('href');
+    try {
+        const res = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newCard = doc.querySelector('#calendar-card');
+        const newHeader = doc.querySelector('#calendar-header');
+        if (newCard) {
+            document.querySelector('#calendar-card').innerHTML = newCard.innerHTML;
+        }
+        if (newHeader) {
+            document.querySelector('#calendar-header').innerHTML = newHeader.innerHTML;
+        }
+        bindWeekNav();
+    } catch (err) {
+        console.error('Kalender-Update fehlgeschlagen', err);
+        window.location.href = url;
+    }
+}
+
+bindWeekNav();
+</script>
+{% endblock %}

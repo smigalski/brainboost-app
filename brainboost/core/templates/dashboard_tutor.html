@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Tutor Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Hallo {{ request.user.username }}!</h1>
+    <p class="muted">Organisiere deine Termine und begleite deine Schüler.</p>
+    <div class="grid two">
+        <div>
+            <h3>Termine</h3>
+            <p>Alle geplanten und vergangenen Termine.</p>
+            <a class="button" href="{% url 'lesson_list' %}">Meine Termine</a>
+        </div>
+        <div>
+            <h3>Fortschritte</h3>
+            <p>Fortschritt eines Schülers ansehen</p>
+            <a class="button" href="{% url 'progress' %}">Fortschritt öffnen</a>
+        </div>
+        <div>
+            <h3>Aufgaben</h3>
+            <p>Stelle Materialien für deine Schüler bereit.</p>
+            <a class="button" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>
+        </div>
+        <div>
+            <h3>Lösungen</h3>
+            <p>Nur Eltern können diese Downloads sehen.</p>
+            <a class="button" href="{% url 'material_upload' 'solution' %}">Lösung hochladen</a>
+        </div>
+        <div>
+            <h3>Online-Lernraum</h3>
+            <p>Starte direkt den Zoom-Raum für einen Schüler.</p>
+            {% if zoom_students %}
+                <form onsubmit="const link = this.elements['zoom_link'].value; if (link) { window.open(link, '_blank', 'noopener'); } return false;">
+                    <label for="zoom-student-select" style="display:block; margin-bottom:4px;">Schüler auswählen</label>
+                    <select id="zoom-student-select" name="zoom_link" style="width:100%;">
+                        {% for student in zoom_students %}
+                            <option value="{{ student.zoom_link }}">{{ student.user.username }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="button" style="margin-top:8px;">Online-Lernraum (Zoom)</button>
+                </form>
+            {% else %}
+                <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

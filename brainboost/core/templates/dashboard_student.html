@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Student Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Hallo {{ request.user.username }}!</h1>
+    <p class="muted">Dein BrainBoost im Überblick.</p>
+    <div class="grid two">
+        <div>
+            <h3>Termine</h3>
+            <p>Überblick über deine Nachhilfetermine.</p>
+            <a class="button" href="{% url 'lesson_list' %}">Meine Termine</a>
+        </div>
+        <div>
+            <h3>Fortschritt</h3>
+            <p>Verfolge Bewertungen und Feedback vom Tutor.</p>
+            <a class="button" href="{% url 'progress' %}">Mein Fortschritt</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Online-Lernraum</h3>
+    <p>Starte deinen Zoom-Raum für die Nachhilfe.</p>
+    {% if request.user.student_profile.zoom_link %}
+        <a class="button" style="margin-top:8px;" href="{{ request.user.student_profile.zoom_link }}" target="_blank" rel="noopener">Online-Lernraum (Zoom)</a>
+    {% else %}
+        <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>Aufgaben zum Download</h3>
+    {% if tasks %}
+        <ul class="list">
+            {% for material in tasks %}
+                <li>
+                    <div>
+                        <strong>{{ material.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</strong>
+                        <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Keine Aufgaben verfügbar.</p>
+    {% endif %}
+</div>
+{% endblock %}

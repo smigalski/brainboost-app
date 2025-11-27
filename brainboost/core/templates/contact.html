@@ -1,0 +1,30 @@
+
+{% extends "base.html" %}
+{% load static %}
+{% block title %}BrainBoost | Kontakt{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Kontakt</h1>
+    <p>Wir freuen uns über deine Nachricht. Melde dich bei Fragen, Feedback oder Kooperationen gern direkt.</p>
+    <div class="grid two">
+        <div>
+            <div style="max-width:200px;">
+                <img src="{% static 'design/Student_Photo_Kiara_Puppe.jpg' %}" alt="Kiara Puppe" class="location-image">
+            </div>
+            <p></p>
+            <p><strong>E-Mail:</strong> <a href="mailto:brainboost.nachhilfe@gmail.com">brainboost.nachhilfe@gmail.com</a></p>
+            <p><strong>Telefon:</strong> +49 (0)175 9932553 oder: <a href="https://wa.me/491759932553" target="_blank" rel="noreferrer noopener"><img src="{% static 'design/WhatsAppLogo.png' %}" alt="WhatsApp" style="width:24px;height:24px;vertical-align:middle;margin-left:6px;"></a></p>
+            <p><strong>Adresse:</strong> Karl-Schmidt-Straße 20, 38114 Braunschweig</p>
+        </div>
+        <div>
+            <h3>Erreichbarkeit</h3>
+            <p>Montag–Freitag, 9–17 Uhr</p>
+            <p><strong>Social:</strong>
+                <a href="https://www.linkedin.com/in/kiara-puppe-bb80b4351/" target="_blank" rel="noreferrer noopener">LinkedIn</a> ·
+                <a href="https://www.instagram.com/brainboost.nachhilfe/" target="_blank" rel="noreferrer noopener">Instagram</a>
+            </p>
+            <p><strong>Support:</strong> Wir antworten in der Regel innerhalb von 24 Stunden.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

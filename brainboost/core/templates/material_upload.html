@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>{{ heading }}</h1>
+    <p class="muted">Maximal 10 MB. Erlaubt: pdf, png, jpg, jpeg, docx.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Hochladen</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Abbrechen</a>
+    </form>
+</div>
+{% endblock %}

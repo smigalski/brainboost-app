@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Fortschritt{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Fortschritt</h1>
+    {% if viewed_student %}
+        <p class="muted">Schüler: {{ viewed_student.user.username }}</p>
+    {% elif student_id %}
+        <p class="muted">Schüler-ID: {{ student_id }}</p>
+    {% endif %}
+    <p class="muted" style="margin:12px 0 12px;">
+        Rating-Notiz: 0 bedeutet keine Zusammenarbeit/kein Engagement (quasi abwesend), 5 steht für normale Zusammenarbeit und normales Engagement,
+        10 für überdurchschnittliche Zusammenarbeit und motivierte Einstellung, mehr zu machen. Die Bewertungen spiegeln die subjektive Wahrnehmung des Tutors wider.
+    </p>
+    <ul class="list">
+        {% for entry in entries %}
+            <li>
+                <div>
+                    <strong>{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
+                    <div class="muted">Tutor: {{ entry.lesson.tutor.user.username }}</div>
+                    <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
+                </div>
+                <div style="text-align:right;">
+                    <span class="badge info">Rating: {{ entry.rating }}/10</span><br>
+                    <span class="muted">{{ entry.created_at }}</span>
+                </div>
+            </li>
+        {% empty %}
+            <li>Keine Einträge vorhanden.</li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
+</div>
+{% endblock %}

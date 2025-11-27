@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Termin bearbeiten{% else %}Termin anlegen{% endif %}{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Termin bearbeiten{% else %}Neuen Termin anlegen{% endif %}</h1>
+    <p class="muted">
+        {% if is_edit %}Passe Datum, Zeit oder Details des Termins an.{% else %}Plane einen Termin für deine Schüler/Studenten.{% endif %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Speichern</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'lesson_list' %}">Abbrechen</a>
+        {% if is_edit and lesson %}
+            <button class="button" style="background: var(--red);" formaction="{% url 'lesson_delete' lesson.id %}" formmethod="post" onclick="return confirm('Diesen Termin wirklich löschen?');">Löschen</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Eltern Dashboard{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Hallo {{ request.user.username }}!</h1>
+    <p class="muted">Behalte die Nachhilfe deiner Kinder im Blick.</p>
+    <div class="grid two">
+        <div>
+            <h3>Termine</h3>
+            <p>Alle kommenden und vergangenen Nachhilfetermine deiner Kinder.</p>
+            <a class="button" href="{% url 'lesson_list' %}">Termine meiner Kinder</a>
+        </div>
+        <div>
+            <h3>Fortschritt</h3>
+            <p>Feedback, Bewertungen und Notizen.</p>
+            <a class="button" href="{% url 'progress' %}">Fortschritt des Kindes ansehen</a>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <h3>Aufgabenlösungen zum Download</h3>
+    {% if solutions %}
+        <ul class="list">
+            {% for material in solutions %}
+                <li>
+                    <div>
+                        <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
+                        <div class="muted">Für: {{ material.student.user.username }}</div>
+                        <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Keine Lösungen verfügbar.</p>
+    {% endif %}
+</div>
+{% endblock %}

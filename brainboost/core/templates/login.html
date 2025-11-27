@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Login{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Login</h1>
+    {% if next %}
+        <p class="tagline">Bitte melde dich an, um die angeforderte Seite zu öffnen. Du benötigst ein Benutzerkonto.</p>
+    {% endif %}
+    {% if form.errors %}
+        <p class="tagline">Bitte überprüfe deine Eingaben.</p>
+    {% endif %}
+    <form method="post" action="">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Einloggen</button>
+    </form>
+    <div style="margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,183,0,0.55);background:linear-gradient(120deg, rgba(255,215,97,0.25), rgba(255,255,255,0.92));box-shadow:0 12px 24px rgba(0,0,0,0.08);display:flex;align-items:flex-start;gap:12px;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,183,0,0.22);color:var(--accent, #d88700);font-weight:800;font-size:1rem;">!</span>
+        <div>
+            <div style="font-weight:800;color:var(--accent, #d88700);text-transform:uppercase;font-size:0.82rem;letter-spacing:0.05em;">Wichtiger Hinweis</div>
+            <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">Die Registrierung erfolgt direkt gemeinsam mit deinem Tutor/Nachhilfelehrer.</p>
+        </div>
+    </div>
+    <p class="muted">Zurück zur <a href="{% url 'landing_page' %}">Startseite</a></p>
+</div>
+{% endblock %}
