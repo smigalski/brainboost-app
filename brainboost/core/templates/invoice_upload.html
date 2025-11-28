@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Rechnung hochladen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Rechnung hochladen</h1>
+    <p class="muted">Nur PDF-Dateien. Die Rechnung wird den Eltern des ausgewählten Schülers angezeigt.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="{{ form.student.id_for_label }}">Schüler auswählen</label>
+        {{ form.student }}
+        <label for="{{ form.file.id_for_label }}">PDF-Rechnung</label>
+        {{ form.file }}
+        {% if form.file.help_text %}
+            <p class="muted">{{ form.file.help_text }}</p>
+        {% endif %}
+        <button class="button" type="submit" style="margin-top:8px;">Hochladen</button>
+    </form>
+    <p class="muted" style="margin-top:12px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
+</div>
+<div class="card">
+    <h3>Meine hochgeladenen Rechnungen</h3>
+    {% if tutor_invoices %}
+        <ul class="list">
+            {% for invoice in tutor_invoices %}
+                <li>
+                    <div>
+                        <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
+                        <div class="muted">Für: {{ invoice.student.user.username }}</div>
+                        <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
+                        <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
+                    </div>
+                    <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Noch keine Rechnungen hochgeladen.</p>
+    {% endif %}
+</div>
+{% endblock %}

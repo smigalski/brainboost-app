@@ -26,6 +26,9 @@
     {% else %}
         <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
     {% endif %}
+    {% if request.user.student_profile.zumpad_link %}
+        <a class="button" style="margin-top:8px; background: var(--yellow); color:#000;" href="{{ request.user.student_profile.zumpad_link }}" target="_blank" rel="noopener">ZUMPad</a>
+    {% endif %}
 </div>
 
 <div class="card">

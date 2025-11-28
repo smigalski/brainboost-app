@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
+from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -45,6 +46,7 @@ class StudentProfile(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     zoom_link = models.URLField(blank=True)
+    zumpad_link = models.URLField(blank=True)
 
     class Meta:
         verbose_name = "Schüler/Student"
@@ -132,6 +134,8 @@ class Lesson(models.Model):
         choices=Status.choices,
         default=Status.PLANNED,
     )
+    cancellation_reason = models.TextField(blank=True, default="")
+    reschedule_requested = models.BooleanField(default=False)
     location_address = models.CharField(max_length=255, blank=True)
     distance_km = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
 
@@ -185,6 +189,10 @@ class Lesson(models.Model):
     def scheduled_datetime(self) -> datetime:
         return timezone.make_aware(datetime.combine(self.date, self.time))
 
+    @property
+    def end_datetime(self) -> datetime:
+        return self.scheduled_datetime + timedelta(minutes=self.duration_minutes)
+
     @classmethod
     def upcoming_qs(cls):
         today = timezone.localdate()
@@ -201,10 +209,43 @@ class Lesson(models.Model):
             Q(date__lt=today) | Q(date=today, time__lt=now_time)
         )
 
+    @property
+    def calendar_title(self) -> str:
+        return f"Nachhilfe {self.get_fach_display()} ({self.student.user.username})"
+
+    @property
+    def calendar_details(self) -> str:
+        return (
+            f"Tutor: {self.tutor.user.username}\\n"
+            f"Schüler: {self.student.user.username}\\n"
+            f"Ort: {self.get_ort_display()}"
+        )
+
+    @property
+    def calendar_location(self) -> str:
+        return self.location_address or self.get_ort_display()
+
+    @property
+    def google_calendar_url(self) -> str:
+        start = self.scheduled_datetime.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        end = self.end_datetime.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        ctz = timezone.get_current_timezone_name()
+        return (
+            "https://calendar.google.com/calendar/render?action=TEMPLATE"
+            f"&text={quote(self.calendar_title)}"
+            f"&dates={start}/{end}"
+            f"&details={quote(self.calendar_details)}"
+            f"&location={quote(self.calendar_location)}"
+            f"&ctz={quote(ctz)}"
+        )
+
 
 def material_upload_path(instance, filename):
     kind_folder = instance.kind
     return f"materials/{kind_folder}/student_{instance.student_id}_{filename}"
+
+def invoice_upload_path(instance, filename):
+    return f"invoices/student_{instance.student_id}_{filename}"
 
 
 class LearningMaterial(models.Model):
@@ -261,3 +302,33 @@ class ProgressEntry(models.Model):
 
     def __str__(self) -> str:
         return f"Progress for {self.lesson} - Rating {self.rating}"
+
+
+class Invoice(models.Model):
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="invoices",
+    )
+    uploaded_by = models.ForeignKey(
+        TutorProfile,
+        on_delete=models.CASCADE,
+        related_name="invoices",
+    )
+    file = models.FileField(
+        upload_to=invoice_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        verbose_name = "Rechnung"
+        verbose_name_plural = "Rechnungen"
+
+    def __str__(self):
+        return f"Rechnung für {self.student} ({self.file.name})"
+
+    @property
+    def due_date(self):
+        return self.uploaded_at + timedelta(days=7)

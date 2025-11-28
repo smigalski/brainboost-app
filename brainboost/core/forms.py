@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Lesson, ProgressEntry, StudentProfile, LearningMaterial
+from .models import Lesson, ProgressEntry, StudentProfile, LearningMaterial, Invoice
 
 
 class LessonForm(forms.ModelForm):
@@ -64,4 +64,25 @@ class LearningMaterialForm(forms.ModelForm):
         max_size = 10 * 1024 * 1024  # 10 MB
         if f.size > max_size:
             raise forms.ValidationError("Datei ist größer als 10 MB.")
+        return f
+
+
+class InvoiceForm(forms.ModelForm):
+    class Meta:
+        model = Invoice
+        fields = ["student", "file"]
+
+    def __init__(self, *args, allowed_students=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if allowed_students is not None:
+            self.fields["student"].queryset = allowed_students
+        self.fields["file"].help_text = "Nur PDF, max 10 MB."
+
+    def clean_file(self):
+        f = self.cleaned_data["file"]
+        max_size = 10 * 1024 * 1024  # 10 MB
+        if f.size > max_size:
+            raise forms.ValidationError("Datei ist größer als 10 MB.")
+        if not f.name.lower().endswith(".pdf"):
+            raise forms.ValidationError("Nur PDF-Dateien sind erlaubt.")
         return f

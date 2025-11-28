@@ -327,6 +327,69 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 10px 26px rgba(0,0,0,0.1);
 }
 
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 11;
+    padding: 16px;
+}
+
+.modal.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: var(--card-radius);
+    padding: 22px;
+    width: min(520px, 100%);
+    box-shadow: var(--shadow);
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--slate);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.button.ghost {
+    background: #e8e8e8;
+    color: #333;
+    box-shadow: none;
+}
+
+.button.ghost:hover {
+    transform: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
 @media (max-width: 720px) {
     .info-grid {
         grid-template-columns: 1fr;

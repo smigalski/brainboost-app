@@ -12,8 +12,12 @@ urlpatterns = [
     path("termine/neu/", views.lesson_create, name="lesson_create"),
     path("termine/<int:lesson_id>/bearbeiten/", views.lesson_edit, name="lesson_edit"),
     path("termine/<int:lesson_id>/stornieren/", views.lesson_cancel, name="lesson_cancel"),
+    path("termine/<int:lesson_id>/verlegen/", views.lesson_reschedule_request, name="lesson_reschedule_request"),
+    path("termine/<int:lesson_id>/ics/", views.lesson_ics, name="lesson_ics"),
     path("termine/<int:lesson_id>/loeschen/", views.lesson_delete, name="lesson_delete"),
     path("material/<str:kind>/upload/", views.material_upload, name="material_upload"),
+    path("rechnungen/neu/", views.invoice_upload, name="invoice_upload"),
+    path("rechnungen/", views.invoice_list, name="invoice_list"),
     path("fortschritt/", views.progress_view, name="progress"),
     path(
         "schueler/<int:student_id>/fortschritt/",

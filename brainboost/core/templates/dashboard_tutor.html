@@ -26,22 +26,44 @@
             <a class="button" href="{% url 'material_upload' 'solution' %}">Lösung hochladen</a>
         </div>
         <div>
+            <h3>Rechnungen</h3>
+            <p>PDF-Rechnungen hochladen und Eltern bereitstellen.</p>
+            <a class="button" href="{% url 'invoice_upload' %}">Rechnung hochladen</a>
+        </div>
+        <div>
             <h3>Online-Lernraum</h3>
             <p>Starte direkt den Zoom-Raum für einen Schüler.</p>
             {% if zoom_students %}
-                <form onsubmit="const link = this.elements['zoom_link'].value; if (link) { window.open(link, '_blank', 'noopener'); } return false;">
+                <div>
                     <label for="zoom-student-select" style="display:block; margin-bottom:4px;">Schüler auswählen</label>
                     <select id="zoom-student-select" name="zoom_link" style="width:100%;">
                         {% for student in zoom_students %}
-                            <option value="{{ student.zoom_link }}">{{ student.user.username }}</option>
+                            <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.username }}</option>
                         {% endfor %}
                     </select>
-                    <button type="submit" class="button" style="margin-top:8px;">Online-Lernraum (Zoom)</button>
-                </form>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                        <button type="button" class="button" onclick="openOnlineRoom('zoom')">Online-Lernraum (Zoom)</button>
+                        <button type="button" class="button" style="background: var(--yellow); color:#000;" onclick="openOnlineRoom('zumpad')">ZUMPad</button>
+                    </div>
+                </div>
             {% else %}
                 <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
             {% endif %}
         </div>
     </div>
 </div>
+{% block scripts %}
+<script>
+function openOnlineRoom(kind) {
+    const select = document.getElementById('zoom-student-select');
+    if (!select) return;
+    const option = select.selectedOptions[0];
+    if (!option) return;
+    const link = kind === 'zumpad' ? option.dataset.zumpad : option.value;
+    if (link) {
+        window.open(link, '_blank', 'noopener');
+    }
+}
+</script>
+{% endblock %}
 {% endblock %}

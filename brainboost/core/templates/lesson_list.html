@@ -32,6 +32,18 @@
                         {% endif %}
                     {% endwith %}
                     <div class="muted">Student/Schüler: {{ lesson.student.user.username }} · Tutor: {{ lesson.tutor.user.username }}</div>
+                    {% if lesson.reschedule_requested %}
+                        <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
+                    {% endif %}
+                    {% if lesson.cancellation_reason %}
+                        <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
+                    {% endif %}
+                    {% if lesson.status != 'cancelled' %}
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                            <a class="button" style="padding:6px 10px; background: var(--teal);" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener">Google Kalender</a>
+                            <a class="button" style="padding:6px 10px; background: #4a5568;" href="{% url 'lesson_ics' lesson.id %}">iCloud / ICS</a>
+                        </div>
+                    {% endif %}
                 </div>
                 <div style="text-align:right;">
                     <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
@@ -46,12 +58,20 @@
                         <div style="margin-top:6px;">
                             <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Fortschritt hinzufügen</a>
                         </div>
+                    {% endif %}
+                    {% if lesson.id in cancelable_ids and lesson.status != 'cancelled' and request.user.role != 'tutor' and not lesson.reschedule_requested %}
                         <div style="margin-top:6px;">
-                            <a class="button" style="padding:6px 10px; background: var(--red);" href="{% url 'lesson_cancel' lesson.id %}">Stornieren</a>
-                        </div>
-                    {% elif lesson.id in cancelable_ids %}
-                        <div style="margin-top:6px;">
-                            <a class="button" style="padding:6px 10px; background: var(--red);" href="{% url 'lesson_cancel' lesson.id %}">Stornieren</a>
+                            <button
+                                type="button"
+                                class="button change-request-btn"
+                                style="padding:6px 10px; background: var(--red);"
+                                data-cancel-url="{% url 'lesson_cancel' lesson.id %}"
+                                data-reschedule-url="{% url 'lesson_reschedule_request' lesson.id %}"
+                                data-lesson-label="{{ lesson.date|date:'d.m.Y' }} um {{ lesson.time|time:'H:i' }} Uhr"
+                                data-scheduled="{{ lesson.date|date:'Y-m-d' }}T{{ lesson.time|time:'H:i:s' }}"
+                            >
+                                Änderung anfragen
+                            </button>
                         </div>
                     {% endif %}
                 </div>
@@ -96,6 +116,18 @@
                                 {% endwith %}
                                 <div class="muted">Student: {{ lesson.student.user.username }}</div>
                                 <div class="muted">Tutor: {{ lesson.tutor.user.username }}</div>
+                                {% if lesson.reschedule_requested %}
+                                    <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
+                                {% endif %}
+                                {% if lesson.cancellation_reason %}
+                                    <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
+                                {% endif %}
+                                {% if lesson.status != 'cancelled' %}
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                                        <a class="button" style="padding:6px 10px; background: var(--teal);" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener">Google Kalender</a>
+                                        <a class="button" style="padding:6px 10px; background: #4a5568;" href="{% url 'lesson_ics' lesson.id %}">iCloud / ICS</a>
+                                    </div>
+                                {% endif %}
                             </div>
                             <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
                                 {{ lesson.get_status_display }}
@@ -109,9 +141,201 @@
         {% endfor %}
     </div>
 </div>
+
+<div id="cancel-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Stornierung anfragen</h3>
+            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
+        </div>
+        <p class="muted" id="cancel-lesson-info"></p>
+        <div id="cancel-warning" class="muted" style="display:none; color: var(--red); font-weight:700;">
+            Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere den Tutor sofort.
+        </div>
+        <form id="cancel-form">
+            {% csrf_token %}
+            <label for="cancel-reason">Grund der Stornierung</label>
+            <textarea id="cancel-reason" name="reason" rows="3" placeholder="z.B. Krank, Termin verschoben" required></textarea>
+            <div id="cancel-error" class="muted" style="display:none; color: var(--red);"></div>
+            <div class="modal-actions">
+                <button type="button" class="button ghost" id="cancel-close-btn">Abbrechen</button>
+                <button type="submit" class="button" id="cancel-submit-btn">Anfrage senden</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="change-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Änderung anfragen</h3>
+            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
+        </div>
+        <p class="muted" id="change-lesson-info"></p>
+        <div class="modal-actions" style="justify-content:flex-start; gap:12px;">
+            <button type="button" class="button" id="change-cancel-btn">Stornierung anfragen</button>
+            <button type="button" class="button ghost" id="change-reschedule-btn">Termin verschieben</button>
+        </div>
+    </div>
+</div>
+
+<div id="reschedule-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Termin verschieben</h3>
+            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
+        </div>
+        <p class="muted" id="reschedule-info"></p>
+        <div class="modal-actions" style="justify-content:flex-end;">
+            <button type="button" class="button" id="reschedule-close-btn">Alles klar</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>
+const cancelModal = document.getElementById('cancel-modal');
+const changeModal = document.getElementById('change-modal');
+const rescheduleModal = document.getElementById('reschedule-modal');
+const cancelForm = document.getElementById('cancel-form');
+const cancelReasonInput = document.getElementById('cancel-reason');
+const cancelLessonInfo = document.getElementById('cancel-lesson-info');
+const cancelWarning = document.getElementById('cancel-warning');
+const cancelError = document.getElementById('cancel-error');
+const cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+const modalCloseButtons = document.querySelectorAll('#cancel-modal .modal-close, #change-modal .modal-close, #cancel-close-btn');
+const changeToCancelBtn = document.getElementById('change-cancel-btn');
+const changeRescheduleBtn = document.getElementById('change-reschedule-btn');
+const changeLessonInfo = document.getElementById('change-lesson-info');
+const rescheduleInfo = document.getElementById('reschedule-info');
+const rescheduleCloseButtons = document.querySelectorAll('#reschedule-modal .modal-close, #reschedule-close-btn');
+let currentCancelUrl = null;
+let currentRescheduleUrl = null;
+let currentLessonLabel = "";
+let currentLessonScheduled = "";
+let reloadAfterReschedule = false;
+
+function bindChangeButtons() {
+    document.querySelectorAll('.change-request-btn').forEach(btn => {
+        btn.removeEventListener('click', handleChangeButton);
+        btn.addEventListener('click', handleChangeButton);
+    });
+}
+
+function handleChangeButton(event) {
+    const btn = event.currentTarget;
+    currentCancelUrl = btn.dataset.cancelUrl;
+    currentRescheduleUrl = btn.dataset.rescheduleUrl;
+    currentLessonLabel = btn.dataset.lessonLabel;
+    currentLessonScheduled = btn.dataset.scheduled;
+    changeLessonInfo.textContent = `Termin am ${currentLessonLabel}`;
+    cancelReasonInput.value = "";
+    cancelError.style.display = "none";
+    changeModal.classList.add('open');
+}
+
+function closeCancelModal() {
+    [cancelModal, changeModal, rescheduleModal].forEach(m => m.classList.remove('open'));
+}
+
+modalCloseButtons.forEach(btn => btn.addEventListener('click', closeCancelModal));
+cancelModal.addEventListener('click', (e) => { if (e.target === cancelModal) closeCancelModal(); });
+changeModal.addEventListener('click', (e) => { if (e.target === changeModal) closeCancelModal(); });
+
+function getCsrfToken() {
+    const csrfInput = document.querySelector('#cancel-form input[name=csrfmiddlewaretoken]');
+    return csrfInput ? csrfInput.value : '';
+}
+
+function openCancelModalFromChange() {
+    if (!currentLessonScheduled) return;
+    const scheduled = new Date(currentLessonScheduled);
+    const hoursUntil = (scheduled - new Date()) / 36e5;
+    const tooLate = hoursUntil < 5;
+    cancelLessonInfo.textContent = `Termin am ${currentLessonLabel}`;
+    cancelWarning.style.display = tooLate ? "block" : "none";
+    cancelSubmitBtn.disabled = tooLate;
+    changeModal.classList.remove('open');
+    cancelModal.classList.add('open');
+}
+
+function openRescheduleModal() {
+    if (!currentLessonScheduled || !currentRescheduleUrl) return;
+    const scheduled = new Date(currentLessonScheduled);
+    const hoursUntil = (scheduled - new Date()) / 36e5;
+    changeModal.classList.remove('open');
+    reloadAfterReschedule = false;
+    if (hoursUntil < 5) {
+        rescheduleInfo.textContent = "Terminverlegung ist weniger als 5 Stunden vor Termin nicht möglich. Bitte kontaktiere deinen Tutor direkt.";
+        rescheduleModal.classList.add('open');
+        return;
+    }
+    rescheduleInfo.textContent = "Der Tutor wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
+    rescheduleModal.classList.add('open');
+    fetch(currentRescheduleUrl, {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": getCsrfToken(),
+        },
+    })
+        .then((res) => res.json().catch(() => ({})).then((data) => ({ res, data })))
+        .then(({ res, data }) => {
+            if (res.ok && data.ok) {
+                reloadAfterReschedule = true;
+                rescheduleInfo.textContent = data.message || "Der Tutor wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
+                return;
+            }
+            const message = (data && data.message) || "Terminverlegung nicht möglich.";
+            rescheduleInfo.textContent = message;
+        })
+        .catch(() => {
+            rescheduleInfo.textContent = "Netzwerkfehler. Bitte versuche es erneut.";
+        });
+}
+
+function closeRescheduleModal() {
+    rescheduleModal.classList.remove('open');
+    if (reloadAfterReschedule) {
+        window.location.reload();
+    }
+}
+
+rescheduleModal.addEventListener('click', (e) => { if (e.target === rescheduleModal) closeRescheduleModal(); });
+rescheduleCloseButtons.forEach((btn) => btn.addEventListener('click', closeRescheduleModal));
+
+changeToCancelBtn.addEventListener('click', openCancelModalFromChange);
+changeRescheduleBtn.addEventListener('click', openRescheduleModal);
+
+cancelForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!currentCancelUrl) return;
+    cancelError.style.display = "none";
+    const formData = new FormData();
+    formData.append('reason', cancelReasonInput.value.trim());
+    try {
+        const res = await fetch(currentCancelUrl, {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": getCsrfToken(),
+            },
+            body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.ok) {
+            window.location.reload();
+            return;
+        }
+        const message = data.message || "Stornierung nicht möglich.";
+        cancelError.textContent = message;
+        cancelError.style.display = "block";
+    } catch (err) {
+        cancelError.textContent = "Netzwerkfehler. Bitte versuche es erneut.";
+        cancelError.style.display = "block";
+    }
+});
+
 function bindWeekNav() {
     document.querySelectorAll('.week-nav').forEach(link => {
         link.removeEventListener('click', handleWeekNav);
@@ -143,5 +367,6 @@ async function handleWeekNav(e) {
 }
 
 bindWeekNav();
+bindChangeButtons();
 </script>
 {% endblock %}

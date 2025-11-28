@@ -5,6 +5,8 @@
     <h1>Fortschritt</h1>
     {% if viewed_student %}
         <p class="muted">Schüler: {{ viewed_student.user.username }}</p>
+    {% elif request.user.role == 'tutor' %}
+        <p class="muted">Deine erstellten Fortschritteinträge (alle Schüler).</p>
     {% elif student_id %}
         <p class="muted">Schüler-ID: {{ student_id }}</p>
     {% endif %}

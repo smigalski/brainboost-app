@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Rechnungen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Rechnungen</h1>
+    <p class="muted">Hier findest du alle Rechnungen deiner Kinder. Fälligkeitsdatum: 7 Tage nach Upload.</p>
+    <ul class="list">
+        {% for invoice in invoices %}
+            <li>
+                <div>
+                    <strong>Rechnung für {{ invoice.student.user.username }}</strong>
+                    <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
+                    <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
+                    <div class="muted">Tutor: {{ invoice.uploaded_by.user.username }}</div>
+                </div>
+                <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+            </li>
+        {% empty %}
+            <li>Keine Rechnungen vorhanden.</li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
+</div>
+{% endblock %}
