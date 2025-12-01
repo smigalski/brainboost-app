@@ -20,18 +20,20 @@
             <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
                 <div>
                     <strong>{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
-                    <div class="muted">{{ lesson.duration_minutes }} Minuten</div>
-                    <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
-                    <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
+                    <div class="muted"><strong>{{ lesson.duration_minutes }} min</strong></div>
+                    <div class="muted">{{ lesson.get_ort_display }}</div>
+                    <div class="muted">{{ lesson.get_fach_display }}</div>
                     {% if lesson.location_address %}
-                        <div class="muted">Adresse: {{ lesson.location_address }}</div>
+                        <div class="muted">{{ lesson.location_address }}</div>
                     {% endif %}
-                    {% with dist=lesson.computed_distance_km %}
-                        {% if dist %}
-                            <div class="muted">Entfernung: {{ dist }} km</div>
-                        {% endif %}
-                    {% endwith %}
-                    <div class="muted">Student/Schüler: {{ lesson.student.user.username }} · Tutor: {{ lesson.tutor.user.username }}</div>
+                    {% if request.user.role == 'tutor' %}
+                        {% with dist=lesson.computed_distance_km %}
+                            {% if dist %}
+                                <div class="muted">Fahrweg: {{ dist }} km</div>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                    <div class="muted"><strong> {{ lesson.student.user.username }} </strong>  Tutor: {{ lesson.tutor.user.username }}</div>
                     {% if lesson.reschedule_requested %}
                         <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
                     {% endif %}
@@ -103,19 +105,21 @@
                     {% for lesson in day.lessons %}
                         <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
                             <div>
-                                <div><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
-                                <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
-                                <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
+                                <div style="white-space:nowrap;"><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
+                                <div class="muted">{{ lesson.get_ort_display }}</div>
+                                <div class="muted">{{ lesson.get_fach_display }}</div>
                                 {% if lesson.location_address %}
-                                    <div class="muted">Adresse: {{ lesson.location_address }}</div>
+                                    <div class="muted">{{ lesson.location_address }}</div>
                                 {% endif %}
-                                {% with dist=lesson.computed_distance_km %}
-                                    {% if dist %}
-                                        <div class="muted">Entfernung: {{ dist }} km</div>
-                                    {% endif %}
-                                {% endwith %}
-                                <div class="muted">Student: {{ lesson.student.user.username }}</div>
-                                <div class="muted">Tutor: {{ lesson.tutor.user.username }}</div>
+                                {% if request.user.role == 'tutor' %}
+                                    {% with dist=lesson.computed_distance_km %}
+                                        {% if dist %}
+                                            <div class="muted">Fahrweg: {{ dist }} km</div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                                <div class="muted">{{ lesson.student.user.username }}</div>
+                                <div class="muted">{{ lesson.tutor.user.username }}</div>
                                 {% if lesson.reschedule_requested %}
                                     <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
                                 {% endif %}

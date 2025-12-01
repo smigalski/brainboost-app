@@ -61,7 +61,8 @@ def _assign_location_and_distance(lesson: Lesson):
         tutor_lat = getattr(lesson.tutor, "latitude", None)
         tutor_lon = getattr(lesson.tutor, "longitude", None)
         if None not in (lat, lon, tutor_lat, tutor_lon):
-            distance = _haversine_km(tutor_lat, tutor_lon, lat, lon)
+            base_km = _haversine_km(tutor_lat, tutor_lon, lat, lon)
+            distance = round(base_km * 2 * 1.35, 2)
     elif lesson.ort == Lesson.Ort.BIB:
         address = "Bibliothek Braunschweig"
     elif lesson.ort == Lesson.Ort.BIB_WOB:
@@ -100,24 +101,43 @@ def dashboard(request):
     elif request.user.role == CustomUser.Roles.TUTOR:
         template = "dashboard_tutor.html"
         if hasattr(request.user, "tutor_profile"):
-            zoom_students = (
-                StudentProfile.objects.filter(
-                    lessons__tutor=request.user.tutor_profile
-                )
-                .filter(
-                    Q(zoom_link__isnull=False, zoom_link__gt="") | Q(zumpad_link__isnull=False, zumpad_link__gt="")
-                )
-                .select_related("user")
-                .distinct()
+            assigned_students = StudentProfile.objects.filter(
+                lessons__tutor=request.user.tutor_profile
             )
-            if not zoom_students.exists():
-                zoom_students = (
-                    StudentProfile.objects.filter(
-                        Q(zoom_link__isnull=False, zoom_link__gt="") | Q(zumpad_link__isnull=False, zumpad_link__gt="")
-                    )
-                    .select_related("user")
-                )
+            new_students_with_links = StudentProfile.objects.filter(
+                lessons__isnull=True
+            ).filter(
+                Q(zoom_link__isnull=False, zoom_link__gt="")
+                | Q(zumpad_link__isnull=False, zumpad_link__gt="")
+            )
+            zoom_students = (
+                assigned_students
+                | new_students_with_links
+            ).select_related("user").distinct()
             context["zoom_students"] = zoom_students
+            news_lessons = (
+                Lesson.objects.filter(tutor=request.user.tutor_profile)
+                .select_related("student__user")
+                .order_by("-date", "-time")[:5]
+            )
+            news_items = []
+            for lesson in news_lessons:
+                labels = []
+                if lesson.reschedule_requested:
+                    labels.append("Verschiebung angefragt")
+                if lesson.status == Lesson.Status.CANCELLED:
+                    labels.append("Termin storniert")
+                if not labels:
+                    labels.append(f"Status: {lesson.get_status_display()}")
+                news_items.append(
+                    {
+                        "student": lesson.student.user.username,
+                        "date": lesson.date,
+                        "time": lesson.time,
+                        "text": ", ".join(labels),
+                    }
+                )
+            context["news_items"] = news_items
     else:
         template = "dashboard_student.html"
     return render(request, template, context)

@@ -4,12 +4,16 @@
 <div class="card">
     <h1>Rechnung hochladen</h1>
     <p class="muted">Nur PDF-Dateien. Die Rechnung wird den Eltern des ausgewählten Schülers angezeigt.</p>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         <label for="{{ form.student.id_for_label }}">Schüler auswählen</label>
         {{ form.student }}
         <label for="{{ form.file.id_for_label }}">PDF-Rechnung</label>
         {{ form.file }}
+        {% if form.file.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ form.file.errors.0 }}</p>
+        {% endif %}
+        <p id="file-warning" class="muted" style="display:none;color:#b3261e;margin:6px 0 0;font-weight:600;">Nur PDF-Dateien sind erlaubt.</p>
         {% if form.file.help_text %}
             <p class="muted">{{ form.file.help_text }}</p>
         {% endif %}
@@ -37,4 +41,21 @@
         <p class="muted">Noch keine Rechnungen hochgeladen.</p>
     {% endif %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    const fileInput = document.getElementById("{{ form.file.id_for_label }}");
+    const warning = document.getElementById("file-warning");
+    if (!fileInput || !warning) return;
+
+    function checkFile() {
+        const file = fileInput.files[0];
+        const isPdf = file && file.name.toLowerCase().endsWith(".pdf");
+        warning.style.display = file && !isPdf ? "block" : "none";
+    }
+
+    fileInput.addEventListener("change", checkFile);
+})();
+</script>
 {% endblock %}

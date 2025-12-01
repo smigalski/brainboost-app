@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from .models import Lesson, ProgressEntry, StudentProfile, LearningMaterial, Invoice
 
@@ -29,10 +30,9 @@ class LessonForm(forms.ModelForm):
             self.fields["student"].queryset = allowed_students
         elif tutor_profile:
             students_qs = StudentProfile.objects.filter(
-                lessons__tutor=tutor_profile
+                Q(lessons__tutor=tutor_profile) | Q(lessons__isnull=True)
             ).distinct()
-            # Falls noch keine Lessons existieren, Tutor darf alle Schüler wählen
-            self.fields["student"].queryset = students_qs if students_qs.exists() else StudentProfile.objects.all()
+            self.fields["student"].queryset = students_qs
 
 
 class ProgressEntryForm(forms.ModelForm):

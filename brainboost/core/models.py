@@ -1,3 +1,5 @@
+import json
+import urllib.request
 from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
 from urllib.parse import quote
@@ -65,6 +67,45 @@ class StudentProfile(models.Model):
 
     def __str__(self) -> str:
         return f"Student/Schüler: {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        should_geocode = False
+        if self.address:
+            if self.pk:
+                try:
+                    previous = StudentProfile.objects.get(pk=self.pk)
+                    should_geocode = previous.address != self.address or not (self.latitude and self.longitude)
+                except StudentProfile.DoesNotExist:
+                    should_geocode = True
+            else:
+                should_geocode = True
+
+        if should_geocode:
+            coords = self._geocode_address(self.address)
+            if coords:
+                self.latitude, self.longitude = coords
+
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _geocode_address(address: str):
+        encoded = quote(address)
+        url = f"https://nominatim.openstreetmap.org/search?q={encoded}&format=json&limit=1"
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "brainboost-app/1.0 (brainboost.nachhilfe@gmail.com)"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.load(resp)
+        except Exception:
+            return None
+
+        if not data:
+            return None
+        try:
+            return float(data[0]["lat"]), float(data[0]["lon"])
+        except (KeyError, ValueError, TypeError):
+            return None
 
 
 class TutorProfile(models.Model):
@@ -169,8 +210,8 @@ class Lesson(models.Model):
                 getattr(self.tutor, "longitude", None),
             )
             if None not in (s_lat, s_lon, t_lat, t_lon):
-                # Add 18% on top of the straight-line distance as a simple real-world buffer.
-                return round(self._haversine_km(t_lat, t_lon, s_lat, s_lon) * 1.18, 2)
+                base_km = self._haversine_km(t_lat, t_lon, s_lat, s_lon)
+                return round(base_km * 2 * 1.35, 2)
         return None
 
     @staticmethod

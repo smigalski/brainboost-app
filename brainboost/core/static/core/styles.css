@@ -319,12 +319,31 @@ input:focus, select:focus, textarea:focus {
 .map-link { display: block; }
 
 .location-image {
-    width: 100%;
+    width: clamp(160px, 40%, 260px);
     height: auto;
     border-radius: 14px;
     display: block;
     object-fit: cover;
     box-shadow: 0 10px 26px rgba(0,0,0,0.1);
+    margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+    .location-image {
+        width: clamp(160px, 60%, 230px);
+    }
+}
+
+@media (max-width: 640px) {
+    .location-image {
+        width: 100%;
+    }
+}
+
+@keyframes pulseGlow {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.18); opacity: 0.18; }
+    100% { transform: scale(1); opacity: 0; }
 }
 
 .modal {
