@@ -79,11 +79,11 @@ WSGI_APPLICATION = 'brainboost.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'brainboost_db'),
-        'USER': os.getenv('POSTGRES_USER', 'brainboost_user'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'NAME': os.getenv('POSTGRES_DB', 'super$default'),
+        'USER': os.getenv('POSTGRES_USER', 'super'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'Technikum_in19'),
+        'HOST': os.getenv('POSTGRES_HOST', 'brainboost-4941.postgres.pythonanywhere-services.com'),
+        'PORT': os.getenv('POSTGRES_PORT', '14941'),
     }
 }
 
