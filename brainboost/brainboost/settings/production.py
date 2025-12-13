@@ -5,7 +5,7 @@ import os
 DEBUG = False
 
 # Secret nur aus Env (z.B. in WSGI gesetzt)
-SECRET_KEY = os.environ['pzm7*9n%3l2ntnyg#iw4vm+d%)1kpwbtp8r1mc5=q+fguaduac']
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # 🔹 PRODUKTIONS-DATENBANK AUF PYTHONANYWHERE
 DATABASES = {
