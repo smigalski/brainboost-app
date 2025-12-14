@@ -27,7 +27,7 @@ _hosts = os.getenv(
     'DJANGO_ALLOWED_HOSTS',
     'localhost,127.0.0.1,brainboost.pythonanywhere.com',
 )
-ALLOWED_HOSTS = [h.strip() for h in _hosts.split(',') if h.strip()]
+ALLOWED_HOSTS = ['brainboost.pythonanywhere.com']
 
 CSRF_TRUSTED_ORIGINS = [
     f"https://{h}"
