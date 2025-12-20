@@ -13,7 +13,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('POSTGRES_DB', 'brainboost_online'),
         'USER': os.environ.get('POSTGRES_USER', 'admin'),
-        'PASSWORD': os.environ['Multikulti24'],
+        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
         'HOST': os.environ.get(
             'POSTGRES_HOST',
             'brainboost-4941.postgres.pythonanywhere-services.com',
