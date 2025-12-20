@@ -11,9 +11,9 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'super$default'),
-        'USER': os.environ.get('POSTGRES_USER', 'super'),
-        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
+        'NAME': os.environ.get('POSTGRES_DB', 'brainboost_online'),
+        'USER': os.environ.get('POSTGRES_USER', 'admin'),
+        'PASSWORD': os.environ['Multikulti24'],
         'HOST': os.environ.get(
             'POSTGRES_HOST',
             'brainboost-4941.postgres.pythonanywhere-services.com',
