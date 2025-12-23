@@ -24,18 +24,19 @@ DATABASES = {
 
 # Hosts / CSRF
 _hosts = os.getenv(
-    'DJANGO_ALLOWED_HOSTS',
-    'localhost,127.0.0.1,brainboost.pythonanywhere.com',
+    "DJANGO_ALLOWED_HOSTS",
+    "brainboost.pythonanywhere.com,www.nachhilfe-brainboost.de,nachhilfe-brainboost.de"
 )
-ALLOWED_HOSTS = ['brainboost.pythonanywhere.com', 'www.nachhilfe-brainboost.de', 'nachhilfe-brainboost.de']
+ALLOWED_HOSTS = [h.strip() for h in _hosts.split(",") if h.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
-    f"https://{h}"
-    for h in ALLOWED_HOSTS
-    if h not in ('localhost', '127.0.0.1')
+    f"https://{h}" for h in ALLOWED_HOSTS
+    if h not in ("localhost", "127.0.0.1")
 ]
 
+
 # Static / Media (PA)
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media'
 
