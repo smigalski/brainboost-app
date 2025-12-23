@@ -1,6 +1,7 @@
 :root {
     --teal: #2c8a8a;
     --teal-dark: #1f6666;
+    --logo-turquoise: #369693;
     --cream: #f7f7f2;
     --yellow: #ffc928;
     --red: #e63946;
@@ -20,6 +21,10 @@ body {
     color: var(--accent);
     min-height: 100vh;
 }
+
+strong.accent { color: #e63946; }
+strong.logo { color: var(--logo-turquoise); }
+
 
 .hero-bg {
     position: fixed;
