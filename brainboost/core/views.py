@@ -85,6 +85,10 @@ def agbs(request):
     return render(request, "agbs.html")
 
 
+def pricing(request):
+    return render(request, "pricing.html")
+
+
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)

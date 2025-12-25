@@ -7,6 +7,7 @@
     <title>{% block title %}BrainBoost{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=999">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
+    <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
 </head>
 <body>
@@ -26,6 +27,7 @@
                 <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
                 <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
                 <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Fortschritt</a>
+                <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
                 <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
             {% endwith %}
             {% if request.user.is_authenticated %}
@@ -51,7 +53,9 @@
     </div>
 </footer>
 {% include "partials/cookie_notice.html" %}
+{% include "partials/price_banner.html" %}
 <script src="{% static 'core/cookie_notice.js' %}?v=1"></script>
+<script src="{% static 'js/price_banner.js' %}?v=1"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
