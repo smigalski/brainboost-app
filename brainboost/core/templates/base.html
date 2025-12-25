@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BrainBoost{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=999">
-    <link rel="stylesheet" href="{% static 'css/cookie_notice.css' %}">
+    <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
 </head>
 <body>
@@ -51,7 +51,7 @@
     </div>
 </footer>
 {% include "partials/cookie_notice.html" %}
-<script src="{% static 'js/cookie_notice.js' %}"></script>
+<script src="{% static 'core/cookie_notice.js' %}?v=1"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
