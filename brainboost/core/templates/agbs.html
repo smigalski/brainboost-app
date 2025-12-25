@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | AGBs{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Allgemeine Geschäftsbedingungen (AGB)</h1>
+    <p class="muted">
+        Stand: {{ now|date:"d.m.Y" }} – Diese AGB regeln die Nutzung des Nachhilfeangebots von BrainBoost.
+    </p>
+
+    <h3>1. Leistungsumfang</h3>
+    <p>
+        BrainBoost erbringt individuelle Nachhilfeleistungen in den jeweils vereinbarten Fächern und Einheiten.
+        Der Unterricht findet nach Absprache entweder bei BrainBoost, in der Stadtbibliothek Braunschweig oder online über Zoom statt.
+    </p>
+
+    <h3>2. Terminvereinbarung</h3>
+    <p>
+        Termine werden flexibel und individuell über WhatsApp oder über die BrainBoost WebApp vereinbart.
+        Ein Anspruch auf bestimmte Zeiten oder eine feste Anzahl an Terminen pro Woche besteht nicht, sofern nichts anderes vereinbart ist.
+    </p>
+
+    <h3>3. Stornierung / Ausfall</h3>
+    <p>
+        Eine Absage ist bis <strong>5 Stunden</strong> vor Terminbeginn kostenfrei möglich.
+        Bei späterer Absage oder Nichterscheinen wird die <strong>volle Unterrichtseinheit</strong> berechnet.
+    </p>
+
+    <h3>4. Preise</h3>
+    <p>Es gelten folgende Endpreise pro Unterrichtseinheit:</p>
+    <ul>
+        <li><strong>45 Minuten:</strong> 19 €</li>
+        <li><strong>60 Minuten:</strong> 25 €</li>
+        <li><strong>90 Minuten:</strong> 38 €</li>
+    </ul>
+    <p>
+        Die Preise gelten unabhängig vom Unterrichtsort. Es wird keine Umsatzsteuer ausgewiesen
+        (Kleinunternehmerregelung gemäß § 19 UStG).
+    </p>
+
+    <h3>5. Fahrtkosten</h3>
+    <p>
+        Ab einer Entfernung von <strong>3 km</strong> werden Fahrtkosten in Höhe von <strong>0,30 € pro gefahrenem km</strong>
+        (Hin- und Rückweg) berechnet. Die Distanz wird anhand eines Routenplaners (z. B. Google Maps) ermittelt.
+    </p>
+
+    <h3>6. Zuschläge (Wochenenden / Feiertage)</h3>
+    <p>
+        Unterricht an Wochenenden oder gesetzlichen Feiertagen ist nach Absprache möglich.
+        In diesem Fall fällt ein Zuschlag von <strong>27 % pro Unterrichtseinheit</strong> an.
+    </p>
+
+    <h3>7. Abrechnung & Zahlung</h3>
+    <p>
+        Es gibt keinen monatlichen Festbetrag. Abgerechnet wird ausschließlich der tatsächlich erbrachte Unterricht.
+        Die Abrechnung erfolgt <strong>monatlich per Rechnung</strong>. Das Zahlungsziel beträgt <strong>7 Werktage</strong> ab Rechnungserhalt.
+        Bei Zahlungsverzug gelten die gesetzlichen Regelungen, insbesondere Verzugszinsen gemäß <strong>§ 288 BGB</strong>.
+    </p>
+
+    <h3>8. BrainBoost WebApp (Zugang & Nutzung)</h3>
+    <p>
+        Die BrainBoost WebApp dient der Terminverwaltung, Kommunikation und Bereitstellung von Lernmaterialien.
+        Zugangsdaten sind vertraulich zu behandeln und dürfen nicht an Dritte weitergegeben werden.
+        Bei minderjährigen Schüler:innen erklären die Erziehungsberechtigten ihr Einverständnis zur Nutzung im Rahmen der Nachhilfeorganisation.
+    </p>
+
+    <h3>9. Kündigung</h3>
+    <p>
+        Die Zusammenarbeit kann jederzeit von beiden Seiten beendet werden.
+        Bereits vereinbarte Termine bleiben davon unberührt, sofern sie nicht fristgerecht gemäß Abschnitt 3 abgesagt werden.
+    </p>
+
+    <h3>10. Schlussbestimmungen</h3>
+    <p>
+        Sollten einzelne Bestimmungen dieser AGB unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.
+        Es gilt deutsches Recht.
+    </p>
+</div>
+{% endblock %}

@@ -81,6 +81,10 @@ def impressum(request):
     return render(request, "impressum.html")
 
 
+def agbs(request):
+    return render(request, "agbs.html")
+
+
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)
