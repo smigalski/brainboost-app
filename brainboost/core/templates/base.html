@@ -22,11 +22,13 @@
                 <span class="brand-sub">Nachhilfe</span>
             </div>
         </a>
-        <nav class="nav-links">
+        <nav class="nav-links nav-links--wrap">
             {% with request.resolver_match.url_name as current %}
-                <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
-                <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
-                <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Fortschritt</a>
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
+                    <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
+                    <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Fortschritt</a>
+                {% endif %}
                 <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
                 <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
             {% endwith %}

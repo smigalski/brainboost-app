@@ -2,6 +2,39 @@
 {% load static %}
 {% block title %}BrainBoost | Landing{% endblock %}
 {% block content %}
+<div style="display:flex;justify-content:center;margin:8px 0 18px;">
+    <button id="open-contact-modal" type="button" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;">
+        <span style="position:absolute;inset:-35%;background:radial-gradient(circle, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.2s infinite ease-in-out;pointer-events:none;"></span>
+        <span style="position:relative;z-index:1;">Jetzt kostenlos Probestunde buchen!</span>
+    </button>
+</div>
+<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="contact-modal-title">Kontaktformular</h3>
+            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
+        </div>
+        <form id="contact-form" novalidate>
+            <label for="contact-first-name">Vorname</label>
+            <input id="contact-first-name" type="text" autocomplete="given-name">
+            <label for="contact-last-name">Nachname</label>
+            <input id="contact-last-name" type="text" autocomplete="family-name">
+            <label for="contact-phone">Telefonnummer</label>
+            <input id="contact-phone" type="tel" autocomplete="tel">
+            <label for="contact-email">E-Mail</label>
+            <input id="contact-email" type="email" autocomplete="email">
+            <label for="contact-message">Nachricht</label>
+            <textarea id="contact-message" rows="4" placeholder="Hallo, ich würde gerne für mein Kind/für mich eine Probestunde buchen. Mit freundlichen Grüßen"></textarea>
+            <p id="contact-form-error" style="display:none;color:#b30000;margin:4px 0 0;">
+                Bitte gib Vorname oder Nachname sowie Telefonnummer oder E-Mail an.
+            </p>
+        </form>
+        <div class="modal-actions">
+            <button type="button" class="button ghost" id="contact-cancel">Abbrechen</button>
+            <button type="submit" class="button" form="contact-form" id="contact-submit" disabled>Absenden</button>
+        </div>
+    </div>
+</div>
 <div class="card">
     <h1>Willkommen bei BrainBoost!</h1>
     <p class="muted">Nachhilfe mit Herz, Struktur und klaren Ergebnissen.</p>
@@ -139,6 +172,92 @@
         </div>
     </div>
 
+    <script>
+        (function() {
+            var modal = document.getElementById('contact-modal');
+            var openBtn = document.getElementById('open-contact-modal');
+            var closeBtns = modal.querySelectorAll('.modal-close, #contact-cancel');
+            var form = document.getElementById('contact-form');
+            var submitBtn = document.getElementById('contact-submit');
+            var error = document.getElementById('contact-form-error');
+            var firstName = document.getElementById('contact-first-name');
+            var lastName = document.getElementById('contact-last-name');
+            var phone = document.getElementById('contact-phone');
+            var email = document.getElementById('contact-email');
+            var message = document.getElementById('contact-message');
+            var touched = false;
+
+            var updateValidity = function(forceShow) {
+                var hasName = firstName.value.trim() || lastName.value.trim();
+                var hasContact = phone.value.trim() || email.value.trim();
+                var ok = Boolean(hasName && hasContact);
+                submitBtn.disabled = !ok;
+                if (forceShow || touched) {
+                    error.style.display = ok ? 'none' : 'block';
+                } else {
+                    error.style.display = 'none';
+                }
+                return ok;
+            };
+
+            var openModal = function() {
+                modal.classList.add('open');
+            };
+
+            var closeModal = function() {
+                modal.classList.remove('open');
+            };
+
+            if (openBtn) {
+                openBtn.addEventListener('click', openModal);
+            }
+            closeBtns.forEach(function(btn) {
+                btn.addEventListener('click', closeModal);
+            });
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.classList.contains('open')) {
+                    closeModal();
+                }
+            });
+
+            [firstName, lastName, phone, email, message].forEach(function(input) {
+                input.addEventListener('input', function() {
+                    touched = true;
+                    updateValidity(false);
+                });
+            });
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                touched = true;
+                if (!updateValidity(true)) {
+                    return;
+                }
+                var bodyLines = [
+                    'Vorname: ' + firstName.value.trim(),
+                    'Nachname: ' + lastName.value.trim(),
+                    'Telefonnummer: ' + phone.value.trim(),
+                    'E-Mail: ' + email.value.trim(),
+                    '',
+                    'Nachricht:',
+                    message.value.trim()
+                ];
+                var mailto = 'mailto:brainboost.nachhilfe@gmail.com'
+                    + '?subject=' + encodeURIComponent('Kontaktformular Probestunde')
+                    + '&body=' + encodeURIComponent(bodyLines.join('\n'));
+                window.location.href = mailto;
+                form.reset();
+                touched = false;
+                updateValidity(false);
+                closeModal();
+            });
+        })();
+    </script>
     <div id="preise-modal" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:16px;">
         <div style="position:relative;background:#fff;border-radius:14px;max-width:820px;width:100%;padding:16px;box-shadow:0 16px 40px rgba(0,0,0,0.25);max-height:90vh;overflow:auto;">
             <button id="preise-close-btn" aria-label="Fenster schließen" style="position:absolute;top:10px;right:10px;border:none;background:transparent;font-size:26px;cursor:pointer;color:#2a2a2a;">×</button>
@@ -209,7 +328,7 @@
     
     <div class="info-tile">
         <h3>Tutor werden!</h3>
-        <p class="tile-placeholder">Studierst vielleicht <strong>Lehramt?</strong> Suchst du nach einem gutbezahlten und selbständigen <strong>Studentenjob</strong>? Möchtest du dein<strong>eigener Chef</strong> sein?
+        <p class="tile-placeholder">Studierst vielleicht <strong>Lehramt?</strong> Suchst du nach einem gutbezahlten und selbständigen <strong>Studentenjob</strong>? Möchtest du dein <strong>eigener Chef</strong> sein?
             Dann kontakiere gerne Kiara, um weitere Details zu besprechen! Wenn zu viele Nachhilfeschüler auf einen Tutor zufallen, dann sind wir stets so schnell wie möglich betrebt einen neuen Tutor zu finden! <strong>Vielleicht hast du Glück</strong>, einfach anschreiben! <a href="{% url 'contact' %}">Hier</a>
         </p>
     </div>

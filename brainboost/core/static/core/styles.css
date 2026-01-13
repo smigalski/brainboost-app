@@ -75,6 +75,12 @@ strong.logo { color: var(--logo-turquoise); }
     align-items: center;
 }
 
+.nav-links--wrap {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 100%;
+}
+
 .nav-links a {
     text-decoration: none;
     color: var(--accent);
