@@ -111,6 +111,10 @@ strong.logo { color: var(--logo-turquoise); }
     padding: 0 16px 48px;
 }
 
+.brand-sub2 {
+    color: #fff;
+}
+
 .card {
     background: var(--cream);
     border-radius: var(--card-radius);
