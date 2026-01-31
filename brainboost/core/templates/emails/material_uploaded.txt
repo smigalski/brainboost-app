@@ -1,0 +1,11 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Neues Material wurde bereitgestellt.
+
+Schüler: {{ student.user.username }}
+Tutor: {{ tutor.user.username }}
+Art: {{ material.get_kind_display }}
+Hochgeladen am: {{ material.uploaded_at|date:"d.m.Y H:i" }}
+
+Dashboard: {{ dashboard_url }}
+{% endblock %}

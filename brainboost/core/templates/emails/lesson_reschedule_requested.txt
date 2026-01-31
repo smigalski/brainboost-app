@@ -1,0 +1,12 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Eine Terminverlegung wurde angefragt.
+
+Schüler: {{ student.user.username }}
+Tutor: {{ tutor.user.username }}
+Datum: {{ lesson.date|date:"d.m.Y" }}
+Uhrzeit: {{ lesson.time|time:"H:i" }}
+Von: {{ actor_label }}
+
+Details: {{ lesson_list_url }}
+{% endblock %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ heading }}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f6f8;color:#0b1b2a;font-family:Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+            <tr>
+              <td>
+                <h2 style="margin:0 0 12px 0;font-size:22px;">{{ heading }}</h2>
+                {% block content %}{% endblock %}
+                <p style="margin:24px 0 0 0;font-size:13px;color:#5a6b7b;">
+                  BrainBoost · Stark im Kopf - Stark im Lernen
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

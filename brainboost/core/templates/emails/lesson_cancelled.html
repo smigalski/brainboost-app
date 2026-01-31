@@ -1,0 +1,15 @@
+{% extends "emails/base.html" %}
+{% block content %}
+  <p style="margin:0 0 12px 0;">Ein Termin wurde storniert.</p>
+  <ul style="margin:0 0 12px 16px;padding:0;">
+    <li><strong>Schüler:</strong> {{ student.user.username }}</li>
+    <li><strong>Tutor:</strong> {{ tutor.user.username }}</li>
+    <li><strong>Datum:</strong> {{ lesson.date|date:"d.m.Y" }}</li>
+    <li><strong>Uhrzeit:</strong> {{ lesson.time|time:"H:i" }}</li>
+    <li><strong>Von:</strong> {{ actor_label }}</li>
+    <li><strong>Grund:</strong> {{ reason }}</li>
+  </ul>
+  <p style="margin:0;">
+    Details: <a href="{{ lesson_list_url }}">{{ lesson_list_url }}</a>
+  </p>
+{% endblock %}

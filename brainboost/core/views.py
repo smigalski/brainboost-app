@@ -24,6 +24,14 @@ from .forms import (
     ParentCreateForm,
     StudentCreateForm,
 )
+from .notifications import (
+    notify_invoice_uploaded,
+    notify_lesson_cancelled,
+    notify_lesson_changed,
+    notify_lesson_created,
+    notify_lesson_reschedule_requested,
+    notify_material_uploaded,
+)
 from .models import (
     CustomUser,
     Lesson,
@@ -87,6 +95,16 @@ def _assign_location_and_distance(lesson: Lesson):
 
     lesson.location_address = address or ""
     lesson.distance_km = distance
+
+
+def _actor_label(user: CustomUser) -> str:
+    if user.role == CustomUser.Roles.TUTOR:
+        return f"Tutor {user.username}"
+    if user.role == CustomUser.Roles.PARENT:
+        return f"Elternteil {user.username}"
+    if user.role == CustomUser.Roles.STUDENT:
+        return f"Schüler {user.username}"
+    return user.username
 
 
 def contact(request):
@@ -351,6 +369,7 @@ def lesson_create(request):
             lesson.tutor = request.user.tutor_profile
             _assign_location_and_distance(lesson)
             lesson.save()
+            notify_lesson_created(request, lesson)
             return redirect("lesson_list")
     else:
         form = LessonForm(tutor_profile=request.user.tutor_profile)
@@ -395,6 +414,13 @@ def lesson_cancel(request, lesson_id):
     lesson.cancellation_reason = reason
     lesson.reschedule_requested = False
     lesson.save(update_fields=["status", "cancellation_reason", "reschedule_requested"])
+    notify_lesson_cancelled(
+        request,
+        lesson,
+        actor_label=_actor_label(request.user),
+        reason=reason,
+        include_tutor=request.user.role != CustomUser.Roles.TUTOR,
+    )
     if is_ajax:
         return JsonResponse({"ok": True, "message": "Stornierungsanfrage wurde gespeichert."})
     return redirect("lesson_list")
@@ -433,6 +459,12 @@ def lesson_reschedule_request(request, lesson_id):
 
     lesson.reschedule_requested = True
     lesson.save(update_fields=["reschedule_requested"])
+    notify_lesson_reschedule_requested(
+        request,
+        lesson,
+        actor_label=_actor_label(request.user),
+        include_tutor=True,
+    )
     success_msg = "Tutor wurde informiert. Termin ist als Verlegungsanfrage markiert."
     return JsonResponse({"ok": True, "message": success_msg}) if is_ajax else redirect("lesson_list")
 
@@ -498,6 +530,7 @@ def lesson_edit(request, lesson_id):
             updated = form.save(commit=False)
             _assign_location_and_distance(updated)
             updated.save()
+            notify_lesson_changed(request, updated)
             return redirect("lesson_list")
     else:
         form = LessonForm(
@@ -550,6 +583,7 @@ def material_upload(request, kind: str):
             material.kind = kind
             material.uploaded_by = request.user.tutor_profile
             material.save()
+            notify_material_uploaded(request, material)
             return redirect("dashboard")
     else:
         form = LearningMaterialForm(allowed_students=allowed_students)
@@ -585,6 +619,7 @@ def invoice_upload(request):
             invoice = form.save(commit=False)
             invoice.uploaded_by = request.user.tutor_profile
             invoice.save()
+            notify_invoice_uploaded(request, invoice)
             return redirect("dashboard")
     else:
         form = InvoiceForm(allowed_students=allowed_students)

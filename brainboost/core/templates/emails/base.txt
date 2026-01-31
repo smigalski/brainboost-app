@@ -1,0 +1,6 @@
+{{ heading }}
+{% for _ in heading %}={% endfor %}
+{% block content %}{% endblock %}
+
+--
+BrainBoost

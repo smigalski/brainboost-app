@@ -1,0 +1,13 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Ein Termin wurde storniert.
+
+Schüler: {{ student.user.username }}
+Tutor: {{ tutor.user.username }}
+Datum: {{ lesson.date|date:"d.m.Y" }}
+Uhrzeit: {{ lesson.time|time:"H:i" }}
+Von: {{ actor_label }}
+Grund: {{ reason }}
+
+Details: {{ lesson_list_url }}
+{% endblock %}
