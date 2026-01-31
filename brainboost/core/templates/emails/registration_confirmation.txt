@@ -1,0 +1,11 @@
+Hallo {{ user.first_name|default:user.username }},
+
+dein BrainBoost-Konto wurde erstellt.
+
+Bitte setze dein Passwort über folgenden Link:
+{{ set_password_url }}
+
+Wenn du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.
+
+Viele Grüße
+Dein BrainBoost-Team

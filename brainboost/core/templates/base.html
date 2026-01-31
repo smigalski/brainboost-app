@@ -40,6 +40,13 @@
         </nav>
     </header>
 <main class="page">
+    {% if messages %}
+        <div class="card" style="border-left:4px solid var(--teal);background:linear-gradient(120deg, rgba(95,181,255,0.12), rgba(255,255,255,0.92));">
+            {% for message in messages %}
+                <div style="font-weight:600;color:#0b1b2a;">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
     {% block content %}{% endblock %}
 </main>
 <footer class="site-footer">

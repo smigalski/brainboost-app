@@ -16,6 +16,16 @@
             <a class="button" href="{% url 'progress' %}">Fortschritt öffnen</a>
         </div>
         <div>
+            <h3>Eltern anlegen</h3>
+            <p>Lege einen neuen Eltern-Account an.</p>
+            <a class="button" href="{% url 'parent_create' %}">Eltern anlegen</a>
+        </div>
+        <div>
+            <h3>Schüler anlegen</h3>
+            <p>Lege einen neuen Schüler-Account an.</p>
+            <a class="button" href="{% url 'student_create' %}">Schüler anlegen</a>
+        </div>
+        <div>
             <h3>Aufgaben</h3>
             <p>Stelle Materialien für deine Schüler bereit.</p>
             <a class="button" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BrainBoost Bestätigung</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; color: #0b1b2a;">
+    <p>Hallo {{ user.first_name|default:user.username }},</p>
+    <p>dein BrainBoost-Konto wurde erstellt.</p>
+    <p>
+      Bitte setze dein Passwort über folgenden Link:
+      <a href="{{ set_password_url }}">{{ set_password_url }}</a>
+    </p>
+    <p>Wenn du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.</p>
+    <p>Viele Grüße<br />Dein BrainBoost-Team</p>
+  </body>
+</html>

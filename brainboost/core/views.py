@@ -1,13 +1,29 @@
 from datetime import timedelta
 
+import logging
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.urls import reverse
 
-from .forms import LessonForm, ProgressEntryForm, LearningMaterialForm, InvoiceForm
+from .forms import (
+    LessonForm,
+    ProgressEntryForm,
+    LearningMaterialForm,
+    InvoiceForm,
+    ParentCreateForm,
+    StudentCreateForm,
+)
 from .models import (
     CustomUser,
     Lesson,
@@ -88,6 +104,37 @@ def agbs(request):
 def pricing(request):
     return render(request, "pricing.html")
 
+logger = logging.getLogger(__name__)
+
+
+def _send_set_password_email(request, user: CustomUser) -> None:
+    if not user.email:
+        raise ValueError("missing_email")
+    if not getattr(settings, "EMAIL_HOST_USER", "") or not getattr(
+        settings, "EMAIL_HOST_PASSWORD", ""
+    ):
+        raise RuntimeError("smtp_config_missing")
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    reset_path = reverse(
+        "password_reset_confirm",
+        kwargs={"uidb64": uid, "token": token},
+    )
+    reset_url = request.build_absolute_uri(reset_path)
+    context = {
+        "user": user,
+        "set_password_url": reset_url,
+    }
+    subject = "BrainBoost: Bestätigung & Passwort setzen"
+    text_body = render_to_string("emails/registration_confirmation.txt", context)
+    html_body = render_to_string("emails/registration_confirmation.html", context)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
+    message = EmailMultiAlternatives(subject, text_body, from_email, [user.email])
+    message.attach_alternative(html_body, "text/html")
+    sent = message.send()
+    if sent == 0:
+        raise RuntimeError("email_send_failed")
+
 
 @login_required
 def dashboard(request):
@@ -149,6 +196,72 @@ def dashboard(request):
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def parent_create(request):
+    if request.user.role != CustomUser.Roles.TUTOR:
+        return redirect("dashboard")
+    if request.method == "POST":
+        form = ParentCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            try:
+                _send_set_password_email(request, user)
+            except ValueError:
+                messages.error(
+                    request,
+                    "Elternteil wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
+                )
+            except Exception as exc:
+                logger.exception("E-Mail Versand fehlgeschlagen (Elternteil)")
+                messages.error(
+                    request,
+                    "Elternteil wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                    f"Fehler: {exc.__class__.__name__} ({exc})",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Elternteil wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                )
+            return redirect("dashboard")
+    else:
+        form = ParentCreateForm()
+    return render(request, "parent_create.html", {"form": form})
+
+
+@login_required
+def student_create(request):
+    if request.user.role != CustomUser.Roles.TUTOR:
+        return redirect("dashboard")
+    if request.method == "POST":
+        form = StudentCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            try:
+                _send_set_password_email(request, user)
+            except ValueError:
+                messages.error(
+                    request,
+                    "Schüler wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
+                )
+            except Exception as exc:
+                logger.exception("E-Mail Versand fehlgeschlagen (Schüler)")
+                messages.error(
+                    request,
+                    "Schüler wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                    f"Fehler: {exc.__class__.__name__} ({exc})",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Schüler wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                )
+            return redirect("dashboard")
+    else:
+        form = StudentCreateForm()
+    return render(request, "student_create.html", {"form": form})
 
 
 @login_required

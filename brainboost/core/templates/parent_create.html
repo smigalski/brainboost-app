@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Eltern anlegen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Eltern anlegen</h1>
+    <p class="muted">Lege einen neuen Eltern-Account an.</p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">Speichern</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Abbrechen</a>
+    </form>
+</div>
+{% endblock %}
