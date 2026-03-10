@@ -173,7 +173,7 @@ class StudentCreateForm(BaseUserCreateForm):
         label="Rolle",
     )
     address = forms.CharField(max_length=255, required=False, label="Adresse")
-    zoom_link = forms.URLField(required=False, label="Zoom-Link")
+    zoom_link = forms.URLField(required=False, label="BBB-Link")
     zumpad_link = forms.URLField(required=False, label="ZUMPad-Link")
     parents = forms.ModelMultipleChoiceField(
         queryset=ParentProfile.objects.all(),

@@ -60,8 +60,12 @@ class ParentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "zoom_link")
+    list_display = ("user", "bbb_link")
     filter_horizontal = ("parents",)
+
+    @admin.display(description="BBB-Link")
+    def bbb_link(self, obj):
+        return obj.zoom_link
 
 
 @admin.register(TutorProfile)

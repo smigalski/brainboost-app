@@ -42,22 +42,22 @@
         </div>
         <div>
             <h3>Online-Lernraum</h3>
-            <p>Starte direkt den Zoom-Raum für einen Schüler.</p>
-            {% if zoom_students %}
+            <p>Starte direkt den BigBlueButton-Raum für einen Schüler.</p>
+            {% if bbb_students %}
                 <div>
-                    <label for="zoom-student-select" style="display:block; margin-bottom:4px;">Schüler auswählen</label>
-                    <select id="zoom-student-select" name="zoom_link" style="width:100%;">
-                        {% for student in zoom_students %}
+                    <label for="bbb-student-select" style="display:block; margin-bottom:4px;">Schüler auswählen</label>
+                    <select id="bbb-student-select" name="zoom_link" style="width:100%;">
+                        {% for student in bbb_students %}
                             <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.username }}</option>
                         {% endfor %}
                     </select>
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                        <button type="button" class="button" onclick="openOnlineRoom('zoom')" style="background:#5fb5ff;color:#0b1b2a;">Online-Lernraum (Zoom)</button>
+                        <button type="button" class="button" onclick="openOnlineRoom('bbb')" style="background:#5fb5ff;color:#0b1b2a;">Online-Lernraum (BigBlueButton)</button>
                         <button type="button" class="button" style="background: var(--yellow); color:#000;" onclick="openOnlineRoom('zumpad')">ZUMPad</button>
                     </div>
                 </div>
             {% else %}
-                <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
+                <p class="muted">Es ist noch kein BBB-Link hinterlegt.</p>
             {% endif %}
         </div>
     </div>
@@ -85,7 +85,7 @@
 {% block scripts %}
 <script>
 function openOnlineRoom(kind) {
-    const select = document.getElementById('zoom-student-select');
+    const select = document.getElementById('bbb-student-select');
     if (!select) return;
     const option = select.selectedOptions[0];
     if (!option) return;

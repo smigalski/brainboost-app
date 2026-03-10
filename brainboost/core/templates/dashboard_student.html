@@ -20,11 +20,11 @@
 
 <div class="card">
     <h3>Online-Lernraum</h3>
-    <p>Starte deinen Zoom-Raum für die Nachhilfe.</p>
+    <p>Starte deinen BigBlueButton-Raum für die Nachhilfe.</p>
     {% if request.user.student_profile.zoom_link %}
-        <a class="button" style="margin-top:8px;background:#5fb5ff;color:#0b1b2a;" href="{{ request.user.student_profile.zoom_link }}" target="_blank" rel="noopener">Online-Lernraum (Zoom)</a>
+        <a class="button" style="margin-top:8px;background:#5fb5ff;color:#0b1b2a;" href="{{ request.user.student_profile.zoom_link }}" target="_blank" rel="noopener">Online-Lernraum (BigBlueButton)</a>
     {% else %}
-        <p class="muted">Es ist noch kein Zoom-Link hinterlegt.</p>
+        <p class="muted">Es ist noch kein BBB-Link hinterlegt.</p>
     {% endif %}
     {% if request.user.student_profile.zumpad_link %}
         <a class="button" style="margin-top:8px; background: var(--yellow); color:#000;" href="{{ request.user.student_profile.zumpad_link }}" target="_blank" rel="noopener">ZUMPad</a>

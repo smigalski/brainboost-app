@@ -183,11 +183,11 @@ def dashboard(request):
                 Q(zoom_link__isnull=False, zoom_link__gt="")
                 | Q(zumpad_link__isnull=False, zumpad_link__gt="")
             )
-            zoom_students = (
+            bbb_students = (
                 assigned_students
                 | new_students_with_links
             ).select_related("user").distinct()
-            context["zoom_students"] = zoom_students
+            context["bbb_students"] = bbb_students
             news_lessons = (
                 Lesson.objects.filter(tutor=request.user.tutor_profile)
                 .select_related("student__user")
