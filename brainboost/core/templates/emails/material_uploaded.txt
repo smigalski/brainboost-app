@@ -4,7 +4,7 @@ Neues Material wurde bereitgestellt.
 
 Schüler: {{ student.user.username }}
 Tutor: {{ tutor.user.username }}
-Art: {{ material.get_kind_display }}
+Art: {{ kind_label }}
 Hochgeladen am: {{ material.uploaded_at|date:"d.m.Y H:i" }}
 
 Dashboard: {{ dashboard_url }}

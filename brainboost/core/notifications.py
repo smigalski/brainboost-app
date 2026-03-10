@@ -196,9 +196,11 @@ def notify_invoice_uploaded(request, invoice: Invoice) -> None:
 def notify_material_uploaded(request, material: LearningMaterial) -> None:
     if not _notifications_enabled("material_uploaded"):
         return
-    subject = f"Neues Material ({material.get_kind_display()}) für {material.student.user.username}"
+    kind_label = "Musterlösung" if material.kind == material.Kind.SOLUTION else material.get_kind_display()
+    subject = f"Neues Material ({kind_label}) für {material.student.user.username}"
     context = {
-        "heading": f"Neues Material: {material.get_kind_display()}",
+        "heading": f"Neues Material: {kind_label}",
+        "kind_label": kind_label,
         "material": material,
         "student": material.student,
         "tutor": material.uploaded_by,

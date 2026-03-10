@@ -570,7 +570,7 @@ def material_upload(request, kind: str):
     ).distinct()
     if not allowed_students.exists():
         allowed_students = StudentProfile.objects.all()
-    heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Lösung hochladen"
+    heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Musterlösung hochladen"
 
     if request.method == "POST":
         form = LearningMaterialForm(

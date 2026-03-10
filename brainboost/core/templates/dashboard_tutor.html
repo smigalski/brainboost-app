@@ -13,7 +13,7 @@
         <div>
             <h3>Fortschritte</h3>
             <p>Fortschritt eines Schülers ansehen</p>
-            <a class="button" href="{% url 'progress' %}">Fortschritt öffnen</a>
+            <a class="button" href="{% url 'progress' %}">Übersicht öffnen</a>
         </div>
         <div>
             <h3>Eltern anlegen</h3>
@@ -31,9 +31,9 @@
             <a class="button" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>
         </div>
         <div>
-            <h3>Lösungen</h3>
-            <p>Nur Eltern können diese Downloads sehen.</p>
-            <a class="button" href="{% url 'material_upload' 'solution' %}">Lösung hochladen</a>
+            <h3>Musterlösungen</h3>
+            <p>Tutoren laden hier nur Musterlösungen hoch; Schüler laden ihre normalen Lösungen selbst hoch.</p>
+            <a class="button" href="{% url 'material_upload' 'solution' %}">Musterlösung hochladen</a>
         </div>
         <div>
             <h3>Rechnungen</h3>
