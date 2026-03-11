@@ -1,6 +1,5 @@
 from django import forms
 from django.db import transaction
-from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.contrib.auth import password_validation
 
@@ -43,15 +42,26 @@ class LessonForm(forms.ModelForm):
             self.fields["student"].queryset = allowed_students
         elif tutor_profile:
             students_qs = StudentProfile.objects.filter(
-                Q(lessons__tutor=tutor_profile) | Q(lessons__isnull=True)
+                assigned_tutors=tutor_profile
             ).distinct()
             self.fields["student"].queryset = students_qs
 
 
 class ProgressEntryForm(forms.ModelForm):
+    rating = forms.TypedChoiceField(
+        choices=[(value, str(value)) for value in range(1, 11)],
+        coerce=int,
+        widget=forms.RadioSelect,
+        label="Mitarbeit",
+    )
+
     class Meta:
         model = ProgressEntry
         fields = ["lesson", "comment", "rating"]
+        labels = {
+            "lesson": "Termin",
+            "comment": "Kommentar",
+        }
 
     def __init__(self, *args, tutor_profile=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,13 +74,40 @@ class ProgressEntryForm(forms.ModelForm):
 class LearningMaterialForm(forms.ModelForm):
     class Meta:
         model = LearningMaterial
-        fields = ["student", "file"]
+        fields = ["student", "related_task", "file"]
 
-    def __init__(self, *args, allowed_students=None, **kwargs):
+    def __init__(self, *args, allowed_students=None, kind=None, tutor_profile=None, **kwargs):
         super().__init__(*args, **kwargs)
         if allowed_students is not None:
             self.fields["student"].queryset = allowed_students
+        self.kind = kind
+        self.tutor_profile = tutor_profile
+        if kind == LearningMaterial.Kind.SOLUTION:
+            tasks_qs = LearningMaterial.objects.filter(kind=LearningMaterial.Kind.TASK)
+            if allowed_students is not None:
+                tasks_qs = tasks_qs.filter(student__in=allowed_students)
+            self.fields["related_task"].queryset = tasks_qs.select_related("student__user").order_by("-uploaded_at")
+            self.fields["related_task"].required = True
+            self.fields["related_task"].label = "Zugehoerige Aufgabe"
+        else:
+            self.fields.pop("related_task")
         self.fields["file"].help_text = "Erlaubt: pdf, png, jpg, jpeg, docx. Max 10 MB."
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.kind != LearningMaterial.Kind.SOLUTION:
+            return cleaned
+
+        student = cleaned.get("student")
+        related_task = cleaned.get("related_task")
+        if not related_task:
+            self.add_error("related_task", "Bitte waehle die zugehoerige Aufgabe aus.")
+            return cleaned
+        if related_task.kind != LearningMaterial.Kind.TASK:
+            self.add_error("related_task", "Es kann nur eine Aufgabe verknuepft werden.")
+        if student and related_task.student_id != student.id:
+            self.add_error("related_task", "Die Aufgabe muss zum ausgewaehlten Schueler passen.")
+        return cleaned
 
     def clean_file(self):
         f = self.cleaned_data["file"]

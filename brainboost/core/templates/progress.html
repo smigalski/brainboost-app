@@ -1,31 +1,46 @@
 {% extends "base.html" %}
-{% block title %}BrainBoost | Fortschritt{% endblock %}
+{% block title %}BrainBoost | Lernfortschritt{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Fortschritt</h1>
+    <h1>Lernfortschritt</h1>
     {% if viewed_student %}
         <p class="muted">Schüler: {{ viewed_student.user.username }}</p>
     {% elif request.user.role == 'tutor' %}
-        <p class="muted">Deine erstellten Fortschritteinträge (alle Schüler).</p>
+        <p class="muted">Deine erstellten Lernfortschrittseinträge (alle Schüler).</p>
     {% elif student_id %}
         <p class="muted">Schüler-ID: {{ student_id }}</p>
     {% endif %}
     <p class="muted" style="margin:12px 0 12px;">
-        Rating-Notiz: 0 bedeutet keine Zusammenarbeit/kein Engagement (quasi abwesend), 5 steht für normale Zusammenarbeit und normales Engagement,
-        10 für überdurchschnittliche Zusammenarbeit und motivierte Einstellung, mehr zu machen. Die Bewertungen spiegeln die subjektive Wahrnehmung des Tutors wider.
+        Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
+        Die Einschätzung spiegelt die subjektive Wahrnehmung des Tutors wider.
     </p>
     <ul class="list">
         {% for entry in entries %}
-            <li>
-                <div>
-                    <strong>{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
-                    <div class="muted">Tutor: {{ entry.lesson.tutor.user.username }}</div>
-                    <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
+            <li style="display:block;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                    <strong style="flex:1 1 auto; min-width:0;">{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
+                    <div style="flex:0 0 auto; text-align:right;">
+                        <span
+                            class="badge info"
+                            style="
+                                {% if entry.rating <= 1 %}background:#ff6b6b;color:#1a1a1a;
+                                {% elif entry.rating == 2 %}background:#ff7d61;color:#1a1a1a;
+                                {% elif entry.rating == 3 %}background:#ff9258;color:#1a1a1a;
+                                {% elif entry.rating == 4 %}background:#ffaa52;color:#1a1a1a;
+                                {% elif entry.rating == 5 %}background:#ffc24d;color:#1a1a1a;
+                                {% elif entry.rating == 6 %}background:#e6d64a;color:#1a1a1a;
+                                {% elif entry.rating == 7 %}background:#bddf4c;color:#1a1a1a;
+                                {% elif entry.rating == 8 %}background:#91d15c;color:#1a1a1a;
+                                {% elif entry.rating == 9 %}background:#5cbf5c;color:#1a1a1a;
+                                {% else %}background:#1f6666;color:#f7f7f2;
+                                {% endif %}
+                            "
+                        >Mitarbeit: {{ entry.rating }}/10</span>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                    <span class="badge info">Rating: {{ entry.rating }}/10</span><br>
-                    <span class="muted">{{ entry.created_at }}</span>
-                </div>
+                <div class="muted">{{ entry.lesson.student.user.username }} | {{ entry.lesson.get_fach_display }} | {{ entry.lesson.get_ort_display }}</div>
+                <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
+                <div class="muted">{{ entry.created_at }}</div>
             </li>
         {% empty %}
             <li>Keine Einträge vorhanden.</li>

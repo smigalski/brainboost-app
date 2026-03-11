@@ -473,7 +473,57 @@ input:focus, select:focus, textarea:focus {
     color: var(--teal-dark);
 }
 
-@media (max-width: 640px) {
-    .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .nav-links { flex-wrap: wrap; }
+@media (max-width: 760px) {
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 14px 16px;
+    }
+
+    .brand-link {
+        width: 100%;
+    }
+
+    .brand {
+        width: 100%;
+    }
+
+    .nav-links,
+    .nav-links--wrap {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        gap: 10px;
+        justify-content: stretch;
+        align-items: stretch;
+    }
+
+    .nav-links a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        width: 100%;
+        padding: 10px 8px;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .nav-links .pill {
+        grid-column: 1 / -1;
+    }
+
+    .brand-title {
+        font-size: 16px;
+    }
+
+    .brand-sub {
+        font-size: 12px;
+    }
+
+    .brand-icon img {
+        width: 52px !important;
+        height: 52px !important;
+    }
 }

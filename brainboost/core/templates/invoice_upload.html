@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Rechnung hochladen{% endblock %}
+{% block title %}Rechnungen{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Rechnung hochladen</h1>
-    <p class="muted">Nur PDF-Dateien. Die Rechnung wird den Eltern des ausgewählten Schülers angezeigt.</p>
+    <h1>Rechnungen</h1>
+    <p class="muted">Hier kannst du Rechnungen hochladen und den Freigabestatus deiner Rechnungen verfolgen.</p>
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         <label for="{{ form.student.id_for_label }}">Schüler auswählen</label>
@@ -21,8 +21,9 @@
     </form>
     <p class="muted" style="margin-top:12px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
 </div>
+
 <div class="card">
-    <h3>Meine hochgeladenen Rechnungen</h3>
+    <h3>Meine Rechnungen</h3>
     {% if tutor_invoices %}
         <ul class="list">
             {% for invoice in tutor_invoices %}
@@ -32,6 +33,11 @@
                         <div class="muted">Für: {{ invoice.student.user.username }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
+                        {% if invoice.is_approved %}
+                            <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                        {% else %}
+                            <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
+                        {% endif %}
                     </div>
                     <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
                 </li>
@@ -41,6 +47,42 @@
         <p class="muted">Noch keine Rechnungen hochgeladen.</p>
     {% endif %}
 </div>
+
+{% if has_subordinate_tutors %}
+    <div class="card">
+        <h3>Rechnungen zugewiesener Tutoren</h3>
+        {% if subordinate_invoices %}
+            <ul class="list">
+                {% for invoice in subordinate_invoices %}
+                    <li>
+                        <div>
+                            <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
+                            <div class="muted">Tutor: {{ invoice.uploaded_by.user.username }}</div>
+                            <div class="muted">Für: {{ invoice.student.user.username }}</div>
+                            <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
+                            {% if invoice.is_approved %}
+                                <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                            {% else %}
+                                <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
+                            {% endif %}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                            <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                            {% if not invoice.is_approved %}
+                                <form method="post" action="{% url 'invoice_approve' invoice.id %}">
+                                    {% csrf_token %}
+                                    <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Genehmigen</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">Aktuell liegen keine Rechnungen zugewiesener Tutoren vor.</p>
+        {% endif %}
+    </div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>

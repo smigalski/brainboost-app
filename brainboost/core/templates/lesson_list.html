@@ -5,7 +5,6 @@
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <div>
             <h1>Termine</h1>
-            <p class="muted">Geplante und vergangene Termine.</p>
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             {% if request.user.role == 'tutor' %}
@@ -17,12 +16,17 @@
     </div>
     <ul class="list" style="margin-top:16px;">
         {% for lesson in lessons %}
-            <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
+            <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                    <strong style="flex:1 1 auto; min-width:0;">{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
+                    <div style="flex:0 0 auto; text-align:right;">
+                        <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                            {{ lesson.get_status_display }}
+                        </span>
+                    </div>
+                </div>
                 <div>
-                    <strong>{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
-                    <div class="muted"><strong>{{ lesson.duration_minutes }} min</strong></div>
-                    <div class="muted">{{ lesson.get_ort_display }}</div>
-                    <div class="muted">{{ lesson.get_fach_display }}</div>
+                    <div class="muted"><strong>{{ lesson.duration_minutes }} min</strong> {{ lesson.get_ort_display }} | {{ lesson.get_fach_display }}</div>
                     {% if lesson.location_address %}
                         <div class="muted">{{ lesson.location_address }}</div>
                     {% endif %}
@@ -33,7 +37,7 @@
                             {% endif %}
                         {% endwith %}
                     {% endif %}
-                    <div class="muted"><strong> {{ lesson.student.user.username }} </strong>  Tutor: {{ lesson.tutor.user.username }}</div>
+                    <div class="muted">{{ lesson.student.user.username }} | {{ lesson.tutor.user.username }}</div>
                     {% if lesson.reschedule_requested %}
                         <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
                     {% endif %}
@@ -47,34 +51,25 @@
                         </div>
                     {% endif %}
                 </div>
-                <div style="text-align:right;">
-                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                        {{ lesson.get_status_display }}
-                    </span>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
                     {% if lesson.id in editable_ids %}
-                        <div style="margin-top:6px;">
-                            <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
-                        </div>
+                        <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
                     {% endif %}
                     {% if request.user.role == 'tutor' %}
-                        <div style="margin-top:6px;">
-                            <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Fortschritt hinzufügen</a>
-                        </div>
+                        <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Lernfortschritt hinzufügen</a>
                     {% endif %}
                     {% if lesson.id in cancelable_ids and lesson.status != 'cancelled' and request.user.role != 'tutor' and not lesson.reschedule_requested %}
-                        <div style="margin-top:6px;">
-                            <button
-                                type="button"
-                                class="button change-request-btn"
-                                style="padding:6px 10px; background: var(--red);"
-                                data-cancel-url="{% url 'lesson_cancel' lesson.id %}"
-                                data-reschedule-url="{% url 'lesson_reschedule_request' lesson.id %}"
-                                data-lesson-label="{{ lesson.date|date:'d.m.Y' }} um {{ lesson.time|time:'H:i' }} Uhr"
-                                data-scheduled="{{ lesson.date|date:'Y-m-d' }}T{{ lesson.time|time:'H:i:s' }}"
-                            >
-                                Änderung anfragen
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            class="button change-request-btn"
+                            style="padding:6px 10px; background: var(--red);"
+                            data-cancel-url="{% url 'lesson_cancel' lesson.id %}"
+                            data-reschedule-url="{% url 'lesson_reschedule_request' lesson.id %}"
+                            data-lesson-label="{{ lesson.date|date:'d.m.Y' }} um {{ lesson.time|time:'H:i' }} Uhr"
+                            data-scheduled="{{ lesson.date|date:'Y-m-d' }}T{{ lesson.time|time:'H:i:s' }}"
+                        >
+                            Änderung anfragen
+                        </button>
                     {% endif %}
                 </div>
             </li>
@@ -103,9 +98,14 @@
                 <strong>{{ day.date|date:"l, d.m.Y" }}</strong>
                 <ul class="list" style="margin-top:10px;">
                     {% for lesson in day.lessons %}
-                        <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}">
+                        <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                                <div style="flex:1 1 auto; min-width:0; white-space:nowrap;"><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
+                                <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                                    {{ lesson.get_status_display }}
+                                </span>
+                            </div>
                             <div>
-                                <div style="white-space:nowrap;"><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
                                 <div class="muted">{{ lesson.get_ort_display }}</div>
                                 <div class="muted">{{ lesson.get_fach_display }}</div>
                                 {% if lesson.location_address %}
@@ -133,9 +133,6 @@
                                     </div>
                                 {% endif %}
                             </div>
-                            <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                                {{ lesson.get_status_display }}
-                            </span>
                         </li>
                     {% empty %}
                         <li>Keine Termine.</li>

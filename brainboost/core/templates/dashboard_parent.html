@@ -11,9 +11,9 @@
             <a class="button" href="{% url 'lesson_list' %}">Termine meiner Kinder</a>
         </div>
         <div>
-            <h3>Fortschritt</h3>
+            <h3>Lernfortschritt</h3>
             <p>Feedback, Bewertungen und Notizen.</p>
-            <a class="button" href="{% url 'progress' %}">Fortschritt des Kindes ansehen</a>
+            <a class="button" href="{% url 'progress' %}">Lernfortschritt des Kindes ansehen</a>
         </div>
         <div>
             <h3>Rechnungen</h3>
@@ -31,6 +31,9 @@
                     <div>
                         <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
                         <div class="muted">Für: {{ material.student.user.username }}</div>
+                        {% if material.related_task %}
+                            <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
+                        {% endif %}
                         <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
                     </div>
                     <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>

@@ -64,6 +64,11 @@ class StudentProfile(models.Model):
         related_name="students",
         blank=True,
     )
+    assigned_tutors = models.ManyToManyField(
+        "TutorProfile",
+        related_name="assigned_students",
+        blank=True,
+    )
 
     def __str__(self) -> str:
         return f"Student/Schüler: {self.user.username}"
@@ -112,6 +117,12 @@ class TutorProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    assigned_tutors = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="supervising_tutors",
+        blank=True,
+    )
     class Meta:
         verbose_name = "Tutor"
         verbose_name_plural = "Tutoren"
@@ -309,6 +320,15 @@ class LearningMaterial(models.Model):
         on_delete=models.CASCADE,
         related_name="materials",
     )
+    related_task = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="linked_solutions",
+        null=True,
+        blank=True,
+        limit_choices_to={"kind": "task"},
+        verbose_name="Zugehoerige Aufgabe",
+    )
     kind = models.CharField(max_length=20, choices=Kind.choices)
     file = models.FileField(
         upload_to=material_upload_path,
@@ -337,17 +357,18 @@ class ProgressEntry(models.Model):
     )
     comment = models.TextField(blank=True)
     rating = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(10)]
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name="Mitarbeit",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Fortschrittseintrag"
-        verbose_name_plural = "Fortschrittseinträge"
+        verbose_name = "Lernfortschrittseintrag"
+        verbose_name_plural = "Lernfortschrittseinträge"
 
     def __str__(self) -> str:
-        return f"Progress for {self.lesson} - Rating {self.rating}"
+        return f"Lernfortschritt für {self.lesson} - Mitarbeit {self.rating}"
 
 
 class Invoice(models.Model):
@@ -361,11 +382,19 @@ class Invoice(models.Model):
         on_delete=models.CASCADE,
         related_name="invoices",
     )
+    approved_by = models.ForeignKey(
+        TutorProfile,
+        on_delete=models.SET_NULL,
+        related_name="approved_invoices",
+        null=True,
+        blank=True,
+    )
     file = models.FileField(
         upload_to=invoice_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-uploaded_at"]
@@ -378,6 +407,10 @@ class Invoice(models.Model):
     @property
     def due_date(self):
         return self.uploaded_at + timedelta(days=7)
+
+    @property
+    def is_approved(self):
+        return self.approved_at is not None
 
 
 class TutorTemplate(models.Model):

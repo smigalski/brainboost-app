@@ -3,50 +3,76 @@
 {% block content %}
 <div class="card">
     <h1>Hallo {{ request.user.username }}!</h1>
-    <p class="muted">Dein BrainBoost im Überblick.</p>
-    <div class="grid two">
-        <div>
-            <h3>Termine</h3>
-            <p>Überblick über deine Nachhilfetermine.</p>
-            <a class="button" href="{% url 'lesson_list' %}">Meine Termine</a>
+    <style>
+        .student-dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 1.2fr) minmax(260px, 1fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 760px) {
+            .student-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <div class="student-dashboard-grid">
+        <div style="display:flex; flex-direction:column; gap:24px;">
+            <div style="padding:18px; border-radius:18px; background:rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:12px;">Kommende Termine</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for lesson in upcoming_lessons %}
+                        <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
+                            <div class="muted">Tutor: {{ lesson.tutor.user.username }}</div>
+                            <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
+                            <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Keine kommenden Termine vorhanden.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">Letzter Lernfortschrittseintrag</div>
+                {% if latest_progress_entry %}
+                    <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                        <div style="font-weight:800; color:var(--accent);">{{ latest_progress_entry.lesson.date|date:"d.m.Y" }} · {{ latest_progress_entry.lesson.time|time:"H:i" }}</div>
+                        <div class="muted">Tutor: {{ latest_progress_entry.lesson.tutor.user.username }}</div>
+                        <div class="muted">Mitarbeit: {{ latest_progress_entry.rating }}/10</div>
+                        <div style="margin-top:8px;">{{ latest_progress_entry.comment|default:"Kein Kommentar hinterlegt." }}</div>
+                    </div>
+                {% else %}
+                    <div class="muted">Noch kein Lernfortschrittseintrag vorhanden.</div>
+                {% endif %}
+            </div>
         </div>
-        <div>
-            <h3>Fortschritt</h3>
-            <p>Verfolge Bewertungen und Feedback vom Tutor.</p>
-            <a class="button" href="{% url 'progress' %}">Mein Fortschritt</a>
+
+        <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
+            <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:12px;">Zugewiesene/r TutorIn</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                {% for tutor in assigned_tutors %}
+                    <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                        <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-weight:800; flex-shrink:0;">
+                            Bild
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-weight:800; color:var(--accent);">{{ tutor.user.username }}</div>
+                            {% if tutor.user.first_name or tutor.user.last_name %}
+                                <div class="muted">{{ tutor.user.first_name }} {{ tutor.user.last_name }}</div>
+                            {% endif %}
+                            {% if tutor.address %}
+                                <div class="muted">{{ tutor.address }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="muted">Noch kein/e TutorIn zugewiesen.</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
-
-<div class="card">
-    <h3>Online-Lernraum</h3>
-    <p>Starte deinen BigBlueButton-Raum für die Nachhilfe.</p>
-    {% if request.user.student_profile.zoom_link %}
-        <a class="button" style="margin-top:8px;background:#5fb5ff;color:#0b1b2a;" href="{{ request.user.student_profile.zoom_link }}" target="_blank" rel="noopener">Online-Lernraum (BigBlueButton)</a>
-    {% else %}
-        <p class="muted">Es ist noch kein BBB-Link hinterlegt.</p>
-    {% endif %}
-    {% if request.user.student_profile.zumpad_link %}
-        <a class="button" style="margin-top:8px; background: var(--yellow); color:#000;" href="{{ request.user.student_profile.zumpad_link }}" target="_blank" rel="noopener">ZUMPad</a>
-    {% endif %}
-</div>
-
-<div class="card">
-    <h3>Aufgaben zum Download</h3>
-    {% if tasks %}
-        <ul class="list">
-            {% for material in tasks %}
-                <li>
-                    <div>
-                        <strong>{{ material.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</strong>
-                        <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
-                    </div>
-                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="muted">Keine Aufgaben verfügbar.</p>
-    {% endif %}
 </div>
 {% endblock %}

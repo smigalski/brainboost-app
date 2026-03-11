@@ -1,16 +1,89 @@
 {% extends "base.html" %}
-{% block title %}Fortschritt erfassen{% endblock %}
+{% block title %}Lernfortschritt erfassen{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Fortschritt eintragen</h1>
+    <h1>Lernfortschritt eintragen</h1>
     {% if lesson %}
         <p class="muted">Für Termin am {{ lesson.date|date:"d.m.Y" }} um {{ lesson.time|time:"H:i" }} ({{ lesson.student.user.username }})</p>
     {% else %}
         <p class="muted">Wähle einen Termin und hinterlasse Feedback.</p>
     {% endif %}
+    <style>
+        .progress-rating-grid {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .progress-rating-option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .progress-rating-option span {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 46px;
+            border-radius: 12px;
+            font-weight: 800;
+            color: #1a1a1a;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .progress-rating-option input:checked + span {
+            border-color: #1a2238;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12);
+            transform: translateY(-1px);
+        }
+        @media (max-width: 640px) {
+            .progress-rating-grid {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+        }
+    </style>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% if form.non_field_errors %}
+            <div class="muted" style="color: var(--red);">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% if form.lesson %}
+            <p>
+                {{ form.lesson.label_tag }}
+                {{ form.lesson }}
+                {% if form.lesson.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.lesson.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+        {% endif %}
+
+        <p>
+            {{ form.comment.label_tag }}
+            {{ form.comment }}
+            {% if form.comment.errors %}
+                <span class="muted" style="color: var(--red);">{{ form.comment.errors|join:", " }}</span>
+            {% endif %}
+        </p>
+
+        <div>
+            {{ form.rating.label_tag }}
+            <div class="progress-rating-grid">
+                {% for radio in form.rating %}
+                    <label class="progress-rating-option">
+                        {{ radio.tag }}
+                        <span style="background:{% cycle '#ff6b6b' '#ff7d61' '#ff9258' '#ffaa52' '#ffc24d' '#e6d64a' '#bddf4c' '#91d15c' '#5cbf5c' '#1f6666' %};{% if forloop.counter == 10 %} color:#f7f7f2;{% endif %}">
+                            {{ radio.choice_label }}
+                        </span>
+                    </label>
+                {% endfor %}
+            </div>
+            {% if form.rating.errors %}
+                <div class="muted" style="color: var(--red); margin-top:6px;">{{ form.rating.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+
         <button class="button" type="submit">Speichern</button>
         <a class="button" style="background: var(--teal);" href="{% url 'progress' %}">Abbrechen</a>
     </form>

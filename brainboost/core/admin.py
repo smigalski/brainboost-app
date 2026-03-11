@@ -9,6 +9,7 @@ from .models import (
     TutorProfile,
     Lesson,
     ProgressEntry,
+    Invoice,
     TutorTemplate,
 )
 
@@ -62,7 +63,7 @@ class ParentProfileAdmin(admin.ModelAdmin):
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "bbb_link")
-    filter_horizontal = ("parents",)
+    filter_horizontal = ("parents", "assigned_tutors")
 
     @admin.display(description="BBB-Link")
     def bbb_link(self, obj):
@@ -72,6 +73,7 @@ class StudentProfileAdmin(admin.ModelAdmin):
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
     list_display = ("user",)
+    filter_horizontal = ("assigned_tutors",)
 
 
 @admin.register(Lesson)
@@ -86,6 +88,13 @@ class ProgressEntryAdmin(admin.ModelAdmin):
     list_display = ("lesson", "rating", "created_at")
     list_filter = ("rating", "created_at")
     search_fields = ("lesson__student__user__username", "lesson__tutor__user__username")
+
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ("student", "uploaded_by", "approved_by", "uploaded_at", "approved_at")
+    list_filter = ("uploaded_at", "approved_at")
+    search_fields = ("student__user__username", "uploaded_by__user__username", "approved_by__user__username")
 
 
 @admin.register(TutorTemplate)

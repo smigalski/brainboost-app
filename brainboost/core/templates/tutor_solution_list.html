@@ -10,6 +10,9 @@
                 <div>
                     <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
                     <div class="muted">Für: {{ material.student.user.username }}</div>
+                    {% if material.related_task %}
+                        <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
+                    {% endif %}
                     <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Hochgeladen von: {{ material.uploaded_by.user.username }}</div>
                 </div>

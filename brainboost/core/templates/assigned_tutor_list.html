@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Zugewiesene Tutoren{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+        <div>
+            <h1>Zugewiesene Tutoren</h1>
+            <p class="muted">Uebersicht ueber Adresse sowie zugewiesene Schueler und Tutoren.</p>
+        </div>
+        <a class="button" href="{% url 'dashboard' %}">Zurueck zum Dashboard</a>
+    </div>
+
+    <style>
+        @media (max-width: 760px) {
+            .assigned-tutors-table thead {
+                display: none;
+            }
+            .assigned-tutors-table,
+            .assigned-tutors-table tbody,
+            .assigned-tutors-table tr,
+            .assigned-tutors-table td {
+                display: block;
+                width: 100%;
+            }
+            .assigned-tutors-table tr {
+                margin-bottom: 14px;
+                border: 1px solid rgba(0,0,0,0.08);
+                border-radius: 14px;
+                overflow: hidden;
+                background: #fff;
+            }
+            .assigned-tutors-table td {
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+                padding: 10px 12px;
+            }
+            .assigned-tutors-table td:last-child {
+                border-bottom: none;
+            }
+            .assigned-tutors-table td::before {
+                content: attr(data-label);
+                display: block;
+                margin-bottom: 4px;
+                font-size: 0.82rem;
+                font-weight: 800;
+                color: var(--teal-dark);
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
+        }
+    </style>
+
+    <table class="assigned-tutors-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead>
+            <tr style="text-align:left; border-bottom:1px solid rgba(0,0,0,0.08);">
+                <th style="padding:12px;">Tutor</th>
+                <th style="padding:12px;">Wohnadresse</th>
+                <th style="padding:12px;">Zugewiesene Schueler</th>
+                <th style="padding:12px;">Zugewiesene Tutoren</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tutor in tutors %}
+                <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
+                    <td data-label="Tutor" style="padding:12px; vertical-align:top; font-weight:700;">{{ tutor.user.username }}</td>
+                    <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
+                        {% if tutor.address %}
+                            {{ tutor.address }}
+                        {% else %}
+                            <span class="muted">Keine Adresse hinterlegt</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Zugewiesene Schueler" style="padding:12px; vertical-align:top;">{{ tutor.assigned_student_count }}</td>
+                    <td data-label="Zugewiesene Tutoren" style="padding:12px; vertical-align:top;">{{ tutor.assigned_tutor_count }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="padding:12px;">Keine zugewiesenen Tutoren vorhanden.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

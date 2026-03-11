@@ -157,6 +157,18 @@ def _send_set_password_email(request, user: CustomUser) -> None:
         raise RuntimeError("email_send_failed")
 
 
+def _assigned_students_qs(tutor_profile: TutorProfile):
+    return (
+        StudentProfile.objects.filter(assigned_tutors=tutor_profile)
+        .select_related("user")
+        .distinct()
+    )
+
+
+def _assigned_tutors_qs(tutor_profile: TutorProfile):
+    return tutor_profile.assigned_tutors.select_related("user").distinct()
+
+
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)
@@ -164,34 +176,38 @@ def dashboard(request):
     if request.user.role == CustomUser.Roles.STUDENT:
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
-            context["tasks"] = LearningMaterial.objects.filter(
-                student=request.user.student_profile, kind=LearningMaterial.Kind.TASK
+            student_profile = request.user.student_profile
+            context["upcoming_lessons"] = (
+                Lesson.upcoming_qs()
+                .filter(student=student_profile)
+                .select_related("tutor__user")
+                .order_by("date", "time")[:5]
             )
+            context["latest_progress_entry"] = (
+                ProgressEntry.objects.filter(lesson__student=student_profile)
+                .select_related("lesson__tutor__user")
+                .order_by("-created_at")
+                .first()
+            )
+            context["assigned_tutors"] = student_profile.assigned_tutors.select_related(
+                "user"
+            ).distinct()
     elif request.user.role == CustomUser.Roles.PARENT:
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
             students = request.user.parent_profile.students.all()
             context["solutions"] = LearningMaterial.objects.filter(
                 student__in=students, kind=LearningMaterial.Kind.SOLUTION
-            )
+            ).select_related("student__user", "related_task")
     elif request.user.role == CustomUser.Roles.TUTOR:
         template = "dashboard_tutor.html"
         if hasattr(request.user, "tutor_profile"):
-            assigned_students = StudentProfile.objects.filter(
-                lessons__tutor=request.user.tutor_profile
-            ).select_related("user").distinct()
-            new_students_with_links = StudentProfile.objects.filter(
-                lessons__isnull=True
-            ).filter(
-                Q(zoom_link__isnull=False, zoom_link__gt="")
-                | Q(zumpad_link__isnull=False, zumpad_link__gt="")
-            ).select_related("user").distinct()
-            bbb_students = (
-                assigned_students
-                | new_students_with_links
-            ).distinct()
+            assigned_students = _assigned_students_qs(request.user.tutor_profile)
+            assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
+            bbb_students = assigned_students
             context["bbb_students"] = bbb_students
             context["assigned_student_count"] = assigned_students.count()
+            context["assigned_tutor_count"] = assigned_tutors.count()
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
                 .filter(tutor=request.user.tutor_profile)
@@ -236,7 +252,7 @@ def assigned_student_list(request):
     today = timezone.localdate()
     now_time = timezone.localtime().time()
     students = (
-        StudentProfile.objects.filter(lessons__tutor=tutor_profile)
+        _assigned_students_qs(tutor_profile)
         .select_related("user")
         .prefetch_related("parents__user")
         .annotate(
@@ -255,6 +271,29 @@ def assigned_student_list(request):
         request,
         "assigned_student_list.html",
         {"students": students},
+    )
+
+
+@login_required
+def assigned_tutor_list(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    tutor_profile = request.user.tutor_profile
+    tutors = (
+        _assigned_tutors_qs(tutor_profile)
+        .annotate(
+            assigned_student_count=Count("assigned_students", distinct=True),
+            assigned_tutor_count=Count("assigned_tutors", distinct=True),
+        )
+        .order_by("user__username")
+    )
+
+    return render(
+        request,
+        "assigned_tutor_list.html",
+        {"tutors": tutors},
     )
 
 
@@ -293,14 +332,15 @@ def parent_create(request):
 
 @login_required
 def tutor_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR or not (
-        request.user.is_staff or request.user.is_superuser
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
     ):
         return redirect("dashboard")
     if request.method == "POST":
         form = TutorCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
+            request.user.tutor_profile.assigned_tutors.add(user.tutor_profile)
             try:
                 _send_set_password_email(request, user)
             except ValueError:
@@ -334,6 +374,7 @@ def student_create(request):
         form = StudentCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
+            user.student_profile.assigned_tutors.add(request.user.tutor_profile)
             try:
                 _send_set_password_email(request, user)
             except ValueError:
@@ -643,10 +684,8 @@ def material_upload(request, kind: str):
         return redirect("dashboard")
 
     allowed_students = StudentProfile.objects.filter(
-        lessons__tutor=request.user.tutor_profile
+        assigned_tutors=request.user.tutor_profile
     ).distinct()
-    if not allowed_students.exists():
-        allowed_students = StudentProfile.objects.all()
     heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Musterlösung hochladen"
 
     if request.method == "POST":
@@ -654,6 +693,8 @@ def material_upload(request, kind: str):
             data=request.POST,
             files=request.FILES,
             allowed_students=allowed_students,
+            kind=kind,
+            tutor_profile=request.user.tutor_profile,
         )
         if form.is_valid():
             material = form.save(commit=False)
@@ -663,7 +704,11 @@ def material_upload(request, kind: str):
             notify_material_uploaded(request, material)
             return redirect("dashboard")
     else:
-        form = LearningMaterialForm(allowed_students=allowed_students)
+        form = LearningMaterialForm(
+            allowed_students=allowed_students,
+            kind=kind,
+            tutor_profile=request.user.tutor_profile,
+        )
 
     return render(
         request,
@@ -679,13 +724,11 @@ def tutor_solution_list(request):
         return redirect("dashboard")
 
     tutor_profile = request.user.tutor_profile
-    assigned_students = StudentProfile.objects.filter(
-        lessons__tutor=tutor_profile
-    ).distinct()
+    assigned_students = _assigned_students_qs(tutor_profile)
     solutions = (
         LearningMaterial.objects.filter(kind=LearningMaterial.Kind.SOLUTION)
         .filter(Q(student__in=assigned_students) | Q(uploaded_by=tutor_profile))
-        .select_related("student__user", "uploaded_by__user")
+        .select_related("student__user", "uploaded_by__user", "related_task")
         .distinct()
     )
 
@@ -735,13 +778,9 @@ def invoice_upload(request):
     if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
         return redirect("dashboard")
 
-    allowed_students = (
-        StudentProfile.objects.filter(lessons__tutor=request.user.tutor_profile)
-        .select_related("user")
-        .distinct()
-    )
-    if not allowed_students.exists():
-        allowed_students = StudentProfile.objects.all().select_related("user")
+    tutor_profile = request.user.tutor_profile
+    allowed_students = _assigned_students_qs(tutor_profile)
+    subordinate_tutors = _assigned_tutors_qs(tutor_profile)
 
     if request.method == "POST":
         form = InvoiceForm(
@@ -751,24 +790,73 @@ def invoice_upload(request):
         )
         if form.is_valid():
             invoice = form.save(commit=False)
-            invoice.uploaded_by = request.user.tutor_profile
+            invoice.uploaded_by = tutor_profile
             invoice.save()
-            notify_invoice_uploaded(request, invoice)
-            return redirect("dashboard")
+            if not tutor_profile.supervising_tutors.exists():
+                invoice.approved_by = tutor_profile
+                invoice.approved_at = timezone.now()
+                invoice.save(update_fields=["approved_by", "approved_at"])
+                notify_invoice_uploaded(request, invoice)
+                messages.success(request, "Rechnung wurde hochgeladen und direkt freigegeben.")
+            else:
+                messages.success(request, "Rechnung wurde hochgeladen und wartet auf Freigabe.")
+            return redirect("invoice_upload")
     else:
         form = InvoiceForm(allowed_students=allowed_students)
+
+    own_invoices = (
+        Invoice.objects.filter(uploaded_by=tutor_profile)
+        .select_related("student__user", "approved_by__user")
+        .order_by("-uploaded_at")
+    )
+    subordinate_invoices = (
+        Invoice.objects.filter(uploaded_by__in=subordinate_tutors)
+        .select_related("student__user", "uploaded_by__user", "approved_by__user")
+        .order_by("-uploaded_at")
+    )
 
     return render(
         request,
         "invoice_upload.html",
         {
             "form": form,
-            "heading": "Rechnung hochladen",
-            "tutor_invoices": Invoice.objects.filter(uploaded_by=request.user.tutor_profile)
-            .select_related("student__user")
-            .order_by("-uploaded_at"),
+            "heading": "Rechnungen",
+            "tutor_invoices": own_invoices,
+            "subordinate_invoices": subordinate_invoices,
+            "has_subordinate_tutors": subordinate_tutors.exists(),
         },
     )
+
+
+@login_required
+def invoice_approve(request, invoice_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    if request.method != "POST":
+        return redirect("invoice_upload")
+
+    tutor_profile = request.user.tutor_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user", "uploaded_by__user", "approved_by__user"),
+        pk=invoice_id,
+    )
+
+    if not tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists():
+        messages.error(request, "Du darfst diese Rechnung nicht freigeben.")
+        return redirect("invoice_upload")
+
+    if invoice.is_approved:
+        messages.info(request, "Diese Rechnung wurde bereits freigegeben.")
+        return redirect("invoice_upload")
+
+    invoice.approved_by = tutor_profile
+    invoice.approved_at = timezone.now()
+    invoice.save(update_fields=["approved_by", "approved_at"])
+    notify_invoice_uploaded(request, invoice)
+    messages.success(request, "Rechnung wurde freigegeben.")
+    return redirect("invoice_upload")
 
 
 @login_required
@@ -838,11 +926,7 @@ def progress_view(request, student_id=None):
     elif request.user.role == CustomUser.Roles.TUTOR and hasattr(
         request.user, "tutor_profile"
     ):
-        student_list = (
-            StudentProfile.objects.filter(
-                lessons__tutor=request.user.tutor_profile
-            ).distinct()
-        )
+        student_list = _assigned_students_qs(request.user.tutor_profile)
         if student_id is None:
             entries = ProgressEntry.objects.filter(
                 lesson__tutor=request.user.tutor_profile
@@ -869,7 +953,10 @@ def invoice_list(request):
     if request.user.role != CustomUser.Roles.PARENT or not hasattr(request.user, "parent_profile"):
         return redirect("dashboard")
     students = request.user.parent_profile.students.all()
-    invoices = Invoice.objects.filter(student__in=students).select_related("student__user", "uploaded_by__user")
+    invoices = Invoice.objects.filter(
+        student__in=students,
+        approved_at__isnull=False,
+    ).select_related("student__user", "uploaded_by__user", "approved_by__user")
     return render(
         request,
         "invoice_list.html",
