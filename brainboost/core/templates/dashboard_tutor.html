@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}BrainBoost | Tutor Dashboard{% endblock %}
+{% block title %}BrainBoost | TutorIn Dashboard{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Hallo {{ request.user.username }}!</h1>
+    <h1>Hallo {{ request.user.get_full_name }}!</h1>
     <style>
         .tutor-dashboard-grid {
             display: flex;
@@ -12,12 +12,26 @@
     </style>
     <div class="tutor-dashboard-grid">
         <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="padding:14px 16px; border-radius:14px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:10px;">News</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for item in news_items %}
+                        <div style="padding:10px 12px; border-radius:12px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:700; color:var(--accent);">{{ item.title }}</div>
+                            <div class="muted">{{ item.text }}</div>
+                            <div class="muted">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Aktuell keine neuen Meldungen.</div>
+                    {% endfor %}
+                </div>
+            </div>
             <a href="{% url 'assigned_student_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16); text-decoration:none; color:inherit;">
-                <div class="muted" style="margin-bottom:4px;">Zugewiesene Schüler</div>
+                <div class="muted" style="margin-bottom:4px;">Zugewiesene SchülerInnen</div>
                 <div style="font-size:2rem; font-weight:800; color: var(--teal-dark); line-height:1;">{{ assigned_student_count }}</div>
             </a>
             <a href="{% url 'assigned_tutor_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(111,169,75,0.12); border:1px solid rgba(86,148,53,0.18); text-decoration:none; color:inherit;">
-                <div class="muted" style="margin-bottom:4px;">Zugewiesene Tutoren</div>
+                <div class="muted" style="margin-bottom:4px;">Zugewiesene TutorInnen</div>
                 <div style="font-size:2rem; font-weight:800; color:#2f5f1e; line-height:1;">{{ assigned_tutor_count }}</div>
             </a>
             <div style="padding:14px 16px; border-radius:14px; background: rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
@@ -25,7 +39,7 @@
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     {% for lesson in upcoming_lessons %}
                         <div style="padding:10px 12px; border-radius:12px; background: var(--cream); border:1px solid rgba(0,0,0,0.05);">
-                            <div style="font-weight:700; color: var(--accent);">{{ lesson.student.user.username }}</div>
+                            <div style="font-weight:700; color: var(--accent);">{{ lesson.student.user.get_full_name }}</div>
                             <div class="muted">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
                             <div class="muted">{{ lesson.get_fach_display }}</div>
                         </div>
@@ -42,16 +56,21 @@
 
             <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(143,211,107,0.14); border:1px solid rgba(86,148,53,0.18);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e;">Konten</div>
-                <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'tutor_create' %}">Tutor anlegen</a>
+                {% if is_admin_tutor %}
+                    <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'tutor_create' %}">TutorIn anlegen</a>
+                {% else %}
+                    <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">TutorIn anlegen</span>
+                    <div class="muted" style="font-size:0.82rem;">Nur fuer AdministratorInnen verfuegbar.</div>
+                {% endif %}
                 <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'parent_create' %}">Eltern anlegen</a>
-                <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">Schüler anlegen</a>
+                <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">SchülerIn anlegen</a>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(255,201,40,0.14); border:1px solid rgba(191,139,0,0.18);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200;">Materialien</div>
                 <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>
                 <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'material_upload' 'solution' %}">Musterlösung hochladen</a>
-                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'tutor_solution_list' %}">Lösungen der Schüler ansehen</a>
+                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'tutor_solution_list' %}">Lösungen der SchülerInnen ansehen</a>
                 <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'tutor_template_list' %}">Vorlagen</a>
             </div>
 
@@ -60,7 +79,7 @@
                     <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e;">Online</div>
                     <select id="bbb-student-select" name="zoom_link" style="width:100%;">
                         {% for student in bbb_students %}
-                            <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.username }}</option>
+                            <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.get_full_name }}</option>
                         {% endfor %}
                     </select>
                     <button type="button" class="button" onclick="openOnlineRoom('bbb')" style="background:#5fb5ff;color:#0b1b2a;">Online-Lernraum (BigBlueButton)</button>

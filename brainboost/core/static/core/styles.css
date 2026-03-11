@@ -172,6 +172,44 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 3px rgba(44,138,138,0.18);
 }
 
+.pac-container {
+    z-index: 10000 !important;
+    margin-top: 6px;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.12);
+    font-family: var(--font-sans);
+}
+
+.pac-item {
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--accent);
+}
+
+.pac-item:hover,
+.pac-item-selected {
+    background: rgba(44,138,138,0.08);
+}
+
+.pac-item-query {
+    font-size: 14px;
+    color: var(--accent);
+}
+
+.pac-icon {
+    display: none;
+}
+
+.address-autocomplete-widget {
+    width: 100%;
+}
+
+.address-autocomplete-widget gmp-place-autocomplete {
+    width: 100%;
+}
+
 .muted {
     color: #6b6b6b;
     font-size: 14px;

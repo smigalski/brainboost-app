@@ -3,7 +3,7 @@
 {% block content %}
 <div class="card">
     <h1>Eltern anlegen</h1>
-    <p class="muted">Lege einen neuen Eltern-Account an.</p>
+    <p class="muted">Lege einen neuen Eltern-Eintrag an. E-Mail und Passwort koennen fuer Platzhalter leer bleiben.</p>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}

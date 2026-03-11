@@ -1,6 +1,6 @@
 # BrainBoost App
 
-Einfache Django-Anwendung für BrainBoost: Login, Landing-Page und Tutor-Workflows.
+Einfache Django-Anwendung für BrainBoost: Login, Landing-Page und TutorIn-Workflows.
 
 ## Lokale Entwicklung
 - Python 3.11+ empfohlen.

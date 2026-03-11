@@ -4,7 +4,7 @@
 <div class="card">
     <h1>{% if is_edit %}Termin bearbeiten{% else %}Neuen Termin anlegen{% endif %}</h1>
     <p class="muted">
-        {% if is_edit %}Passe Datum, Zeit oder Details des Termins an.{% else %}Plane einen Termin für deine Schüler/Studenten.{% endif %}
+        {% if is_edit %}Passe Datum, Zeit oder Details des Termins an.{% else %}Plane einen Termin für deine SchülerInnen/StudentInnen.{% endif %}
     </p>
     <form method="post">
         {% csrf_token %}

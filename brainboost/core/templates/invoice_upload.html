@@ -6,7 +6,7 @@
     <p class="muted">Hier kannst du Rechnungen hochladen und den Freigabestatus deiner Rechnungen verfolgen.</p>
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
-        <label for="{{ form.student.id_for_label }}">Schüler auswählen</label>
+        <label for="{{ form.student.id_for_label }}">SchülerIn auswählen</label>
         {{ form.student }}
         <label for="{{ form.file.id_for_label }}">PDF-Rechnung</label>
         {{ form.file }}
@@ -50,14 +50,14 @@
 
 {% if has_subordinate_tutors %}
     <div class="card">
-        <h3>Rechnungen zugewiesener Tutoren</h3>
+        <h3>Rechnungen zugewiesener TutorInnen</h3>
         {% if subordinate_invoices %}
             <ul class="list">
                 {% for invoice in subordinate_invoices %}
                     <li>
                         <div>
                             <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
-                            <div class="muted">Tutor: {{ invoice.uploaded_by.user.username }}</div>
+                            <div class="muted">TutorIn: {{ invoice.uploaded_by.user.username }}</div>
                             <div class="muted">Für: {{ invoice.student.user.username }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                             {% if invoice.is_approved %}
@@ -79,7 +79,7 @@
                 {% endfor %}
             </ul>
         {% else %}
-            <p class="muted">Aktuell liegen keine Rechnungen zugewiesener Tutoren vor.</p>
+            <p class="muted">Aktuell liegen keine Rechnungen zugewiesener TutorInnen vor.</p>
         {% endif %}
     </div>
 {% endif %}

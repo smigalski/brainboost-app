@@ -2,8 +2,8 @@
 {% block content %}
 Ein neuer Termin wurde erstellt.
 
-Schüler: {{ student.user.username }}
-Tutor: {{ tutor.user.username }}
+SchülerIn: {{ student.user.username }}
+TutorIn: {{ tutor.user.username }}
 Datum: {{ lesson.date|date:"d.m.Y" }}
 Uhrzeit: {{ lesson.time|time:"H:i" }}
 Fach: {{ lesson.get_fach_display }}

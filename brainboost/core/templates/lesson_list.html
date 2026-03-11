@@ -37,9 +37,9 @@
                             {% endif %}
                         {% endwith %}
                     {% endif %}
-                    <div class="muted">{{ lesson.student.user.username }} | {{ lesson.tutor.user.username }}</div>
+                    <div class="muted">{{ lesson.student.user.get_full_name }} | {{ lesson.tutor.user.get_full_name }}</div>
                     {% if lesson.reschedule_requested %}
-                        <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
+                        <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – TutorIn informiert.</div>
                     {% endif %}
                     {% if lesson.cancellation_reason %}
                         <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
@@ -118,10 +118,10 @@
                                         {% endif %}
                                     {% endwith %}
                                 {% endif %}
-                                <div class="muted">{{ lesson.student.user.username }}</div>
-                                <div class="muted">{{ lesson.tutor.user.username }}</div>
+                                <div class="muted">{{ lesson.student.user.get_full_name }}</div>
+                                <div class="muted">{{ lesson.tutor.user.get_full_name }}</div>
                                 {% if lesson.reschedule_requested %}
-                                    <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – Tutor informiert.</div>
+                                    <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – TutorIn informiert.</div>
                                 {% endif %}
                                 {% if lesson.cancellation_reason %}
                                     <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
@@ -151,7 +151,7 @@
         </div>
         <p class="muted" id="cancel-lesson-info"></p>
         <div id="cancel-warning" class="muted" style="display:none; color: var(--red); font-weight:700;">
-            Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere den Tutor sofort.
+            Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere die TutorIn sofort.
         </div>
         <form id="cancel-form">
             {% csrf_token %}
@@ -267,11 +267,11 @@ function openRescheduleModal() {
     changeModal.classList.remove('open');
     reloadAfterReschedule = false;
     if (hoursUntil < 5) {
-        rescheduleInfo.textContent = "Terminverlegung ist weniger als 5 Stunden vor Termin nicht möglich. Bitte kontaktiere deinen Tutor direkt.";
+        rescheduleInfo.textContent = "Terminverlegung ist weniger als 5 Stunden vor Termin nicht möglich. Bitte kontaktiere deine TutorIn direkt.";
         rescheduleModal.classList.add('open');
         return;
     }
-    rescheduleInfo.textContent = "Der Tutor wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
+    rescheduleInfo.textContent = "Die TutorIn wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
     rescheduleModal.classList.add('open');
     fetch(currentRescheduleUrl, {
         method: "POST",
@@ -284,7 +284,7 @@ function openRescheduleModal() {
         .then(({ res, data }) => {
             if (res.ok && data.ok) {
                 reloadAfterReschedule = true;
-                rescheduleInfo.textContent = data.message || "Der Tutor wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
+                rescheduleInfo.textContent = data.message || "Die TutorIn wurde informiert und meldet sich, um einen neuen Termin zu vereinbaren.";
                 return;
             }
             const message = (data && data.message) || "Terminverlegung nicht möglich.";

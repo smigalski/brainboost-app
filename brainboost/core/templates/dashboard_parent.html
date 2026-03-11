@@ -2,35 +2,107 @@
 {% block title %}BrainBoost | Eltern Dashboard{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Hallo {{ request.user.username }}!</h1>
-    <p class="muted">Behalte die Nachhilfe deiner Kinder im Blick.</p>
-    <div class="grid two">
-        <div>
-            <h3>Termine</h3>
-            <p>Alle kommenden und vergangenen Nachhilfetermine deiner Kinder.</p>
-            <a class="button" href="{% url 'lesson_list' %}">Termine meiner Kinder</a>
+    <h1>Hallo {{ request.user.get_full_name }}!</h1>
+    <style>
+        .parent-dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.3fr);
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 760px) {
+            .parent-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <div class="parent-dashboard-grid">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">News</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for item in news_items %}
+                        <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:800; color:var(--accent);">{{ item.title }}</div>
+                            <div class="muted">{{ item.text }}</div>
+                            <div class="muted">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Aktuell keine neuen Meldungen.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="padding:18px; border-radius:18px; background:rgba(31,102,102,0.08); border:1px solid rgba(31,102,102,0.16);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:12px;">Aktionen</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <a class="button" href="{% url 'lesson_list' %}">Termine meiner Kinder</a>
+                    <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'progress' %}">Lernfortschritt ansehen</a>
+                    <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'invoice_list' %}">Rechnungen einsehen</a>
+                </div>
+            </div>
+
+            <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:8px;">Uebersicht</div>
+                <p class="muted" style="margin:0;">Behalte die Nachhilfe, Termine und Kontaktinfos deiner Kinder zentral im Blick.</p>
+            </div>
         </div>
-        <div>
-            <h3>Lernfortschritt</h3>
-            <p>Feedback, Bewertungen und Notizen.</p>
-            <a class="button" href="{% url 'progress' %}">Lernfortschritt des Kindes ansehen</a>
-        </div>
-        <div>
-            <h3>Rechnungen</h3>
-            <p>Eingegangene Rechnungen herunterladen.</p>
-            <a class="button" href="{% url 'invoice_list' %}">Rechnungen einsehen</a>
+
+        <div style="display:flex; flex-direction:column; gap:24px;">
+            <div style="padding:18px; border-radius:18px; background:rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:12px;">Kommende Termine</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for lesson in upcoming_lessons %}
+                        <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
+                            <div class="muted">Kind: {{ lesson.student.user.get_full_name }}</div>
+                            <div class="muted">TutorIn: {{ lesson.tutor.user.get_full_name }}</div>
+                            <div class="muted">{{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Keine kommenden Termine vorhanden.</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">Zugewiesene TutorInnen</div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    {% for tutor in assigned_tutors %}
+                        <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-weight:800; flex-shrink:0;">
+                                Bild
+                            </div>
+                            <div style="min-width:0;">
+                                <div style="font-weight:800; color:var(--accent);">{{ tutor.user.get_full_name }}</div>
+                                {% if tutor.user.email %}
+                                    <div class="muted">E-Mail: {{ tutor.user.email }}</div>
+                                {% endif %}
+                                {% if tutor.phone_number %}
+                                    <div class="muted">Telefon: {{ tutor.phone_number }}</div>
+                                {% endif %}
+                                {% if tutor.address %}
+                                    <div class="muted">{{ tutor.address }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Noch keine TutorInnen zugewiesen.</div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
 <div class="card">
-    <h3>Aufgabenlösungen zum Download</h3>
+    <h3>Musterlösungen zum Download</h3>
     {% if solutions %}
         <ul class="list">
             {% for material in solutions %}
                 <li>
                     <div>
                         <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
-                        <div class="muted">Für: {{ material.student.user.username }}</div>
+                        <div class="muted">Für: {{ material.student.user.get_full_name }}</div>
                         {% if material.related_task %}
                             <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
                         {% endif %}

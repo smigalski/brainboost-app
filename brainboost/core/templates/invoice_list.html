@@ -11,7 +11,7 @@
                     <strong>Rechnung für {{ invoice.student.user.username }}</strong>
                     <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
-                    <div class="muted">Tutor: {{ invoice.uploaded_by.user.username }}</div>
+                    <div class="muted">TutorIn: {{ invoice.uploaded_by.user.username }}</div>
                     {% if invoice.approved_by %}
                         <div class="muted">Freigegeben von: {{ invoice.approved_by.user.username }}</div>
                     {% endif %}

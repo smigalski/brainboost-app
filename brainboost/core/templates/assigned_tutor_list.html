@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}BrainBoost | Zugewiesene Tutoren{% endblock %}
+{% block title %}BrainBoost | Zugewiesene TutorInnen{% endblock %}
 {% block content %}
 <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
         <div>
-            <h1>Zugewiesene Tutoren</h1>
-            <p class="muted">Uebersicht ueber Adresse sowie zugewiesene Schueler und Tutoren.</p>
+            <h1>Zugewiesene TutorInnen</h1>
+            <p class="muted">Uebersicht ueber Adresse sowie zugewiesene SchuelerInnen und TutorInnen.</p>
         </div>
         <a class="button" href="{% url 'dashboard' %}">Zurueck zum Dashboard</a>
     </div>
@@ -52,16 +52,16 @@
     <table class="assigned-tutors-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
         <thead>
             <tr style="text-align:left; border-bottom:1px solid rgba(0,0,0,0.08);">
-                <th style="padding:12px;">Tutor</th>
+                <th style="padding:12px;">TutorIn</th>
                 <th style="padding:12px;">Wohnadresse</th>
-                <th style="padding:12px;">Zugewiesene Schueler</th>
-                <th style="padding:12px;">Zugewiesene Tutoren</th>
+                <th style="padding:12px;">Zugewiesene SchuelerInnen</th>
+                <th style="padding:12px;">Zugewiesene TutorInnen</th>
             </tr>
         </thead>
         <tbody>
             {% for tutor in tutors %}
                 <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
-                    <td data-label="Tutor" style="padding:12px; vertical-align:top; font-weight:700;">{{ tutor.user.username }}</td>
+                    <td data-label="TutorIn" style="padding:12px; vertical-align:top; font-weight:700;">{{ tutor.user.username }}</td>
                     <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
                         {% if tutor.address %}
                             {{ tutor.address }}
@@ -69,12 +69,12 @@
                             <span class="muted">Keine Adresse hinterlegt</span>
                         {% endif %}
                     </td>
-                    <td data-label="Zugewiesene Schueler" style="padding:12px; vertical-align:top;">{{ tutor.assigned_student_count }}</td>
-                    <td data-label="Zugewiesene Tutoren" style="padding:12px; vertical-align:top;">{{ tutor.assigned_tutor_count }}</td>
+                    <td data-label="Zugewiesene SchuelerInnen" style="padding:12px; vertical-align:top;">{{ tutor.assigned_student_count }}</td>
+                    <td data-label="Zugewiesene TutorInnen" style="padding:12px; vertical-align:top;">{{ tutor.assigned_tutor_count }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" style="padding:12px;">Keine zugewiesenen Tutoren vorhanden.</td>
+                    <td colspan="4" style="padding:12px;">Keine zugewiesenen TutorInnen vorhanden.</td>
                 </tr>
             {% endfor %}
         </tbody>

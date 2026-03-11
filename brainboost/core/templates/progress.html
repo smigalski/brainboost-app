@@ -4,15 +4,15 @@
 <div class="card">
     <h1>Lernfortschritt</h1>
     {% if viewed_student %}
-        <p class="muted">Schüler: {{ viewed_student.user.username }}</p>
+        <p class="muted">SchülerIn: {{ viewed_student.user.get_full_name }}</p>
     {% elif request.user.role == 'tutor' %}
-        <p class="muted">Deine erstellten Lernfortschrittseinträge (alle Schüler).</p>
+        <p class="muted">Deine erstellten Lernfortschrittseinträge (alle SchülerInnen).</p>
     {% elif student_id %}
-        <p class="muted">Schüler-ID: {{ student_id }}</p>
+        <p class="muted">SchülerIn-ID: {{ student_id }}</p>
     {% endif %}
     <p class="muted" style="margin:12px 0 12px;">
         Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
-        Die Einschätzung spiegelt die subjektive Wahrnehmung des Tutors wider.
+        Die Einschätzung spiegelt die subjektive Wahrnehmung der TutorIn wider.
     </p>
     <ul class="list">
         {% for entry in entries %}
@@ -38,7 +38,7 @@
                         >Mitarbeit: {{ entry.rating }}/10</span>
                     </div>
                 </div>
-                <div class="muted">{{ entry.lesson.student.user.username }} | {{ entry.lesson.get_fach_display }} | {{ entry.lesson.get_ort_display }}</div>
+                <div class="muted">{{ entry.lesson.student.user.get_full_name }} | {{ entry.lesson.get_fach_display }} | {{ entry.lesson.get_ort_display }}</div>
                 <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
                 <div class="muted">{{ entry.created_at }}</div>
             </li>

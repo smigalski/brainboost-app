@@ -32,7 +32,7 @@
                 {% if not request.user.is_authenticated or request.user.role == 'parent' %}
                     <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
                 {% endif %}
-                {% if not request.user.is_authenticated or request.user.role != 'tutor' %}
+                {% if not request.user.is_authenticated %}
                     <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
                 {% endif %}
             {% endwith %}

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}BrainBoost | Student Dashboard{% endblock %}
+{% block title %}BrainBoost | StudentIn Dashboard{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Hallo {{ request.user.username }}!</h1>
+    <h1>Hallo {{ request.user.get_full_name }}!</h1>
     <style>
         .student-dashboard-grid {
             display: grid;
@@ -19,13 +19,27 @@
     </style>
     <div class="student-dashboard-grid">
         <div style="display:flex; flex-direction:column; gap:24px;">
+            <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">News</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for item in news_items %}
+                        <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:800; color:var(--accent);">{{ item.title }}</div>
+                            <div class="muted">{{ item.text }}</div>
+                            <div class="muted">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Aktuell keine neuen Meldungen.</div>
+                    {% endfor %}
+                </div>
+            </div>
             <div style="padding:18px; border-radius:18px; background:rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:12px;">Kommende Termine</div>
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     {% for lesson in upcoming_lessons %}
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
-                            <div class="muted">Tutor: {{ lesson.tutor.user.username }}</div>
+                            <div class="muted">TutorIn: {{ lesson.tutor.user.get_full_name }}</div>
                             <div class="muted">Fach: {{ lesson.get_fach_display }}</div>
                             <div class="muted">Ort: {{ lesson.get_ort_display }}</div>
                         </div>
@@ -40,7 +54,7 @@
                 {% if latest_progress_entry %}
                     <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                         <div style="font-weight:800; color:var(--accent);">{{ latest_progress_entry.lesson.date|date:"d.m.Y" }} · {{ latest_progress_entry.lesson.time|time:"H:i" }}</div>
-                        <div class="muted">Tutor: {{ latest_progress_entry.lesson.tutor.user.username }}</div>
+                        <div class="muted">TutorIn: {{ latest_progress_entry.lesson.tutor.user.get_full_name }}</div>
                         <div class="muted">Mitarbeit: {{ latest_progress_entry.rating }}/10</div>
                         <div style="margin-top:8px;">{{ latest_progress_entry.comment|default:"Kein Kommentar hinterlegt." }}</div>
                     </div>
@@ -51,7 +65,7 @@
         </div>
 
         <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
-            <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:12px;">Zugewiesene/r TutorIn</div>
+            <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:12px;">Zugewiesene TutorInnen</div>
             <div style="display:flex; flex-direction:column; gap:12px;">
                 {% for tutor in assigned_tutors %}
                     <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
@@ -59,17 +73,14 @@
                             Bild
                         </div>
                         <div style="min-width:0;">
-                            <div style="font-weight:800; color:var(--accent);">{{ tutor.user.username }}</div>
-                            {% if tutor.user.first_name or tutor.user.last_name %}
-                                <div class="muted">{{ tutor.user.first_name }} {{ tutor.user.last_name }}</div>
-                            {% endif %}
+                            <div style="font-weight:800; color:var(--accent);">{{ tutor.user.get_full_name }}</div>
                             {% if tutor.address %}
                                 <div class="muted">{{ tutor.address }}</div>
                             {% endif %}
                         </div>
                     </div>
                 {% empty %}
-                    <div class="muted">Noch kein/e TutorIn zugewiesen.</div>
+                    <div class="muted">Noch keine TutorInnen zugewiesen.</div>
                 {% endfor %}
             </div>
         </div>

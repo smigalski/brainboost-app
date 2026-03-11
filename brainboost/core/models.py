@@ -14,9 +14,9 @@ from django.utils import timezone
 
 class CustomUser(AbstractUser):
     class Roles(models.TextChoices):
-        STUDENT = "student", "Schüler/Student"
+        STUDENT = "student", "SchülerIn/StudentIn"
         PARENT = "parent", "Parent"
-        TUTOR = "tutor", "Tutor"
+        TUTOR = "tutor", "TutorIn"
 
     role = models.CharField(
         max_length=20,
@@ -38,6 +38,7 @@ class ParentProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="parent_profile",
     )
+    phone_number = models.CharField(max_length=50, blank=True)
 
     def __str__(self) -> str:
         return f"Parent: {self.user.username}"
@@ -45,14 +46,15 @@ class ParentProfile(models.Model):
 
 class StudentProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
+    phone_number = models.CharField(max_length=50, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     zoom_link = models.URLField(blank=True)
     zumpad_link = models.URLField(blank=True)
 
     class Meta:
-        verbose_name = "Schüler/Student"
-        verbose_name_plural = "Schüler/Studenten"
+        verbose_name = "SchülerIn/StudentIn"
+        verbose_name_plural = "SchülerInnen/StudentInnen"
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -71,7 +73,7 @@ class StudentProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Student/Schüler: {self.user.username}"
+        return f"StudentIn/SchülerIn: {self.user.username}"
 
     def save(self, *args, **kwargs):
         should_geocode = False
@@ -115,6 +117,7 @@ class StudentProfile(models.Model):
 
 class TutorProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
+    phone_number = models.CharField(max_length=50, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     assigned_tutors = models.ManyToManyField(
@@ -124,8 +127,8 @@ class TutorProfile(models.Model):
         blank=True,
     )
     class Meta:
-        verbose_name = "Tutor"
-        verbose_name_plural = "Tutoren"
+        verbose_name = "TutorIn"
+        verbose_name_plural = "TutorInnen"
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -134,7 +137,7 @@ class TutorProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Tutor: {self.user.username}"
+        return f"TutorIn: {self.user.username}"
 
 
 class Lesson(models.Model):
@@ -146,7 +149,7 @@ class Lesson(models.Model):
     class Ort(models.TextChoices):
         BIB = "library", "Bibliothek Braunschweig"
         BIB_WOB = "library_wob", "Bibliothek Wolfsburg"
-        ZUHAUSE_STUDENT = "at home", "Beim Schüler/Studenten"
+        ZUHAUSE_STUDENT = "at home", "Bei SchülerIn/StudentIn"
         ZUHAUSE_BRAIN = "at brainboost", "Bei mir"
         ONLINE = "online", "online"
 
@@ -268,8 +271,8 @@ class Lesson(models.Model):
     @property
     def calendar_details(self) -> str:
         return (
-            f"Tutor: {self.tutor.user.username}\\n"
-            f"Schüler: {self.student.user.username}\\n"
+            f"TutorIn: {self.tutor.user.username}\\n"
+            f"SchülerIn: {self.student.user.username}\\n"
             f"Ort: {self.get_ort_display()}"
         )
 

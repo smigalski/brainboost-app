@@ -102,12 +102,188 @@ def _assign_location_and_distance(lesson: Lesson):
 
 def _actor_label(user: CustomUser) -> str:
     if user.role == CustomUser.Roles.TUTOR:
-        return f"Tutor {user.username}"
+        return f"TutorIn {user.username}"
     if user.role == CustomUser.Roles.PARENT:
         return f"Elternteil {user.username}"
     if user.role == CustomUser.Roles.STUDENT:
-        return f"Schüler {user.username}"
+        return f"SchülerIn {user.username}"
     return user.username
+
+
+def _display_name(user: CustomUser) -> str:
+    full_name = user.get_full_name().strip()
+    return full_name or user.username
+
+
+def _limit_news_items(items: list[dict], limit: int = 6) -> list[dict]:
+    return sorted(items, key=lambda item: item["timestamp"], reverse=True)[:limit]
+
+
+def _lesson_news_items(lessons) -> list[dict]:
+    items = []
+    for lesson in lessons:
+        labels = []
+        if lesson.reschedule_requested:
+            labels.append("Terminverlegung angefragt")
+        if lesson.status == Lesson.Status.CANCELLED:
+            labels.append("Termin storniert")
+        elif lesson.status == Lesson.Status.COMPLETED:
+            labels.append("Termin abgeschlossen")
+        elif lesson.status == Lesson.Status.PLANNED:
+            labels.append("Termin geplant")
+        items.append(
+            {
+                "timestamp": lesson.scheduled_datetime,
+                "title": f"Termin: {_display_name(lesson.student.user)}",
+                "text": f"{lesson.date.strftime('%d.%m.%Y')} um {lesson.time.strftime('%H:%M')} · {', '.join(labels)}",
+            }
+        )
+    return items
+
+
+def _student_news_items(student_profile: StudentProfile) -> list[dict]:
+    items = []
+    lesson_items = Lesson.objects.filter(student=student_profile).select_related("student__user").order_by("-date", "-time")[:4]
+    items.extend(_lesson_news_items(lesson_items))
+
+    progress_entries = (
+        ProgressEntry.objects.filter(lesson__student=student_profile)
+        .select_related("lesson__tutor__user")
+        .order_by("-created_at")[:4]
+    )
+    for entry in progress_entries:
+        items.append(
+            {
+                "timestamp": entry.created_at,
+                "title": "Neuer Lernfortschritt",
+                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen Eintrag mit Mitarbeit {entry.rating}/10 hinterlegt.",
+            }
+        )
+
+    materials = (
+        LearningMaterial.objects.filter(student=student_profile, kind=LearningMaterial.Kind.SOLUTION)
+        .select_related("uploaded_by__user")
+        .order_by("-uploaded_at")[:4]
+    )
+    for material in materials:
+        items.append(
+            {
+                "timestamp": material.uploaded_at,
+                "title": "Neue Musterlösung",
+                "text": f"Neue Musterlösung von {_display_name(material.uploaded_by.user)} wurde hochgeladen.",
+            }
+        )
+    return _limit_news_items(items)
+
+
+def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
+    items = []
+    students = parent_profile.students.all()
+    lesson_items = (
+        Lesson.objects.filter(student__in=students)
+        .select_related("student__user")
+        .order_by("-date", "-time")[:4]
+    )
+    items.extend(_lesson_news_items(lesson_items))
+
+    progress_entries = (
+        ProgressEntry.objects.filter(lesson__student__in=students)
+        .select_related("lesson__student__user", "lesson__tutor__user")
+        .order_by("-created_at")[:4]
+    )
+    for entry in progress_entries:
+        items.append(
+            {
+                "timestamp": entry.created_at,
+                "title": f"Lernfortschritt: {_display_name(entry.lesson.student.user)}",
+                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen neuen Eintrag mit Mitarbeit {entry.rating}/10 erstellt.",
+            }
+        )
+
+    invoices = (
+        Invoice.objects.filter(student__in=students)
+        .select_related("student__user")
+        .order_by("-uploaded_at")[:4]
+    )
+    for invoice in invoices:
+        items.append(
+            {
+                "timestamp": invoice.uploaded_at,
+                "title": f"Neue Rechnung: {_display_name(invoice.student.user)}",
+                "text": f"Eine neue Rechnung wurde am {invoice.uploaded_at.strftime('%d.%m.%Y %H:%M')} hochgeladen.",
+            }
+        )
+
+    materials = (
+        LearningMaterial.objects.filter(student__in=students, kind=LearningMaterial.Kind.SOLUTION)
+        .select_related("student__user")
+        .order_by("-uploaded_at")[:4]
+    )
+    for material in materials:
+        items.append(
+            {
+                "timestamp": material.uploaded_at,
+                "title": f"Neue Musterlösung: {_display_name(material.student.user)}",
+                "text": "Es wurde eine neue Musterlösung hochgeladen.",
+            }
+        )
+    return _limit_news_items(items)
+
+
+def _tutor_news_items(tutor_profile: TutorProfile) -> list[dict]:
+    items = []
+    assigned_students = _assigned_students_qs(tutor_profile)
+    subordinate_tutors = _assigned_tutors_qs(tutor_profile)
+
+    lesson_items = (
+        Lesson.objects.filter(tutor=tutor_profile)
+        .select_related("student__user")
+        .order_by("-date", "-time")[:4]
+    )
+    items.extend(_lesson_news_items(lesson_items))
+
+    progress_entries = (
+        ProgressEntry.objects.filter(lesson__tutor=tutor_profile)
+        .select_related("lesson__student__user")
+        .order_by("-created_at")[:4]
+    )
+    for entry in progress_entries:
+        items.append(
+            {
+                "timestamp": entry.created_at,
+                "title": f"Lernfortschritt gespeichert: {_display_name(entry.lesson.student.user)}",
+                "text": f"Mitarbeit {entry.rating}/10 wurde eingetragen.",
+            }
+        )
+
+    materials = (
+        LearningMaterial.objects.filter(Q(student__in=assigned_students) | Q(uploaded_by=tutor_profile))
+        .select_related("student__user")
+        .order_by("-uploaded_at")[:4]
+    )
+    for material in materials:
+        items.append(
+            {
+                "timestamp": material.uploaded_at,
+                "title": f"Neues Material: {_display_name(material.student.user)}",
+                "text": f"{material.get_kind_display()} wurde hochgeladen.",
+            }
+        )
+
+    invoices = (
+        Invoice.objects.filter(Q(uploaded_by=tutor_profile) | Q(uploaded_by__in=subordinate_tutors))
+        .select_related("student__user", "uploaded_by__user")
+        .order_by("-uploaded_at")[:4]
+    )
+    for invoice in invoices:
+        items.append(
+            {
+                "timestamp": invoice.uploaded_at,
+                "title": f"Neue Rechnung: {_display_name(invoice.student.user)}",
+                "text": f"Hochgeladen von {_display_name(invoice.uploaded_by.user)}.",
+            }
+        )
+    return _limit_news_items(items)
 
 
 def contact(request):
@@ -177,6 +353,7 @@ def dashboard(request):
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
+            context["news_items"] = _student_news_items(student_profile)
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
                 .filter(student=student_profile)
@@ -195,7 +372,19 @@ def dashboard(request):
     elif request.user.role == CustomUser.Roles.PARENT:
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
+            context["news_items"] = _parent_news_items(request.user.parent_profile)
             students = request.user.parent_profile.students.all()
+            context["upcoming_lessons"] = (
+                Lesson.upcoming_qs()
+                .filter(student__in=students)
+                .select_related("student__user", "tutor__user")
+                .order_by("date", "time")[:5]
+            )
+            context["assigned_tutors"] = (
+                TutorProfile.objects.filter(assigned_students__in=students)
+                .select_related("user")
+                .distinct()
+            )
             context["solutions"] = LearningMaterial.objects.filter(
                 student__in=students, kind=LearningMaterial.Kind.SOLUTION
             ).select_related("student__user", "related_task")
@@ -204,6 +393,8 @@ def dashboard(request):
         if hasattr(request.user, "tutor_profile"):
             assigned_students = _assigned_students_qs(request.user.tutor_profile)
             assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
+            context["is_admin_tutor"] = request.user.is_superuser
+            context["news_items"] = _tutor_news_items(request.user.tutor_profile)
             bbb_students = assigned_students
             context["bbb_students"] = bbb_students
             context["assigned_student_count"] = assigned_students.count()
@@ -214,29 +405,6 @@ def dashboard(request):
                 .select_related("student__user")
                 .order_by("date", "time")[:5]
             )
-            news_lessons = (
-                Lesson.objects.filter(tutor=request.user.tutor_profile)
-                .select_related("student__user")
-                .order_by("-date", "-time")[:5]
-            )
-            news_items = []
-            for lesson in news_lessons:
-                labels = []
-                if lesson.reschedule_requested:
-                    labels.append("Verschiebung angefragt")
-                if lesson.status == Lesson.Status.CANCELLED:
-                    labels.append("Termin storniert")
-                if not labels:
-                    labels.append(f"Status: {lesson.get_status_display()}")
-                news_items.append(
-                    {
-                        "student": lesson.student.user.username,
-                        "date": lesson.date,
-                        "time": lesson.time,
-                        "text": ", ".join(labels),
-                    }
-                )
-            context["news_items"] = news_items
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
@@ -305,25 +473,26 @@ def parent_create(request):
         form = ParentCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
-            try:
-                _send_set_password_email(request, user)
-            except ValueError:
-                messages.error(
-                    request,
-                    "Elternteil wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
-                )
-            except Exception as exc:
-                logger.exception("E-Mail Versand fehlgeschlagen (Elternteil)")
-                messages.error(
-                    request,
-                    "Elternteil wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
-                    f"Fehler: {exc.__class__.__name__} ({exc})",
-                )
-            else:
+            if not user.email:
                 messages.success(
                     request,
-                    "Elternteil wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    "Elternteil wurde als Platzhalter ohne WebApp-Zugang angelegt.",
                 )
+            else:
+                try:
+                    _send_set_password_email(request, user)
+                except Exception as exc:
+                    logger.exception("E-Mail Versand fehlgeschlagen (Elternteil)")
+                    messages.error(
+                        request,
+                        "Elternteil wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                        f"Fehler: {exc.__class__.__name__} ({exc})",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "Elternteil wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    )
             return redirect("dashboard")
     else:
         form = ParentCreateForm()
@@ -336,6 +505,12 @@ def tutor_create(request):
         request.user, "tutor_profile"
     ):
         return redirect("dashboard")
+    if not request.user.is_superuser:
+        messages.error(
+            request,
+            "TutorInnen koennen nur von AdministratorInnen angelegt werden.",
+        )
+        return redirect("dashboard")
     if request.method == "POST":
         form = TutorCreateForm(request.POST)
         if form.is_valid():
@@ -346,19 +521,19 @@ def tutor_create(request):
             except ValueError:
                 messages.error(
                     request,
-                    "Tutor wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
+                    "TutorIn wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
                 )
             except Exception as exc:
                 logger.exception("E-Mail Versand fehlgeschlagen (Tutor)")
                 messages.error(
                     request,
-                    "Tutor wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                    "TutorIn wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
                     f"Fehler: {exc.__class__.__name__} ({exc})",
                 )
             else:
                 messages.success(
                     request,
-                    "Tutor wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    "TutorIn wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
                 )
             return redirect("dashboard")
     else:
@@ -375,25 +550,26 @@ def student_create(request):
         if form.is_valid():
             user = form.save()
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
-            try:
-                _send_set_password_email(request, user)
-            except ValueError:
-                messages.error(
-                    request,
-                    "Schüler wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
-                )
-            except Exception as exc:
-                logger.exception("E-Mail Versand fehlgeschlagen (Schüler)")
-                messages.error(
-                    request,
-                    "Schüler wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
-                    f"Fehler: {exc.__class__.__name__} ({exc})",
-                )
-            else:
+            if not user.email:
                 messages.success(
                     request,
-                    "Schüler wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    "SchülerIn wurde als Platzhalter ohne WebApp-Zugang angelegt.",
                 )
+            else:
+                try:
+                    _send_set_password_email(request, user)
+                except Exception as exc:
+                    logger.exception("E-Mail Versand fehlgeschlagen (Schüler)")
+                    messages.error(
+                        request,
+                        "SchülerIn wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                        f"Fehler: {exc.__class__.__name__} ({exc})",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "SchülerIn wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    )
             return redirect("dashboard")
     else:
         form = StudentCreateForm()
@@ -500,7 +676,7 @@ def lesson_cancel(request, lesson_id):
     lesson = get_object_or_404(Lesson, pk=lesson_id)
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
     allowed = False
-    # Tutor, Student oder Elternteil dürfen stornieren
+    # TutorIn, StudentIn oder Elternteil dürfen stornieren
     if hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile:
         allowed = True
     if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
@@ -525,7 +701,7 @@ def lesson_cancel(request, lesson_id):
     now = timezone.now()
     time_until_lesson = lesson.scheduled_datetime - now
     if time_until_lesson < timedelta(hours=5):
-        msg = "Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere den Tutor sofort."
+        msg = "Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere die TutorIn sofort."
         return JsonResponse({"ok": False, "message": msg}, status=400) if is_ajax else redirect("lesson_list")
 
     lesson.status = Lesson.Status.CANCELLED
@@ -568,7 +744,7 @@ def lesson_reschedule_request(request, lesson_id):
     now = timezone.now()
     time_until_lesson = lesson.scheduled_datetime - now
     if time_until_lesson < timedelta(hours=5):
-        msg = "Terminverlegung weniger als 5 Stunden vor Termin nicht möglich. Bitte kontaktiere den Tutor direkt."
+        msg = "Terminverlegung weniger als 5 Stunden vor Termin nicht möglich. Bitte kontaktiere die TutorIn direkt."
         return JsonResponse({"ok": False, "message": msg}, status=400) if is_ajax else redirect("lesson_list")
 
     if lesson.reschedule_requested:
@@ -583,7 +759,7 @@ def lesson_reschedule_request(request, lesson_id):
         actor_label=_actor_label(request.user),
         include_tutor=True,
     )
-    success_msg = "Tutor wurde informiert. Termin ist als Verlegungsanfrage markiert."
+    success_msg = "TutorIn wurde informiert. Termin ist als Verlegungsanfrage markiert."
     return JsonResponse({"ok": True, "message": success_msg}) if is_ajax else redirect("lesson_list")
 
 

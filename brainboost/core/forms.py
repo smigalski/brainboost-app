@@ -106,7 +106,7 @@ class LearningMaterialForm(forms.ModelForm):
         if related_task.kind != LearningMaterial.Kind.TASK:
             self.add_error("related_task", "Es kann nur eine Aufgabe verknuepft werden.")
         if student and related_task.student_id != student.id:
-            self.add_error("related_task", "Die Aufgabe muss zum ausgewaehlten Schueler passen.")
+            self.add_error("related_task", "Die Aufgabe muss zur ausgewaehlten SchuelerIn passen.")
         return cleaned
 
     def clean_file(self):
@@ -180,6 +180,11 @@ class BaseUserCreateForm(forms.Form):
         cleaned = super().clean()
         pw1 = cleaned.get("password1")
         pw2 = cleaned.get("password2")
+        if pw1 or pw2:
+            if not pw1:
+                self.add_error("password1", "Bitte gib ein Passwort ein.")
+            if not pw2:
+                self.add_error("password2", "Bitte bestaetige das Passwort.")
         if pw1:
             try:
                 password_validation.validate_password(pw1, None)
@@ -203,7 +208,8 @@ class BaseUserCreateForm(forms.Form):
 
 
 class ParentCreateForm(BaseUserCreateForm):
-    email = forms.EmailField(required=True, label="E-Mail")
+    email = forms.EmailField(required=False, label="E-Mail")
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
     role_display = forms.CharField(
         initial=CustomUser.Roles.PARENT.label,
         required=False,
@@ -211,24 +217,62 @@ class ParentCreateForm(BaseUserCreateForm):
         label="Rolle",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].required = False
+        self.fields["password2"].required = False
+        self.fields["email"].help_text = "Optional. Wenn leer, wird nur ein Platzhalter-Eintrag ohne E-Mail-Versand angelegt."
+        self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
+        self.order_fields(
+            [
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "password1",
+                "password2",
+                "is_active",
+                "role_display",
+            ]
+        )
+
     def save(self) -> CustomUser:
         with transaction.atomic():
             user = self._build_user(CustomUser.Roles.PARENT)
-            user.set_password(self.cleaned_data["password1"])
+            if self.cleaned_data.get("password1"):
+                user.set_password(self.cleaned_data["password1"])
+            else:
+                user.set_unusable_password()
             user.save()
-            ParentProfile.objects.create(user=user)
+            ParentProfile.objects.create(
+                user=user,
+                phone_number=self.cleaned_data.get("phone_number", ""),
+            )
         return user
 
 
 class StudentCreateForm(BaseUserCreateForm):
-    email = forms.EmailField(required=True, label="E-Mail")
+    email = forms.EmailField(required=False, label="E-Mail")
     role_display = forms.CharField(
         initial=CustomUser.Roles.STUDENT.label,
         required=False,
         disabled=True,
         label="Rolle",
     )
-    address = forms.CharField(max_length=255, required=False, label="Adresse")
+    address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Adresse",
+        widget=forms.TextInput(
+            attrs={
+                "class": "address-autocomplete",
+                "autocomplete": "off",
+                "placeholder": "Wohnadresse eingeben",
+            }
+        ),
+    )
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
     zoom_link = forms.URLField(required=False, label="BBB-Link")
     zumpad_link = forms.URLField(required=False, label="ZUMPad-Link")
     parents = forms.ModelMultipleChoiceField(
@@ -238,14 +282,42 @@ class StudentCreateForm(BaseUserCreateForm):
         widget=forms.SelectMultiple(attrs={"size": 6}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["password1"].required = False
+        self.fields["password2"].required = False
+        self.fields["email"].help_text = "Optional. Wenn leer, wird nur ein Platzhalter-Eintrag ohne E-Mail-Versand angelegt."
+        self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
+        self.order_fields(
+            [
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "password1",
+                "password2",
+                "is_active",
+                "role_display",
+                "address",
+                "zoom_link",
+                "zumpad_link",
+                "parents",
+            ]
+        )
+
     def save(self) -> CustomUser:
         with transaction.atomic():
             user = self._build_user(CustomUser.Roles.STUDENT)
-            user.set_password(self.cleaned_data["password1"])
+            if self.cleaned_data.get("password1"):
+                user.set_password(self.cleaned_data["password1"])
+            else:
+                user.set_unusable_password()
             user.save()
             profile = StudentProfile.objects.create(
                 user=user,
                 address=self.cleaned_data.get("address", ""),
+                phone_number=self.cleaned_data.get("phone_number", ""),
                 zoom_link=self.cleaned_data.get("zoom_link", ""),
                 zumpad_link=self.cleaned_data.get("zumpad_link", ""),
             )
@@ -263,7 +335,36 @@ class TutorCreateForm(BaseUserCreateForm):
         disabled=True,
         label="Rolle",
     )
-    address = forms.CharField(max_length=255, required=False, label="Adresse")
+    address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Adresse",
+        widget=forms.TextInput(
+            attrs={
+                "class": "address-autocomplete",
+                "autocomplete": "off",
+                "placeholder": "Wohnadresse eingeben",
+            }
+        ),
+    )
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.order_fields(
+            [
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "password1",
+                "password2",
+                "is_active",
+                "role_display",
+                "address",
+            ]
+        )
 
     def save(self) -> CustomUser:
         with transaction.atomic():
@@ -273,5 +374,6 @@ class TutorCreateForm(BaseUserCreateForm):
             TutorProfile.objects.create(
                 user=user,
                 address=self.cleaned_data.get("address", ""),
+                phone_number=self.cleaned_data.get("phone_number", ""),
             )
         return user

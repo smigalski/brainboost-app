@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Tutor anlegen{% endblock %}
+{% load static %}
+{% block title %}TutorIn anlegen{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Tutor anlegen</h1>
-    <p class="muted">Lege einen neuen Tutor-Account an.</p>
+    <h1>TutorIn anlegen</h1>
+    <p class="muted">Lege einen neuen TutorIn-Account an.</p>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
@@ -11,4 +12,13 @@
         <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Abbrechen</a>
     </form>
 </div>
+{% endblock %}
+{% block scripts %}
+    {% if google_maps_api_key %}
+        <script src="{% static 'core/address_autocomplete.js' %}"></script>
+        <script
+            async
+            src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async&libraries=places&callback=initAddressAutocomplete"
+        ></script>
+    {% endif %}
 {% endblock %}

@@ -2,8 +2,8 @@
 {% block content %}
 Neues Material wurde bereitgestellt.
 
-Schüler: {{ student.user.username }}
-Tutor: {{ tutor.user.username }}
+SchülerIn: {{ student.user.username }}
+TutorIn: {{ tutor.user.username }}
 Art: {{ kind_label }}
 Hochgeladen am: {{ material.uploaded_at|date:"d.m.Y H:i" }}
 
