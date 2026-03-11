@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Lösungen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Lösungen</h1>
+    <p class="muted">Hier findest du alle Lösungen deiner Schüler und deine hochgeladenen Musterlösungen.</p>
+    <ul class="list">
+        {% for material in solutions %}
+            <li>
+                <div>
+                    <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
+                    <div class="muted">Für: {{ material.student.user.username }}</div>
+                    <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
+                    <div class="muted">Hochgeladen von: {{ material.uploaded_by.user.username }}</div>
+                </div>
+                <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+            </li>
+        {% empty %}
+            <li>Keine Lösungen vorhanden.</li>
+        {% endfor %}
+    </ul>
+    <p class="muted" style="margin-top:16px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
+</div>
+{% endblock %}

@@ -3,84 +3,66 @@
 {% block content %}
 <div class="card">
     <h1>Hallo {{ request.user.username }}!</h1>
-    <p class="muted">Organisiere deine Termine und begleite deine Schüler.</p>
-    <div class="grid two">
-        <div>
-            <h3>Termine</h3>
-            <p>Alle geplanten und vergangenen Termine.</p>
-            <a class="button" href="{% url 'lesson_list' %}">Meine Termine</a>
-        </div>
-        <div>
-            <h3>Fortschritte</h3>
-            <p>Fortschritt eines Schülers ansehen</p>
-            <a class="button" href="{% url 'progress' %}">Übersicht öffnen</a>
-        </div>
-        <div>
-            <h3>Eltern anlegen</h3>
-            <p>Lege einen neuen Eltern-Account an.</p>
-            <a class="button" href="{% url 'parent_create' %}">Eltern anlegen</a>
-        </div>
-        <div>
-            <h3>Schüler anlegen</h3>
-            <p>Lege einen neuen Schüler-Account an.</p>
-            <a class="button" href="{% url 'student_create' %}">Schüler anlegen</a>
-        </div>
-        <div>
-            <h3>Aufgaben</h3>
-            <p>Stelle Materialien für deine Schüler bereit.</p>
-            <a class="button" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>
-        </div>
-        <div>
-            <h3>Musterlösungen</h3>
-            <p>Tutoren laden hier nur Musterlösungen hoch; Schüler laden ihre normalen Lösungen selbst hoch.</p>
-            <a class="button" href="{% url 'material_upload' 'solution' %}">Musterlösung hochladen</a>
-        </div>
-        <div>
-            <h3>Rechnungen</h3>
-            <p>PDF-Rechnungen hochladen und Eltern bereitstellen.</p>
-            <a class="button" href="{% url 'invoice_upload' %}">Rechnung hochladen</a>
-        </div>
-        <div>
-            <h3>Online-Lernraum</h3>
-            <p>Starte direkt den BigBlueButton-Raum für einen Schüler.</p>
+    <div style="display:grid; grid-template-columns:minmax(280px, 420px) minmax(260px, 1fr); gap:24px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(31,102,102,0.08); border:1px solid rgba(31,102,102,0.16);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark);">Organisation</div>
+                <a class="button" style="background: var(--teal-dark);" href="{% url 'lesson_list' %}">Meine Termine</a>
+                <a class="button" style="background: var(--teal-dark);" href="{% url 'progress' %}">Fortschrittübersicht der Schüler</a>
+                <a class="button" style="background: var(--teal-dark);" href="{% url 'invoice_upload' %}">Rechnung hochladen</a>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(143,211,107,0.14); border:1px solid rgba(86,148,53,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e;">Konten</div>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                    <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'tutor_create' %}">Tutor anlegen</a>
+                {% endif %}
+                <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'parent_create' %}">Eltern anlegen</a>
+                <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">Schüler anlegen</a>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(255,201,40,0.14); border:1px solid rgba(191,139,0,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200;">Materialien</div>
+                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'material_upload' 'task' %}">Aufgabe hochladen</a>
+                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'material_upload' 'solution' %}">Musterlösung hochladen</a>
+                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'tutor_solution_list' %}">Lösungen der Schüler ansehen</a>
+                <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'tutor_template_list' %}">Vorlagen</a>
+            </div>
+
             {% if bbb_students %}
-                <div>
-                    <label for="bbb-student-select" style="display:block; margin-bottom:4px;">Schüler auswählen</label>
+                <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(95,181,255,0.16); border:1px solid rgba(74,128,255,0.18);">
+                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e;">Online</div>
                     <select id="bbb-student-select" name="zoom_link" style="width:100%;">
                         {% for student in bbb_students %}
                             <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.username }}</option>
                         {% endfor %}
                     </select>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                        <button type="button" class="button" onclick="openOnlineRoom('bbb')" style="background:#5fb5ff;color:#0b1b2a;">Online-Lernraum (BigBlueButton)</button>
-                        <button type="button" class="button" style="background: var(--yellow); color:#000;" onclick="openOnlineRoom('zumpad')">ZUMPad</button>
-                    </div>
+                    <button type="button" class="button" onclick="openOnlineRoom('bbb')" style="background:#5fb5ff;color:#0b1b2a;">Online-Lernraum (BigBlueButton)</button>
+                    <button type="button" class="button" style="background:#90d2ff;color:#0b1b2a;" onclick="openOnlineRoom('zumpad')">ZUMPad</button>
                 </div>
-            {% else %}
-                <p class="muted">Es ist noch kein BBB-Link hinterlegt.</p>
             {% endif %}
         </div>
-    </div>
-</div>
-
-<div class="card">
-    <h3>News</h3>
-    <p class="muted">Letzte Änderungen von Eltern oder Schülern, die dir zugewiesen sind.</p>
-    {% if news_items %}
-        <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
-            {% for item in news_items %}
-                <div style="padding:10px 12px;border:1px solid rgba(0,0,0,0.06);border-radius:12px;background:linear-gradient(120deg, rgba(95,181,255,0.12), rgba(255,255,255,0.92));box-shadow:0 6px 16px rgba(0,0,0,0.06);">
-                    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                        <span style="font-weight:700;color:#0b1b2a;">{{ item.student }}</span>
-                        <span class="muted" style="font-size:0.9rem;">{{ item.date|date:"d.m.Y" }} · {{ item.time|time:"H:i" }}</span>
-                    </div>
-                    <div style="margin-top:4px;color:#0f2c3f;font-weight:600;">{{ item.text }}</div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <a href="{% url 'assigned_student_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16); text-decoration:none; color:inherit;">
+                <div class="muted" style="margin-bottom:4px;">Zugewiesene Schüler</div>
+                <div style="font-size:2rem; font-weight:800; color: var(--teal-dark); line-height:1;">{{ assigned_student_count }}</div>
+            </a>
+            <div style="padding:14px 16px; border-radius:14px; background: rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
+                <div class="muted" style="margin-bottom:10px;">Nächste Termine</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% for lesson in upcoming_lessons %}
+                        <div style="padding:10px 12px; border-radius:12px; background: var(--cream); border:1px solid rgba(0,0,0,0.05);">
+                            <div style="font-weight:700; color: var(--accent);">{{ lesson.student.user.username }}</div>
+                            <div class="muted">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
+                            <div class="muted">{{ lesson.get_fach_display }}</div>
+                        </div>
+                    {% empty %}
+                        <div class="muted">Keine anstehenden Termine.</div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <p class="muted">Aktuell keine Neuigkeiten.</p>
-    {% endif %}
+    </div>
 </div>
 {% block scripts %}
 <script>

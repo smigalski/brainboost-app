@@ -9,10 +9,10 @@
         </div>
         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             {% if request.user.role == 'tutor' %}
-                <a class="button" href="{% url 'lesson_create' %}">+ Neuer Termin</a>
+                <a class="button" style="background: #8fd36b; color: #16301f;" href="{% url 'lesson_create' %}">+ Neuer Termin</a>
             {% endif %}
-            <a class="button" href="?when=upcoming">Zukünftig</a>
-            <a class="button" style="background: var(--teal);" href="?when=past">Vergangenheit</a>
+            <a class="button" href="?when=upcoming">Zukunft</a>
+            <a class="button" style="background: var(--teal-dark);" href="?when=past">Vergangenheit</a>
         </div>
     </div>
     <ul class="list" style="margin-top:16px;">

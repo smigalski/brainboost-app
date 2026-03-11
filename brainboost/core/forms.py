@@ -9,8 +9,10 @@ from .models import (
     ProgressEntry,
     StudentProfile,
     ParentProfile,
+    TutorProfile,
     LearningMaterial,
     Invoice,
+    TutorTemplate,
     CustomUser,
 )
 
@@ -96,6 +98,23 @@ class InvoiceForm(forms.ModelForm):
             raise forms.ValidationError("Datei ist größer als 10 MB.")
         if not f.name.lower().endswith(".pdf"):
             raise forms.ValidationError("Nur PDF-Dateien sind erlaubt.")
+        return f
+
+
+class TutorTemplateForm(forms.ModelForm):
+    class Meta:
+        model = TutorTemplate
+        fields = ["file"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file"].help_text = "Erlaubt: pdf, png, jpg, jpeg, docx. Max 10 MB."
+
+    def clean_file(self):
+        f = self.cleaned_data["file"]
+        max_size = 10 * 1024 * 1024  # 10 MB
+        if f.size > max_size:
+            raise forms.ValidationError("Datei ist größer als 10 MB.")
         return f
 
 
@@ -196,4 +215,26 @@ class StudentCreateForm(BaseUserCreateForm):
             parents = self.cleaned_data.get("parents")
             if parents:
                 profile.parents.set(parents)
+        return user
+
+
+class TutorCreateForm(BaseUserCreateForm):
+    email = forms.EmailField(required=True, label="E-Mail")
+    role_display = forms.CharField(
+        initial=CustomUser.Roles.TUTOR.label,
+        required=False,
+        disabled=True,
+        label="Rolle",
+    )
+    address = forms.CharField(max_length=255, required=False, label="Adresse")
+
+    def save(self) -> CustomUser:
+        with transaction.atomic():
+            user = self._build_user(CustomUser.Roles.TUTOR)
+            user.set_password(self.cleaned_data["password1"])
+            user.save()
+            TutorProfile.objects.create(
+                user=user,
+                address=self.cleaned_data.get("address", ""),
+            )
         return user

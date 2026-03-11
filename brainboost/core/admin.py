@@ -9,6 +9,7 @@ from .models import (
     TutorProfile,
     Lesson,
     ProgressEntry,
+    TutorTemplate,
 )
 
 
@@ -85,3 +86,10 @@ class ProgressEntryAdmin(admin.ModelAdmin):
     list_display = ("lesson", "rating", "created_at")
     list_filter = ("rating", "created_at")
     search_fields = ("lesson__student__user__username", "lesson__tutor__user__username")
+
+
+@admin.register(TutorTemplate)
+class TutorTemplateAdmin(admin.ModelAdmin):
+    list_display = ("file", "uploaded_by", "uploaded_at")
+    list_filter = ("uploaded_at",)
+    search_fields = ("file", "uploaded_by__user__username")

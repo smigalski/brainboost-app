@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Zugewiesene Schüler{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+        <div>
+            <h1>Zugewiesene Schüler</h1>
+            <p class="muted">Übersicht über Adresse, Eltern und vergangene Nachhilfetermine.</p>
+        </div>
+        <a class="button" href="{% url 'dashboard' %}">Zurück zum Dashboard</a>
+    </div>
+
+    <style>
+        @media (max-width: 760px) {
+            .assigned-students-table thead {
+                display: none;
+            }
+            .assigned-students-table,
+            .assigned-students-table tbody,
+            .assigned-students-table tr,
+            .assigned-students-table td {
+                display: block;
+                width: 100%;
+            }
+            .assigned-students-table tr {
+                margin-bottom: 14px;
+                border: 1px solid rgba(0,0,0,0.08);
+                border-radius: 14px;
+                overflow: hidden;
+                background: #fff;
+            }
+            .assigned-students-table td {
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+                padding: 10px 12px;
+            }
+            .assigned-students-table td:last-child {
+                border-bottom: none;
+            }
+            .assigned-students-table td::before {
+                content: attr(data-label);
+                display: block;
+                margin-bottom: 4px;
+                font-size: 0.82rem;
+                font-weight: 800;
+                color: var(--teal-dark);
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
+        }
+    </style>
+
+    <table class="assigned-students-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
+        <thead>
+            <tr style="text-align:left; border-bottom:1px solid rgba(0,0,0,0.08);">
+                <th style="padding:12px;">Schüler</th>
+                <th style="padding:12px;">Wohnadresse</th>
+                <th style="padding:12px;">Eltern</th>
+                <th style="padding:12px;">Vergangene Termine</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
+                    <td data-label="Schüler" style="padding:12px; vertical-align:top; font-weight:700;">{{ student.user.username }}</td>
+                    <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
+                        {% if student.address %}
+                            {{ student.address }}
+                        {% else %}
+                            <span class="muted">Keine Adresse hinterlegt</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Eltern" style="padding:12px; vertical-align:top;">
+                        {% with parents=student.parents.all %}
+                            {% for parent in parents %}
+                                <div>{{ parent.user.username }}</div>
+                            {% empty %}
+                                <span class="muted">Keine Eltern zugeordnet</span>
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
+                    <td data-label="Vergangene Termine" style="padding:12px; vertical-align:top;">{{ student.past_lesson_count }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="padding:12px;">Keine zugewiesenen Schüler vorhanden.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

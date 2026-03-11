@@ -8,7 +8,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
@@ -23,6 +23,8 @@ from .forms import (
     InvoiceForm,
     ParentCreateForm,
     StudentCreateForm,
+    TutorTemplateForm,
+    TutorCreateForm,
 )
 from .notifications import (
     notify_invoice_uploaded,
@@ -41,6 +43,7 @@ from .models import (
     TutorProfile,
     LearningMaterial,
     Invoice,
+    TutorTemplate,
 )
 
 
@@ -176,18 +179,25 @@ def dashboard(request):
         if hasattr(request.user, "tutor_profile"):
             assigned_students = StudentProfile.objects.filter(
                 lessons__tutor=request.user.tutor_profile
-            )
+            ).select_related("user").distinct()
             new_students_with_links = StudentProfile.objects.filter(
                 lessons__isnull=True
             ).filter(
                 Q(zoom_link__isnull=False, zoom_link__gt="")
                 | Q(zumpad_link__isnull=False, zumpad_link__gt="")
-            )
+            ).select_related("user").distinct()
             bbb_students = (
                 assigned_students
                 | new_students_with_links
-            ).select_related("user").distinct()
+            ).distinct()
             context["bbb_students"] = bbb_students
+            context["assigned_student_count"] = assigned_students.count()
+            context["upcoming_lessons"] = (
+                Lesson.upcoming_qs()
+                .filter(tutor=request.user.tutor_profile)
+                .select_related("student__user")
+                .order_by("date", "time")[:5]
+            )
             news_lessons = (
                 Lesson.objects.filter(tutor=request.user.tutor_profile)
                 .select_related("student__user")
@@ -214,6 +224,38 @@ def dashboard(request):
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def assigned_student_list(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    tutor_profile = request.user.tutor_profile
+    today = timezone.localdate()
+    now_time = timezone.localtime().time()
+    students = (
+        StudentProfile.objects.filter(lessons__tutor=tutor_profile)
+        .select_related("user")
+        .prefetch_related("parents__user")
+        .annotate(
+            past_lesson_count=Count(
+                "lessons",
+                filter=Q(lessons__tutor=tutor_profile)
+                & (Q(lessons__date__lt=today) | Q(lessons__date=today, lessons__time__lt=now_time)),
+                distinct=True,
+            )
+        )
+        .distinct()
+        .order_by("user__username")
+    )
+
+    return render(
+        request,
+        "assigned_student_list.html",
+        {"students": students},
+    )
 
 
 @login_required
@@ -247,6 +289,41 @@ def parent_create(request):
     else:
         form = ParentCreateForm()
     return render(request, "parent_create.html", {"form": form})
+
+
+@login_required
+def tutor_create(request):
+    if request.user.role != CustomUser.Roles.TUTOR or not (
+        request.user.is_staff or request.user.is_superuser
+    ):
+        return redirect("dashboard")
+    if request.method == "POST":
+        form = TutorCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            try:
+                _send_set_password_email(request, user)
+            except ValueError:
+                messages.error(
+                    request,
+                    "Tutor wurde angelegt, aber es wurde keine E-Mail-Adresse angegeben.",
+                )
+            except Exception as exc:
+                logger.exception("E-Mail Versand fehlgeschlagen (Tutor)")
+                messages.error(
+                    request,
+                    "Tutor wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                    f"Fehler: {exc.__class__.__name__} ({exc})",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Tutor wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                )
+            return redirect("dashboard")
+    else:
+        form = TutorCreateForm()
+    return render(request, "tutor_create.html", {"form": form})
 
 
 @login_required
@@ -592,6 +669,63 @@ def material_upload(request, kind: str):
         request,
         "material_upload.html",
         {"form": form, "heading": heading},
+    )
+
+
+@login_required
+def tutor_solution_list(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    tutor_profile = request.user.tutor_profile
+    assigned_students = StudentProfile.objects.filter(
+        lessons__tutor=tutor_profile
+    ).distinct()
+    solutions = (
+        LearningMaterial.objects.filter(kind=LearningMaterial.Kind.SOLUTION)
+        .filter(Q(student__in=assigned_students) | Q(uploaded_by=tutor_profile))
+        .select_related("student__user", "uploaded_by__user")
+        .distinct()
+    )
+
+    return render(
+        request,
+        "tutor_solution_list.html",
+        {"solutions": solutions},
+    )
+
+
+@login_required
+def tutor_template_list(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    is_admin_tutor = request.user.is_staff or request.user.is_superuser
+
+    if request.method == "POST":
+        if not is_admin_tutor:
+            return redirect("tutor_template_list")
+        form = TutorTemplateForm(request.POST, request.FILES)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.uploaded_by = request.user.tutor_profile
+            template.save()
+            messages.success(request, "Vorlage wurde hochgeladen.")
+            return redirect("tutor_template_list")
+    else:
+        form = TutorTemplateForm()
+
+    templates = TutorTemplate.objects.select_related("uploaded_by__user")
+    return render(
+        request,
+        "tutor_template_list.html",
+        {
+            "templates": templates,
+            "form": form,
+            "is_admin_tutor": is_admin_tutor,
+        },
     )
 
 

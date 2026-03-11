@@ -285,6 +285,11 @@ def material_upload_path(instance, filename):
     kind_folder = instance.kind
     return f"materials/{kind_folder}/student_{instance.student_id}_{filename}"
 
+
+def tutor_template_upload_path(instance, filename):
+    return f"tutor_templates/{instance.uploaded_by_id}_{filename}"
+
+
 def invoice_upload_path(instance, filename):
     return f"invoices/student_{instance.student_id}_{filename}"
 
@@ -373,3 +378,28 @@ class Invoice(models.Model):
     @property
     def due_date(self):
         return self.uploaded_at + timedelta(days=7)
+
+
+class TutorTemplate(models.Model):
+    uploaded_by = models.ForeignKey(
+        TutorProfile,
+        on_delete=models.CASCADE,
+        related_name="templates",
+    )
+    file = models.FileField(
+        upload_to=tutor_template_upload_path,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["pdf", "png", "jpg", "jpeg", "docx"]
+            )
+        ],
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        verbose_name = "Vorlage"
+        verbose_name_plural = "Vorlagen"
+
+    def __str__(self):
+        return f"Vorlage von {self.uploaded_by.user.username} ({self.file.name})"

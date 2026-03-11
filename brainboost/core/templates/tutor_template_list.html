@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Vorlagen{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+        <div>
+            <h1>Vorlagen</h1>
+            <p class="muted">Von Admin-Tutoren hochgeladene Vorlagen für alle Tutoren.</p>
+        </div>
+        <a class="button" href="{% url 'dashboard' %}">Zurück zum Dashboard</a>
+    </div>
+
+    {% if is_admin_tutor %}
+        <div style="padding:16px; border-radius:14px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.16); margin-bottom:18px;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button class="button" style="background:#e0b126; color:#1f1600;" type="submit">Vorlage hochladen</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <ul class="list">
+        {% for template in templates %}
+            <li>
+                <div>
+                    <strong>{{ template.file.name|cut:"tutor_templates/" }}</strong>
+                    <div class="muted">Hochgeladen von {{ template.uploaded_by.user.username }}</div>
+                    <div class="muted">Hochgeladen am {{ template.uploaded_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                <a class="button" style="padding:6px 10px; background:#e0b126; color:#1f1600;" href="{{ template.file.url }}" download>Download</a>
+            </li>
+        {% empty %}
+            <li>Keine Vorlagen vorhanden.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
