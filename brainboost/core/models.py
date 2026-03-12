@@ -427,6 +427,7 @@ class Invoice(models.Model):
 
     class PaymentStatus(models.TextChoices):
         OPEN = "open", "offen"
+        ANNOUNCED = "announced", "angekündigt"
         PAID = "paid", "bezahlt"
 
     student = models.ForeignKey(
@@ -443,6 +444,13 @@ class Invoice(models.Model):
         TutorProfile,
         on_delete=models.SET_NULL,
         related_name="approved_invoices",
+        null=True,
+        blank=True,
+    )
+    payment_requested_by = models.ForeignKey(
+        ParentProfile,
+        on_delete=models.SET_NULL,
+        related_name="requested_invoice_payments",
         null=True,
         blank=True,
     )
@@ -466,6 +474,7 @@ class Invoice(models.Model):
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    payment_requested_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -487,6 +496,14 @@ class Invoice(models.Model):
     @property
     def can_pay_online(self):
         return self.is_approved and self.amount_total is not None and self.payment_status != self.PaymentStatus.PAID
+
+    @property
+    def can_confirm_receipt(self):
+        return (
+            self.is_approved
+            and self.payment_status == self.PaymentStatus.ANNOUNCED
+            and self.payment_method in {self.PaymentMethod.CASH, self.PaymentMethod.BANK_TRANSFER}
+        )
 
 
 class TutorTemplate(models.Model):

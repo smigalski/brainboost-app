@@ -263,6 +263,67 @@ def notify_invoice_pending_approval(request, invoice: Invoice) -> None:
     )
 
 
+def notify_invoice_payment_selected(
+    request,
+    invoice: Invoice,
+    parent: ParentProfile,
+) -> None:
+    if not _notifications_enabled("invoice_payment_selected"):
+        return
+    subject = (
+        f"Zahlungsart gewählt: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+    )
+    tutor_user = getattr(invoice.uploaded_by, "user", None)
+    if not tutor_user or not tutor_user.email:
+        return
+    context = {
+        "heading": "Zahlungsart gewählt",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        "parent": parent,
+        "payment_method_label": invoice.get_payment_method_display(),
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_payment_selected",
+        context,
+        [tutor_user.email],
+    )
+
+
+def notify_invoice_payment_confirmed(
+    request,
+    invoice: Invoice,
+    parent: ParentProfile,
+) -> None:
+    if not _notifications_enabled("invoice_payment_confirmed"):
+        return
+    parent_user = getattr(parent, "user", None)
+    if not parent_user or not parent_user.email:
+        return
+    subject = (
+        f"Zahlung bestätigt: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+    )
+    context = {
+        "heading": "Zahlung bestätigt",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        "parent": parent,
+        "payment_method_label": invoice.get_payment_method_display(),
+        "invoice_file_url": request.build_absolute_uri(invoice.file.url),
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_payment_confirmed",
+        context,
+        [parent_user.email],
+    )
+
+
 def notify_material_uploaded(request, material: LearningMaterial) -> None:
     if not _notifications_enabled("material_uploaded"):
         return

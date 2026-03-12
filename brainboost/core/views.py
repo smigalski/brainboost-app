@@ -37,6 +37,8 @@ from .forms import (
 )
 from .notifications import (
     notify_invoice_parent,
+    notify_invoice_payment_confirmed,
+    notify_invoice_payment_selected,
     notify_invoice_pending_approval,
     notify_lesson_cancelled,
     notify_lesson_changed,
@@ -171,6 +173,27 @@ def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
             }
         )
     return links
+
+
+def _mark_invoice_payment_selected(
+    request,
+    invoice: Invoice,
+    parent_profile: ParentProfile,
+    method: str,
+) -> None:
+    invoice.payment_method = method
+    invoice.payment_status = Invoice.PaymentStatus.ANNOUNCED
+    invoice.payment_requested_by = parent_profile
+    invoice.payment_requested_at = timezone.now()
+    invoice.save(
+        update_fields=[
+            "payment_method",
+            "payment_status",
+            "payment_requested_by",
+            "payment_requested_at",
+        ]
+    )
+    notify_invoice_payment_selected(request, invoice, parent_profile)
 
 
 INVOICE_RATE_BY_DURATION = {
@@ -1551,6 +1574,39 @@ def invoice_delete(request, invoice_id):
 
 
 @login_required
+def invoice_select_payment(request, invoice_id, method):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.PARENT or not hasattr(
+        request.user, "parent_profile"
+    ):
+        return redirect("invoice_list")
+    if request.method != "POST":
+        return redirect("invoice_list")
+
+    if method not in {Invoice.PaymentMethod.CASH, Invoice.PaymentMethod.BANK_TRANSFER}:
+        messages.error(request, "Diese Zahlungsart ist nicht verfügbar.")
+        return redirect("invoice_list")
+
+    parent_profile = request.user.parent_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user", "uploaded_by__user"),
+        pk=invoice_id,
+        student__parents=parent_profile,
+        approved_at__isnull=False,
+    )
+    if invoice.payment_status == Invoice.PaymentStatus.PAID:
+        messages.info(request, "Diese Rechnung ist bereits als bezahlt markiert.")
+        return redirect("invoice_list")
+
+    _mark_invoice_payment_selected(request, invoice, parent_profile, method)
+    messages.success(
+        request,
+        f"Die Zahlungsart {invoice.get_payment_method_display()} wurde gespeichert. TutorIn wurde informiert.",
+    )
+    return redirect("invoice_list")
+
+
+@login_required
 def invoice_checkout(request, invoice_id):
     _ensure_profile_for_user(request.user)
     if request.user.role != CustomUser.Roles.PARENT or not hasattr(
@@ -1604,9 +1660,19 @@ def invoice_checkout(request, invoice_id):
             }
         ],
     )
-    invoice.payment_method = Invoice.PaymentMethod.ONLINE
+    if (
+        invoice.payment_status == Invoice.PaymentStatus.OPEN
+        or invoice.payment_method != Invoice.PaymentMethod.ONLINE
+        or invoice.payment_requested_by_id != parent_profile.id
+    ):
+        _mark_invoice_payment_selected(
+            request,
+            invoice,
+            parent_profile,
+            Invoice.PaymentMethod.ONLINE,
+        )
     invoice.stripe_checkout_session_id = session.id
-    invoice.save(update_fields=["payment_method", "stripe_checkout_session_id"])
+    invoice.save(update_fields=["stripe_checkout_session_id"])
     return redirect(session.url)
 
 
@@ -1652,6 +1718,50 @@ def stripe_webhook(request):
                 )
 
     return HttpResponse(status=200)
+
+
+@login_required
+def invoice_confirm_payment(request, invoice_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("invoice_upload")
+
+    tutor_profile = request.user.tutor_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related(
+            "student__user",
+            "uploaded_by__user",
+            "payment_requested_by__user",
+        ),
+        pk=invoice_id,
+    )
+    can_manage = (
+        invoice.uploaded_by_id == tutor_profile.id
+        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
+    )
+    if not can_manage:
+        messages.error(request, "Du darfst diesen Zahlungseingang nicht bestätigen.")
+        return redirect("invoice_upload")
+    if not invoice.can_confirm_receipt:
+        messages.info(request, "Für diese Rechnung gibt es aktuell nichts zu bestätigen.")
+        return redirect("invoice_upload")
+
+    invoice.payment_status = Invoice.PaymentStatus.PAID
+    invoice.paid_at = timezone.now()
+    invoice.save(update_fields=["payment_status", "paid_at"])
+
+    if invoice.payment_requested_by:
+        notify_invoice_payment_confirmed(request, invoice, invoice.payment_requested_by)
+
+    messages.success(
+        request,
+        f"Zahlung per {invoice.get_payment_method_display()} wurde als eingegangen bestätigt.",
+    )
+    return redirect("invoice_upload")
 
 
 @login_required
@@ -1909,5 +2019,8 @@ def invoice_list(request):
     return render(
         request,
         "invoice_list.html",
-        {"invoices": invoices},
+        {
+            "invoices": invoices,
+            "payment_status_paid": Invoice.PaymentStatus.PAID,
+        },
     )

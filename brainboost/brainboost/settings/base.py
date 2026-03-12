@@ -137,6 +137,8 @@ EMAIL_NOTIFICATIONS = {
     "lesson_reschedule_requested": True,
     "invoice_uploaded": True,
     "invoice_pending_approval": True,
+    "invoice_payment_selected": True,
+    "invoice_payment_confirmed": True,
     "material_uploaded": True,
 }
 

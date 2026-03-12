@@ -17,6 +17,9 @@
                     {% endif %}
                     <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                     <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
+                    {% if invoice.payment_requested_at %}
+                        <div class="muted">Zahlung angekündigt am: {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
+                    {% endif %}
                     {% if invoice.approved_by %}
                         <div class="muted">Freigegeben von: {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }}</div>
                     {% endif %}
@@ -25,6 +28,16 @@
                     {% endif %}
                 </div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                    {% if invoice.payment_status != payment_status_paid %}
+                        <form method="post" action="{% url 'invoice_select_payment' invoice.id 'cash' %}">
+                            {% csrf_token %}
+                            <button class="button" type="submit" style="padding:6px 10px; background:#d9b74d; color:#2c2100;">Bar zahlen</button>
+                        </form>
+                        <form method="post" action="{% url 'invoice_select_payment' invoice.id 'bank_transfer' %}">
+                            {% csrf_token %}
+                            <button class="button" type="submit" style="padding:6px 10px; background:#486fa9;">Per Überweisung zahlen</button>
+                        </form>
+                    {% endif %}
                     {% if invoice.can_pay_online %}
                         <form method="post" action="{% url 'invoice_checkout' invoice.id %}">
                             {% csrf_token %}

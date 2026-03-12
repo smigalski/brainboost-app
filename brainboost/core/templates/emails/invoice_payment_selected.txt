@@ -1,0 +1,12 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Ein Elternteil hat eine Zahlungsart für eine Rechnung gewählt.
+
+SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
+Elternteil: {{ parent.user.get_full_name|default:parent.user.username }}
+Zahlungsart: {{ payment_method_label }}
+Rechnung: {{ invoice.file.name }}
+Fällig am: {{ invoice.due_date|date:"d.m.Y" }}
+
+Rechnungen: {{ invoice_upload_url }}
+{% endblock %}

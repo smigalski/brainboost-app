@@ -63,6 +63,14 @@
                         <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
+                        {% if invoice.amount_total %}
+                            <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                        {% endif %}
+                        <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
+                        <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
+                        {% if invoice.payment_requested_by %}
+                            <div class="muted">Von {{ invoice.payment_requested_by.user.get_full_name|default:invoice.payment_requested_by.user.username }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
+                        {% endif %}
                         {% if invoice.is_approved %}
                             <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                         {% else %}
@@ -75,6 +83,12 @@
                             <button class="button" type="submit" aria-label="Rechnung löschen" title="Rechnung löschen" style="padding:6px 10px; background:#b42318;">X</button>
                         </form>
                         <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                        {% if invoice.can_confirm_receipt %}
+                            <form method="post" action="{% url 'invoice_confirm_payment' invoice.id %}">
+                                {% csrf_token %}
+                                <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Eingang bestätigen</button>
+                            </form>
+                        {% endif %}
                         {% if invoice.parent_notification_links %}
                             <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
                                 {% for link in invoice.parent_notification_links %}
@@ -103,6 +117,14 @@
                             <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
                             <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
+                            {% if invoice.amount_total %}
+                                <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                            {% endif %}
+                            <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
+                            <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
+                            {% if invoice.payment_requested_by %}
+                                <div class="muted">Von {{ invoice.payment_requested_by.user.get_full_name|default:invoice.payment_requested_by.user.username }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
+                            {% endif %}
                             {% if invoice.is_approved %}
                                 <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                             {% else %}
@@ -115,6 +137,11 @@
                                 <form method="post" action="{% url 'invoice_approve' invoice.id %}">
                                     {% csrf_token %}
                                     <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Genehmigen</button>
+                                </form>
+                            {% elif invoice.can_confirm_receipt %}
+                                <form method="post" action="{% url 'invoice_confirm_payment' invoice.id %}">
+                                    {% csrf_token %}
+                                    <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Eingang bestätigen</button>
                                 </form>
                             {% elif invoice.parent_notification_links %}
                                 <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">

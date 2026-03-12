@@ -1,0 +1,12 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Der Zahlungseingang deiner Rechnung wurde bestätigt.
+
+SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
+TutorIn: {{ tutor.user.get_full_name|default:tutor.user.username }}
+Zahlungsart: {{ payment_method_label }}
+Bestätigt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}
+
+PDF: {{ invoice_file_url }}
+Rechnungen: {{ invoice_list_url }}
+{% endblock %}
