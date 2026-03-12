@@ -1,16 +1,13 @@
 {% extends "emails/base.html" %}
 {% block content %}
-  <p style="margin:0 0 12px 0;">Es wurde eine neue Rechnung hochgeladen.</p>
+  <p style="margin:0 0 12px 0;">Eine neue Rechnung wartet auf Freigabe.</p>
   <ul style="margin:0 0 12px 16px;padding:0;">
-    <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
     <li><strong>TutorIn:</strong> {{ tutor.user.get_full_name|default:tutor.user.username }}</li>
+    <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
     <li><strong>Hochgeladen am:</strong> {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</li>
     <li><strong>Fällig am:</strong> {{ invoice.due_date|date:"d.m.Y" }}</li>
   </ul>
-  <p style="margin:0 0 12px 0;">
-    PDF: <a href="{{ invoice_file_url }}">{{ invoice_file_url }}</a>
-  </p>
   <p style="margin:0;">
-    Rechnungen: <a href="{{ invoice_list_url }}">{{ invoice_list_url }}</a>
+    Freigabe: <a href="{{ invoice_upload_url }}">{{ invoice_upload_url }}</a>
   </p>
 {% endblock %}

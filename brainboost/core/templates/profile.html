@@ -73,9 +73,6 @@
                     <div>
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
-                            {% if field.name == "address" and field.value %}
-                                <span class="muted" style="display:inline; margin-left:8px;">{{ field.value }}</span>
-                            {% endif %}
                         </label>
                         {{ field }}
                         {% if field.help_text %}

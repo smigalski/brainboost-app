@@ -1,7 +1,9 @@
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
 from django import forms
+from django.contrib.auth import password_validation
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -139,6 +141,26 @@ class InvoiceForm(forms.ModelForm):
         if not f.name.lower().endswith(".pdf"):
             raise forms.ValidationError("Nur PDF-Dateien sind erlaubt.")
         return f
+
+
+class InvoiceGenerateForm(forms.Form):
+    student = forms.ModelChoiceField(queryset=StudentProfile.objects.none(), label="SchülerIn")
+    period = forms.CharField(
+        label="Monat / Jahr",
+        widget=forms.TextInput(attrs={"type": "month"}),
+    )
+
+    def __init__(self, *args, allowed_students=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if allowed_students is not None:
+            self.fields["student"].queryset = allowed_students
+
+    def clean_period(self):
+        value = (self.cleaned_data.get("period") or "").strip()
+        try:
+            return datetime.strptime(value, "%Y-%m").date()
+        except ValueError as exc:
+            raise forms.ValidationError("Bitte wähle einen gültigen Monat aus.") from exc
 
 
 class TutorTemplateForm(forms.ModelForm):

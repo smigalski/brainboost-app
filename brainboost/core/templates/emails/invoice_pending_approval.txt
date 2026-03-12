@@ -1,12 +1,11 @@
 {% extends "emails/base.txt" %}
 {% block content %}
-Es wurde eine neue Rechnung hochgeladen.
+Eine neue Rechnung wartet auf Freigabe.
 
-SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
 TutorIn: {{ tutor.user.get_full_name|default:tutor.user.username }}
+SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
 Hochgeladen am: {{ invoice.uploaded_at|date:"d.m.Y H:i" }}
 Fällig am: {{ invoice.due_date|date:"d.m.Y" }}
 
-PDF: {{ invoice_file_url }}
-Rechnungen: {{ invoice_list_url }}
+Freigabe: {{ invoice_upload_url }}
 {% endblock %}

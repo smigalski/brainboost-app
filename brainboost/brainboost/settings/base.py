@@ -124,6 +124,9 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 
 # Optional per-event toggles for notifications.
@@ -133,6 +136,7 @@ EMAIL_NOTIFICATIONS = {
     "lesson_cancelled": True,
     "lesson_reschedule_requested": True,
     "invoice_uploaded": True,
+    "invoice_pending_approval": True,
     "material_uploaded": True,
 }
 

@@ -6,7 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from .models import LearningMaterial, Lesson, StudentProfile, Invoice
+from .models import LearningMaterial, Lesson, StudentProfile, ParentProfile, Invoice, TutorProfile
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,23 @@ def _student_recipients(student: StudentProfile) -> list[str]:
     return _unique_emails(emails)
 
 
+def _parent_recipients(student: StudentProfile) -> list[str]:
+    emails = []
+    for parent in student.parents.select_related("user"):
+        if parent.user.email:
+            emails.append(parent.user.email)
+    return _unique_emails(emails)
+
+
+def _tutor_recipients(tutors: Iterable[TutorProfile]) -> list[str]:
+    emails = []
+    for tutor in tutors:
+        tutor_user = getattr(tutor, "user", None)
+        if tutor_user and tutor_user.email:
+            emails.append(tutor_user.email)
+    return _unique_emails(emails)
+
+
 def _tutor_email(lesson: Lesson) -> Optional[str]:
     tutor_user = getattr(lesson.tutor, "user", None)
     if tutor_user and tutor_user.email:
@@ -55,6 +72,7 @@ def _build_urls(request) -> dict:
         "dashboard_url": request.build_absolute_uri(reverse("dashboard")),
         "lesson_list_url": request.build_absolute_uri(reverse("lesson_list")),
         "invoice_list_url": request.build_absolute_uri(reverse("invoice_list")),
+        "invoice_upload_url": request.build_absolute_uri(reverse("invoice_upload")),
     }
 
 
@@ -188,9 +206,61 @@ def notify_invoice_uploaded(request, invoice: Invoice) -> None:
         "invoice": invoice,
         "student": invoice.student,
         "tutor": invoice.uploaded_by,
+        "invoice_file_url": request.build_absolute_uri(invoice.file.url),
         **_build_urls(request),
     }
-    _send_templated_email(subject, "invoice_uploaded", context, _student_recipients(invoice.student))
+    _send_templated_email(
+        subject,
+        "invoice_uploaded",
+        context,
+        _parent_recipients(invoice.student),
+    )
+
+
+def notify_invoice_parent(request, invoice: Invoice, parent: ParentProfile) -> None:
+    if not _notifications_enabled("invoice_uploaded"):
+        return
+    parent_user = getattr(parent, "user", None)
+    if not parent_user or not parent_user.email:
+        return
+    subject = f"Neue Rechnung für {invoice.student.user.username}"
+    context = {
+        "heading": "Neue Rechnung",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        "invoice_file_url": request.build_absolute_uri(invoice.file.url),
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_uploaded",
+        context,
+        [parent_user.email],
+    )
+
+
+def notify_invoice_pending_approval(request, invoice: Invoice) -> None:
+    if not _notifications_enabled("invoice_pending_approval"):
+        return
+    supervisors = invoice.uploaded_by.supervising_tutors.select_related("user")
+    recipients = _tutor_recipients(supervisors)
+    if not recipients:
+        return
+    subject = f"Rechnung wartet auf Freigabe: {invoice.student.user.username}"
+    context = {
+        "heading": "Rechnung wartet auf Freigabe",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_pending_approval",
+        context,
+        recipients,
+    )
 
 
 def notify_material_uploaded(request, material: LearningMaterial) -> None:

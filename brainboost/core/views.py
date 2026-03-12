@@ -1,12 +1,14 @@
-from datetime import timedelta
+from decimal import Decimal, ROUND_HALF_UP
+from datetime import date, timedelta
 
 import logging
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
+from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Count, Q
@@ -17,12 +19,14 @@ from django.http import JsonResponse, HttpResponse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import (
     LessonForm,
     ProgressEntryForm,
     LearningMaterialForm,
     InvoiceForm,
+    InvoiceGenerateForm,
     ParentCreateForm,
     StudentCreateForm,
     TutorTemplateForm,
@@ -32,7 +36,8 @@ from .forms import (
     TutorProfileForm,
 )
 from .notifications import (
-    notify_invoice_uploaded,
+    notify_invoice_parent,
+    notify_invoice_pending_approval,
     notify_lesson_cancelled,
     notify_lesson_changed,
     notify_lesson_created,
@@ -118,6 +123,239 @@ def _actor_label(user: CustomUser) -> str:
 def _display_name(user: CustomUser) -> str:
     full_name = user.get_full_name().strip()
     return full_name or user.username
+
+
+def _normalize_whatsapp_number(raw_number: str) -> str:
+    if not raw_number:
+        return ""
+    raw_number = raw_number.strip()
+    digits_only = "".join(ch for ch in raw_number if ch.isdigit())
+    if not digits_only:
+        return ""
+    if raw_number.startswith("+"):
+        return digits_only
+    if digits_only.startswith("00"):
+        return digits_only[2:]
+    if digits_only.startswith("0"):
+        return f"49{digits_only[1:]}"
+    return digits_only
+
+
+def _invoice_whatsapp_message(request, invoice: Invoice, parent: ParentProfile) -> str:
+    invoice_url = request.build_absolute_uri(invoice.file.url)
+    portal_url = request.build_absolute_uri(reverse("invoice_list"))
+    student_name = _display_name(invoice.student.user)
+    tutor_name = _display_name(invoice.uploaded_by.user)
+    parent_name = _display_name(parent.user)
+    return (
+        f"Hallo {parent_name},\n"
+        f"eine neue Rechnung fuer {student_name} ist verfuegbar.\n"
+        f"TutorIn: {tutor_name}\n"
+        f"Faellig bis: {invoice.due_date.strftime('%d.%m.%Y')}\n"
+        f"PDF: {invoice_url}\n"
+        f"Portal: {portal_url}"
+    )
+
+
+def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
+    links = []
+    for parent in invoice.student.parents.select_related("user"):
+        number = _normalize_whatsapp_number(parent.phone_number)
+        if not number:
+            continue
+        parent_name = _display_name(parent.user)
+        links.append(
+            {
+                "name": parent_name,
+                "url": reverse("invoice_notify_parent", args=[invoice.id, parent.id]),
+            }
+        )
+    return links
+
+
+INVOICE_RATE_BY_DURATION = {
+    45: Decimal("19.00"),
+    60: Decimal("25.00"),
+    90: Decimal("36.00"),
+}
+
+
+def _easter_sunday(year: int) -> date:
+    a = year % 19
+    b = year // 100
+    c = year % 100
+    d = b // 4
+    e = b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i = c // 4
+    k = c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    month = (h + l - 7 * m + 114) // 31
+    day = ((h + l - 7 * m + 114) % 31) + 1
+    return date(year, month, day)
+
+
+def _holiday_dates_lower_saxony(year: int) -> set[date]:
+    easter = _easter_sunday(year)
+    return {
+        date(year, 1, 1),
+        easter - timedelta(days=2),  # Karfreitag
+        easter + timedelta(days=1),  # Ostermontag
+        date(year, 5, 1),
+        easter + timedelta(days=39),  # Christi Himmelfahrt
+        easter + timedelta(days=50),  # Pfingstmontag
+        date(year, 10, 3),
+        date(year, 10, 31),  # Reformationstag (Niedersachsen)
+        date(year, 12, 25),
+        date(year, 12, 26),
+    }
+
+
+def _lesson_invoice_components(lesson: Lesson) -> dict:
+    base_amount = INVOICE_RATE_BY_DURATION.get(lesson.duration_minutes)
+    if base_amount is None:
+        base_amount = (
+            Decimal("19.00") * Decimal(str(lesson.duration_minutes)) / Decimal("45")
+        ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    distance = Decimal(str(lesson.computed_distance_km or 0))
+    travel_amount = Decimal("0.00")
+    if distance > Decimal("3"):
+        travel_amount = ((distance - Decimal("3")) * Decimal("0.30")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+    is_special_day = (
+        lesson.date.weekday() >= 5
+        or lesson.date in _holiday_dates_lower_saxony(lesson.date.year)
+    )
+    subtotal = base_amount + travel_amount
+    surcharge_amount = Decimal("0.00")
+    if is_special_day:
+        surcharge_amount = (subtotal * Decimal("0.27")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+    total_amount = (subtotal + surcharge_amount).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    notes = []
+    if travel_amount > 0:
+        notes.append(f"Fahrtkosten {travel_amount} EUR")
+    if is_special_day:
+        notes.append(f"27% Zuschlag {surcharge_amount} EUR")
+
+    return {
+        "base_amount": base_amount,
+        "travel_amount": travel_amount,
+        "surcharge_amount": surcharge_amount,
+        "total_amount": total_amount,
+        "notes": notes,
+        "is_special_day": is_special_day,
+        "distance_km": distance.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+    }
+
+
+def _build_invoice_pdf_context(
+    tutor_profile: TutorProfile,
+    student: StudentProfile,
+    period_start,
+    lessons,
+) -> dict:
+    tutor_name = _display_name(tutor_profile.user)
+    student_name = _display_name(student.user)
+    period_label = date_format(period_start, "F Y")
+    today = timezone.localdate()
+    total_amount = Decimal("0.00")
+    total_travel = Decimal("0.00")
+    total_surcharge = Decimal("0.00")
+    line_items = []
+    for lesson in lessons:
+        components = _lesson_invoice_components(lesson)
+        lesson_amount = components["total_amount"]
+        total_amount += lesson_amount
+        total_travel += components["travel_amount"]
+        total_surcharge += components["surcharge_amount"]
+        line_items.append(
+            {
+                "date": lesson.date,
+                "time": lesson.time,
+                "subject": lesson.get_fach_display(),
+                "duration_minutes": lesson.duration_minutes,
+                "location": lesson.get_ort_display(),
+                "base_amount": components["base_amount"],
+                "travel_amount": components["travel_amount"],
+                "surcharge_amount": components["surcharge_amount"],
+                "total_amount": components["total_amount"],
+                "notes": components["notes"],
+                "is_special_day": components["is_special_day"],
+                "distance_km": components["distance_km"],
+            }
+        )
+
+    return {
+        "tutor_name": tutor_name,
+        "student_name": student_name,
+        "period_label": period_label,
+        "invoice_date": today,
+        "due_date": today + timedelta(days=7),
+        "line_items": line_items,
+        "total_travel": total_travel.quantize(Decimal("0.01")),
+        "total_surcharge": total_surcharge.quantize(Decimal("0.01")),
+        "total_amount": total_amount.quantize(Decimal("0.01")),
+        "account_holder": tutor_profile.account_holder or "-",
+        "bank_name": tutor_profile.bank_name or "-",
+        "iban": tutor_profile.iban or "-",
+        "bic": tutor_profile.bic or "-",
+    }
+
+
+def _generate_invoice_pdf(
+    request,
+    tutor_profile: TutorProfile,
+    student: StudentProfile,
+    period_start,
+    lessons,
+    invoice_context=None,
+) -> bytes:
+    try:
+        from weasyprint import HTML
+    except (ImportError, OSError) as exc:
+        raise RuntimeError(
+            "WeasyPrint ist noch nicht vollständig verfügbar. "
+            "Bitte die Systembibliotheken für WeasyPrint installieren."
+        ) from exc
+
+    context = invoice_context or _build_invoice_pdf_context(
+        tutor_profile=tutor_profile,
+        student=student,
+        period_start=period_start,
+        lessons=lessons,
+    )
+    html = render_to_string(
+        "invoice_pdf.html",
+        {
+            **context,
+            "logo_url": request.build_absolute_uri("/static/design/LogoPNG.png"),
+        },
+    )
+    return HTML(
+        string=html,
+        base_url=request.build_absolute_uri("/"),
+    ).write_pdf()
+
+
+def _stripe_client():
+    secret_key = getattr(settings, "STRIPE_SECRET_KEY", "")
+    if not secret_key:
+        raise RuntimeError("Stripe ist noch nicht konfiguriert. STRIPE_SECRET_KEY fehlt.")
+    import stripe
+
+    stripe.api_key = secret_key
+    return stripe
 
 
 def _rating_label(rating) -> str:
@@ -1099,26 +1337,100 @@ def invoice_upload(request):
     subordinate_tutors = _assigned_tutors_qs(tutor_profile)
 
     if request.method == "POST":
-        form = InvoiceForm(
-            data=request.POST,
-            files=request.FILES,
-            allowed_students=allowed_students,
-        )
-        if form.is_valid():
-            invoice = form.save(commit=False)
-            invoice.uploaded_by = tutor_profile
-            invoice.save()
-            if not tutor_profile.supervising_tutors.exists():
-                invoice.approved_by = tutor_profile
-                invoice.approved_at = timezone.now()
-                invoice.save(update_fields=["approved_by", "approved_at"])
-                notify_invoice_uploaded(request, invoice)
-                messages.success(request, "Rechnung wurde hochgeladen und direkt freigegeben.")
-            else:
-                messages.success(request, "Rechnung wurde hochgeladen und wartet auf Freigabe.")
-            return redirect("invoice_upload")
+        action = request.POST.get("action")
+        if action == "generate":
+            generate_form = InvoiceGenerateForm(
+                data=request.POST,
+                allowed_students=allowed_students,
+            )
+            form = InvoiceForm(allowed_students=allowed_students)
+            if generate_form.is_valid():
+                student = generate_form.cleaned_data["student"]
+                period_start = generate_form.cleaned_data["period"]
+                lessons = list(
+                    Lesson.objects.filter(
+                        tutor=tutor_profile,
+                        student=student,
+                        status=Lesson.Status.COMPLETED,
+                        date__year=period_start.year,
+                        date__month=period_start.month,
+                    ).order_by("date", "time")
+                )
+                if not lessons:
+                    generate_form.add_error(
+                        "period",
+                        "Für diesen Monat gibt es keine abgeschlossenen Termine.",
+                    )
+                else:
+                    invoice_context = _build_invoice_pdf_context(
+                        tutor_profile=tutor_profile,
+                        student=student,
+                        period_start=period_start,
+                        lessons=lessons,
+                    )
+                    try:
+                        pdf_bytes = _generate_invoice_pdf(
+                            request=request,
+                            tutor_profile=tutor_profile,
+                            student=student,
+                            period_start=period_start,
+                            lessons=lessons,
+                            invoice_context=invoice_context,
+                        )
+                    except RuntimeError as exc:
+                        generate_form.add_error(None, str(exc))
+                        pdf_bytes = None
+                    if pdf_bytes is None:
+                        pass
+                    else:
+                        invoice = Invoice(
+                            student=student,
+                            uploaded_by=tutor_profile,
+                            amount_total=invoice_context["total_amount"],
+                        )
+                        filename = (
+                            f"rechnung_{student.user.username}_{period_start.strftime('%Y_%m')}.pdf"
+                        )
+                        invoice.file.save(filename, ContentFile(pdf_bytes), save=False)
+                        invoice.save()
+                        if not tutor_profile.supervising_tutors.exists():
+                            invoice.approved_by = tutor_profile
+                            invoice.approved_at = timezone.now()
+                            invoice.save(update_fields=["approved_by", "approved_at"])
+                            messages.success(
+                                request,
+                                "Rechnung wurde generiert und direkt freigegeben. Versand an Eltern erst über den Eltern-Button.",
+                            )
+                        else:
+                            notify_invoice_pending_approval(request, invoice)
+                            messages.success(
+                                request,
+                                "Rechnung wurde generiert und wartet auf Freigabe.",
+                            )
+                        return redirect("invoice_upload")
+        else:
+            form = InvoiceForm(
+                data=request.POST,
+                files=request.FILES,
+                allowed_students=allowed_students,
+            )
+            generate_form = InvoiceGenerateForm(allowed_students=allowed_students)
+            if form.is_valid():
+                invoice = form.save(commit=False)
+                invoice.uploaded_by = tutor_profile
+                invoice.save()
+                if not tutor_profile.supervising_tutors.exists():
+                    invoice.approved_by = tutor_profile
+                    invoice.approved_at = timezone.now()
+                    invoice.save(update_fields=["approved_by", "approved_at"])
+                    messages.success(request, "Rechnung wurde hochgeladen und direkt freigegeben. Versand an Eltern erst über den Eltern-Button.")
+                else:
+                    notify_invoice_pending_approval(request, invoice)
+                    messages.success(request, "Rechnung wurde hochgeladen und wartet auf Freigabe.")
+                return redirect("invoice_upload")
     else:
         form = InvoiceForm(allowed_students=allowed_students)
+        generate_form = InvoiceGenerateForm(allowed_students=allowed_students)
 
     own_invoices = (
         Invoice.objects.filter(uploaded_by=tutor_profile)
@@ -1130,12 +1442,21 @@ def invoice_upload(request):
         .select_related("student__user", "uploaded_by__user", "approved_by__user")
         .order_by("-uploaded_at")
     )
+    for invoice in own_invoices:
+        invoice.parent_notification_links = (
+            _invoice_parent_notification_links(request, invoice) if invoice.is_approved else []
+        )
+    for invoice in subordinate_invoices:
+        invoice.parent_notification_links = (
+            _invoice_parent_notification_links(request, invoice) if invoice.is_approved else []
+        )
 
     return render(
         request,
         "invoice_upload.html",
         {
             "form": form,
+            "generate_form": generate_form,
             "heading": "Rechnungen",
             "tutor_invoices": own_invoices,
             "subordinate_invoices": subordinate_invoices,
@@ -1170,9 +1491,167 @@ def invoice_approve(request, invoice_id):
     invoice.approved_by = tutor_profile
     invoice.approved_at = timezone.now()
     invoice.save(update_fields=["approved_by", "approved_at"])
-    notify_invoice_uploaded(request, invoice)
-    messages.success(request, "Rechnung wurde freigegeben.")
+    messages.success(request, "Rechnung wurde freigegeben. Versand an Eltern erst über den Eltern-Button.")
     return redirect("invoice_upload")
+
+
+@login_required
+def invoice_notify_parent(request, invoice_id, parent_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    tutor_profile = request.user.tutor_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user", "uploaded_by__user", "approved_by__user"),
+        pk=invoice_id,
+    )
+    can_manage = (
+        invoice.uploaded_by_id == tutor_profile.id
+        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
+    )
+    if not can_manage:
+        messages.error(request, "Du darfst diese Rechnung nicht an Eltern versenden.")
+        return redirect("invoice_upload")
+    if not invoice.is_approved:
+        messages.error(request, "Die Rechnung muss erst freigegeben werden.")
+        return redirect("invoice_upload")
+
+    parent = get_object_or_404(invoice.student.parents.select_related("user"), pk=parent_id)
+    notify_invoice_parent(request, invoice, parent)
+
+    number = _normalize_whatsapp_number(parent.phone_number)
+    if not number:
+        messages.info(request, "Für dieses Elternteil ist keine WhatsApp-Nummer hinterlegt. Die Mail wurde versendet.")
+        return redirect("invoice_upload")
+
+    message = _invoice_whatsapp_message(request, invoice, parent)
+    return redirect(f"https://wa.me/{number}?text={quote(message)}")
+
+
+@login_required
+def invoice_delete(request, invoice_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    if request.method != "POST":
+        return redirect("invoice_upload")
+
+    tutor_profile = request.user.tutor_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user"),
+        pk=invoice_id,
+        uploaded_by=tutor_profile,
+    )
+    invoice.file.delete(save=False)
+    invoice.delete()
+    messages.success(request, "Rechnung wurde gelöscht.")
+    return redirect("invoice_upload")
+
+
+@login_required
+def invoice_checkout(request, invoice_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.PARENT or not hasattr(
+        request.user, "parent_profile"
+    ):
+        return redirect("invoice_list")
+    if request.method != "POST":
+        return redirect("invoice_list")
+
+    parent_profile = request.user.parent_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user", "uploaded_by__user"),
+        pk=invoice_id,
+        student__parents=parent_profile,
+        approved_at__isnull=False,
+    )
+    if not invoice.can_pay_online:
+        messages.error(request, "Für diese Rechnung ist aktuell keine Online-Zahlung verfügbar.")
+        return redirect("invoice_list")
+
+    try:
+        stripe = _stripe_client()
+    except RuntimeError as exc:
+        messages.error(request, str(exc))
+        return redirect("invoice_list")
+
+    unit_amount = int((invoice.amount_total * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    success_url = request.build_absolute_uri(reverse("invoice_list")) + "?payment=success"
+    cancel_url = request.build_absolute_uri(reverse("invoice_list")) + "?payment=cancelled"
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        payment_method_types=["card"],
+        customer_email=request.user.email or None,
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "invoice_id": str(invoice.id),
+            "parent_id": str(parent_profile.id),
+        },
+        line_items=[
+            {
+                "price_data": {
+                    "currency": invoice.currency.lower(),
+                    "unit_amount": unit_amount,
+                    "product_data": {
+                        "name": f"Rechnung für {invoice.student.user.get_full_name() or invoice.student.user.username}",
+                        "description": f"BrainBoost Nachhilfe · Fällig bis {invoice.due_date.strftime('%d.%m.%Y')}",
+                    },
+                },
+                "quantity": 1,
+            }
+        ],
+    )
+    invoice.payment_method = Invoice.PaymentMethod.ONLINE
+    invoice.stripe_checkout_session_id = session.id
+    invoice.save(update_fields=["payment_method", "stripe_checkout_session_id"])
+    return redirect(session.url)
+
+
+@csrf_exempt
+def stripe_webhook(request):
+    try:
+        stripe = _stripe_client()
+    except RuntimeError:
+        return HttpResponse(status=500)
+
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
+    webhook_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", "")
+    try:
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+        else:
+            event = stripe.Event.construct_from(json.loads(payload.decode("utf-8")), stripe.api_key)
+    except Exception:
+        return HttpResponse(status=400)
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        invoice_id = session.get("metadata", {}).get("invoice_id")
+        if invoice_id:
+            invoice = Invoice.objects.filter(pk=invoice_id).first()
+            if invoice and invoice.payment_status != Invoice.PaymentStatus.PAID:
+                invoice.payment_status = Invoice.PaymentStatus.PAID
+                invoice.payment_method = Invoice.PaymentMethod.ONLINE
+                invoice.paid_at = timezone.now()
+                invoice.stripe_checkout_session_id = session.get("id", "") or invoice.stripe_checkout_session_id
+                payment_intent = session.get("payment_intent")
+                if isinstance(payment_intent, str):
+                    invoice.stripe_payment_intent_id = payment_intent
+                invoice.save(
+                    update_fields=[
+                        "payment_status",
+                        "payment_method",
+                        "paid_at",
+                        "stripe_checkout_session_id",
+                        "stripe_payment_intent_id",
+                    ]
+                )
+
+    return HttpResponse(status=200)
 
 
 @login_required
@@ -1263,6 +1742,36 @@ def progress_edit(request, entry_id):
             "next_url": next_url,
         },
     )
+
+
+@login_required
+def progress_delete(request, entry_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
+        return redirect("progress")
+
+    if request.method != "POST":
+        return redirect("progress")
+
+    tutor_profile = request.user.tutor_profile
+    entry = get_object_or_404(
+        ProgressEntry.objects.select_related("lesson__student__user", "lesson__tutor"),
+        pk=entry_id,
+        lesson__tutor=tutor_profile,
+    )
+    next_url = request.POST.get("next") or reverse(
+        "progress_student", args=[entry.lesson.student_id]
+    )
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("progress_student", args=[entry.lesson.student_id])
+
+    entry.delete()
+    messages.success(request, "Lernfortschrittseintrag wurde gelöscht.")
+    return redirect(next_url)
 
 
 @login_required
@@ -1387,6 +1896,11 @@ def invoice_list(request):
     _ensure_profile_for_user(request.user)
     if request.user.role != CustomUser.Roles.PARENT or not hasattr(request.user, "parent_profile"):
         return redirect("dashboard")
+    payment_status = request.GET.get("payment")
+    if payment_status == "success":
+        messages.success(request, "Die Online-Zahlung wurde erfolgreich gestartet. Nach Bestätigung wird die Rechnung als bezahlt markiert.")
+    elif payment_status == "cancelled":
+        messages.info(request, "Die Online-Zahlung wurde abgebrochen.")
     students = request.user.parent_profile.students.all()
     invoices = Invoice.objects.filter(
         student__in=students,

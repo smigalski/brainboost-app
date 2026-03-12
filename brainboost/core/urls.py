@@ -36,6 +36,10 @@ urlpatterns = [
     path("vorlagen/", views.tutor_template_list, name="tutor_template_list"),
     path("rechnungen/neu/", views.invoice_upload, name="invoice_upload"),
     path("rechnungen/<int:invoice_id>/genehmigen/", views.invoice_approve, name="invoice_approve"),
+    path("rechnungen/<int:invoice_id>/eltern/<int:parent_id>/benachrichtigen/", views.invoice_notify_parent, name="invoice_notify_parent"),
+    path("rechnungen/<int:invoice_id>/loeschen/", views.invoice_delete, name="invoice_delete"),
+    path("rechnungen/<int:invoice_id>/checkout/", views.invoice_checkout, name="invoice_checkout"),
+    path("stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
     path("rechnungen/", views.invoice_list, name="invoice_list"),
     path("lernfortschritt/", views.progress_view, name="progress"),
     path(
@@ -57,6 +61,11 @@ urlpatterns = [
         "lernfortschritt/<int:entry_id>/bearbeiten/",
         views.progress_edit,
         name="progress_edit",
+    ),
+    path(
+        "lernfortschritt/<int:entry_id>/loeschen/",
+        views.progress_delete,
+        name="progress_delete",
     ),
     path(
         "passwort/setzen/<uidb64>/<token>/",

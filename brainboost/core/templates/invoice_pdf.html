@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>BrainBoost Rechnung</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 18mm;
+        }
+
+        :root {
+            --ink: #1a2238;
+            --muted: #5f6b7a;
+            --line: #d7dde4;
+            --soft: #f5f7fa;
+            --accent: #1f6666;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 11pt;
+            line-height: 1.45;
+            color: var(--ink);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--line);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+        }
+
+        .brand-title {
+            font-size: 19pt;
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            color: var(--ink);
+        }
+
+        .brand-subtitle {
+            margin: 0;
+            color: var(--muted);
+            font-size: 10pt;
+        }
+
+        .invoice-meta {
+            text-align: right;
+        }
+
+        .invoice-meta h1 {
+            margin: 0 0 8px 0;
+            font-size: 20pt;
+            color: var(--accent);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .panel {
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .panel-title {
+            margin: 0 0 10px 0;
+            font-size: 9pt;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 800;
+        }
+
+        .panel-row {
+            margin: 0 0 6px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 18px;
+            table-layout: fixed;
+        }
+
+        thead th {
+            text-align: left;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            border-bottom: 2px solid var(--line);
+            padding: 10px 8px;
+        }
+
+        tbody td {
+            vertical-align: top;
+            border-bottom: 1px solid var(--line);
+            padding: 10px 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .numeric {
+            text-align: right;
+            white-space: nowrap;
+            font-size: 10pt;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .notes {
+            margin-top: 6px;
+            font-size: 9pt;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        .totals {
+            margin-left: auto;
+            width: 300px;
+            border-collapse: collapse;
+        }
+
+        .totals td {
+            padding: 7px 0;
+            border: none;
+        }
+
+        .totals .grand-total td {
+            border-top: 2px solid var(--line);
+            font-weight: 800;
+            font-size: 12pt;
+            padding-top: 10px;
+        }
+
+        .bank {
+            margin-top: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">
+            <img src="{{ logo_url }}" alt="BrainBoost">
+            <div>
+                <p class="brand-title">BrainBoost by Kiara Puppe</p>
+                <p class="brand-subtitle">Stark im Kopf - Stark im Lernen</p>
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <h1>Rechnung</h1>
+            <div>Rechnungsdatum: {{ invoice_date|date:"d.m.Y" }}</div>
+            <div>Fällig bis: {{ due_date|date:"d.m.Y" }}</div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="panel">
+            <p class="panel-title">Leistungsdaten</p>
+            <p class="panel-row"><strong>Leistungszeitraum:</strong> {{ period_label }}</p>
+            <p class="panel-row"><strong>SchülerIn:</strong> {{ student_name }}</p>
+            <p class="panel-row"><strong>TutorIn:</strong> {{ tutor_name }}</p>
+        </div>
+        <div class="panel">
+            <p class="panel-title">Tariflogik</p>
+            <p class="panel-row">45 Min. = 19,00 EUR</p>
+            <p class="panel-row">60 Min. = 25,00 EUR</p>
+            <p class="panel-row">90 Min. = 36,00 EUR</p>
+            <p class="panel-row muted">Fahrtkosten ab mehr als 3 km: 0,30 EUR/km</p>
+            <p class="panel-row muted">27 % Zuschlag an Feiertagen sowie samstags und sonntags</p>
+        </div>
+    </div>
+
+    <table>
+        <colgroup>
+            <col style="width: 19%;">
+            <col style="width: 31%;">
+            <col style="width: 10%;">
+            <col style="width: 11%;">
+            <col style="width: 12%;">
+            <col style="width: 17%;">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Fach / Ort</th>
+                <th class="numeric">Dauer</th>
+                <th class="numeric">Fahrt</th>
+                <th class="numeric">Zuschlag</th>
+                <th class="numeric">Gesamt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+                <tr>
+                    <td>
+                        <div><strong>{{ item.date|date:"d.m.Y" }}</strong></div>
+                        <div class="muted">{{ item.time|time:"H:i" }}</div>
+                        <div class="notes">Grundpreis {{ item.base_amount }} EUR</div>
+                    </td>
+                    <td>
+                        <div>{{ item.subject }}</div>
+                        <div class="muted">{{ item.location }}</div>
+                        {% if item.notes %}
+                            <div class="notes">{{ item.notes|join:" · " }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="numeric">{{ item.duration_minutes }} Min.</td>
+                    <td class="numeric">{{ item.travel_amount }} EUR</td>
+                    <td class="numeric">{{ item.surcharge_amount }} EUR</td>
+                    <td class="numeric"><strong>{{ item.total_amount }} EUR</strong></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td>Fahrtkosten gesamt</td>
+            <td class="numeric">{{ total_travel }} EUR</td>
+        </tr>
+        <tr>
+            <td>Zuschläge gesamt</td>
+            <td class="numeric">{{ total_surcharge }} EUR</td>
+        </tr>
+        <tr class="grand-total">
+            <td>Rechnungsbetrag</td>
+            <td class="numeric">{{ total_amount }} EUR</td>
+        </tr>
+    </table>
+
+    <div class="panel bank">
+        <p class="panel-title">Zahlungsdaten</p>
+        <p class="panel-row"><strong>KontoinhaberIn:</strong> {{ account_holder }}</p>
+        <p class="panel-row"><strong>Bank:</strong> {{ bank_name }}</p>
+        <p class="panel-row"><strong>IBAN:</strong> {{ iban }}</p>
+        <p class="panel-row"><strong>BIC:</strong> {{ bic }}</p>
+    </div>
+</body>
+</html>

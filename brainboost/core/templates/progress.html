@@ -103,6 +103,17 @@
                                 aria-label="Lernfortschritt bearbeiten"
                                 title="Lernfortschritt bearbeiten"
                             >&#9998;</a>
+                            <form method="post" action="{% url 'progress_delete' entry.id %}" onsubmit="return confirm('Lernfortschrittseintrag wirklich löschen?');" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button
+                                    class="icon-button"
+                                    type="submit"
+                                    aria-label="Lernfortschritt löschen"
+                                    title="Lernfortschritt löschen"
+                                    style="background:#b42318; color:#f7f7f2;"
+                                >X</button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>

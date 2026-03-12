@@ -3,9 +3,39 @@
 {% block content %}
 <div class="card">
     <h1>Rechnungen</h1>
-    <p class="muted">Hier kannst du Rechnungen hochladen und den Freigabestatus deiner Rechnungen verfolgen.</p>
+    <p class="muted">Hier kannst du Monatsrechnungen aus abgeschlossenen Terminen generieren oder weiterhin eine eigene PDF-Rechnung als Backup hochladen.</p>
+</div>
+
+<div class="card">
+    <h3>Rechnung generieren</h3>
+    <p class="muted">Erstellt automatisch eine PDF-Rechnung für den gewählten Monat auf Basis abgeschlossener Termine. Verwendet feste Preise von 19 EUR / 45 Min., 25 EUR / 60 Min. und 36 EUR / 90 Min. plus Fahrtkosten und 27% Zuschlag an Feiertagen sowie samstags und sonntags.</p>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="generate">
+        {% if generate_form.non_field_errors %}
+            <p class="error" style="color:#b3261e;margin:0 0 8px;font-weight:600;">{{ generate_form.non_field_errors.0 }}</p>
+        {% endif %}
+        <label for="{{ generate_form.student.id_for_label }}">SchülerIn auswählen</label>
+        {{ generate_form.student }}
+        {% if generate_form.student.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ generate_form.student.errors.0 }}</p>
+        {% endif %}
+        <label for="{{ generate_form.period.id_for_label }}">Monat / Jahr</label>
+        {{ generate_form.period }}
+        {% if generate_form.period.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ generate_form.period.errors.0 }}</p>
+        {% endif %}
+        <button class="button" type="submit" style="margin-top:8px;">Rechnung generieren</button>
+    </form>
+    <p class="muted" style="margin-top:12px;">Die bestehende Upload-Funktion bleibt darunter als Backup erhalten.</p>
+</div>
+
+<div class="card">
+    <h3>Eigene PDF-Rechnung hochladen</h3>
+    <p class="muted">Fallback, falls du eine Rechnung weiterhin manuell außerhalb der WebApp erstellt hast.</p>
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
+        <input type="hidden" name="action" value="upload">
         <label for="{{ form.student.id_for_label }}">SchülerIn auswählen</label>
         {{ form.student }}
         <label for="{{ form.file.id_for_label }}">PDF-Rechnung</label>
@@ -30,16 +60,29 @@
                 <li>
                     <div>
                         <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
-                        <div class="muted">Für: {{ invoice.student.user.username }}</div>
+                        <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
                         {% if invoice.is_approved %}
-                            <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                            <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                         {% else %}
                             <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                         {% endif %}
                     </div>
-                    <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                        <form method="post" action="{% url 'invoice_delete' invoice.id %}" onsubmit="return confirm('Rechnung wirklich löschen?');">
+                            {% csrf_token %}
+                            <button class="button" type="submit" aria-label="Rechnung löschen" title="Rechnung löschen" style="padding:6px 10px; background:#b42318;">X</button>
+                        </form>
+                        <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                        {% if invoice.parent_notification_links %}
+                            <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                                {% for link in invoice.parent_notification_links %}
+                                    <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
         </ul>
@@ -57,11 +100,11 @@
                     <li>
                         <div>
                             <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
-                            <div class="muted">TutorIn: {{ invoice.uploaded_by.user.username }}</div>
-                            <div class="muted">Für: {{ invoice.student.user.username }}</div>
+                            <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
+                            <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                             {% if invoice.is_approved %}
-                                <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                                <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                             {% else %}
                                 <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                             {% endif %}
@@ -73,6 +116,12 @@
                                     {% csrf_token %}
                                     <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Genehmigen</button>
                                 </form>
+                            {% elif invoice.parent_notification_links %}
+                                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                                    {% for link in invoice.parent_notification_links %}
+                                        <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
                     </li>

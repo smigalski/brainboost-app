@@ -420,6 +420,15 @@ class ProgressEntry(models.Model):
 
 
 class Invoice(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = "cash", "bar"
+        BANK_TRANSFER = "bank_transfer", "Überweisung"
+        ONLINE = "online", "online"
+
+    class PaymentStatus(models.TextChoices):
+        OPEN = "open", "offen"
+        PAID = "paid", "bezahlt"
+
     student = models.ForeignKey(
         StudentProfile,
         on_delete=models.CASCADE,
@@ -441,8 +450,23 @@ class Invoice(models.Model):
         upload_to=invoice_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
     )
+    amount_total = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=3, default="EUR")
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.BANK_TRANSFER,
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.OPEN,
+    )
+    stripe_checkout_session_id = models.CharField(max_length=255, blank=True)
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-uploaded_at"]
@@ -459,6 +483,10 @@ class Invoice(models.Model):
     @property
     def is_approved(self):
         return self.approved_at is not None
+
+    @property
+    def can_pay_online(self):
+        return self.is_approved and self.amount_total is not None and self.payment_status != self.PaymentStatus.PAID
 
 
 class TutorTemplate(models.Model):

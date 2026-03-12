@@ -3,20 +3,36 @@
 {% block content %}
 <div class="card">
     <h1>Rechnungen</h1>
-    <p class="muted">Hier findest du alle Rechnungen deiner Kinder. Fälligkeitsdatum: 7 Tage nach Upload.</p>
+    <p class="muted">Hier findest du alle Rechnungen deiner Kinder. Zahlungsmethoden: bar, Überweisung oder online.</p>
     <ul class="list">
         {% for invoice in invoices %}
             <li>
                 <div>
-                    <strong>Rechnung für {{ invoice.student.user.username }}</strong>
+                    <strong>Rechnung für {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</strong>
                     <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
-                    <div class="muted">TutorIn: {{ invoice.uploaded_by.user.username }}</div>
+                    <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
+                    {% if invoice.amount_total %}
+                        <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                    {% endif %}
+                    <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
+                    <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
                     {% if invoice.approved_by %}
-                        <div class="muted">Freigegeben von: {{ invoice.approved_by.user.username }}</div>
+                        <div class="muted">Freigegeben von: {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }}</div>
+                    {% endif %}
+                    {% if invoice.paid_at %}
+                        <div class="muted">Bezahlt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}</div>
                     {% endif %}
                 </div>
-                <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                    {% if invoice.can_pay_online %}
+                        <form method="post" action="{% url 'invoice_checkout' invoice.id %}">
+                            {% csrf_token %}
+                            <button class="button" type="submit" style="padding:6px 10px; background:#2e8f5f;">Online bezahlen</button>
+                        </form>
+                    {% endif %}
+                    <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
+                </div>
             </li>
         {% empty %}
             <li>Keine Rechnungen vorhanden.</li>
