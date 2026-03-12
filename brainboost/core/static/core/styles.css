@@ -195,6 +195,127 @@ p { margin: 0 0 12px; color: var(--slate); }
     box-shadow: 0 18px 50px rgba(0,0,0,0.16);
 }
 
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 10px;
+    background: #d7dde4;
+    color: #1a2238;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.icon-button--teal {
+    background: var(--teal);
+    color: var(--cream);
+}
+
+.icon-button--google-calendar {
+    background: #fff;
+    border: 1px solid #d7dde4;
+}
+
+.icon-button--slate {
+    background: #4a5568;
+    color: var(--cream);
+}
+
+.icon-button--apple {
+    background: #fff;
+    border: 1px solid #d7dde4;
+    color: #1f1a1d;
+}
+
+.icon-button--dark {
+    background: var(--teal-dark);
+    color: var(--cream);
+}
+
+.icon-action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.google-calendar-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background:
+        linear-gradient(to bottom, #4285f4 0 28%, #ffffff 28% 82%, #34a853 82% 100%);
+    color: #4285f4;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    overflow: hidden;
+}
+
+.google-calendar-icon::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(to bottom, #4285f4 0 28%, #fbbc04 28% 82%, transparent 82% 100%);
+}
+
+.google-calendar-icon::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid #ea4335;
+}
+
+.google-calendar-icon__date {
+    position: relative;
+    z-index: 1;
+}
+
+.apple-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+}
+
+.apple-icon svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+.plus-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: #f7f7f2;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+}
+
 form {
     display: grid;
     gap: 12px;

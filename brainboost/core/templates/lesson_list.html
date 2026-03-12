@@ -10,8 +10,8 @@
             {% if request.user.role == 'tutor' %}
                 <a class="button" style="background: #8fd36b; color: #16301f;" href="{% url 'lesson_create' %}">+ Neuer Termin</a>
             {% endif %}
-            <a class="button" href="?when=upcoming{% if filter_query %}&{{ filter_query }}{% endif %}">Zukunft</a>
             <a class="button" style="background: var(--teal-dark);" href="?when=past{% if filter_query %}&{{ filter_query }}{% endif %}">Vergangenheit</a>
+            <a class="button" href="?when=upcoming{% if filter_query %}&{{ filter_query }}{% endif %}">Zukunft</a>
         </div>
     </div>
     <form method="get" style="display:grid; gap:12px; margin-top:16px;">
@@ -75,14 +75,14 @@
             <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                     <strong style="flex:1 1 auto; min-width:0;">{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
-                    <div style="flex:0 0 auto; text-align:right;">
+                    <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                         <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
                             {{ lesson.get_status_display }}
                         </span>
                     </div>
                 </div>
                 <div>
-                    <div class="muted"><strong>{{ lesson.duration_minutes }} min</strong> {{ lesson.get_ort_display }} | {{ lesson.get_fach_display }}</div>
+                    <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
                     {% if lesson.location_address %}
                         <div class="muted">{{ lesson.location_address }}</div>
                     {% endif %}
@@ -93,26 +93,26 @@
                             {% endif %}
                         {% endwith %}
                     {% endif %}
-                    <div class="muted">{{ lesson.student.user.get_full_name }} | {{ lesson.tutor.user.get_full_name }}</div>
                     {% if lesson.reschedule_requested %}
                         <div class="muted" style="color: var(--red);">Terminverlegung angefragt – TutorIn informiert.</div>
                     {% endif %}
                     {% if lesson.cancellation_reason %}
                         <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                     {% endif %}
-                    {% if lesson.status != 'cancelled' %}
-                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                            <a class="button" style="padding:6px 10px; background: var(--teal);" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener">Google Kalender</a>
-                            <a class="button" style="padding:6px 10px; background: #4a5568;" href="{% url 'lesson_ics' lesson.id %}">iCloud / ICS</a>
-                        </div>
-                    {% endif %}
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                <div class="icon-action-row">
                     {% if lesson.id in editable_ids %}
-                        <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
+                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
                     {% endif %}
-                    {% if request.user.role == 'tutor' %}
-                        <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Lernfortschritt hinzufügen</a>
+                    {% if lesson.status != 'cancelled' %}
+                        <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
+                        <a class="icon-button icon-button--apple" href="{% url 'lesson_ics' lesson.id %}" aria-label="iCloud / ICS" title="iCloud / ICS">
+                            <span class="apple-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                    <path d="M16.43 12.17c.03 3.2 2.8 4.26 2.83 4.28-.02.08-.44 1.52-1.44 3-.86 1.28-1.75 2.56-3.15 2.59-1.37.03-1.81-.81-3.38-.81-1.57 0-2.07.78-3.35.84-1.35.05-2.38-1.35-3.25-2.62C2.91 16.83 1.6 12.1 3.52 8.77c.95-1.65 2.64-2.69 4.48-2.72 1.32-.03 2.57.89 3.38.89.81 0 2.33-1.1 3.93-.94.67.03 2.55.27 3.76 2.04-.1.06-2.65 1.54-2.64 4.13Zm-2.09-7.62c.72-.87 1.2-2.08 1.07-3.28-1.04.04-2.3.69-3.04 1.56-.66.77-1.23 2-1.07 3.17 1.16.09 2.33-.59 3.04-1.45Z"/>
+                                </svg>
+                            </span>
+                        </a>
                     {% endif %}
                     {% if lesson.id in cancelable_ids and lesson.status != 'cancelled' and request.user.role != 'tutor' and not lesson.reschedule_requested %}
                         <button
@@ -126,6 +126,9 @@
                         >
                             Änderung anfragen
                         </button>
+                    {% endif %}
+                    {% if request.user.role == 'tutor' %}
+                        <a class="icon-button icon-button--dark" href="{% url 'progress_create_for_lesson' lesson.id %}" aria-label="Lernfortschritt hinzufügen" title="Lernfortschritt hinzufügen"><span class="plus-icon" aria-hidden="true">+</span></a>
                     {% endif %}
                 </div>
             </li>
@@ -157,13 +160,14 @@
                         <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                                 <div style="flex:1 1 auto; min-width:0; white-space:nowrap;"><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
-                                <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                                    {{ lesson.get_status_display }}
-                                </span>
+                                <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                                        {{ lesson.get_status_display }}
+                                    </span>
+                                </div>
                             </div>
                             <div>
-                                <div class="muted">{{ lesson.get_ort_display }}</div>
-                                <div class="muted">{{ lesson.get_fach_display }}</div>
+                                <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
                                 {% if lesson.location_address %}
                                     <div class="muted">{{ lesson.location_address }}</div>
                                 {% endif %}
@@ -174,26 +178,28 @@
                                         {% endif %}
                                     {% endwith %}
                                 {% endif %}
-                                <div class="muted">{{ lesson.student.user.get_full_name }}</div>
-                                <div class="muted">{{ lesson.tutor.user.get_full_name }}</div>
                                 {% if lesson.reschedule_requested %}
                                     <div class="muted" style="color: var(--red);">Terminverlegung angefragt – TutorIn informiert.</div>
                                 {% endif %}
                                 {% if lesson.cancellation_reason %}
                                     <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                                 {% endif %}
-                                {% if lesson.status != 'cancelled' %}
-                                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                                        <a class="button" style="padding:6px 10px; background: var(--teal);" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener">Google Kalender</a>
-                                        <a class="button" style="padding:6px 10px; background: #4a5568;" href="{% url 'lesson_ics' lesson.id %}">iCloud / ICS</a>
-                                    </div>
-                                {% endif %}
-                                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                                <div class="icon-action-row" style="margin-top:8px;">
                                     {% if lesson.id in editable_ids %}
-                                        <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
+                                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
+                                    {% endif %}
+                                    {% if lesson.status != 'cancelled' %}
+                                        <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
+                                        <a class="icon-button icon-button--apple" href="{% url 'lesson_ics' lesson.id %}" aria-label="iCloud / ICS" title="iCloud / ICS">
+                                            <span class="apple-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                                                    <path d="M16.43 12.17c.03 3.2 2.8 4.26 2.83 4.28-.02.08-.44 1.52-1.44 3-.86 1.28-1.75 2.56-3.15 2.59-1.37.03-1.81-.81-3.38-.81-1.57 0-2.07.78-3.35.84-1.35.05-2.38-1.35-3.25-2.62C2.91 16.83 1.6 12.1 3.52 8.77c.95-1.65 2.64-2.69 4.48-2.72 1.32-.03 2.57.89 3.38.89.81 0 2.33-1.1 3.93-.94.67.03 2.55.27 3.76 2.04-.1.06-2.65 1.54-2.64 4.13Zm-2.09-7.62c.72-.87 1.2-2.08 1.07-3.28-1.04.04-2.3.69-3.04 1.56-.66.77-1.23 2-1.07 3.17 1.16.09 2.33-.59 3.04-1.45Z"/>
+                                                </svg>
+                                            </span>
+                                        </a>
                                     {% endif %}
                                     {% if request.user.role == 'tutor' %}
-                                        <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Lernfortschritt hinzufügen</a>
+                                        <a class="icon-button icon-button--dark" href="{% url 'progress_create_for_lesson' lesson.id %}" aria-label="Lernfortschritt hinzufügen" title="Lernfortschritt hinzufügen"><span class="plus-icon" aria-hidden="true">+</span></a>
                                     {% endif %}
                                 </div>
                             </div>

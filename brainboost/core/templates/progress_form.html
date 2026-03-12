@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Lernfortschritt erfassen{% endblock %}
+{% block title %}{% if is_edit %}Lernfortschritt bearbeiten{% else %}Lernfortschritt erfassen{% endif %}{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>Lernfortschritt eintragen</h1>
+    <h1>{% if is_edit %}Lernfortschritt bearbeiten{% else %}Lernfortschritt eintragen{% endif %}</h1>
     {% if lesson %}
         <p class="muted">Für Termin am {{ lesson.date|date:"d.m.Y" }} um {{ lesson.time|time:"H:i" }} ({{ lesson.student.user.get_full_name }})</p>
     {% else %}
@@ -45,6 +45,9 @@
     </style>
     <form method="post">
         {% csrf_token %}
+        {% if next_url %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
         {% if form.non_field_errors %}
             <div class="muted" style="color: var(--red);">{{ form.non_field_errors }}</div>
         {% endif %}
@@ -85,7 +88,7 @@
         </div>
 
         <button class="button" type="submit">Speichern</button>
-        <a class="button" style="background: var(--teal);" href="{% url 'progress' %}">Abbrechen</a>
+        <a class="button" style="background: var(--teal);" href="{{ cancel_url }}">Abbrechen</a>
     </form>
 </div>
 {% endblock %}

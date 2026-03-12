@@ -144,6 +144,10 @@ class StudentProfile(models.Model):
 class TutorProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
+    account_holder = models.CharField(max_length=255, blank=True)
+    bank_name = models.CharField(max_length=255, blank=True)
+    iban = models.CharField(max_length=34, blank=True)
+    bic = models.CharField(max_length=11, blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     assigned_tutors = models.ManyToManyField(

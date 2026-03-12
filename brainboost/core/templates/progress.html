@@ -14,12 +14,70 @@
         Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
         Die Einschätzung spiegelt die subjektive Wahrnehmung der TutorIn wider.
     </p>
+    {% if request.user.role == 'tutor' %}
+        <form method="get" style="display:grid; gap:12px; margin:12px 0 16px;">
+            <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                <div>
+                    <label for="filter-period">Monat / Jahr</label>
+                    <select id="filter-period" name="period">
+                        <option value="">Alle</option>
+                        {% for option in period_options %}
+                            <option value="{{ option.value }}"{% if option.value == selected_period %} selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if not viewed_student %}
+                    <div>
+                        <label for="filter-student">SchülerIn</label>
+                        <select id="filter-student" name="student">
+                            <option value="">Alle</option>
+                            {% for student in student_list %}
+                                <option value="{{ student.id }}"{% if student.id|stringformat:"s" == selected_student %} selected{% endif %}>{{ student.user.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+                <div>
+                    <label for="filter-weekday">Wochentag</label>
+                    <select id="filter-weekday" name="weekday">
+                        <option value="">Alle</option>
+                        {% for value, label in weekday_options %}
+                            <option value="{{ value }}"{% if value == selected_weekday %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-duration">Dauer</label>
+                    <select id="filter-duration" name="duration">
+                        <option value="">Alle</option>
+                        {% for option in duration_options %}
+                            <option value="{{ option }}"{% if option == selected_duration %} selected{% endif %}>{{ option }} Min</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-ort">Ort</label>
+                    <select id="filter-ort" name="ort">
+                        <option value="">Alle</option>
+                        {% for value, label in ort_options %}
+                            <option value="{{ value }}"{% if value == selected_ort %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="button" type="submit">Filter anwenden</button>
+                <a class="button" style="background:#d7dde4; color:#364152;" href="{% if viewed_student %}{% url 'progress_student' viewed_student.id %}{% else %}{% url 'progress' %}{% endif %}">Filter zurücksetzen</a>
+            </div>
+        </form>
+    {% endif %}
     <ul class="list">
         {% for entry in entries %}
             <li style="display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                     <strong style="flex:1 1 auto; min-width:0;">{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
-                    <div style="flex:0 0 auto; text-align:right;">
+                    <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px;">
+                        <div style="text-align:right;">
                         <span
                             class="badge info"
                             style="
@@ -37,6 +95,15 @@
                                 {% endif %}
                             "
                         >Mitarbeit: {% if entry.rating is not None %}{{ entry.rating }}/10{% else %}-{% endif %}</span>
+                        </div>
+                        {% if request.user.role == 'tutor' %}
+                            <a
+                                class="icon-button"
+                                href="{% url 'progress_edit' entry.id %}?next={{ request.get_full_path|urlencode }}"
+                                aria-label="Lernfortschritt bearbeiten"
+                                title="Lernfortschritt bearbeiten"
+                            >&#9998;</a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="muted">{{ entry.lesson.student.user.get_full_name }} | {{ entry.lesson.get_fach_display }} | {{ entry.lesson.get_ort_display }}</div>

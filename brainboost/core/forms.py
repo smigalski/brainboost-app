@@ -587,12 +587,20 @@ class TutorProfileForm(BaseProfileUpdateForm):
             }
         ),
     )
+    account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
+    bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
+    iban = forms.CharField(max_length=34, required=False, label="IBAN")
+    bic = forms.CharField(max_length=11, required=False, label="BIC")
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
         profile = user.tutor_profile
         self.fields["phone_number"].initial = profile.phone_number
         self.fields["address"].initial = profile.address
+        self.fields["account_holder"].initial = profile.account_holder
+        self.fields["bank_name"].initial = profile.bank_name
+        self.fields["iban"].initial = profile.iban
+        self.fields["bic"].initial = profile.bic
         self.order_fields(
             [
                 "avatar_icon",
@@ -604,6 +612,10 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "email",
                 "phone_number",
                 "address",
+                "account_holder",
+                "bank_name",
+                "iban",
+                "bic",
             ]
         )
 
@@ -612,5 +624,9 @@ class TutorProfileForm(BaseProfileUpdateForm):
         profile = user.tutor_profile
         profile.phone_number = self.cleaned_data.get("phone_number", "")
         profile.address = self.cleaned_data.get("address", "")
+        profile.account_holder = self.cleaned_data.get("account_holder", "")
+        profile.bank_name = self.cleaned_data.get("bank_name", "")
+        profile.iban = self.cleaned_data.get("iban", "")
+        profile.bic = self.cleaned_data.get("bic", "")
         profile.save()
         return user

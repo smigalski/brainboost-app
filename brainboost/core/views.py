@@ -15,7 +15,7 @@ from django.utils.formats import date_format
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
+from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
 from django.urls import reverse
 
 from .forms import (
@@ -686,11 +686,13 @@ def lesson_list(request):
         filtered_qs = filtered_qs.filter(ort=ort)
 
     if when == "past":
-        lessons = Lesson.past_qs().filter(pk__in=filtered_qs.values_list("pk", flat=True))
+        lessons = Lesson.past_qs().filter(
+            pk__in=filtered_qs.values_list("pk", flat=True)
+        ).order_by("-date", "-time")
     else:
         lessons = Lesson.upcoming_qs().filter(
             pk__in=filtered_qs.values_list("pk", flat=True)
-        )
+        ).order_by("-date", "-time")
 
     filter_pairs = [
         ("period", period),
@@ -1209,7 +1211,57 @@ def progress_create(request, lesson_id=None):
     return render(
         request,
         "progress_form.html",
-        {"form": form, "lesson": lesson},
+        {
+            "form": form,
+            "lesson": lesson,
+            "is_edit": False,
+            "cancel_url": reverse("progress"),
+        },
+    )
+
+
+@login_required
+def progress_edit(request, entry_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
+        return redirect("progress")
+
+    tutor_profile = request.user.tutor_profile
+    entry = get_object_or_404(
+        ProgressEntry.objects.select_related("lesson__student__user", "lesson__tutor"),
+        pk=entry_id,
+        lesson__tutor=tutor_profile,
+    )
+    next_url = request.GET.get("next") or request.POST.get("next") or ""
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("progress_student", args=[entry.lesson.student_id])
+
+    if request.method == "POST":
+        form = ProgressEntryForm(
+            data=request.POST,
+            instance=entry,
+            tutor_profile=tutor_profile,
+        )
+        if form.is_valid():
+            form.save()
+            return redirect(next_url)
+    else:
+        form = ProgressEntryForm(instance=entry, tutor_profile=tutor_profile)
+
+    return render(
+        request,
+        "progress_form.html",
+        {
+            "form": form,
+            "lesson": entry.lesson,
+            "is_edit": True,
+            "cancel_url": next_url,
+            "next_url": next_url,
+        },
     )
 
 
@@ -1219,6 +1271,11 @@ def progress_view(request, student_id=None):
     entries = ProgressEntry.objects.none()
     viewed_student = None
     student_list = StudentProfile.objects.none()
+    period = request.GET.get("period", "").strip()
+    selected_student = request.GET.get("student", "").strip()
+    weekday = request.GET.get("weekday", "").strip()
+    duration = request.GET.get("duration", "").strip()
+    ort = request.GET.get("ort", "").strip()
 
     if request.user.role == CustomUser.Roles.STUDENT and hasattr(
         request.user, "student_profile"
@@ -1247,7 +1304,62 @@ def progress_view(request, student_id=None):
             )
         else:
             viewed_student = get_object_or_404(student_list, pk=student_id)
-            entries = ProgressEntry.objects.filter(lesson__student=viewed_student)
+            entries = ProgressEntry.objects.filter(
+                lesson__student=viewed_student,
+                lesson__tutor=request.user.tutor_profile,
+            )
+
+        if period:
+            try:
+                period_year, period_month = period.split("-", 1)
+            except ValueError:
+                period_year, period_month = "", ""
+            if period_year and period_month:
+                entries = entries.filter(
+                    lesson__date__year=period_year,
+                    lesson__date__month=period_month,
+                )
+        if selected_student and student_id is None:
+            entries = entries.filter(lesson__student_id=selected_student)
+        if weekday:
+            entries = entries.filter(lesson__date__week_day=weekday)
+        if duration:
+            entries = entries.filter(lesson__duration_minutes=duration)
+        if ort:
+            entries = entries.filter(lesson__ort=ort)
+
+    period_options = [
+        {
+            "value": lesson_date.strftime("%Y-%m"),
+            "label": date_format(lesson_date, "F Y"),
+        }
+        for lesson_date in sorted(
+            Lesson.objects.filter(id__in=entries.values_list("lesson_id", flat=True))
+            .dates("date", "month"),
+            reverse=True,
+        )
+    ]
+    duration_options = [
+        str(value)
+        for value in sorted(
+            {
+                value
+                for value in entries.values_list("lesson__duration_minutes", flat=True).distinct()
+                if value is not None
+            }
+        )
+    ]
+    ort_values = set(entries.values_list("lesson__ort", flat=True).distinct())
+    ort_options = [choice for choice in Lesson.Ort.choices if choice[0] in ort_values]
+    weekday_options = [
+        ("2", "Montag"),
+        ("3", "Dienstag"),
+        ("4", "Mittwoch"),
+        ("5", "Donnerstag"),
+        ("6", "Freitag"),
+        ("7", "Samstag"),
+        ("1", "Sonntag"),
+    ]
 
     return render(
         request,
@@ -1257,6 +1369,15 @@ def progress_view(request, student_id=None):
             "viewed_student": viewed_student,
             "student_id": student_id,
             "student_list": student_list,
+            "period_options": period_options,
+            "selected_period": period,
+            "selected_student": selected_student,
+            "selected_weekday": weekday,
+            "selected_duration": duration,
+            "selected_ort": ort,
+            "duration_options": duration_options,
+            "ort_options": ort_options,
+            "weekday_options": weekday_options,
         },
     )
 

@@ -54,6 +54,11 @@ urlpatterns = [
         name="progress_create_for_lesson",
     ),
     path(
+        "lernfortschritt/<int:entry_id>/bearbeiten/",
+        views.progress_edit,
+        name="progress_edit",
+    ),
+    path(
         "passwort/setzen/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
             template_name="password_reset_confirm.html",
