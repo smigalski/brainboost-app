@@ -8,9 +8,12 @@
     </p>
     <form method="post">
         {% csrf_token %}
+        {% if next_url %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
         {{ form.as_p }}
         <button class="button" type="submit">Speichern</button>
-        <a class="button" style="background: var(--teal);" href="{% url 'lesson_list' %}">Abbrechen</a>
+        <a class="button" style="background: var(--teal);" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'lesson_list' %}{% endif %}">Abbrechen</a>
         {% if is_edit and lesson %}
             <button class="button" style="background: var(--red);" formaction="{% url 'lesson_delete' lesson.id %}" formmethod="post" onclick="return confirm('Diesen Termin wirklich löschen?');">Löschen</button>
         {% endif %}

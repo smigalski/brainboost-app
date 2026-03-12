@@ -74,7 +74,10 @@
         {% for lesson in lessons %}
             <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                    <strong style="flex:1 1 auto; min-width:0;">{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
+                    <div style="flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <strong>{{ lesson.date|date:"l, d.m.Y" }} {{ lesson.time|time:"H:i" }}</strong>
+                        <span style="font-weight:600; white-space:nowrap;">+{{ lesson.duration_minutes }} Min</span>
+                    </div>
                     <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                         <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
                             {{ lesson.get_status_display }}
@@ -82,7 +85,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                    <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
                     {% if lesson.location_address %}
                         <div class="muted">{{ lesson.location_address }}</div>
                     {% endif %}
@@ -102,7 +105,7 @@
                 </div>
                 <div class="icon-action-row">
                     {% if lesson.id in editable_ids %}
-                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
+                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}?next={{ request.get_full_path|urlencode }}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
                     {% endif %}
                     {% if lesson.status != 'cancelled' %}
                         <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
@@ -159,7 +162,10 @@
                     {% for lesson in day.lessons %}
                         <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                                <div style="flex:1 1 auto; min-width:0; white-space:nowrap;"><strong>{{ lesson.time|time:"H:i" }}</strong> · {{ lesson.duration_minutes }} Min</div>
+                                <div style="flex:1 1 auto; min-width:0; display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                                    <strong>{{ lesson.time|time:"H:i" }}</strong>
+                                    <span style="font-weight:600; white-space:nowrap;">+{{ lesson.duration_minutes }} Min</span>
+                                </div>
                                 <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                                     <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
                                         {{ lesson.get_status_display }}
@@ -186,7 +192,7 @@
                                 {% endif %}
                                 <div class="icon-action-row" style="margin-top:8px;">
                                     {% if lesson.id in editable_ids %}
-                                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
+                                        <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}?next={{ request.get_full_path|urlencode }}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
                                     {% endif %}
                                     {% if lesson.status != 'cancelled' %}
                                         <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>

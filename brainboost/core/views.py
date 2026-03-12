@@ -1213,6 +1213,11 @@ def lesson_edit(request, lesson_id):
     is_tutor = hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile
     if not is_tutor:
         return redirect("lesson_list")
+    next_url = request.GET.get("next") or request.POST.get("next") or reverse("lesson_list")
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("lesson_list")
 
     if request.method == "POST":
         form = LessonForm(
@@ -1226,7 +1231,7 @@ def lesson_edit(request, lesson_id):
             _assign_location_and_distance(updated)
             updated.save()
             notify_lesson_changed(request, updated)
-            return redirect("lesson_list")
+            return redirect(next_url)
     else:
         form = LessonForm(
             instance=lesson,
@@ -1234,7 +1239,17 @@ def lesson_edit(request, lesson_id):
             allowed_students=None,
         )
 
-    return render(request, "lesson_form.html", {"form": form, "is_edit": True, "lesson": lesson})
+    return render(
+        request,
+        "lesson_form.html",
+        {
+            "form": form,
+            "is_edit": True,
+            "lesson": lesson,
+            "cancel_url": next_url,
+            "next_url": next_url,
+        },
+    )
 
 
 @login_required
@@ -1246,8 +1261,13 @@ def lesson_delete(request, lesson_id):
         return redirect("lesson_list")
 
     if request.method == "POST":
+        next_url = request.POST.get("next") or reverse("lesson_list")
+        if not url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+        ):
+            next_url = reverse("lesson_list")
         lesson.delete()
-        return redirect("lesson_list")
+        return redirect(next_url)
     return redirect("lesson_edit", lesson_id=lesson_id)
 
 
