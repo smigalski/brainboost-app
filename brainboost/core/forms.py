@@ -5,7 +5,6 @@ from django import forms
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.contrib.auth import password_validation
 
 from .models import (
     Lesson,
@@ -412,16 +411,6 @@ class BaseProfileUpdateForm(forms.Form):
     first_name = forms.CharField(max_length=150, required=False, label="Vorname")
     last_name = forms.CharField(max_length=150, required=False, label="Nachname")
     email = forms.EmailField(required=False, label="E-Mail")
-    new_password1 = forms.CharField(
-        required=False,
-        widget=forms.PasswordInput,
-        label="Neues Passwort",
-    )
-    new_password2 = forms.CharField(
-        required=False,
-        widget=forms.PasswordInput,
-        label="Neues Passwort bestaetigen",
-    )
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         self.user_instance = user
@@ -435,12 +424,6 @@ class BaseProfileUpdateForm(forms.Form):
             "Optional. Maximal 15 MB. Das Bild wird beim Speichern komprimiert."
         )
         self.fields["remove_profile_image"].initial = False
-        self.fields["new_password1"].help_text = (
-            "Optional. Wenn du dein Passwort aendern willst, trage hier ein neues ein."
-        )
-        self.fields["new_password2"].help_text = (
-            "Nur zusammen mit dem neuen Passwort ausfuellen."
-        )
 
     def clean_username(self):
         username = self.cleaned_data["username"]
@@ -471,32 +454,6 @@ class BaseProfileUpdateForm(forms.Form):
         finally:
             uploaded_file.seek(0)
         return uploaded_file
-
-    def clean(self):
-        cleaned = super().clean()
-        new_password1 = cleaned.get("new_password1")
-        new_password2 = cleaned.get("new_password2")
-        if new_password1 or new_password2:
-            if not new_password1:
-                self.add_error("new_password1", "Bitte gib ein neues Passwort ein.")
-            if not new_password2:
-                self.add_error(
-                    "new_password2",
-                    "Bitte bestaetige dein neues Passwort.",
-                )
-            if new_password1 and new_password2 and new_password1 != new_password2:
-                self.add_error(
-                    "new_password2",
-                    "Die Passwoerter stimmen nicht ueberein.",
-                )
-            if new_password1:
-                try:
-                    password_validation.validate_password(
-                        new_password1, self.user_instance
-                    )
-                except ValidationError as exc:
-                    self.add_error("new_password1", exc)
-        return cleaned
 
     def _compressed_profile_image(self):
         uploaded_file = self.cleaned_data.get("profile_image")
@@ -541,8 +498,6 @@ class BaseProfileUpdateForm(forms.Form):
         user.last_name = self.cleaned_data.get("last_name", "")
         user.email = self.cleaned_data.get("email", "")
         self._update_profile_image(user)
-        if self.cleaned_data.get("new_password1"):
-            user.set_password(self.cleaned_data["new_password1"])
         user.save()
         return user
 
@@ -562,8 +517,6 @@ class ParentProfileForm(BaseProfileUpdateForm):
                 "first_name",
                 "last_name",
                 "email",
-                "new_password1",
-                "new_password2",
                 "phone_number",
             ]
         )
@@ -604,8 +557,6 @@ class StudentProfileForm(BaseProfileUpdateForm):
                 "first_name",
                 "last_name",
                 "email",
-                "new_password1",
-                "new_password2",
                 "phone_number",
                 "address",
             ]
@@ -649,8 +600,6 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "first_name",
                 "last_name",
                 "email",
-                "new_password1",
-                "new_password2",
                 "phone_number",
                 "address",
             ]

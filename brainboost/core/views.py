@@ -4,7 +4,6 @@ import logging
 from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
@@ -441,9 +440,7 @@ def profile_view(request):
     if request.method == "POST":
         form = form_class(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            user = form.save()
-            if form.cleaned_data.get("new_password1"):
-                update_session_auth_hash(request, user)
+            form.save()
             messages.success(request, "Dein Profil wurde aktualisiert.")
             return redirect("profile")
     else:

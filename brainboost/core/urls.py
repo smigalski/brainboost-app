@@ -11,6 +11,14 @@ urlpatterns = [
     path("preise/", views.pricing, name="pricing"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("profil/", views.profile_view, name="profile"),
+    path(
+        "profil/passwort/",
+        auth_views.PasswordChangeView.as_view(
+            template_name="password_change.html",
+            success_url=reverse_lazy("profile"),
+        ),
+        name="password_change",
+    ),
     path("eltern/neu/", views.parent_create, name="parent_create"),
     path("tutoren/neu/", views.tutor_create, name="tutor_create"),
     path("schueler/neu/", views.student_create, name="student_create"),
