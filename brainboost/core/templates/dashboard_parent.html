@@ -26,7 +26,7 @@
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ item.title }}</div>
                             <div class="muted">{{ item.text }}</div>
-                            <div class="muted">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
+                            <div class="muted" style="margin-top:6px; font-size:0.8rem; text-align:right;">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
                         </div>
                     {% empty %}
                         <div class="muted">Aktuell keine neuen Meldungen.</div>
@@ -54,10 +54,8 @@
                 <div style="display:flex; flex-direction:column; gap:10px;">
                     {% for lesson in upcoming_lessons %}
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
-                            <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
-                            <div class="muted">Kind: {{ lesson.student.user.get_full_name }}</div>
-                            <div class="muted">TutorIn: {{ lesson.tutor.user.get_full_name }}</div>
-                            <div class="muted">{{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                            <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"l, d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
+                            <div class="muted">Kind: {{ lesson.student.user.get_full_name }} · TutorIn: {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
                         </div>
                     {% empty %}
                         <div class="muted">Keine kommenden Termine vorhanden.</div>
@@ -70,9 +68,13 @@
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     {% for tutor in assigned_tutors %}
                         <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
-                            <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-weight:800; flex-shrink:0;">
-                                Bild
-                            </div>
+                            {% if tutor.user.profile_image %}
+                                <img src="{{ tutor.user.profile_image.url }}" alt="Profilbild von {{ tutor.user.get_full_name }}" style="width:56px; height:56px; border-radius:16px; object-fit:cover; border:1px solid rgba(31,102,102,0.18); flex-shrink:0;">
+                            {% else %}
+                                <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-size:26px; flex-shrink:0;">
+                                    {{ tutor.user.avatar_symbol }}
+                                </div>
+                            {% endif %}
                             <div style="min-width:0;">
                                 <div style="font-weight:800; color:var(--accent);">{{ tutor.user.get_full_name }}</div>
                                 {% if tutor.user.email %}

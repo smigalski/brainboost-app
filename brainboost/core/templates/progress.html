@@ -23,7 +23,8 @@
                         <span
                             class="badge info"
                             style="
-                                {% if entry.rating <= 1 %}background:#ff6b6b;color:#1a1a1a;
+                                {% if entry.rating is None %}background:#d7dde4;color:#364152;
+                                {% elif entry.rating <= 1 %}background:#ff6b6b;color:#1a1a1a;
                                 {% elif entry.rating == 2 %}background:#ff7d61;color:#1a1a1a;
                                 {% elif entry.rating == 3 %}background:#ff9258;color:#1a1a1a;
                                 {% elif entry.rating == 4 %}background:#ffaa52;color:#1a1a1a;
@@ -35,7 +36,7 @@
                                 {% else %}background:#1f6666;color:#f7f7f2;
                                 {% endif %}
                             "
-                        >Mitarbeit: {{ entry.rating }}/10</span>
+                        >Mitarbeit: {% if entry.rating is not None %}{{ entry.rating }}/10{% else %}-{% endif %}</span>
                     </div>
                 </div>
                 <div class="muted">{{ entry.lesson.student.user.get_full_name }} | {{ entry.lesson.get_fach_display }} | {{ entry.lesson.get_ort_display }}</div>

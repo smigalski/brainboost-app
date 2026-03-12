@@ -61,7 +61,9 @@
         <tbody>
             {% for student in students %}
                 <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
-                    <td data-label="SchülerIn" style="padding:12px; vertical-align:top; font-weight:700;">{{ student.user.username }}</td>
+                    <td data-label="SchülerIn" style="padding:12px; vertical-align:top; font-weight:700;">
+                        {{ student.user.get_full_name|default:student.user.username }}{% if student.phone_number %} · {{ student.phone_number }}{% endif %}
+                    </td>
                     <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
                         {% if student.address %}
                             {{ student.address }}
@@ -72,7 +74,7 @@
                     <td data-label="Eltern" style="padding:12px; vertical-align:top;">
                         {% with parents=student.parents.all %}
                             {% for parent in parents %}
-                                <div>{{ parent.user.username }}</div>
+                                <div>{{ parent.user.get_full_name|default:parent.user.username }}{% if parent.phone_number %} · {{ parent.phone_number }}{% endif %}</div>
                             {% empty %}
                                 <span class="muted">Keine Eltern zugeordnet</span>
                             {% endfor %}

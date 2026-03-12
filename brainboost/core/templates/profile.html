@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}BrainBoost | Profil{% endblock %}
+{% block content %}
+<div class="card" style="display:grid; gap:24px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div>
+            <h1>Mein Profil</h1>
+            <p>Hier kannst du deine Angaben und dein Profil-Icon anpassen.</p>
+        </div>
+        {% if request.user.profile_image %}
+            <img class="profile-hero-icon profile-hero-icon--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
+        {% else %}
+            <div class="profile-hero-icon{% if not request.user.avatar_icon %} profile-hero-icon--empty{% endif %}">
+                {{ request.user.avatar_symbol }}
+            </div>
+        {% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data" style="display:grid; gap:20px;">
+        {% csrf_token %}
+
+        <section style="display:grid; gap:12px;">
+            <div>
+                <h2 style="margin-bottom:4px;">Profil-Icon</h2>
+                <div class="muted">Standardmäßig leer. Alternativ kannst du ein eigenes Profilbild hochladen.</div>
+            </div>
+            {% if form.avatar_icon.errors %}
+                <div class="muted" style="color:#b42318;">{{ form.avatar_icon.errors|join:", " }}</div>
+            {% endif %}
+            <div class="profile-avatar-grid">
+                {% for choice in form.avatar_icon %}
+                    <label class="profile-avatar-option">
+                        {{ choice.tag }}
+                        <span class="profile-avatar-option__icon{% if choice.choice_label == 'Leer' %} profile-avatar-option__icon--empty{% endif %}">
+                            {% if choice.choice_label == "Adler" %}🦅{% elif choice.choice_label == "Hai" %}🦈{% elif choice.choice_label == "Löwe" %}🦁{% elif choice.choice_label == "Ameise" %}🐜{% endif %}
+                        </span>
+                        <span class="profile-avatar-option__label">{{ choice.choice_label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section style="display:grid; gap:12px;">
+            <div>
+                <h2 style="margin-bottom:4px;">Eigenes Profilbild</h2>
+                <div class="muted">Wenn ein Bild hochgeladen ist, wird es statt des Tier-Icons angezeigt.</div>
+            </div>
+            <div class="grid two">
+                <div>
+                    <label for="{{ form.profile_image.id_for_label }}">{{ form.profile_image.label }}</label>
+                    {{ form.profile_image }}
+                    {% if form.profile_image.help_text %}
+                        <div class="muted">{{ form.profile_image.help_text }}</div>
+                    {% endif %}
+                    {% if form.profile_image.errors %}
+                        <div class="muted" style="color:#b42318;">{{ form.profile_image.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.remove_profile_image.id_for_label }}">{{ form.remove_profile_image.label }}</label>
+                    <div class="profile-image-remove">{{ form.remove_profile_image }}</div>
+                    {% if form.remove_profile_image.errors %}
+                        <div class="muted" style="color:#b42318;">{{ form.remove_profile_image.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="grid two">
+            {% for field in form %}
+                {% if field.name != "avatar_icon" and field.name != "profile_image" and field.name != "remove_profile_image" %}
+                    <div>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="muted">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="muted" style="color:#b42318;">{{ field.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </section>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="button" type="submit">Profil speichern</button>
+            <a class="button" style="background:#d7dde4; color:#364152;" href="{% url 'dashboard' %}">Abbrechen</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+    {% if uses_address_autocomplete and google_maps_api_key %}
+        <script src="{% static 'core/address_autocomplete.js' %}"></script>
+        <script async
+            src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initAddressAutocomplete">
+        </script>
+    {% endif %}
+{% endblock %}

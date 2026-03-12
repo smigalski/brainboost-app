@@ -18,14 +18,40 @@ class CustomUser(AbstractUser):
         PARENT = "parent", "Parent"
         TUTOR = "tutor", "TutorIn"
 
+    class AvatarIcons(models.TextChoices):
+        NONE = "", "Kein Profil-Icon"
+        EAGLE = "eagle", "Adler"
+        SHARK = "shark", "Hai"
+        LION = "lion", "Löwe"
+        ANT = "ant", "Ameise"
+
     role = models.CharField(
         max_length=20,
         choices=Roles.choices,
         default=Roles.STUDENT,
     )
+    avatar_icon = models.CharField(
+        max_length=20,
+        choices=AvatarIcons.choices,
+        blank=True,
+        default="",
+    )
+    profile_image = models.ImageField(
+        upload_to="profile_images/",
+        blank=True,
+    )
 
     def __str__(self) -> str:
         return f"{self.username} ({self.get_role_display()})"
+
+    @property
+    def avatar_symbol(self) -> str:
+        return {
+            self.AvatarIcons.EAGLE: "🦅",
+            self.AvatarIcons.SHARK: "🦈",
+            self.AvatarIcons.LION: "🦁",
+            self.AvatarIcons.ANT: "🐜",
+        }.get(self.avatar_icon, "")
 
 
 class ParentProfile(models.Model):
@@ -177,9 +203,21 @@ class Lesson(models.Model):
             ("mathe", "Mathe"),
             ("deutsch", "Deutsch"),
             ("englisch", "Englisch"),
-            ("naturwissenschaften", "Naturwissenschaften"),
+            ("chemie", "Chemie"),
+            ("biologie", "Biologie"),
+            ("erdkunde", "Erdkunde"),
+            ("physik", "Physik"),
+            (
+                "sonstiges_mint",
+                "Sonstiges mathematisch-naturwissenschaftliches Fach",
+            ),
             ("franzoesisch", "Französisch"),
             ("spanisch", "Spanisch"),
+            ("sonstiges_sprache", "Sonstiges sprachliches Fach"),
+            ("geschichte", "Geschichte"),
+            ("informatik", "Informatik"),
+            ("politik", "Politik"),
+            ("sonstiges_gesellschaft", "Sonstiges gesellschaftliches Fach"),
             ("musik", "Musik"),
         ],
         default="mathe",
@@ -362,6 +400,8 @@ class ProgressEntry(models.Model):
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         verbose_name="Mitarbeit",
+        null=True,
+        blank=True,
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -371,7 +411,8 @@ class ProgressEntry(models.Model):
         verbose_name_plural = "Lernfortschrittseinträge"
 
     def __str__(self) -> str:
-        return f"Lernfortschritt für {self.lesson} - Mitarbeit {self.rating}"
+        rating_label = "-" if self.rating is None else str(self.rating)
+        return f"Lernfortschritt für {self.lesson} - Mitarbeit {rating_label}"
 
 
 class Invoice(models.Model):

@@ -10,10 +10,66 @@
             {% if request.user.role == 'tutor' %}
                 <a class="button" style="background: #8fd36b; color: #16301f;" href="{% url 'lesson_create' %}">+ Neuer Termin</a>
             {% endif %}
-            <a class="button" href="?when=upcoming">Zukunft</a>
-            <a class="button" style="background: var(--teal-dark);" href="?when=past">Vergangenheit</a>
+            <a class="button" href="?when=upcoming{% if filter_query %}&{{ filter_query }}{% endif %}">Zukunft</a>
+            <a class="button" style="background: var(--teal-dark);" href="?when=past{% if filter_query %}&{{ filter_query }}{% endif %}">Vergangenheit</a>
         </div>
     </div>
+    <form method="get" style="display:grid; gap:12px; margin-top:16px;">
+        <input type="hidden" name="when" value="{{ when }}">
+        <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div>
+                <label for="filter-period">Monat / Jahr</label>
+                <select id="filter-period" name="period">
+                    <option value="">Alle</option>
+                    {% for option in period_options %}
+                        <option value="{{ option.value }}"{% if option.value == selected_period %} selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if request.user.role != 'student' %}
+                <div>
+                    <label for="filter-student">SchülerIn</label>
+                    <select id="filter-student" name="student">
+                        <option value="">Alle</option>
+                        {% for student in student_options %}
+                            <option value="{{ student.id }}"{% if student.id|stringformat:"s" == selected_student %} selected{% endif %}>{{ student.user.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            <div>
+                <label for="filter-weekday">Wochentag</label>
+                <select id="filter-weekday" name="weekday">
+                    <option value="">Alle</option>
+                    {% for value, label in weekday_options %}
+                        <option value="{{ value }}"{% if value == selected_weekday %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filter-duration">Dauer</label>
+                <select id="filter-duration" name="duration">
+                    <option value="">Alle</option>
+                    {% for option in duration_options %}
+                        <option value="{{ option }}"{% if option == selected_duration %} selected{% endif %}>{{ option }} Min</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="filter-ort">Ort</label>
+                <select id="filter-ort" name="ort">
+                    <option value="">Alle</option>
+                    {% for value, label in ort_options %}
+                        <option value="{{ value }}"{% if value == selected_ort %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="button" type="submit">Filter anwenden</button>
+            <a class="button" style="background:#d7dde4; color:#364152;" href="?when={{ when }}">Filter zurücksetzen</a>
+        </div>
+    </form>
     <ul class="list" style="margin-top:16px;">
         {% for lesson in lessons %}
             <li class="{% if lesson.status == 'cancelled' %}canceled{% endif %}" style="display:block;">
@@ -39,7 +95,7 @@
                     {% endif %}
                     <div class="muted">{{ lesson.student.user.get_full_name }} | {{ lesson.tutor.user.get_full_name }}</div>
                     {% if lesson.reschedule_requested %}
-                        <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – TutorIn informiert.</div>
+                        <div class="muted" style="color: var(--red);">Terminverlegung angefragt – TutorIn informiert.</div>
                     {% endif %}
                     {% if lesson.cancellation_reason %}
                         <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
@@ -87,9 +143,9 @@
             <p class="muted">{{ week_start|date:"d.m.Y" }} – {{ week_end|date:"d.m.Y" }}</p>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
-            <a class="button week-nav" href="?offset={{ week_offset|add:'-1' }}">← Vorherige Woche</a>
-            <a class="button week-nav" style="background: var(--teal);" href="?offset=0">Aktuelle Woche</a>
-            <a class="button week-nav" href="?offset={{ week_offset|add:'1' }}">Nächste Woche →</a>
+            <a class="button week-nav" href="?{{ when_query }}&offset={{ week_offset|add:'-1' }}">← Vorherige Woche</a>
+            <a class="button week-nav" style="background: var(--teal);" href="?{{ when_query }}&offset=0">Aktuelle Woche</a>
+            <a class="button week-nav" href="?{{ when_query }}&offset={{ week_offset|add:'1' }}">Nächste Woche →</a>
         </div>
     </div>
     <div id="calendar-card" class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top:12px;">
@@ -121,7 +177,7 @@
                                 <div class="muted">{{ lesson.student.user.get_full_name }}</div>
                                 <div class="muted">{{ lesson.tutor.user.get_full_name }}</div>
                                 {% if lesson.reschedule_requested %}
-                                    <div class="muted" style="color: var(--teal-dark);">Terminverlegung angefragt – TutorIn informiert.</div>
+                                    <div class="muted" style="color: var(--red);">Terminverlegung angefragt – TutorIn informiert.</div>
                                 {% endif %}
                                 {% if lesson.cancellation_reason %}
                                     <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
@@ -132,6 +188,14 @@
                                         <a class="button" style="padding:6px 10px; background: #4a5568;" href="{% url 'lesson_ics' lesson.id %}">iCloud / ICS</a>
                                     </div>
                                 {% endif %}
+                                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                                    {% if lesson.id in editable_ids %}
+                                        <a class="button" style="padding:6px 10px; background: var(--yellow); color: #000;" href="{% url 'lesson_edit' lesson.id %}">Bearbeiten</a>
+                                    {% endif %}
+                                    {% if request.user.role == 'tutor' %}
+                                        <a class="button" style="padding:6px 10px;" href="{% url 'progress_create_for_lesson' lesson.id %}">Lernfortschritt hinzufügen</a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </li>
                     {% empty %}

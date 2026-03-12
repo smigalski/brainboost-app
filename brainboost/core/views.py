@@ -1,8 +1,10 @@
 from datetime import timedelta
 
 import logging
+from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
@@ -10,6 +12,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Count, Q
 from django.template.loader import render_to_string
+from django.utils.formats import date_format
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.utils.encoding import force_bytes
@@ -25,6 +28,9 @@ from .forms import (
     StudentCreateForm,
     TutorTemplateForm,
     TutorCreateForm,
+    ParentProfileForm,
+    StudentProfileForm,
+    TutorProfileForm,
 )
 from .notifications import (
     notify_invoice_uploaded,
@@ -115,6 +121,12 @@ def _display_name(user: CustomUser) -> str:
     return full_name or user.username
 
 
+def _rating_label(rating) -> str:
+    if rating is None:
+        return "ohne Mitarbeitsbewertung"
+    return f"Mitarbeit {rating}/10"
+
+
 def _limit_news_items(items: list[dict], limit: int = 6) -> list[dict]:
     return sorted(items, key=lambda item: item["timestamp"], reverse=True)[:limit]
 
@@ -135,7 +147,7 @@ def _lesson_news_items(lessons) -> list[dict]:
             {
                 "timestamp": lesson.scheduled_datetime,
                 "title": f"Termin: {_display_name(lesson.student.user)}",
-                "text": f"{lesson.date.strftime('%d.%m.%Y')} um {lesson.time.strftime('%H:%M')} · {', '.join(labels)}",
+                "text": f"{date_format(lesson.date, 'l, d.m.Y')} um {lesson.time.strftime('%H:%M')} · {', '.join(labels)}",
             }
         )
     return items
@@ -156,7 +168,7 @@ def _student_news_items(student_profile: StudentProfile) -> list[dict]:
             {
                 "timestamp": entry.created_at,
                 "title": "Neuer Lernfortschritt",
-                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen Eintrag mit Mitarbeit {entry.rating}/10 hinterlegt.",
+                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen Eintrag mit {_rating_label(entry.rating)} hinterlegt.",
             }
         )
 
@@ -196,7 +208,7 @@ def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
             {
                 "timestamp": entry.created_at,
                 "title": f"Lernfortschritt: {_display_name(entry.lesson.student.user)}",
-                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen neuen Eintrag mit Mitarbeit {entry.rating}/10 erstellt.",
+                "text": f"{_display_name(entry.lesson.tutor.user)} hat einen neuen Eintrag mit {_rating_label(entry.rating)} erstellt.",
             }
         )
 
@@ -252,7 +264,7 @@ def _tutor_news_items(tutor_profile: TutorProfile) -> list[dict]:
             {
                 "timestamp": entry.created_at,
                 "title": f"Lernfortschritt gespeichert: {_display_name(entry.lesson.student.user)}",
-                "text": f"Mitarbeit {entry.rating}/10 wurde eingetragen.",
+                "text": f"{_rating_label(entry.rating)} wurde eingetragen.",
             }
         )
 
@@ -394,6 +406,7 @@ def dashboard(request):
             assigned_students = _assigned_students_qs(request.user.tutor_profile)
             assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
             context["is_admin_tutor"] = request.user.is_superuser
+            context["has_parent_profiles"] = ParentProfile.objects.exists()
             context["news_items"] = _tutor_news_items(request.user.tutor_profile)
             bbb_students = assigned_students
             context["bbb_students"] = bbb_students
@@ -408,6 +421,42 @@ def dashboard(request):
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def profile_view(request):
+    _ensure_profile_for_user(request.user)
+
+    form_class = {
+        CustomUser.Roles.PARENT: ParentProfileForm,
+        CustomUser.Roles.STUDENT: StudentProfileForm,
+        CustomUser.Roles.TUTOR: TutorProfileForm,
+    }.get(request.user.role, ParentProfileForm)
+
+    uses_address_autocomplete = request.user.role in {
+        CustomUser.Roles.STUDENT,
+        CustomUser.Roles.TUTOR,
+    }
+
+    if request.method == "POST":
+        form = form_class(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            user = form.save()
+            if form.cleaned_data.get("new_password1"):
+                update_session_auth_hash(request, user)
+            messages.success(request, "Dein Profil wurde aktualisiert.")
+            return redirect("profile")
+    else:
+        form = form_class(user=request.user)
+
+    return render(
+        request,
+        "profile.html",
+        {
+            "form": form,
+            "uses_address_autocomplete": uses_address_autocomplete,
+        },
+    )
 
 
 @login_required
@@ -545,6 +594,12 @@ def tutor_create(request):
 def student_create(request):
     if request.user.role != CustomUser.Roles.TUTOR:
         return redirect("dashboard")
+    if not ParentProfile.objects.exists():
+        messages.error(
+            request,
+            "Lege zuerst ein Elternteil an, bevor du eine SchülerIn anlegst.",
+        )
+        return redirect("dashboard")
     if request.method == "POST":
         form = StudentCreateForm(request.POST)
         if form.is_valid():
@@ -607,16 +662,90 @@ def lesson_list(request):
     if request.user.role == CustomUser.Roles.TUTOR:
         editable_ids = list(base_qs.values_list("id", flat=True))
 
+    period = request.GET.get("period", "").strip()
+    student_id = request.GET.get("student", "").strip()
+    weekday = request.GET.get("weekday", "").strip()
+    duration = request.GET.get("duration", "").strip()
+    ort = request.GET.get("ort", "").strip()
+
+    filtered_qs = base_qs
+    if period:
+        try:
+            period_year, period_month = period.split("-", 1)
+        except ValueError:
+            period_year, period_month = "", ""
+        if period_year and period_month:
+            filtered_qs = filtered_qs.filter(
+                date__year=period_year,
+                date__month=period_month,
+            )
+    if student_id:
+        filtered_qs = filtered_qs.filter(student_id=student_id)
+    if weekday:
+        filtered_qs = filtered_qs.filter(date__week_day=weekday)
+    if duration:
+        filtered_qs = filtered_qs.filter(duration_minutes=duration)
+    if ort:
+        filtered_qs = filtered_qs.filter(ort=ort)
+
     if when == "past":
-        lessons = Lesson.past_qs().filter(pk__in=base_qs.values_list("pk", flat=True))
+        lessons = Lesson.past_qs().filter(pk__in=filtered_qs.values_list("pk", flat=True))
     else:
         lessons = Lesson.upcoming_qs().filter(
-            pk__in=base_qs.values_list("pk", flat=True)
+            pk__in=filtered_qs.values_list("pk", flat=True)
         )
+
+    filter_pairs = [
+        ("period", period),
+        ("student", student_id),
+        ("weekday", weekday),
+        ("duration", duration),
+        ("ort", ort),
+    ]
+    active_filter_pairs = [(key, value) for key, value in filter_pairs if value]
+    filter_query = urlencode(active_filter_pairs)
+    when_query = urlencode([("when", when), *active_filter_pairs])
 
     cancelable_ids = list(
         base_qs.exclude(status=Lesson.Status.CANCELLED).values_list("id", flat=True)
     )
+
+    period_options = [
+        {
+            "value": lesson_date.strftime("%Y-%m"),
+            "label": date_format(lesson_date, "F Y"),
+        }
+        for lesson_date in sorted(
+            base_qs.dates("date", "month"),
+            reverse=True,
+        )
+    ]
+    student_options = (
+        StudentProfile.objects.filter(id__in=base_qs.values_list("student_id", flat=True))
+        .select_related("user")
+        .order_by("user__first_name", "user__last_name")
+    )
+    duration_options = [
+        str(value)
+        for value in sorted(
+        {
+            value
+            for value in base_qs.values_list("duration_minutes", flat=True).distinct()
+            if value is not None
+        }
+        )
+    ]
+    ort_values = set(base_qs.values_list("ort", flat=True).distinct())
+    ort_options = [choice for choice in Lesson.Ort.choices if choice[0] in ort_values]
+    weekday_options = [
+        ("2", "Montag"),
+        ("3", "Dienstag"),
+        ("4", "Mittwoch"),
+        ("5", "Donnerstag"),
+        ("6", "Freitag"),
+        ("7", "Samstag"),
+        ("1", "Sonntag"),
+    ]
 
     # Build a simple week calendar (current week Monday-Sunday)
     week_start = today - timedelta(days=today.weekday()) + timedelta(days=7 * week_offset)
@@ -642,6 +771,18 @@ def lesson_list(request):
             "week_start": week_start,
             "week_end": week_end,
             "week_offset": week_offset,
+            "filter_query": filter_query,
+            "when_query": when_query,
+            "selected_period": period,
+            "selected_student": student_id,
+            "selected_weekday": weekday,
+            "selected_duration": duration,
+            "selected_ort": ort,
+            "period_options": period_options,
+            "student_options": student_options,
+            "weekday_options": weekday_options,
+            "duration_options": duration_options,
+            "ort_options": ort_options,
             "cancelable_ids": cancelable_ids,
             "editable_ids": editable_ids,
         },

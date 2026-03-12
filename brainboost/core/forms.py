@@ -1,6 +1,10 @@
+from io import BytesIO
+from pathlib import Path
+
 from django import forms
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.contrib.auth import password_validation
 
 from .models import (
@@ -376,4 +380,286 @@ class TutorCreateForm(BaseUserCreateForm):
                 address=self.cleaned_data.get("address", ""),
                 phone_number=self.cleaned_data.get("phone_number", ""),
             )
+        return user
+
+
+class BaseProfileUpdateForm(forms.Form):
+    max_profile_image_size = 15 * 1024 * 1024
+    _username_field = CustomUser._meta.get_field("username")
+    avatar_icon = forms.ChoiceField(
+        required=False,
+        label="Profil-Icon",
+        choices=(
+            (CustomUser.AvatarIcons.NONE, "Leer"),
+            (CustomUser.AvatarIcons.EAGLE, "Adler"),
+            (CustomUser.AvatarIcons.SHARK, "Hai"),
+            (CustomUser.AvatarIcons.LION, "Löwe"),
+            (CustomUser.AvatarIcons.ANT, "Ameise"),
+        ),
+        widget=forms.RadioSelect,
+    )
+    profile_image = forms.FileField(required=False, label="Eigenes Profilbild")
+    remove_profile_image = forms.BooleanField(
+        required=False,
+        label="Eigenes Profilbild entfernen",
+    )
+    username = forms.CharField(
+        max_length=_username_field.max_length,
+        help_text=_username_field.help_text,
+        validators=_username_field.validators,
+        label=_username_field.verbose_name,
+    )
+    first_name = forms.CharField(max_length=150, required=False, label="Vorname")
+    last_name = forms.CharField(max_length=150, required=False, label="Nachname")
+    email = forms.EmailField(required=False, label="E-Mail")
+    new_password1 = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput,
+        label="Neues Passwort",
+    )
+    new_password2 = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput,
+        label="Neues Passwort bestaetigen",
+    )
+
+    def __init__(self, *args, user: CustomUser, **kwargs):
+        self.user_instance = user
+        super().__init__(*args, **kwargs)
+        self.fields["avatar_icon"].initial = user.avatar_icon
+        self.fields["username"].initial = user.username
+        self.fields["first_name"].initial = user.first_name
+        self.fields["last_name"].initial = user.last_name
+        self.fields["email"].initial = user.email
+        self.fields["profile_image"].help_text = (
+            "Optional. Maximal 15 MB. Das Bild wird beim Speichern komprimiert."
+        )
+        self.fields["remove_profile_image"].initial = False
+        self.fields["new_password1"].help_text = (
+            "Optional. Wenn du dein Passwort aendern willst, trage hier ein neues ein."
+        )
+        self.fields["new_password2"].help_text = (
+            "Nur zusammen mit dem neuen Passwort ausfuellen."
+        )
+
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if CustomUser.objects.filter(username__iexact=username).exclude(
+            pk=self.user_instance.pk
+        ).exists():
+            raise ValidationError("Dieser Benutzername ist bereits vergeben.")
+        return username
+
+    def clean_profile_image(self):
+        uploaded_file = self.cleaned_data.get("profile_image")
+        if not uploaded_file:
+            return uploaded_file
+        if uploaded_file.size > self.max_profile_image_size:
+            raise ValidationError("Das Profilbild darf maximal 15 MB gross sein.")
+        try:
+            from PIL import Image, UnidentifiedImageError
+        except ImportError as exc:
+            raise ValidationError(
+                "Bild-Uploads sind erst verfuegbar, wenn Pillow installiert ist."
+            ) from exc
+        try:
+            uploaded_file.seek(0)
+            with Image.open(uploaded_file) as image:
+                image.verify()
+        except (UnidentifiedImageError, OSError) as exc:
+            raise ValidationError("Bitte lade eine gueltige Bilddatei hoch.") from exc
+        finally:
+            uploaded_file.seek(0)
+        return uploaded_file
+
+    def clean(self):
+        cleaned = super().clean()
+        new_password1 = cleaned.get("new_password1")
+        new_password2 = cleaned.get("new_password2")
+        if new_password1 or new_password2:
+            if not new_password1:
+                self.add_error("new_password1", "Bitte gib ein neues Passwort ein.")
+            if not new_password2:
+                self.add_error(
+                    "new_password2",
+                    "Bitte bestaetige dein neues Passwort.",
+                )
+            if new_password1 and new_password2 and new_password1 != new_password2:
+                self.add_error(
+                    "new_password2",
+                    "Die Passwoerter stimmen nicht ueberein.",
+                )
+            if new_password1:
+                try:
+                    password_validation.validate_password(
+                        new_password1, self.user_instance
+                    )
+                except ValidationError as exc:
+                    self.add_error("new_password1", exc)
+        return cleaned
+
+    def _compressed_profile_image(self):
+        uploaded_file = self.cleaned_data.get("profile_image")
+        if not uploaded_file:
+            return None
+
+        from PIL import Image, ImageOps
+
+        uploaded_file.seek(0)
+        with Image.open(uploaded_file) as image:
+            image = ImageOps.exif_transpose(image)
+            if image.mode not in ("RGB", "L"):
+                image = image.convert("RGB")
+            elif image.mode == "L":
+                image = image.convert("RGB")
+            image.thumbnail((1200, 1200))
+
+            output = BytesIO()
+            image.save(output, format="JPEG", optimize=True, quality=82)
+            output.seek(0)
+
+        stem = Path(uploaded_file.name).stem or "profilbild"
+        filename = f"{stem}.jpg"
+        return ContentFile(output.read(), name=filename)
+
+    def _update_profile_image(self, user: CustomUser) -> None:
+        if self.cleaned_data.get("remove_profile_image") and user.profile_image:
+            user.profile_image.delete(save=False)
+            user.profile_image = ""
+
+        compressed_file = self._compressed_profile_image()
+        if compressed_file:
+            if user.profile_image:
+                user.profile_image.delete(save=False)
+            user.profile_image.save(compressed_file.name, compressed_file, save=False)
+
+    def _save_user(self) -> CustomUser:
+        user = self.user_instance
+        user.avatar_icon = self.cleaned_data.get("avatar_icon", "")
+        user.username = self.cleaned_data["username"]
+        user.first_name = self.cleaned_data.get("first_name", "")
+        user.last_name = self.cleaned_data.get("last_name", "")
+        user.email = self.cleaned_data.get("email", "")
+        self._update_profile_image(user)
+        if self.cleaned_data.get("new_password1"):
+            user.set_password(self.cleaned_data["new_password1"])
+        user.save()
+        return user
+
+
+class ParentProfileForm(BaseProfileUpdateForm):
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+
+    def __init__(self, *args, user: CustomUser, **kwargs):
+        super().__init__(*args, user=user, **kwargs)
+        self.fields["phone_number"].initial = user.parent_profile.phone_number
+        self.order_fields(
+            [
+                "avatar_icon",
+                "profile_image",
+                "remove_profile_image",
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "new_password1",
+                "new_password2",
+                "phone_number",
+            ]
+        )
+
+    def save(self) -> CustomUser:
+        user = self._save_user()
+        profile = user.parent_profile
+        profile.phone_number = self.cleaned_data.get("phone_number", "")
+        profile.save()
+        return user
+
+
+class StudentProfileForm(BaseProfileUpdateForm):
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Adresse",
+        widget=forms.TextInput(
+            attrs={
+                "class": "address-autocomplete",
+                "autocomplete": "off",
+                "placeholder": "Wohnadresse eingeben",
+            }
+        ),
+    )
+    def __init__(self, *args, user: CustomUser, **kwargs):
+        super().__init__(*args, user=user, **kwargs)
+        profile = user.student_profile
+        self.fields["phone_number"].initial = profile.phone_number
+        self.fields["address"].initial = profile.address
+        self.order_fields(
+            [
+                "avatar_icon",
+                "profile_image",
+                "remove_profile_image",
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "new_password1",
+                "new_password2",
+                "phone_number",
+                "address",
+            ]
+        )
+
+    def save(self) -> CustomUser:
+        user = self._save_user()
+        profile = user.student_profile
+        profile.phone_number = self.cleaned_data.get("phone_number", "")
+        profile.address = self.cleaned_data.get("address", "")
+        profile.save()
+        return user
+
+
+class TutorProfileForm(BaseProfileUpdateForm):
+    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Adresse",
+        widget=forms.TextInput(
+            attrs={
+                "class": "address-autocomplete",
+                "autocomplete": "off",
+                "placeholder": "Wohnadresse eingeben",
+            }
+        ),
+    )
+
+    def __init__(self, *args, user: CustomUser, **kwargs):
+        super().__init__(*args, user=user, **kwargs)
+        profile = user.tutor_profile
+        self.fields["phone_number"].initial = profile.phone_number
+        self.fields["address"].initial = profile.address
+        self.order_fields(
+            [
+                "avatar_icon",
+                "profile_image",
+                "remove_profile_image",
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "new_password1",
+                "new_password2",
+                "phone_number",
+                "address",
+            ]
+        )
+
+    def save(self) -> CustomUser:
+        user = self._save_user()
+        profile = user.tutor_profile
+        profile.phone_number = self.cleaned_data.get("phone_number", "")
+        profile.address = self.cleaned_data.get("address", "")
+        profile.save()
         return user
