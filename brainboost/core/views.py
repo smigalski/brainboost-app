@@ -126,7 +126,7 @@ def _rating_label(rating) -> str:
     return f"Mitarbeit {rating}/10"
 
 
-def _limit_news_items(items: list[dict], limit: int = 6) -> list[dict]:
+def _limit_news_items(items: list[dict], limit: int = 3) -> list[dict]:
     return sorted(items, key=lambda item: item["timestamp"], reverse=True)[:limit]
 
 

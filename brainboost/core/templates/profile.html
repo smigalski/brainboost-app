@@ -71,7 +71,12 @@
             {% for field in form %}
                 {% if field.name != "avatar_icon" and field.name != "profile_image" and field.name != "remove_profile_image" %}
                     <div>
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                            {% if field.name == "address" and field.value %}
+                                <span class="muted" style="display:inline; margin-left:8px;">{{ field.value }}</span>
+                            {% endif %}
+                        </label>
                         {{ field }}
                         {% if field.help_text %}
                             <div class="muted">{{ field.help_text }}</div>

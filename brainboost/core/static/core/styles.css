@@ -257,6 +257,46 @@ input:focus, select:focus, textarea:focus {
     width: 100%;
 }
 
+.address-display-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #d8d8d8;
+    background: #fff;
+}
+
+.address-display-value {
+    flex: 1;
+    min-width: 0;
+    color: var(--accent);
+    overflow-wrap: anywhere;
+}
+
+.address-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(31,102,102,0.18);
+    background: rgba(44,138,138,0.08);
+    color: var(--teal-dark);
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.address-edit-button:hover {
+    background: rgba(44,138,138,0.16);
+}
+
+.address-editor[hidden] {
+    display: none;
+}
+
 .muted {
     color: #6b6b6b;
     font-size: 14px;

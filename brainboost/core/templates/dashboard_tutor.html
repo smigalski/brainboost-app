@@ -26,14 +26,6 @@
                     {% endfor %}
                 </div>
             </div>
-            <a href="{% url 'assigned_student_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16); text-decoration:none; color:inherit;">
-                <div class="muted" style="margin-bottom:4px;">Zugewiesene SchülerInnen</div>
-                <div style="font-size:2rem; font-weight:800; color: var(--teal-dark); line-height:1;">{{ assigned_student_count }}</div>
-            </a>
-            <a href="{% url 'assigned_tutor_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(111,169,75,0.12); border:1px solid rgba(86,148,53,0.18); text-decoration:none; color:inherit;">
-                <div class="muted" style="margin-bottom:4px;">Zugewiesene TutorInnen</div>
-                <div style="font-size:2rem; font-weight:800; color:#2f5f1e; line-height:1;">{{ assigned_tutor_count }}</div>
-            </a>
             <div style="padding:14px 16px; border-radius:14px; background: rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
                 <div class="muted" style="margin-bottom:10px;">Nächste Termine</div>
                 <div style="display:flex; flex-direction:column; gap:10px;">
@@ -47,6 +39,14 @@
                     {% endfor %}
                 </div>
             </div>
+            <a href="{% url 'assigned_student_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(44,138,138,0.08); border:1px solid rgba(31,102,102,0.16); text-decoration:none; color:inherit;">
+                <div class="muted" style="margin-bottom:4px;">Zugewiesene SchülerInnen</div>
+                <div style="font-size:2rem; font-weight:800; color: var(--teal-dark); line-height:1;">{{ assigned_student_count }}</div>
+            </a>
+            <a href="{% url 'assigned_tutor_list' %}" style="display:block; padding:14px 16px; border-radius:14px; background: rgba(111,169,75,0.12); border:1px solid rgba(86,148,53,0.18); text-decoration:none; color:inherit;">
+                <div class="muted" style="margin-bottom:4px;">Zugewiesene TutorInnen</div>
+                <div style="font-size:2rem; font-weight:800; color:#2f5f1e; line-height:1;">{{ assigned_tutor_count }}</div>
+            </a>
 
             <div style="display:flex; flex-direction:column; gap:10px; padding:14px; border-radius:16px; background:rgba(31,102,102,0.08); border:1px solid rgba(31,102,102,0.16);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark);">Organisation</div>

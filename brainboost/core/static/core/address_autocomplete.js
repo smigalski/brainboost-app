@@ -15,7 +15,9 @@ async function initAddressAutocomplete() {
 
     inputs.forEach((input) => {
         const originalInput = input;
+        const initialValue = originalInput.value;
         const form = originalInput.form;
+        const deferredMode = originalInput.dataset.addressMode === "deferred";
         const wrapper = document.createElement("div");
         wrapper.className = "address-autocomplete-widget";
 
@@ -23,8 +25,43 @@ async function initAddressAutocomplete() {
         placeAutocomplete.placeholder = originalInput.getAttribute("placeholder") || "Wohnadresse eingeben";
         placeAutocomplete.includedRegionCodes = ["de"];
 
-        wrapper.appendChild(placeAutocomplete);
+        let editorContainer = wrapper;
+        if (deferredMode) {
+            wrapper.classList.add("address-autocomplete-widget--deferred");
+
+            const displayRow = document.createElement("div");
+            displayRow.className = "address-display-row";
+
+            const displayValue = document.createElement("div");
+            displayValue.className = "address-display-value";
+            displayValue.textContent = initialValue || "Keine Adresse hinterlegt";
+
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.className = "address-edit-button";
+            editButton.setAttribute("aria-label", "Adresse bearbeiten");
+            editButton.textContent = "✎";
+
+            editorContainer = document.createElement("div");
+            editorContainer.className = "address-editor";
+            editorContainer.hidden = true;
+
+            editButton.addEventListener("click", () => {
+                displayRow.hidden = true;
+                editorContainer.hidden = false;
+            });
+
+            wrapper.appendChild(displayRow);
+            wrapper.appendChild(editorContainer);
+            displayRow.appendChild(displayValue);
+            displayRow.appendChild(editButton);
+        }
+
+        editorContainer.appendChild(placeAutocomplete);
         originalInput.parentNode.insertBefore(wrapper, originalInput);
+        if (initialValue) {
+            placeAutocomplete.value = initialValue;
+        }
         originalInput.style.display = "none";
 
         const syncTypedValue = () => {

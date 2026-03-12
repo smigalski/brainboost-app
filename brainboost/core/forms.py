@@ -540,6 +540,7 @@ class StudentProfileForm(BaseProfileUpdateForm):
                 "class": "address-autocomplete",
                 "autocomplete": "off",
                 "placeholder": "Wohnadresse eingeben",
+                "data-address-mode": "deferred",
             }
         ),
     )
@@ -582,6 +583,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "class": "address-autocomplete",
                 "autocomplete": "off",
                 "placeholder": "Wohnadresse eingeben",
+                "data-address-mode": "deferred",
             }
         ),
     )
