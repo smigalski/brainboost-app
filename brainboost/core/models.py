@@ -2,6 +2,7 @@ import json
 import urllib.request
 from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
+from pathlib import Path
 from urllib.parse import quote
 
 from django.conf import settings
@@ -375,7 +376,7 @@ def tutor_template_upload_path(instance, filename):
 
 
 def invoice_upload_path(instance, filename):
-    return f"invoices/student_{instance.student_id}_{filename}"
+    return f"invoices/student_{instance.student_id}/{filename}"
 
 
 class LearningMaterial(models.Model):
@@ -593,6 +594,9 @@ class Invoice(models.Model):
         upload_to=invoice_upload_path,
         validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
     )
+    invoice_number = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    billing_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    billing_month = models.PositiveSmallIntegerField(null=True, blank=True)
     amount_total = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default="EUR")
     payment_method = models.CharField(
@@ -609,6 +613,7 @@ class Invoice(models.Model):
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
     payment_requested_at = models.DateTimeField(null=True, blank=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 
@@ -619,6 +624,12 @@ class Invoice(models.Model):
 
     def __str__(self):
         return f"Rechnung für {self.student} ({self.file.name})"
+
+    @property
+    def display_filename(self):
+        if not self.file:
+            return ""
+        return Path(self.file.name).name
 
     @property
     def due_date(self):

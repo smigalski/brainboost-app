@@ -6,7 +6,7 @@
     <li><strong>Elternteil:</strong> {{ parent.user.get_full_name|default:parent.user.username }}</li>
     <li><strong>Zahlungsart:</strong> {{ payment_method_label }}</li>
     <li><strong>Bezahlt am:</strong> {{ invoice.paid_at|date:"d.m.Y H:i" }}</li>
-    <li><strong>Rechnung:</strong> {{ invoice.file.name }}</li>
+    <li><strong>Rechnung:</strong> {{ invoice.display_filename }}</li>
   </ul>
   <p style="margin:0;">
     Rechnungen: <a href="{{ invoice_upload_url }}">{{ invoice_upload_url }}</a>

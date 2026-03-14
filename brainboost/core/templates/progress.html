@@ -152,7 +152,7 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="muted">{{ entry.lesson.student.user.get_full_name }} · {{ entry.lesson.subject_display }} · {{ entry.lesson.get_ort_display }}</div>
+                <div class="muted"><strong>{{ entry.lesson.student.user.get_full_name }}</strong> · {{ entry.lesson.subject_display }} · {{ entry.lesson.get_ort_display }}</div>
                 <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
                 <div class="muted">{{ entry.created_at|date:"d.m.Y H:i" }}</div>
             </li>

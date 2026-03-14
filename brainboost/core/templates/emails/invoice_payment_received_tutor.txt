@@ -6,7 +6,7 @@ SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
 Elternteil: {{ parent.user.get_full_name|default:parent.user.username }}
 Zahlungsart: {{ payment_method_label }}
 Bezahlt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}
-Rechnung: {{ invoice.file.name }}
+Rechnung: {{ invoice.display_filename }}
 
 Rechnungen: {{ invoice_upload_url }}
 {% endblock %}

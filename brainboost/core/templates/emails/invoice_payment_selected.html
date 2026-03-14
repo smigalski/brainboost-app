@@ -5,7 +5,7 @@
     <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
     <li><strong>Elternteil:</strong> {{ parent.user.get_full_name|default:parent.user.username }}</li>
     <li><strong>Zahlungsart:</strong> {{ payment_method_label }}</li>
-    <li><strong>Rechnung:</strong> {{ invoice.file.name }}</li>
+    <li><strong>Rechnung:</strong> {{ invoice.display_filename }}</li>
     <li><strong>Fällig am:</strong> {{ invoice.due_date|date:"d.m.Y" }}</li>
   </ul>
   <p style="margin:0;">

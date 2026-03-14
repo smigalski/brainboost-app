@@ -1,10 +1,46 @@
 {% extends "base.html" %}
 {% block title %}Rechnungen{% endblock %}
 {% block content %}
-<div class="card">
-    <h1>Rechnungen</h1>
-    <p class="muted">Hier kannst du Monatsrechnungen aus abgeschlossenen Terminen generieren oder weiterhin eine eigene PDF-Rechnung als Backup hochladen.</p>
-</div>
+<style>
+    .invoice-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .invoice-list-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-end;
+        flex: 0 0 auto;
+    }
+    .invoice-parent-links {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-end;
+    }
+    @media (max-width: 760px) {
+        .invoice-list-item {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .invoice-list-actions {
+            width: 100%;
+            align-items: stretch;
+        }
+        .invoice-list-actions form,
+        .invoice-list-actions a.button,
+        .invoice-parent-links,
+        .invoice-parent-links a.button {
+            width: 100%;
+        }
+        .invoice-parent-links {
+            align-items: stretch;
+        }
+    }
+</style>
 
 <div class="card">
     <h3>Rechnung generieren</h3>
@@ -58,8 +94,9 @@
         <ul class="list">
             {% for invoice in tutor_invoices %}
                 <li>
+                    <div class="invoice-list-item">
                     <div>
-                        <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
+                        <strong>{{ invoice.display_filename }}</strong>
                         <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
@@ -77,7 +114,7 @@
                             <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                         {% endif %}
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                    <div class="invoice-list-actions">
                         <form method="post" action="{% url 'invoice_delete' invoice.id %}" onsubmit="return confirm('Rechnung wirklich löschen?');">
                             {% csrf_token %}
                             <button class="button" type="submit" aria-label="Rechnung löschen" title="Rechnung löschen" style="padding:6px 10px; background:#b42318;">X</button>
@@ -90,12 +127,13 @@
                             </form>
                         {% endif %}
                         {% if invoice.parent_notification_links %}
-                            <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                            <div class="invoice-parent-links">
                                 {% for link in invoice.parent_notification_links %}
                                     <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
                                 {% endfor %}
                             </div>
                         {% endif %}
+                    </div>
                     </div>
                 </li>
             {% endfor %}
@@ -112,8 +150,9 @@
             <ul class="list">
                 {% for invoice in subordinate_invoices %}
                     <li>
+                        <div class="invoice-list-item">
                         <div>
-                            <strong>{{ invoice.file.name|cut:"invoices/student_" }}</strong>
+                            <strong>{{ invoice.display_filename }}</strong>
                             <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
                             <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
@@ -131,7 +170,7 @@
                                 <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                             {% endif %}
                         </div>
-                        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                        <div class="invoice-list-actions">
                             <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
                             {% if not invoice.is_approved %}
                                 <form method="post" action="{% url 'invoice_approve' invoice.id %}">
@@ -144,12 +183,13 @@
                                     <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Eingang bestätigen</button>
                                 </form>
                             {% elif invoice.parent_notification_links %}
-                                <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+                                <div class="invoice-parent-links">
                                     {% for link in invoice.parent_notification_links %}
                                         <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                        </div>
                         </div>
                     </li>
                 {% endfor %}

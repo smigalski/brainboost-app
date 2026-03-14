@@ -2,6 +2,9 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 
 import logging
+import re
+import unicodedata
+from typing import Optional
 from urllib.parse import quote, urlencode
 from django.conf import settings
 from django.contrib import messages
@@ -189,6 +192,82 @@ def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
             }
         )
     return links
+
+
+GERMAN_MONTH_NAMES = {
+    1: "Januar",
+    2: "Februar",
+    3: "Maerz",
+    4: "April",
+    5: "Mai",
+    6: "Juni",
+    7: "Juli",
+    8: "August",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Dezember",
+}
+INVOICE_NUMBER_PATTERN = re.compile(r"RE-(\d{3,})_", re.IGNORECASE)
+
+
+def _sanitize_invoice_name_part(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value or "")
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    cleaned = "".join(ch for ch in ascii_text if ch.isalnum())
+    return cleaned or "Unbekannt"
+
+
+def _invoice_period_parts(invoice: Invoice) -> tuple[int, int]:
+    if invoice.billing_year and invoice.billing_month:
+        return invoice.billing_year, invoice.billing_month
+    reference = timezone.localtime(invoice.uploaded_at) if invoice.uploaded_at else timezone.now()
+    return reference.year, reference.month
+
+
+def _next_invoice_number() -> int:
+    max_number = 0
+    latest = Invoice.objects.filter(invoice_number__isnull=False).order_by("-invoice_number").first()
+    if latest and latest.invoice_number:
+        max_number = latest.invoice_number
+    for file_name in Invoice.objects.exclude(file="").values_list("file", flat=True):
+        match = INVOICE_NUMBER_PATTERN.search(file_name or "")
+        if match:
+            max_number = max(max_number, int(match.group(1)))
+    return max_number + 1
+
+
+def _invoice_filename(invoice: Invoice, invoice_number: Optional[int] = None) -> str:
+    year, month = _invoice_period_parts(invoice)
+    student_name = _sanitize_invoice_name_part(
+        f"{invoice.student.user.first_name}{invoice.student.user.last_name}"
+    )
+    sequence = invoice_number or invoice.invoice_number or _next_invoice_number()
+    return f"RE-{sequence:03d}_{GERMAN_MONTH_NAMES[month]}{str(year)[-2:]}_{student_name}.pdf"
+
+
+def _rename_invoice_file(invoice: Invoice, filename: str) -> None:
+    if not invoice.file:
+        return
+    invoice.file.open("rb")
+    try:
+        file_content = invoice.file.read()
+    finally:
+        invoice.file.close()
+    old_name = invoice.file.name
+    invoice.file.save(filename, ContentFile(file_content), save=False)
+    if old_name and old_name != invoice.file.name:
+        invoice.file.storage.delete(old_name)
+
+
+def _finalize_invoice_number_and_filename(invoice: Invoice) -> None:
+    if invoice.invoice_number:
+        return
+    next_number = _next_invoice_number()
+    invoice.invoice_number = next_number
+    invoice.sent_at = timezone.now()
+    _rename_invoice_file(invoice, _invoice_filename(invoice, next_number))
+    invoice.save(update_fields=["invoice_number", "sent_at", "file"])
 
 
 def _mark_invoice_payment_selected(
@@ -1727,11 +1806,11 @@ def invoice_upload(request):
                         invoice = Invoice(
                             student=student,
                             uploaded_by=tutor_profile,
+                            billing_year=period_start.year,
+                            billing_month=period_start.month,
                             amount_total=invoice_context["total_amount"],
                         )
-                        filename = (
-                            f"rechnung_{student.user.username}_{period_start.strftime('%Y_%m')}.pdf"
-                        )
+                        filename = _invoice_filename(invoice)
                         invoice.file.save(filename, ContentFile(pdf_bytes), save=False)
                         invoice.save()
                         if not tutor_profile.supervising_tutors.exists():
@@ -1859,6 +1938,7 @@ def invoice_notify_parent(request, invoice_id, parent_id):
         return redirect("invoice_upload")
 
     parent = get_object_or_404(invoice.student.parents.select_related("user"), pk=parent_id)
+    _finalize_invoice_number_and_filename(invoice)
     notify_invoice_parent(request, invoice, parent)
 
     number = _normalize_whatsapp_number(parent.phone_number)
