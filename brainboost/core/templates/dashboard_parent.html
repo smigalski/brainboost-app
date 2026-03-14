@@ -26,6 +26,11 @@
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ item.title }}</div>
                             <div class="muted">{{ item.text }}</div>
+                            {% if item.url %}
+                                <div style="margin-top:10px;">
+                                    <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{{ item.url }}">{{ item.action_label|default:"Öffnen" }}</a>
+                                </div>
+                            {% endif %}
                             <div class="muted" style="margin-top:6px; font-size:0.8rem; text-align:right;">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
                         </div>
                     {% empty %}
@@ -39,6 +44,7 @@
                     <a class="button" href="{% url 'lesson_list' %}">Termine meiner Kinder</a>
                     <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'progress' %}">Lernfortschritt ansehen</a>
                     <a class="button" style="background:#e0b126; color:#1f1600;" href="{% url 'invoice_list' %}">Rechnungen einsehen</a>
+                    <a class="button" style="background: var(--teal-dark);" href="{% url 'holiday_surveys' %}">Umfragen beantworten</a>
                 </div>
             </div>
 
@@ -55,7 +61,7 @@
                     {% for lesson in upcoming_lessons %}
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"l, d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
-                            <div class="muted">Kind: {{ lesson.student.user.get_full_name }} · TutorIn: {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                            <div class="muted">Kind: {{ lesson.student.user.get_full_name }} · TutorIn: {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.subject_display }} · {{ lesson.get_ort_display }}</div>
                         </div>
                     {% empty %}
                         <div class="muted">Keine kommenden Termine vorhanden.</div>

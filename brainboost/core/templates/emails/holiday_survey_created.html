@@ -1,0 +1,13 @@
+{% extends "emails/base.html" %}
+{% block content %}
+  <p style="margin:0 0 12px 0;">Es gibt eine neue Umfrage in der WebApp.</p>
+  <ul style="margin:0 0 12px 16px;padding:0;">
+    <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
+    <li><strong>TutorIn:</strong> {{ tutor.user.get_full_name|default:tutor.user.username }}</li>
+    <li><strong>Frage:</strong> {{ survey.question }}</li>
+  </ul>
+  <p style="margin:0;">
+    Bitte antworte schnellstmöglich hier:
+    <a href="{{ survey_url }}">{{ survey_url }}</a>
+  </p>
+{% endblock %}

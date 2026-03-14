@@ -39,7 +39,7 @@
                     {% for lesson in upcoming_lessons %}
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ lesson.date|date:"l, d.m.Y" }} · {{ lesson.time|time:"H:i" }}</div>
-                            <div class="muted">TutorIn: {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                            <div class="muted">TutorIn: {{ lesson.tutor.user.get_full_name }} · {{ lesson.duration_minutes }} Min. · {{ lesson.subject_display }} · {{ lesson.get_ort_display }}</div>
                         </div>
                     {% empty %}
                         <div class="muted">Keine kommenden Termine vorhanden.</div>

@@ -6,7 +6,7 @@
     <li><strong>TutorIn:</strong> {{ tutor.user.username }}</li>
     <li><strong>Datum:</strong> {{ lesson.date|date:"d.m.Y" }}</li>
     <li><strong>Uhrzeit:</strong> {{ lesson.time|time:"H:i" }}</li>
-    <li><strong>Fach:</strong> {{ lesson.get_fach_display }}</li>
+    <li><strong>Fach/Fächer:</strong> {{ lesson.subject_display }}</li>
     <li><strong>Ort:</strong> {{ lesson.get_ort_display }}</li>
   </ul>
   <p style="margin:0;">

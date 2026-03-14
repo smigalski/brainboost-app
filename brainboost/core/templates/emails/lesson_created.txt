@@ -6,7 +6,7 @@ SchülerIn: {{ student.user.username }}
 TutorIn: {{ tutor.user.username }}
 Datum: {{ lesson.date|date:"d.m.Y" }}
 Uhrzeit: {{ lesson.time|time:"H:i" }}
-Fach: {{ lesson.get_fach_display }}
+Fach/Fächer: {{ lesson.subject_display }}
 Ort: {{ lesson.get_ort_display }}
 
 Details: {{ lesson_list_url }}

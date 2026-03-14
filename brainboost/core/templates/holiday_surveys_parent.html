@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Umfragen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Umfragen</h1>
+    <p class="muted">Bitte beantworte offene Umfragen möglichst zeitnah direkt hier in der WebApp.</p>
+</div>
+
+{% for item in response_items %}
+    {% with response=item.response form=item.form %}
+    <div class="card">
+        <h3 style="margin-bottom:6px;">{{ response.survey.question }}</h3>
+        <div class="muted" style="margin-bottom:8px;">Kind: {{ response.student.user.get_full_name }} · TutorIn: {{ response.survey.tutor.user.get_full_name }}</div>
+        <div class="muted" style="margin-bottom:14px;">Erstellt am {{ response.survey.created_at|date:"d.m.Y H:i" }}</div>
+        {% if response.answer %}
+            <div class="muted">Deine Antwort: <strong>{{ response.get_answer_display }}</strong>{% if response.answered_at %} am {{ response.answered_at|date:"d.m.Y H:i" }}{% endif %}</div>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="response_id" value="{{ response.id }}">
+                {{ form.answer }}
+                <button class="button" type="submit" style="margin-top:12px;">Antwort speichern</button>
+            </form>
+        {% endif %}
+    </div>
+    {% endwith %}
+{% empty %}
+    <div class="card">
+        <p class="muted">Aktuell liegen keine Umfragen für deine Kinder vor.</p>
+    </div>
+{% endfor %}
+
+<div class="card">
+    <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Zurück zum Dashboard</a>
+</div>
+{% endblock %}

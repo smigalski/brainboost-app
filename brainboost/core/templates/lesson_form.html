@@ -11,7 +11,142 @@
         {% if next_url %}
             <input type="hidden" name="next" value="{{ next_url }}">
         {% endif %}
-        {{ form.as_p }}
+        {% if form.non_field_errors %}
+            <div class="muted" style="color: var(--red); margin-bottom:12px;">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <p>
+            {{ form.student.label_tag }}
+            {{ form.student }}
+            {% if form.student.errors %}
+                <span class="muted" style="color: var(--red);">{{ form.student.errors|join:", " }}</span>
+            {% endif %}
+        </p>
+
+        <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <p>
+                {{ form.date.label_tag }}
+                {{ form.date }}
+                {% if form.date.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.date.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+            <p>
+                {{ form.time.label_tag }}
+                {{ form.time }}
+                {% if form.time.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.time.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div>
+            {{ form.duration_minutes.label_tag }}
+            {{ form.duration_minutes }}
+            {% if form.duration_minutes.errors %}
+                <span class="muted" style="color: var(--red);">{{ form.duration_minutes.errors|join:", " }}</span>
+            {% endif %}
+        </div>
+
+        <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <p>
+                {{ form.ort.label_tag }}
+                {{ form.ort }}
+                {% if form.ort.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.ort.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+            <p>
+                {{ form.status.label_tag }}
+                {{ form.status }}
+                {% if form.status.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.status.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <p>
+                {{ form.fach.label_tag }}
+                {{ form.fach }}
+                {% if form.fach.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.fach.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+            <p>
+                {{ form.fach_2.label_tag }}
+                {{ form.fach_2 }}
+                {% if form.fach_2.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.fach_2.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+            <p>
+                {{ form.fach_3.label_tag }}
+                {{ form.fach_3 }}
+                {% if form.fach_3.errors %}
+                    <span class="muted" style="color: var(--red);">{{ form.fach_3.errors|join:", " }}</span>
+                {% endif %}
+            </p>
+        </div>
+
+        {% if form.repeat_enabled %}
+            <div class="card" style="box-shadow:none; border:1px solid rgba(0,0,0,0.06); margin:12px 0 16px;">
+                <h3 style="margin-top:0;">Wiederholung</h3>
+                <p>
+                    {{ form.repeat_enabled }}
+                    {{ form.repeat_enabled.label_tag }}
+                    {% if form.repeat_enabled.errors %}
+                        <span class="muted" style="color: var(--red);">{{ form.repeat_enabled.errors|join:", " }}</span>
+                    {% endif %}
+                </p>
+                <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <p>
+                        {{ form.repeat_interval_weeks.label_tag }}
+                        {{ form.repeat_interval_weeks }}
+                        {% if form.repeat_interval_weeks.help_text %}
+                            <span class="muted">{{ form.repeat_interval_weeks.help_text }}</span>
+                        {% endif %}
+                        {% if form.repeat_interval_weeks.errors %}
+                            <span class="muted" style="color: var(--red);">{{ form.repeat_interval_weeks.errors|join:", " }}</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        {{ form.repeat_end_mode.label_tag }}
+                        {{ form.repeat_end_mode }}
+                        {% if form.repeat_end_mode.errors %}
+                            <span class="muted" style="color: var(--red);">{{ form.repeat_end_mode.errors|join:", " }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <p>
+                        {{ form.repeat_weeks.label_tag }}
+                        {{ form.repeat_weeks }}
+                        {% if form.repeat_weeks.errors %}
+                            <span class="muted" style="color: var(--red);">{{ form.repeat_weeks.errors|join:", " }}</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        {{ form.repeat_occurrences.label_tag }}
+                        {{ form.repeat_occurrences }}
+                        {% if form.repeat_occurrences.help_text %}
+                            <span class="muted">{{ form.repeat_occurrences.help_text }}</span>
+                        {% endif %}
+                        {% if form.repeat_occurrences.errors %}
+                            <span class="muted" style="color: var(--red);">{{ form.repeat_occurrences.errors|join:", " }}</span>
+                        {% endif %}
+                    </p>
+                    <p>
+                        {{ form.repeat_until.label_tag }}
+                        {{ form.repeat_until }}
+                        {% if form.repeat_until.errors %}
+                            <span class="muted" style="color: var(--red);">{{ form.repeat_until.errors|join:", " }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+
         <button class="button" type="submit">Speichern</button>
         <a class="button" style="background: var(--teal);" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'lesson_list' %}{% endif %}">Abbrechen</a>
         {% if is_edit and lesson %}

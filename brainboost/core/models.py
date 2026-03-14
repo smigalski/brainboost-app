@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, FileExtensionValidator
 from django.db import models
 from django.db.models import Q
@@ -171,6 +172,29 @@ class TutorProfile(models.Model):
 
 
 class Lesson(models.Model):
+    SUBJECT_CHOICES = [
+        ("mathe", "Mathe"),
+        ("deutsch", "Deutsch"),
+        ("englisch", "Englisch"),
+        ("chemie", "Chemie"),
+        ("biologie", "Biologie"),
+        ("erdkunde", "Erdkunde"),
+        ("physik", "Physik"),
+        (
+            "sonstiges_mint",
+            "Sonstiges mathematisch-naturwissenschaftliches Fach",
+        ),
+        ("franzoesisch", "Französisch"),
+        ("spanisch", "Spanisch"),
+        ("sonstiges_sprache", "Sonstiges sprachliches Fach"),
+        ("geschichte", "Geschichte"),
+        ("informatik", "Informatik"),
+        ("politik", "Politik"),
+        ("sonstiges_gesellschaft", "Sonstiges gesellschaftliches Fach"),
+        ("musik", "Musik"),
+        ("spezifische_nachhilfe", "SPEZIFISCHE NACHHILFE"),
+    ]
+
     class Status(models.TextChoices):
         PLANNED = "planned", "geplant"
         COMPLETED = "completed", "vorbei"
@@ -203,29 +227,11 @@ class Lesson(models.Model):
     )
     fach = models.CharField(
         max_length=50,
-        choices=[
-            ("mathe", "Mathe"),
-            ("deutsch", "Deutsch"),
-            ("englisch", "Englisch"),
-            ("chemie", "Chemie"),
-            ("biologie", "Biologie"),
-            ("erdkunde", "Erdkunde"),
-            ("physik", "Physik"),
-            (
-                "sonstiges_mint",
-                "Sonstiges mathematisch-naturwissenschaftliches Fach",
-            ),
-            ("franzoesisch", "Französisch"),
-            ("spanisch", "Spanisch"),
-            ("sonstiges_sprache", "Sonstiges sprachliches Fach"),
-            ("geschichte", "Geschichte"),
-            ("informatik", "Informatik"),
-            ("politik", "Politik"),
-            ("sonstiges_gesellschaft", "Sonstiges gesellschaftliches Fach"),
-            ("musik", "Musik"),
-        ],
+        choices=SUBJECT_CHOICES,
         default="mathe",
     )
+    fach_2 = models.CharField(max_length=50, choices=SUBJECT_CHOICES, blank=True, default="")
+    fach_3 = models.CharField(max_length=50, choices=SUBJECT_CHOICES, blank=True, default="")
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -248,6 +254,26 @@ class Lesson(models.Model):
             f"Lesson for {self.student.user.username} with "
             f"{self.tutor.user.username} on {formatted_date} at {formatted_time}"
         )
+
+    def clean(self):
+        super().clean()
+        subjects = [self.fach, self.fach_2, self.fach_3]
+        non_empty_subjects = [subject for subject in subjects if subject]
+        if len(non_empty_subjects) != len(set(non_empty_subjects)):
+            raise ValidationError("Bitte wähle jedes Fach nur einmal aus.")
+
+    @property
+    def subject_display_list(self):
+        labels = [self.get_fach_display()]
+        if self.fach_2:
+            labels.append(self.get_fach_2_display())
+        if self.fach_3:
+            labels.append(self.get_fach_3_display())
+        return labels
+
+    @property
+    def subject_display(self):
+        return " / ".join(self.subject_display_list)
 
     @property
     def computed_distance_km(self):
@@ -308,7 +334,7 @@ class Lesson(models.Model):
 
     @property
     def calendar_title(self) -> str:
-        return f"Nachhilfe {self.get_fach_display()} ({self.student.user.username})"
+        return f"Nachhilfe {self.subject_display} ({self.student.user.username})"
 
     @property
     def calendar_details(self) -> str:
@@ -407,6 +433,18 @@ class ProgressEntry(models.Model):
         null=True,
         blank=True,
     )
+    rating_fach_2 = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name="Mitarbeit Fach 2",
+        null=True,
+        blank=True,
+    )
+    rating_fach_3 = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(10)],
+        verbose_name="Mitarbeit Fach 3",
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -417,6 +455,74 @@ class ProgressEntry(models.Model):
     def __str__(self) -> str:
         rating_label = "-" if self.rating is None else str(self.rating)
         return f"Lernfortschritt für {self.lesson} - Mitarbeit {rating_label}"
+
+    @property
+    def rating_display_list(self):
+        items = [(self.lesson.get_fach_display(), self.rating)]
+        if self.lesson.fach_2:
+            items.append((self.lesson.get_fach_2_display(), self.rating_fach_2))
+        if self.lesson.fach_3:
+            items.append((self.lesson.get_fach_3_display(), self.rating_fach_3))
+        return items
+
+
+class HolidaySurvey(models.Model):
+    tutor = models.ForeignKey(
+        TutorProfile,
+        on_delete=models.CASCADE,
+        related_name="holiday_surveys",
+    )
+    question = models.CharField(max_length=255, default="Nachhilfe in den kommenden Ferien?")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Umfrage"
+        verbose_name_plural = "Umfragen"
+
+    def __str__(self) -> str:
+        return f"Umfrage von {self.tutor.user.username}: {self.question}"
+
+
+class HolidaySurveyResponse(models.Model):
+    class Answer(models.TextChoices):
+        YES = "yes", "Ja"
+        NO = "no", "Nein"
+
+    survey = models.ForeignKey(
+        HolidaySurvey,
+        on_delete=models.CASCADE,
+        related_name="responses",
+    )
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.CASCADE,
+        related_name="holiday_survey_responses",
+    )
+    parent = models.ForeignKey(
+        ParentProfile,
+        on_delete=models.SET_NULL,
+        related_name="holiday_survey_responses",
+        null=True,
+        blank=True,
+    )
+    answer = models.CharField(max_length=10, choices=Answer.choices, blank=True, default="")
+    answered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["student__user__last_name", "student__user__first_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["survey", "student"],
+                name="unique_holiday_survey_response_per_student",
+            )
+        ]
+        verbose_name = "Umfrageantwort"
+        verbose_name_plural = "Umfrageantworten"
+
+    def __str__(self) -> str:
+        answer = self.get_answer_display() if self.answer else "offen"
+        return f"{self.student.user.username}: {answer}"
 
 
 class Invoice(models.Model):

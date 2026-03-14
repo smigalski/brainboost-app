@@ -139,6 +139,7 @@ EMAIL_NOTIFICATIONS = {
     "invoice_pending_approval": True,
     "invoice_payment_selected": True,
     "invoice_payment_confirmed": True,
+    "holiday_survey_created": True,
     "material_uploaded": True,
 }
 

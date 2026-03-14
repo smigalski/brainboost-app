@@ -27,6 +27,8 @@ from .forms import (
     LearningMaterialForm,
     InvoiceForm,
     InvoiceGenerateForm,
+    HolidaySurveyForm,
+    HolidaySurveyAnswerForm,
     ParentCreateForm,
     StudentCreateForm,
     TutorTemplateForm,
@@ -36,6 +38,7 @@ from .forms import (
     TutorProfileForm,
 )
 from .notifications import (
+    notify_holiday_survey_created,
     notify_invoice_parent,
     notify_invoice_payment_confirmed,
     notify_invoice_payment_selected,
@@ -55,6 +58,8 @@ from .models import (
     TutorProfile,
     LearningMaterial,
     Invoice,
+    HolidaySurvey,
+    HolidaySurveyResponse,
     TutorTemplate,
 )
 
@@ -306,7 +311,7 @@ def _build_invoice_pdf_context(
             {
                 "date": lesson.date,
                 "time": lesson.time,
-                "subject": lesson.get_fach_display(),
+                "subject": lesson.subject_display,
                 "duration_minutes": lesson.duration_minutes,
                 "location": lesson.get_ort_display(),
                 "base_amount": components["base_amount"],
@@ -379,6 +384,35 @@ def _stripe_client():
 
     stripe.api_key = secret_key
     return stripe
+
+
+def _build_recurrence_dates(cleaned_data) -> list[date]:
+    if not cleaned_data.get("repeat_enabled"):
+        return []
+
+    start_date = cleaned_data["date"]
+    interval_weeks = cleaned_data["repeat_interval_weeks"]
+    end_mode = cleaned_data["repeat_end_mode"]
+    dates = []
+
+    if end_mode == "weeks":
+        max_weeks = cleaned_data["repeat_weeks"]
+        offset = interval_weeks
+        while offset <= max_weeks:
+            dates.append(start_date + timedelta(weeks=offset))
+            offset += interval_weeks
+    elif end_mode == "count":
+        occurrences = cleaned_data["repeat_occurrences"]
+        for index in range(1, occurrences):
+            dates.append(start_date + timedelta(weeks=interval_weeks * index))
+    elif end_mode == "until":
+        repeat_until = cleaned_data["repeat_until"]
+        next_date = start_date + timedelta(weeks=interval_weeks)
+        while next_date <= repeat_until:
+            dates.append(next_date)
+            next_date += timedelta(weeks=interval_weeks)
+
+    return dates
 
 
 def _rating_label(rating) -> str:
@@ -499,6 +533,24 @@ def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
                 "text": "Es wurde eine neue Musterlösung hochgeladen.",
             }
         )
+    survey_responses = (
+        HolidaySurveyResponse.objects.filter(
+            student__in=students,
+            answer="",
+        )
+        .select_related("student__user", "survey__tutor__user")
+        .order_by("-survey__created_at")[:4]
+    )
+    for response in survey_responses:
+        items.append(
+            {
+                "timestamp": response.survey.created_at,
+                "title": f"Umfrage: {_display_name(response.student.user)}",
+                "text": f"{response.survey.question} Bitte antworte schnellstmöglich in der WebApp.",
+                "url": reverse("holiday_surveys"),
+                "action_label": "Jetzt antworten",
+            }
+        )
     return _limit_news_items(items)
 
 
@@ -553,6 +605,20 @@ def _tutor_news_items(tutor_profile: TutorProfile) -> list[dict]:
                 "timestamp": invoice.uploaded_at,
                 "title": f"Neue Rechnung: {_display_name(invoice.student.user)}",
                 "text": f"Hochgeladen von {_display_name(invoice.uploaded_by.user)}.",
+            }
+        )
+    survey_responses = (
+        HolidaySurveyResponse.objects.filter(survey__tutor=tutor_profile)
+        .exclude(answer="")
+        .select_related("student__user", "parent__user", "survey")
+        .order_by("-answered_at")[:4]
+    )
+    for response in survey_responses:
+        items.append(
+            {
+                "timestamp": response.answered_at or response.survey.created_at,
+                "title": f"Umfrage beantwortet: {_display_name(response.student.user)}",
+                "text": f"{_display_name(response.parent.user) if response.parent else 'Ein Elternteil'} hat mit {response.get_answer_display()} geantwortet.",
             }
         )
     return _limit_news_items(items)
@@ -678,9 +744,103 @@ def dashboard(request):
                 .select_related("student__user")
                 .order_by("date", "time")[:5]
             )
+            context["latest_holiday_survey"] = (
+                HolidaySurvey.objects.filter(tutor=request.user.tutor_profile)
+                .prefetch_related("responses__student__user")
+                .first()
+            )
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def holiday_surveys(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role == CustomUser.Roles.TUTOR and hasattr(request.user, "tutor_profile"):
+        tutor_profile = request.user.tutor_profile
+        assigned_students = list(_assigned_students_qs(tutor_profile))
+
+        if request.method == "POST":
+            form = HolidaySurveyForm(request.POST)
+            if form.is_valid():
+                survey = form.save(commit=False)
+                survey.tutor = tutor_profile
+                survey.save()
+                created_count = 0
+                for student in assigned_students:
+                    response = HolidaySurveyResponse.objects.create(
+                        survey=survey,
+                        student=student,
+                    )
+                    notify_holiday_survey_created(request, response)
+                    created_count += 1
+                messages.success(
+                    request,
+                    f"Umfrage wurde erstellt und an {created_count} SchülerInnen/Eltern versendet.",
+                )
+                return redirect("holiday_surveys")
+        else:
+            form = HolidaySurveyForm(initial={"question": "Nachhilfe in den kommenden Ferien?"})
+
+        surveys = HolidaySurvey.objects.filter(tutor=tutor_profile).prefetch_related(
+            "responses__student__user",
+            "responses__parent__user",
+        )
+        for survey in surveys:
+            responses = list(survey.responses.all())
+            survey.yes_responses = [response for response in responses if response.answer == HolidaySurveyResponse.Answer.YES]
+            survey.no_responses = [response for response in responses if response.answer == HolidaySurveyResponse.Answer.NO]
+            survey.open_responses = [response for response in responses if not response.answer]
+
+        return render(
+            request,
+            "holiday_surveys_tutor.html",
+            {
+                "form": form,
+                "surveys": surveys,
+            },
+        )
+
+    if request.user.role == CustomUser.Roles.PARENT and hasattr(request.user, "parent_profile"):
+        parent_profile = request.user.parent_profile
+        responses = HolidaySurveyResponse.objects.filter(
+            student__in=parent_profile.students.all(),
+        ).select_related(
+            "student__user",
+            "survey__tutor__user",
+            "parent__user",
+        ).order_by("-survey__created_at", "student__user__last_name")
+
+        if request.method == "POST":
+            response = get_object_or_404(
+                responses,
+                pk=request.POST.get("response_id"),
+            )
+            form = HolidaySurveyAnswerForm(request.POST, instance=response)
+            if form.is_valid():
+                updated = form.save(commit=False)
+                updated.parent = parent_profile
+                updated.answered_at = timezone.now()
+                updated.save()
+                messages.success(request, "Deine Antwort wurde gespeichert.")
+                return redirect("holiday_surveys")
+        response_items = [
+            {
+                "response": response,
+                "form": HolidaySurveyAnswerForm(instance=response),
+            }
+            for response in responses
+        ]
+        return render(
+            request,
+            "holiday_surveys_parent.html",
+            {
+                "response_items": response_items,
+            },
+        )
+
+    return redirect("dashboard")
 
 
 @login_required
@@ -1058,16 +1218,40 @@ def lesson_create(request):
         return redirect("lesson_list")
 
     if request.method == "POST":
-        form = LessonForm(data=request.POST, tutor_profile=request.user.tutor_profile)
+        form = LessonForm(
+            data=request.POST,
+            tutor_profile=request.user.tutor_profile,
+            is_edit=False,
+        )
         if form.is_valid():
             lesson = form.save(commit=False)
             lesson.tutor = request.user.tutor_profile
-            _assign_location_and_distance(lesson)
-            lesson.save()
-            notify_lesson_created(request, lesson)
+            recurrence_dates = _build_recurrence_dates(form.cleaned_data)
+            lessons_to_create = [lesson]
+            for lesson_date in recurrence_dates:
+                lessons_to_create.append(
+                    Lesson(
+                        date=lesson_date,
+                        time=lesson.time,
+                        ort=lesson.ort,
+                        duration_minutes=lesson.duration_minutes,
+                        student=lesson.student,
+                        tutor=lesson.tutor,
+                        fach=lesson.fach,
+                        fach_2=lesson.fach_2,
+                        fach_3=lesson.fach_3,
+                        status=lesson.status,
+                    )
+                )
+            for lesson_item in lessons_to_create:
+                _assign_location_and_distance(lesson_item)
+                lesson_item.save()
+                notify_lesson_created(request, lesson_item)
+            if recurrence_dates:
+                messages.success(request, f"{len(lessons_to_create)} Termine wurden angelegt.")
             return redirect("lesson_list")
     else:
-        form = LessonForm(tutor_profile=request.user.tutor_profile)
+        form = LessonForm(tutor_profile=request.user.tutor_profile, is_edit=False)
     return render(request, "lesson_form.html", {"form": form})
 
 
@@ -1224,6 +1408,7 @@ def lesson_edit(request, lesson_id):
             data=request.POST,
             instance=lesson,
             tutor_profile=request.user.tutor_profile if is_tutor else None,
+            is_edit=True,
             allowed_students=None,
         )
         if form.is_valid():
@@ -1236,6 +1421,7 @@ def lesson_edit(request, lesson_id):
         form = LessonForm(
             instance=lesson,
             tutor_profile=request.user.tutor_profile if is_tutor else None,
+            is_edit=True,
             allowed_students=None,
         )
 
@@ -1825,6 +2011,7 @@ def progress_create(request, lesson_id=None):
             "lesson": lesson,
             "is_edit": False,
             "cancel_url": reverse("progress"),
+            "rating_fields": [form[name] for name in ("rating", "rating_fach_2", "rating_fach_3") if name in form.fields],
         },
     )
 
@@ -1870,6 +2057,7 @@ def progress_edit(request, entry_id):
             "is_edit": True,
             "cancel_url": next_url,
             "next_url": next_url,
+            "rating_fields": [form[name] for name in ("rating", "rating_fach_2", "rating_fach_3") if name in form.fields],
         },
     )
 

@@ -34,6 +34,7 @@ urlpatterns = [
     path("material/<str:kind>/upload/", views.material_upload, name="material_upload"),
     path("loesungen/", views.tutor_solution_list, name="tutor_solution_list"),
     path("vorlagen/", views.tutor_template_list, name="tutor_template_list"),
+    path("umfragen/", views.holiday_surveys, name="holiday_surveys"),
     path("rechnungen/neu/", views.invoice_upload, name="invoice_upload"),
     path("rechnungen/<int:invoice_id>/genehmigen/", views.invoice_approve, name="invoice_approve"),
     path("rechnungen/<int:invoice_id>/eltern/<int:parent_id>/benachrichtigen/", views.invoice_notify_parent, name="invoice_notify_parent"),

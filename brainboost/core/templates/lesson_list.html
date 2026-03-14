@@ -85,7 +85,7 @@
                     </div>
                 </div>
                 <div>
-                    <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                    <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.subject_display }} · {{ lesson.get_ort_display }}</div>
                     {% if lesson.location_address %}
                         <div class="muted">{{ lesson.location_address }}</div>
                     {% endif %}
@@ -173,7 +173,7 @@
                                 </div>
                             </div>
                             <div>
-                                <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.get_fach_display }} · {{ lesson.get_ort_display }}</div>
+                                <div class="muted">{{ lesson.student.user.get_full_name }} · {{ lesson.tutor.user.get_full_name }} · {{ lesson.subject_display }} · {{ lesson.get_ort_display }}</div>
                                 {% if lesson.location_address %}
                                     <div class="muted">{{ lesson.location_address }}</div>
                                 {% endif %}

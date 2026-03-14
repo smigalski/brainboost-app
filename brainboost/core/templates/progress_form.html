@@ -70,22 +70,24 @@
             {% endif %}
         </p>
 
-        <div>
-            {{ form.rating.label_tag }}
-            <div class="progress-rating-grid">
-                {% for radio in form.rating %}
-                    <label class="progress-rating-option">
-                        {{ radio.tag }}
-                        <span style="background:{% cycle '#ff6b6b' '#ff7d61' '#ff9258' '#ffaa52' '#ffc24d' '#e6d64a' '#bddf4c' '#91d15c' '#5cbf5c' '#1f6666' %};{% if forloop.counter == 10 %} color:#f7f7f2;{% endif %}">
-                            {{ radio.choice_label }}
-                        </span>
-                    </label>
-                {% endfor %}
+        {% for rating_field in rating_fields %}
+            <div>
+                {{ rating_field.label_tag }}
+                <div class="progress-rating-grid">
+                    {% for radio in rating_field %}
+                        <label class="progress-rating-option">
+                            {{ radio.tag }}
+                            <span style="background:{% cycle '#ff6b6b' '#ff7d61' '#ff9258' '#ffaa52' '#ffc24d' '#e6d64a' '#bddf4c' '#91d15c' '#5cbf5c' '#1f6666' %};{% if forloop.counter == 10 %} color:#f7f7f2;{% endif %}">
+                                {{ radio.choice_label }}
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if rating_field.errors %}
+                    <div class="muted" style="color: var(--red); margin-top:6px;">{{ rating_field.errors|join:", " }}</div>
+                {% endif %}
             </div>
-            {% if form.rating.errors %}
-                <div class="muted" style="color: var(--red); margin-top:6px;">{{ form.rating.errors|join:", " }}</div>
-            {% endif %}
-        </div>
+        {% endfor %}
 
         <button class="button" type="submit">Speichern</button>
         <a class="button" style="background: var(--teal);" href="{{ cancel_url }}">Abbrechen</a>

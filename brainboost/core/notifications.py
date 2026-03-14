@@ -6,7 +6,15 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from .models import LearningMaterial, Lesson, StudentProfile, ParentProfile, Invoice, TutorProfile
+from .models import (
+    LearningMaterial,
+    Lesson,
+    StudentProfile,
+    ParentProfile,
+    Invoice,
+    TutorProfile,
+    HolidaySurveyResponse,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -338,3 +346,23 @@ def notify_material_uploaded(request, material: LearningMaterial) -> None:
         **_build_urls(request),
     }
     _send_templated_email(subject, "material_uploaded", context, _student_recipients(material.student))
+
+
+def notify_holiday_survey_created(request, response: HolidaySurveyResponse) -> None:
+    if not _notifications_enabled("holiday_survey_created"):
+        return
+    student = response.student
+    survey = response.survey
+    recipients = _parent_recipients(student)
+    if not recipients:
+        return
+    subject = f"Neue Umfrage für {student.user.get_full_name() or student.user.username}"
+    context = {
+        "heading": "Neue Umfrage",
+        "survey": survey,
+        "student": student,
+        "tutor": survey.tutor,
+        "survey_url": request.build_absolute_uri(reverse("holiday_surveys")),
+        **_build_urls(request),
+    }
+    _send_templated_email(subject, "holiday_survey_created", context, recipients)

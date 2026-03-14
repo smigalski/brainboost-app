@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Umfragen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Umfrage</h1>
+    <p class="muted">Erstelle eine Ja/Nein-Umfrage für alle zugewiesenen SchülerInnen. Diese Umfrage für Eltern unter News zu sehen sein und sie werden per Mail benachrichtigt</p>
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            {{ form.question.label_tag }}
+            {{ form.question }}
+            {% if form.question.errors %}
+                <span class="muted" style="color: var(--red);">{{ form.question.errors|join:", " }}</span>
+            {% endif %}
+        </p>
+        <button class="button" type="submit">Umfrage absenden</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Zurück</a>
+    </form>
+</div>
+
+{% for survey in surveys %}
+    <div class="card">
+        <h3 style="margin-bottom:6px;">{{ survey.question }}</h3>
+        <div class="muted" style="margin-bottom:12px;">Erstellt am {{ survey.created_at|date:"d.m.Y H:i" }}</div>
+        <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+            <div>
+                <strong>Ja ({{ survey.yes_responses|length }})</strong>
+                <ul class="list" style="margin-top:10px;">
+                    {% for response in survey.yes_responses %}
+                        <li>{{ response.student.user.get_full_name }}</li>
+                    {% empty %}
+                        <li>Keine Zusagen.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <strong>Nein ({{ survey.no_responses|length }})</strong>
+                <ul class="list" style="margin-top:10px;">
+                    {% for response in survey.no_responses %}
+                        <li>{{ response.student.user.get_full_name }}</li>
+                    {% empty %}
+                        <li>Keine Absagen.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <strong>Offen ({{ survey.open_responses|length }})</strong>
+                <ul class="list" style="margin-top:10px;">
+                    {% for response in survey.open_responses %}
+                        <li>{{ response.student.user.get_full_name }}</li>
+                    {% empty %}
+                        <li>Alle Antworten liegen vor.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div class="card">
+        <p class="muted">Noch keine Umfragen erstellt.</p>
+    </div>
+{% endfor %}
+{% endblock %}

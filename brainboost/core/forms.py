@@ -16,6 +16,8 @@ from .models import (
     TutorProfile,
     LearningMaterial,
     Invoice,
+    HolidaySurvey,
+    HolidaySurveyResponse,
     TutorTemplate,
     CustomUser,
 )
@@ -36,12 +38,53 @@ class LessonForm(forms.ModelForm):
         widget=forms.RadioSelect(attrs={"class": "pill-options"}),
         label="Dauer",
     )
+    repeat_enabled = forms.BooleanField(required=False, label="Regelmäßig wiederholen")
+    repeat_interval_weeks = forms.IntegerField(
+        required=False,
+        min_value=1,
+        initial=1,
+        label="Wochenzyklus",
+        help_text="1 = wöchentlich, 2 = alle zwei Wochen usw.",
+    )
+    repeat_end_mode = forms.ChoiceField(
+        required=False,
+        label="Wiederholen bis",
+        choices=[
+            ("", "Einmaliger Termin"),
+            ("weeks", "Nach Anzahl an Wochen"),
+            ("count", "Nach Anzahl an Terminen"),
+            ("until", "Bis zu einem Datum"),
+        ],
+    )
+    repeat_weeks = forms.IntegerField(required=False, min_value=1, label="Anzahl an Wochen")
+    repeat_occurrences = forms.IntegerField(
+        required=False,
+        min_value=2,
+        label="Anzahl an Terminen",
+        help_text="Inklusive des ersten Termins.",
+    )
+    repeat_until = forms.DateField(
+        required=False,
+        label="Wiederholen bis Datum",
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        input_formats=["%Y-%m-%d"],
+    )
 
     class Meta:
         model = Lesson
-        fields = ["student", "date", "time", "duration_minutes", "ort", "fach", "status"]
+        fields = [
+            "student",
+            "date",
+            "time",
+            "duration_minutes",
+            "ort",
+            "fach",
+            "fach_2",
+            "fach_3",
+            "status",
+        ]
 
-    def __init__(self, *args, tutor_profile=None, allowed_students=None, **kwargs):
+    def __init__(self, *args, tutor_profile=None, allowed_students=None, is_edit=False, **kwargs):
         super().__init__(*args, **kwargs)
         if allowed_students is not None:
             self.fields["student"].queryset = allowed_students
@@ -50,19 +93,83 @@ class LessonForm(forms.ModelForm):
                 assigned_tutors=tutor_profile
             ).distinct()
             self.fields["student"].queryset = students_qs
+        self.fields["fach"].label = "Fach"
+        self.fields["fach_2"].label = "Fach 2"
+        self.fields["fach_3"].label = "Fach 3"
+        self.fields["fach_2"].required = False
+        self.fields["fach_3"].required = False
+        blank_choices = [("", "---------"), *Lesson.SUBJECT_CHOICES]
+        self.fields["fach_2"].choices = blank_choices
+        self.fields["fach_3"].choices = blank_choices
+        if is_edit:
+            for name in (
+                "repeat_enabled",
+                "repeat_interval_weeks",
+                "repeat_end_mode",
+                "repeat_weeks",
+                "repeat_occurrences",
+                "repeat_until",
+            ):
+                self.fields.pop(name, None)
+
+    def clean(self):
+        cleaned = super().clean()
+        subjects = [cleaned.get("fach"), cleaned.get("fach_2"), cleaned.get("fach_3")]
+        non_empty_subjects = [subject for subject in subjects if subject]
+        if len(non_empty_subjects) != len(set(non_empty_subjects)):
+            raise forms.ValidationError("Bitte wähle jedes Fach nur einmal aus.")
+
+        if "repeat_enabled" not in self.fields or not cleaned.get("repeat_enabled"):
+            return cleaned
+
+        end_mode = cleaned.get("repeat_end_mode")
+        interval = cleaned.get("repeat_interval_weeks")
+        if not end_mode:
+            self.add_error("repeat_end_mode", "Bitte wähle aus, wie oft sich der Termin wiederholen soll.")
+        if not interval:
+            self.add_error("repeat_interval_weeks", "Bitte gib den Wochenzyklus an.")
+
+        if end_mode == "weeks" and not cleaned.get("repeat_weeks"):
+            self.add_error("repeat_weeks", "Bitte gib die Anzahl an Wochen an.")
+        elif end_mode == "count" and not cleaned.get("repeat_occurrences"):
+            self.add_error("repeat_occurrences", "Bitte gib die Anzahl an Terminen an.")
+        elif end_mode == "until":
+            repeat_until = cleaned.get("repeat_until")
+            if not repeat_until:
+                self.add_error("repeat_until", "Bitte gib ein Enddatum an.")
+            elif cleaned.get("date") and repeat_until <= cleaned["date"]:
+                self.add_error("repeat_until", "Das Enddatum muss nach dem ersten Termin liegen.")
+
+        return cleaned
 
 
 class ProgressEntryForm(forms.ModelForm):
+    RATING_CHOICES = [(value, str(value)) for value in range(1, 11)]
+
     rating = forms.TypedChoiceField(
-        choices=[(value, str(value)) for value in range(1, 11)],
+        choices=RATING_CHOICES,
         coerce=int,
         widget=forms.RadioSelect,
         label="Mitarbeit",
     )
+    rating_fach_2 = forms.TypedChoiceField(
+        choices=RATING_CHOICES,
+        coerce=int,
+        widget=forms.RadioSelect,
+        label="Mitarbeit Fach 2",
+        required=False,
+    )
+    rating_fach_3 = forms.TypedChoiceField(
+        choices=RATING_CHOICES,
+        coerce=int,
+        widget=forms.RadioSelect,
+        label="Mitarbeit Fach 3",
+        required=False,
+    )
 
     class Meta:
         model = ProgressEntry
-        fields = ["lesson", "comment", "rating"]
+        fields = ["lesson", "comment", "rating", "rating_fach_2", "rating_fach_3"]
         labels = {
             "lesson": "Termin",
             "comment": "Kommentar",
@@ -74,6 +181,40 @@ class ProgressEntryForm(forms.ModelForm):
             self.fields["lesson"].queryset = (
                 tutor_profile.lessons.select_related("student__user")
             )
+        lesson = self._resolve_lesson()
+        if lesson and lesson.fach_2:
+            self.fields["rating_fach_2"].label = f"Mitarbeit {lesson.get_fach_2_display()}"
+        else:
+            self.fields.pop("rating_fach_2", None)
+        if lesson and lesson.fach_3:
+            self.fields["rating_fach_3"].label = f"Mitarbeit {lesson.get_fach_3_display()}"
+        else:
+            self.fields.pop("rating_fach_3", None)
+        if lesson:
+            self.fields["rating"].label = f"Mitarbeit {lesson.get_fach_display()}"
+
+    def _resolve_lesson(self):
+        if self.instance and self.instance.pk:
+            return self.instance.lesson
+        lesson = self.initial.get("lesson")
+        if isinstance(lesson, Lesson):
+            return lesson
+        raw_lesson_id = self.data.get(self.add_prefix("lesson")) or self.initial.get("lesson")
+        if raw_lesson_id:
+            try:
+                return Lesson.objects.get(pk=raw_lesson_id)
+            except (Lesson.DoesNotExist, TypeError, ValueError):
+                return None
+        return None
+
+    def clean(self):
+        cleaned = super().clean()
+        lesson = cleaned.get("lesson") or self._resolve_lesson()
+        if lesson and lesson.fach_2 and cleaned.get("rating_fach_2") in (None, ""):
+            self.add_error("rating_fach_2", f"Bitte bewerte auch {lesson.get_fach_2_display()}.")
+        if lesson and lesson.fach_3 and cleaned.get("rating_fach_3") in (None, ""):
+            self.add_error("rating_fach_3", f"Bitte bewerte auch {lesson.get_fach_3_display()}.")
+        return cleaned
 
 
 class LearningMaterialForm(forms.ModelForm):
@@ -161,6 +302,21 @@ class InvoiceGenerateForm(forms.Form):
             return datetime.strptime(value, "%Y-%m").date()
         except ValueError as exc:
             raise forms.ValidationError("Bitte wähle einen gültigen Monat aus.") from exc
+
+
+class HolidaySurveyForm(forms.ModelForm):
+    class Meta:
+        model = HolidaySurvey
+        fields = ["question"]
+        labels = {"question": "Ja/Nein-Frage"}
+
+
+class HolidaySurveyAnswerForm(forms.ModelForm):
+    class Meta:
+        model = HolidaySurveyResponse
+        fields = ["answer"]
+        labels = {"answer": "Antwort"}
+        widgets = {"answer": forms.RadioSelect}
 
 
 class TutorTemplateForm(forms.ModelForm):

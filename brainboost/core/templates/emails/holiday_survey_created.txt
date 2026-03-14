@@ -1,0 +1,11 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Es gibt eine neue Umfrage in der WebApp.
+
+SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
+TutorIn: {{ tutor.user.get_full_name|default:tutor.user.username }}
+Frage: {{ survey.question }}
+
+Bitte antworte schnellstmöglich hier:
+{{ survey_url }}
+{% endblock %}
