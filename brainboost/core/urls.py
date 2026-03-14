@@ -31,6 +31,7 @@ urlpatterns = [
     path("termine/<int:lesson_id>/bearbeiten/", views.lesson_edit, name="lesson_edit"),
     path("termine/<int:lesson_id>/stornieren/", views.lesson_cancel, name="lesson_cancel"),
     path("termine/<int:lesson_id>/verlegen/", views.lesson_reschedule_request, name="lesson_reschedule_request"),
+    path("termine/<int:lesson_id>/google-calendar/", views.lesson_google_calendar, name="lesson_google_calendar"),
     path("termine/<int:lesson_id>/ics/", views.lesson_ics, name="lesson_ics"),
     path("termine/<int:lesson_id>/loeschen/", views.lesson_delete, name="lesson_delete"),
     path("material/<str:kind>/upload/", views.material_upload, name="material_upload"),
@@ -86,6 +87,29 @@ urlpatterns = [
             template_name="password_reset_complete.html",
         ),
         name="password_reset_complete",
+    ),
+    path(
+        "passwort/vergessen/",
+        auth_views.PasswordResetView.as_view(
+            template_name="password_reset_form.html",
+            email_template_name="emails/password_reset_email.txt",
+            html_email_template_name="emails/password_reset_email.html",
+            subject_template_name="emails/password_reset_subject.txt",
+            success_url=reverse_lazy("password_reset_done"),
+        ),
+        name="password_reset",
+    ),
+    path(
+        "passwort/vergessen/gesendet/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="password_reset_done.html",
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "nutzer/<int:user_id>/passwort-mail/",
+        views.resend_set_password_email,
+        name="resend_set_password_email",
     ),
     path(
         "login/",

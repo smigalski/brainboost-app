@@ -342,13 +342,15 @@ class Lesson(models.Model):
     @property
     def calendar_details(self) -> str:
         return (
-            f"TutorIn: {self.tutor.user.username}\\n"
-            f"SchülerIn: {self.student.user.username}\\n"
+            f"TutorIn: {self.tutor.user.get_full_name().strip() or self.tutor.user.username}\n"
+            f"SchülerIn: {self.student.user.get_full_name().strip() or self.student.user.username}\n"
             f"Ort: {self.get_ort_display()}"
         )
 
     @property
     def calendar_location(self) -> str:
+        if self.ort == self.Ort.ZUHAUSE_STUDENT:
+            return self.location_address or self.student.address or self.get_ort_display()
         return self.location_address or self.get_ort_display()
 
     @property

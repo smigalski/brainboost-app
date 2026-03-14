@@ -61,7 +61,16 @@
         <tbody>
             {% for tutor in tutors %}
                 <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
-                    <td data-label="TutorIn" style="padding:12px; vertical-align:top; font-weight:700;">{{ tutor.user.username }}</td>
+                    <td data-label="TutorIn" style="padding:12px; vertical-align:top; font-weight:700;">
+                        {{ tutor.user.get_full_name|default:tutor.user.username }}
+                        {% if can_resend_password_mail %}
+                            <form method="post" action="{% url 'resend_set_password_email' tutor.user.id %}" style="margin-top:8px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="button" type="submit" style="padding:6px 10px; background:#5fb5ff; color:#0b1b2a;">Passwort-Mail erneut senden</button>
+                            </form>
+                        {% endif %}
+                    </td>
                     <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
                         {% if tutor.address %}
                             {{ tutor.address }}

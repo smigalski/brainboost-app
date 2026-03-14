@@ -63,6 +63,13 @@
                 <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
                     <td data-label="SchülerIn" style="padding:12px; vertical-align:top; font-weight:700;">
                         {{ student.user.get_full_name|default:student.user.username }}{% if student.phone_number %} · {{ student.phone_number }}{% endif %}
+                        {% if can_resend_password_mail %}
+                            <form method="post" action="{% url 'resend_set_password_email' student.user.id %}" style="margin-top:8px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button class="button" type="submit" style="padding:6px 10px; background:#5fb5ff; color:#0b1b2a;">Passwort-Mail erneut senden</button>
+                            </form>
+                        {% endif %}
                     </td>
                     <td data-label="Wohnadresse" style="padding:12px; vertical-align:top;">
                         {% if student.address %}
@@ -74,7 +81,16 @@
                     <td data-label="Eltern" style="padding:12px; vertical-align:top;">
                         {% with parents=student.parents.all %}
                             {% for parent in parents %}
-                                <div>{{ parent.user.get_full_name|default:parent.user.username }}{% if parent.phone_number %} · {{ parent.phone_number }}{% endif %}</div>
+                                <div style="margin-bottom:10px;">
+                                    <div>{{ parent.user.get_full_name|default:parent.user.username }}{% if parent.phone_number %} · {{ parent.phone_number }}{% endif %}</div>
+                                    {% if can_resend_password_mail %}
+                                        <form method="post" action="{% url 'resend_set_password_email' parent.user.id %}" style="margin-top:8px;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                            <button class="button" type="submit" style="padding:6px 10px; background:#5fb5ff; color:#0b1b2a;">Passwort-Mail erneut senden</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
                             {% empty %}
                                 <span class="muted">Keine Eltern zugeordnet</span>
                             {% endfor %}

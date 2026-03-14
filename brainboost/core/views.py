@@ -194,6 +194,26 @@ def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
     return links
 
 
+def _lesson_calendar_title_for_user(user: CustomUser, lesson: Lesson) -> str:
+    if user.role == CustomUser.Roles.TUTOR:
+        return f"{_display_name(lesson.student.user)} - {lesson.subject_display}"
+    return f"BrainBoost - {lesson.subject_display} - {_display_name(lesson.tutor.user)}"
+
+
+def _lesson_google_calendar_url_for_user(user: CustomUser, lesson: Lesson) -> str:
+    start = lesson.scheduled_datetime.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    end = lesson.end_datetime.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ctz = timezone.get_current_timezone_name()
+    return (
+        "https://calendar.google.com/calendar/render?action=TEMPLATE"
+        f"&text={quote(_lesson_calendar_title_for_user(user, lesson))}"
+        f"&dates={start}/{end}"
+        f"&details={quote(lesson.calendar_details)}"
+        f"&location={quote(lesson.calendar_location)}"
+        f"&ctz={quote(ctz)}"
+    )
+
+
 GERMAN_MONTH_NAMES = {
     1: "Januar",
     2: "Februar",
@@ -763,6 +783,10 @@ def _send_set_password_email(request, user: CustomUser) -> None:
         raise RuntimeError("email_send_failed")
 
 
+def _has_admin_access(user: CustomUser) -> bool:
+    return bool(user.is_staff or user.is_superuser)
+
+
 def _assigned_students_qs(tutor_profile: TutorProfile):
     return (
         StudentProfile.objects.filter(assigned_tutors=tutor_profile)
@@ -788,7 +812,7 @@ def _faq_items_for_target(target: str):
 
 
 def _has_faq_admin_access(user: CustomUser) -> bool:
-    return bool(user.is_staff or user.is_superuser)
+    return _has_admin_access(user)
 
 
 @login_required
@@ -1096,7 +1120,10 @@ def assigned_student_list(request):
     return render(
         request,
         "assigned_student_list.html",
-        {"students": students},
+        {
+            "students": students,
+            "can_resend_password_mail": _has_admin_access(request.user),
+        },
     )
 
 
@@ -1119,8 +1146,51 @@ def assigned_tutor_list(request):
     return render(
         request,
         "assigned_tutor_list.html",
-        {"tutors": tutors},
+        {
+            "tutors": tutors,
+            "can_resend_password_mail": _has_admin_access(request.user),
+        },
     )
+
+
+@login_required
+def resend_set_password_email(request, user_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        messages.error(request, "Du darfst keine Passwort-Mails erneut versenden.")
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("dashboard")
+
+    next_url = request.POST.get("next") or reverse("dashboard")
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = reverse("dashboard")
+
+    user = get_object_or_404(CustomUser, pk=user_id)
+    try:
+        _send_set_password_email(request, user)
+    except ValueError:
+        messages.error(
+            request,
+            "Für diesen Nutzer ist keine E-Mail-Adresse hinterlegt.",
+        )
+    except Exception as exc:
+        logger.exception("Erneuter Versand der Passwort-Mail fehlgeschlagen")
+        messages.error(
+            request,
+            "Die Passwort-Mail konnte nicht erneut versendet werden. "
+            f"Fehler: {exc.__class__.__name__} ({exc})",
+        )
+    else:
+        messages.success(
+            request,
+            f"Die Passwort-Mail wurde erneut an {user.get_full_name() or user.username} versendet.",
+        )
+    return redirect(next_url)
 
 
 @login_required
@@ -1320,6 +1390,11 @@ def lesson_list(request):
     cancelable_ids = list(
         base_qs.exclude(status=Lesson.Status.CANCELLED).values_list("id", flat=True)
     )
+    progress_lesson_ids = list(
+        ProgressEntry.objects.filter(lesson__in=base_qs)
+        .values_list("lesson_id", flat=True)
+        .distinct()
+    )
 
     period_options = [
         {
@@ -1396,6 +1471,7 @@ def lesson_list(request):
             "ort_options": ort_options,
             "cancelable_ids": cancelable_ids,
             "editable_ids": editable_ids,
+            "progress_lesson_ids": progress_lesson_ids,
         },
     )
 
@@ -1537,6 +1613,22 @@ def lesson_reschedule_request(request, lesson_id):
     )
     success_msg = "TutorIn wurde informiert. Termin ist als Verlegungsanfrage markiert."
     return JsonResponse({"ok": True, "message": success_msg}) if is_ajax else redirect("lesson_list")
+
+
+@login_required
+def lesson_google_calendar(request, lesson_id):
+    _ensure_profile_for_user(request.user)
+    lesson = get_object_or_404(Lesson, pk=lesson_id)
+    allowed = False
+    if hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile:
+        allowed = True
+    if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
+        allowed = True
+    if hasattr(request.user, "parent_profile") and request.user.parent_profile.students.filter(id=lesson.student_id).exists():
+        allowed = True
+    if not allowed:
+        return redirect("lesson_list")
+    return redirect(_lesson_google_calendar_url_for_user(request.user, lesson))
 
 
 @login_required
@@ -2353,6 +2445,8 @@ def progress_view(request, student_id=None):
             entries = entries.filter(lesson__duration_minutes=duration)
         if ort:
             entries = entries.filter(lesson__ort=ort)
+
+    entries = entries.order_by("-lesson__date", "-lesson__time", "-created_at")
 
     period_options = [
         {

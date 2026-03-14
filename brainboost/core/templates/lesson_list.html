@@ -2,6 +2,27 @@
 {% block title %}BrainBoost | Termine{% endblock %}
 {% block content %}
 <div class="card">
+    <style>
+        .lesson-progress-flag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+        .lesson-progress-flag--present {
+            background: #6fa94b;
+            color: #10210a;
+        }
+        .lesson-progress-flag--missing {
+            background: #d7dde4;
+            color: #5c6675;
+        }
+    </style>
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <div>
             <h1>Termine</h1>
@@ -79,9 +100,10 @@
                         <span style="font-weight:600; white-space:nowrap;">+{{ lesson.duration_minutes }} Min</span>
                     </div>
                     <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                        <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                            {{ lesson.get_status_display }}
-                        </span>
+                        <span
+                            class="lesson-progress-flag {% if lesson.id in progress_lesson_ids %}lesson-progress-flag--present{% else %}lesson-progress-flag--missing{% endif %}"
+                            title="{% if lesson.id in progress_lesson_ids %}Lernfortschritt vorhanden{% else %}Kein Lernfortschritt vorhanden{% endif %}"
+                        >LF</span>
                     </div>
                 </div>
                 <div>
@@ -102,13 +124,18 @@
                     {% if lesson.cancellation_reason %}
                         <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                     {% endif %}
+                    <div style="margin-top:8px;">
+                        <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                            {{ lesson.get_status_display }}
+                        </span>
+                    </div>
                 </div>
                 <div class="icon-action-row">
                     {% if lesson.id in editable_ids %}
                         <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}?next={{ request.get_full_path|urlencode }}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
                     {% endif %}
                     {% if lesson.status != 'cancelled' %}
-                        <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
+                        <a class="icon-button icon-button--google-calendar" href="{% url 'lesson_google_calendar' lesson.id %}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
                         <a class="icon-button icon-button--apple" href="{% url 'lesson_ics' lesson.id %}" aria-label="iCloud / ICS" title="iCloud / ICS">
                             <span class="apple-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" role="presentation" focusable="false">
@@ -156,7 +183,7 @@
     </div>
     <div id="calendar-card" class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top:12px;">
         {% for day in week_days %}
-            <div class="card" style="box-shadow:none; border:1px solid rgba(0,0,0,0.04);">
+            <div class="card" style="box-shadow:none; border:2px solid rgba(31,102,102,0.22);">
                 <strong>{{ day.date|date:"l, d.m.Y" }}</strong>
                 <ul class="list" style="margin-top:10px;">
                     {% for lesson in day.lessons %}
@@ -167,9 +194,10 @@
                                     <span style="font-weight:600; white-space:nowrap;">+{{ lesson.duration_minutes }} Min</span>
                                 </div>
                                 <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                                        {{ lesson.get_status_display }}
-                                    </span>
+                                    <span
+                                        class="lesson-progress-flag {% if lesson.id in progress_lesson_ids %}lesson-progress-flag--present{% else %}lesson-progress-flag--missing{% endif %}"
+                                        title="{% if lesson.id in progress_lesson_ids %}Lernfortschritt vorhanden{% else %}Kein Lernfortschritt vorhanden{% endif %}"
+                                    >LF</span>
                                 </div>
                             </div>
                             <div>
@@ -190,12 +218,17 @@
                                 {% if lesson.cancellation_reason %}
                                     <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                                 {% endif %}
+                                <div style="margin-top:8px;">
+                                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
+                                        {{ lesson.get_status_display }}
+                                    </span>
+                                </div>
                                 <div class="icon-action-row" style="margin-top:8px;">
                                     {% if lesson.id in editable_ids %}
                                         <a class="icon-button" href="{% url 'lesson_edit' lesson.id %}?next={{ request.get_full_path|urlencode }}" aria-label="Termin bearbeiten" title="Termin bearbeiten">&#9998;</a>
                                     {% endif %}
                                     {% if lesson.status != 'cancelled' %}
-                                        <a class="icon-button icon-button--google-calendar" href="{{ lesson.google_calendar_url }}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
+                                        <a class="icon-button icon-button--google-calendar" href="{% url 'lesson_google_calendar' lesson.id %}" target="_blank" rel="noopener" aria-label="Google Kalender" title="Google Kalender"><span class="google-calendar-icon" aria-hidden="true"><span class="google-calendar-icon__date">12</span></span></a>
                                         <a class="icon-button icon-button--apple" href="{% url 'lesson_ics' lesson.id %}" aria-label="iCloud / ICS" title="iCloud / ICS">
                                             <span class="apple-icon" aria-hidden="true">
                                                 <svg viewBox="0 0 24 24" role="presentation" focusable="false">
