@@ -1,0 +1,14 @@
+{% extends "emails/base.html" %}
+{% block content %}
+  <p style="margin:0 0 12px 0;">Die Online-Zahlung zu einer Rechnung ist erfolgreich eingegangen.</p>
+  <ul style="margin:0 0 12px 16px;padding:0;">
+    <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
+    <li><strong>Elternteil:</strong> {{ parent.user.get_full_name|default:parent.user.username }}</li>
+    <li><strong>Zahlungsart:</strong> {{ payment_method_label }}</li>
+    <li><strong>Bezahlt am:</strong> {{ invoice.paid_at|date:"d.m.Y H:i" }}</li>
+    <li><strong>Rechnung:</strong> {{ invoice.file.name }}</li>
+  </ul>
+  <p style="margin:0;">
+    Rechnungen: <a href="{{ invoice_upload_url }}">{{ invoice_upload_url }}</a>
+  </p>
+{% endblock %}

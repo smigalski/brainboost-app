@@ -29,6 +29,8 @@ from .forms import (
     InvoiceGenerateForm,
     HolidaySurveyForm,
     HolidaySurveyAnswerForm,
+    FAQItemForm,
+    FAQSubmissionForm,
     ParentCreateForm,
     StudentCreateForm,
     TutorTemplateForm,
@@ -41,6 +43,7 @@ from .notifications import (
     notify_holiday_survey_created,
     notify_invoice_parent,
     notify_invoice_payment_confirmed,
+    notify_invoice_payment_received_tutor,
     notify_invoice_payment_selected,
     notify_invoice_pending_approval,
     notify_lesson_cancelled,
@@ -60,6 +63,7 @@ from .models import (
     Invoice,
     HolidaySurvey,
     HolidaySurveyResponse,
+    FAQItem,
     TutorTemplate,
 )
 
@@ -90,7 +94,14 @@ def _haversine_km(lat1, lon1, lat2, lon2):
 
 def landing_page(request):
     form = AuthenticationForm(request)
-    return render(request, "landing.html", {"form": form})
+    return render(
+        request,
+        "landing.html",
+        {
+            "form": form,
+            "faq_items": _faq_items_for_target("landing"),
+        },
+    )
 
 
 def _assign_location_and_distance(lesson: Lesson):
@@ -185,6 +196,7 @@ def _mark_invoice_payment_selected(
     invoice: Invoice,
     parent_profile: ParentProfile,
     method: str,
+    notify_tutor: bool = True,
 ) -> None:
     invoice.payment_method = method
     invoice.payment_status = Invoice.PaymentStatus.ANNOUNCED
@@ -198,7 +210,8 @@ def _mark_invoice_payment_selected(
             "payment_requested_at",
         ]
     )
-    notify_invoice_payment_selected(request, invoice, parent_profile)
+    if notify_tutor:
+        notify_invoice_payment_selected(request, invoice, parent_profile)
 
 
 INVOICE_RATE_BY_DURATION = {
@@ -683,6 +696,22 @@ def _assigned_tutors_qs(tutor_profile: TutorProfile):
     return tutor_profile.assigned_tutors.select_related("user").distinct()
 
 
+def _faq_items_for_target(target: str):
+    target_filter = {
+        "parent": Q(show_for_parents=True),
+        "student": Q(show_for_students=True),
+        "tutor": Q(show_for_tutors=True),
+        "landing": Q(show_on_landing=True),
+    }.get(target)
+    if target_filter is None:
+        return FAQItem.objects.none()
+    return FAQItem.objects.filter(is_published=True).filter(target_filter).order_by("question")
+
+
+def _has_faq_admin_access(user: CustomUser) -> bool:
+    return bool(user.is_staff or user.is_superuser)
+
+
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)
@@ -692,6 +721,10 @@ def dashboard(request):
         if hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
             context["news_items"] = _student_news_items(student_profile)
+            context["faq_items"] = _faq_items_for_target("student")
+            context["faq_submission_form"] = FAQSubmissionForm(
+                initial={"show_for_students": True}
+            )
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
                 .filter(student=student_profile)
@@ -711,6 +744,10 @@ def dashboard(request):
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
             context["news_items"] = _parent_news_items(request.user.parent_profile)
+            context["faq_items"] = _faq_items_for_target("parent")
+            context["faq_submission_form"] = FAQSubmissionForm(
+                initial={"show_for_parents": True}
+            )
             students = request.user.parent_profile.students.all()
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
@@ -732,8 +769,10 @@ def dashboard(request):
             assigned_students = _assigned_students_qs(request.user.tutor_profile)
             assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
             context["is_admin_tutor"] = request.user.is_superuser
+            context["can_manage_faq"] = _has_faq_admin_access(request.user)
             context["has_parent_profiles"] = ParentProfile.objects.exists()
             context["news_items"] = _tutor_news_items(request.user.tutor_profile)
+            context["faq_items"] = _faq_items_for_target("tutor")
             bbb_students = assigned_students
             context["bbb_students"] = bbb_students
             context["assigned_student_count"] = assigned_students.count()
@@ -749,9 +788,82 @@ def dashboard(request):
                 .prefetch_related("responses__student__user")
                 .first()
             )
+            context["pending_faq_count"] = FAQItem.objects.filter(is_published=False).count()
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def faq_submit(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role not in (CustomUser.Roles.PARENT, CustomUser.Roles.STUDENT):
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("dashboard")
+
+    form = FAQSubmissionForm(request.POST)
+    if form.is_valid():
+        faq_item = form.save(commit=False)
+        faq_item.created_by = request.user
+        faq_item.is_published = False
+        faq_item.answer = ""
+        faq_item.save()
+        messages.success(request, "Deine Frage wurde an die AdministratorInnen weitergeleitet.")
+    else:
+        messages.error(request, "Die Frage konnte nicht gespeichert werden. Bitte prüfe deine Eingabe.")
+    return redirect("dashboard")
+
+
+@login_required
+def faq_admin(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_faq_admin_access(request.user):
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "create":
+            create_form = FAQItemForm(request.POST)
+            if create_form.is_valid():
+                faq_item = create_form.save(commit=False)
+                faq_item.created_by = request.user
+                faq_item.is_published = True
+                faq_item.save()
+                messages.success(request, "FAQ wurde gespeichert.")
+                return redirect("faq_admin")
+        elif action == "publish":
+            faq_item = get_object_or_404(FAQItem, pk=request.POST.get("faq_id"), is_published=False)
+            publish_form = FAQItemForm(request.POST, instance=faq_item)
+            if publish_form.is_valid():
+                updated = publish_form.save(commit=False)
+                updated.created_by = faq_item.created_by or request.user
+                updated.is_published = True
+                updated.save()
+                messages.success(request, "Frage wurde beantwortet und zur FAQ hinzugefügt.")
+                return redirect("faq_admin")
+        elif action == "update":
+            faq_item = get_object_or_404(FAQItem, pk=request.POST.get("faq_id"), is_published=True)
+            update_form = FAQItemForm(request.POST, instance=faq_item)
+            if update_form.is_valid():
+                update_form.save()
+                messages.success(request, "FAQ wurde aktualisiert.")
+                return redirect("faq_admin")
+
+    create_form = FAQItemForm(initial={"audience_all": True})
+    published_items = FAQItem.objects.filter(is_published=True).order_by("question")
+    pending_items = FAQItem.objects.filter(is_published=False).order_by("-created_at")
+    pending_forms = [(item, FAQItemForm(instance=item)) for item in pending_items]
+    published_forms = [(item, FAQItemForm(instance=item)) for item in published_items]
+    return render(
+        request,
+        "faq_admin.html",
+        {
+            "create_form": create_form,
+            "pending_forms": pending_forms,
+            "published_forms": published_forms,
+        },
+    )
 
 
 @login_required
@@ -1876,6 +1988,7 @@ def invoice_checkout(request, invoice_id):
             invoice,
             parent_profile,
             Invoice.PaymentMethod.ONLINE,
+            notify_tutor=False,
         )
     invoice.stripe_checkout_session_id = session.id
     invoice.save(update_fields=["stripe_checkout_session_id"])
@@ -1922,6 +2035,12 @@ def stripe_webhook(request):
                         "stripe_payment_intent_id",
                     ]
                 )
+                if invoice.payment_requested_by:
+                    notify_invoice_payment_received_tutor(
+                        request,
+                        invoice,
+                        invoice.payment_requested_by,
+                    )
 
     return HttpResponse(status=200)
 
@@ -2216,7 +2335,7 @@ def invoice_list(request):
         return redirect("dashboard")
     payment_status = request.GET.get("payment")
     if payment_status == "success":
-        messages.success(request, "Die Online-Zahlung wurde erfolgreich gestartet. Nach Bestätigung wird die Rechnung als bezahlt markiert.")
+        messages.success(request, "Die Online-Zahlung wurde erfolgreich abgeschlossen. Die Rechnung wurde aktualisiert.")
     elif payment_status == "cancelled":
         messages.info(request, "Die Online-Zahlung wurde abgebrochen.")
     students = request.user.parent_profile.students.all()

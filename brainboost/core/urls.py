@@ -10,6 +10,8 @@ urlpatterns = [
     path("agbs/", views.agbs, name="agbs"),
     path("preise/", views.pricing, name="pricing"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("faq/", views.faq_admin, name="faq_admin"),
+    path("faq/frage/", views.faq_submit, name="faq_submit"),
     path("profil/", views.profile_view, name="profile"),
     path(
         "profil/passwort/",

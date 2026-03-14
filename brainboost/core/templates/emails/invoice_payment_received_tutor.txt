@@ -1,0 +1,12 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Die Online-Zahlung zu einer Rechnung ist erfolgreich eingegangen.
+
+SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
+Elternteil: {{ parent.user.get_full_name|default:parent.user.username }}
+Zahlungsart: {{ payment_method_label }}
+Bezahlt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}
+Rechnung: {{ invoice.file.name }}
+
+Rechnungen: {{ invoice_upload_url }}
+{% endblock %}

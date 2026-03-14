@@ -68,7 +68,8 @@ class ParentProfile(models.Model):
     phone_number = models.CharField(max_length=50, blank=True)
 
     def __str__(self) -> str:
-        return f"Parent: {self.user.username}"
+        full_name = self.user.get_full_name().strip()
+        return full_name or self.user.username
 
 
 class StudentProfile(models.Model):
@@ -100,7 +101,8 @@ class StudentProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"StudentIn/SchülerIn: {self.user.username}"
+        full_name = self.user.get_full_name().strip()
+        return full_name or self.user.username
 
     def save(self, *args, **kwargs):
         should_geocode = False
@@ -523,6 +525,33 @@ class HolidaySurveyResponse(models.Model):
     def __str__(self) -> str:
         answer = self.get_answer_display() if self.answer else "offen"
         return f"{self.student.user.username}: {answer}"
+
+
+class FAQItem(models.Model):
+    question = models.CharField(max_length=255)
+    answer = models.TextField(blank=True)
+    show_for_parents = models.BooleanField(default=False)
+    show_for_students = models.BooleanField(default=False)
+    show_for_tutors = models.BooleanField(default=False)
+    show_on_landing = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="faq_items",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["question"]
+        verbose_name = "FAQ"
+        verbose_name_plural = "FAQ"
+
+    def __str__(self) -> str:
+        return self.question
 
 
 class Invoice(models.Model):

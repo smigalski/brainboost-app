@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}FAQ verwalten{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>FAQ verwalten</h1>
+    <p class="muted">Hier können AdministratorInnen bestehende FAQ bearbeiten und neue Fragen aus Eltern-/SchülerInnen-Sicht beantworten.</p>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <p>
+            {{ create_form.question.label_tag }}
+            {{ create_form.question }}
+        </p>
+        <p>
+            {{ create_form.answer.label_tag }}
+            {{ create_form.answer }}
+        </p>
+        <div style="margin-bottom:14px;">
+            <div style="font-weight:700; margin-bottom:8px;">Relevant für</div>
+            <div style="display:flex; flex-wrap:wrap; gap:12px 18px;">
+                <label>{{ create_form.audience_all }} {{ create_form.audience_all.label }}</label>
+                <label>{{ create_form.show_for_parents }} {{ create_form.show_for_parents.label }}</label>
+                <label>{{ create_form.show_for_students }} {{ create_form.show_for_students.label }}</label>
+                <label>{{ create_form.show_for_tutors }} {{ create_form.show_for_tutors.label }}</label>
+                <label>{{ create_form.show_on_landing }} {{ create_form.show_on_landing.label }}</label>
+            </div>
+        </div>
+        <button class="button" type="submit">Neue FAQ speichern</button>
+        <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Zurück</a>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Offene Fragen</h3>
+    {% for item, form in pending_forms %}
+        <form method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06);">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="publish">
+            <input type="hidden" name="faq_id" value="{{ item.id }}">
+            <p>
+                {{ form.question.label_tag }}
+                {{ form.question }}
+            </p>
+            <p>
+                {{ form.answer.label_tag }}
+                {{ form.answer }}
+            </p>
+            <div style="margin-bottom:14px;">
+                <div style="font-weight:700; margin-bottom:8px;">Relevant für</div>
+                <div style="display:flex; flex-wrap:wrap; gap:12px 18px;">
+                    <label>{{ form.audience_all }} {{ form.audience_all.label }}</label>
+                    <label>{{ form.show_for_parents }} {{ form.show_for_parents.label }}</label>
+                    <label>{{ form.show_for_students }} {{ form.show_for_students.label }}</label>
+                    <label>{{ form.show_for_tutors }} {{ form.show_for_tutors.label }}</label>
+                    <label>{{ form.show_on_landing }} {{ form.show_on_landing.label }}</label>
+                </div>
+            </div>
+            <div class="muted" style="margin-bottom:10px;">Eingereicht von {{ item.created_by.get_full_name|default:item.created_by.username }} am {{ item.created_at|date:"d.m.Y H:i" }}</div>
+            <button class="button" type="submit">Antwort speichern und veröffentlichen</button>
+        </form>
+    {% empty %}
+        <p class="muted">Keine offenen Fragen vorhanden.</p>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h3>Veröffentlichte FAQ</h3>
+    {% for item, form in published_forms %}
+        <form method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06);">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="faq_id" value="{{ item.id }}">
+            <p>
+                {{ form.question.label_tag }}
+                {{ form.question }}
+            </p>
+            <p>
+                {{ form.answer.label_tag }}
+                {{ form.answer }}
+            </p>
+            <div style="margin-bottom:14px;">
+                <div style="font-weight:700; margin-bottom:8px;">Relevant für</div>
+                <div style="display:flex; flex-wrap:wrap; gap:12px 18px;">
+                    <label>{{ form.audience_all }} {{ form.audience_all.label }}</label>
+                    <label>{{ form.show_for_parents }} {{ form.show_for_parents.label }}</label>
+                    <label>{{ form.show_for_students }} {{ form.show_for_students.label }}</label>
+                    <label>{{ form.show_for_tutors }} {{ form.show_for_tutors.label }}</label>
+                    <label>{{ form.show_on_landing }} {{ form.show_on_landing.label }}</label>
+                </div>
+            </div>
+            <button class="button" type="submit">FAQ aktualisieren</button>
+        </form>
+    {% empty %}
+        <p class="muted">Noch keine FAQ veröffentlicht.</p>
+    {% endfor %}
+</div>
+{% endblock %}

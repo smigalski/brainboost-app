@@ -18,6 +18,7 @@ from .models import (
     Invoice,
     HolidaySurvey,
     HolidaySurveyResponse,
+    FAQItem,
     TutorTemplate,
     CustomUser,
 )
@@ -317,6 +318,145 @@ class HolidaySurveyAnswerForm(forms.ModelForm):
         fields = ["answer"]
         labels = {"answer": "Antwort"}
         widgets = {"answer": forms.RadioSelect}
+
+
+class FAQItemForm(forms.ModelForm):
+    audience_all = forms.BooleanField(required=False, label="Alle")
+    show_for_parents = forms.BooleanField(required=False, label="Eltern")
+    show_for_students = forms.BooleanField(required=False, label="SchülerInnen/StudentInnen")
+    show_for_tutors = forms.BooleanField(required=False, label="TutorInnen")
+    show_on_landing = forms.BooleanField(required=False, label="Startseite")
+
+    class Meta:
+        model = FAQItem
+        fields = [
+            "question",
+            "answer",
+            "show_for_parents",
+            "show_for_students",
+            "show_for_tutors",
+            "show_on_landing",
+        ]
+        labels = {
+            "question": "Frage",
+            "answer": "Antwort",
+        }
+        widgets = {
+            "answer": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in (
+            "audience_all",
+            "show_for_parents",
+            "show_for_students",
+            "show_for_tutors",
+            "show_on_landing",
+        ):
+            self.fields[name].widget.attrs["class"] = "faq-target-checkbox"
+        if self.instance and self.instance.pk:
+            self.fields["audience_all"].initial = (
+                self.instance.show_for_parents
+                and self.instance.show_for_students
+                and self.instance.show_for_tutors
+                and self.instance.show_on_landing
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("audience_all"):
+            cleaned["show_for_parents"] = True
+            cleaned["show_for_students"] = True
+            cleaned["show_for_tutors"] = True
+            cleaned["show_on_landing"] = True
+        if not any(
+            cleaned.get(name)
+            for name in (
+                "show_for_parents",
+                "show_for_students",
+                "show_for_tutors",
+                "show_on_landing",
+            )
+        ):
+            raise ValidationError("Bitte wähle mindestens eine Zielgruppe aus.")
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        cleaned = self.cleaned_data
+        instance.show_for_parents = cleaned["show_for_parents"]
+        instance.show_for_students = cleaned["show_for_students"]
+        instance.show_for_tutors = cleaned["show_for_tutors"]
+        instance.show_on_landing = cleaned["show_on_landing"]
+        if commit:
+            instance.save()
+        return instance
+
+
+class FAQSubmissionForm(forms.ModelForm):
+    audience_all = forms.BooleanField(required=False, label="Alle")
+    show_for_parents = forms.BooleanField(required=False, label="Eltern")
+    show_for_students = forms.BooleanField(required=False, label="SchülerInnen/StudentInnen")
+    show_for_tutors = forms.BooleanField(required=False, label="TutorInnen")
+    show_on_landing = forms.BooleanField(required=False, label="Startseite")
+
+    class Meta:
+        model = FAQItem
+        fields = [
+            "question",
+            "show_for_parents",
+            "show_for_students",
+            "show_for_tutors",
+            "show_on_landing",
+        ]
+        labels = {
+            "question": "Deine Frage",
+        }
+        widgets = {
+            "question": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("audience_all"):
+            cleaned["show_for_parents"] = True
+            cleaned["show_for_students"] = True
+            cleaned["show_for_tutors"] = True
+            cleaned["show_on_landing"] = True
+        if not any(
+            cleaned.get(name)
+            for name in (
+                "show_for_parents",
+                "show_for_students",
+                "show_for_tutors",
+                "show_on_landing",
+            )
+        ):
+            raise ValidationError("Bitte wähle mindestens eine Zielgruppe aus.")
+        return cleaned
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in (
+            "audience_all",
+            "show_for_parents",
+            "show_for_students",
+            "show_for_tutors",
+            "show_on_landing",
+        ):
+            self.fields[name].widget.attrs["class"] = "faq-target-checkbox"
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        cleaned = self.cleaned_data
+        instance.show_for_parents = cleaned["show_for_parents"]
+        instance.show_for_students = cleaned["show_for_students"]
+        instance.show_for_tutors = cleaned["show_for_tutors"]
+        instance.show_on_landing = cleaned["show_on_landing"]
+        if commit:
+            instance.save()
+        return instance
 
 
 class TutorTemplateForm(forms.ModelForm):

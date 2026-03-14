@@ -105,6 +105,29 @@
         </div>
     </div>
 </div>
+<div class="card">
+    <h3>FAQ</h3>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for item in faq_items %}
+            <details style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                <summary style="font-weight:800; cursor:pointer;">{{ item.question }}</summary>
+                <div class="muted" style="margin-top:10px;">{{ item.answer|linebreaksbr }}</div>
+            </details>
+        {% empty %}
+            <div class="muted">Noch keine FAQ für TutorInnen vorhanden.</div>
+        {% endfor %}
+    </div>
+</div>
+{% if can_manage_faq %}
+<div class="card">
+    <h3>FAQ</h3>
+    <p class="muted">FAQ und eingereichte Fragen verwalten.</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <a class="button" style="background: var(--teal-dark);" href="{% url 'faq_admin' %}">FAQ verwalten</a>
+        <div class="muted">Offene Fragen: <strong>{{ pending_faq_count }}</strong></div>
+    </div>
+</div>
+{% endif %}
 {% block scripts %}
 <script>
 function openOnlineRoom(kind) {

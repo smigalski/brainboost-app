@@ -3,12 +3,59 @@
 {% block content %}
 <div class="card">
     <h1>Lernfortschritt</h1>
+    <style>
+        .progress-rating-badge {
+            align-self: flex-end;
+        }
+        .progress-rating-badge.is-empty {
+            background: #d7dde4;
+            color: #364152;
+        }
+        .progress-rating-badge.is-1 {
+            background: #ff6b6b;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-2 {
+            background: #ff7d61;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-3 {
+            background: #ff9258;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-4 {
+            background: #ffaa52;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-5 {
+            background: #ffc24d;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-6 {
+            background: #e6d64a;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-7 {
+            background: #bddf4c;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-8 {
+            background: #91d15c;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-9 {
+            background: #5cbf5c;
+            color: #1a1a1a;
+        }
+        .progress-rating-badge.is-10 {
+            background: #1f6666;
+            color: #f7f7f2;
+        }
+    </style>
     {% if viewed_student %}
         <p class="muted">SchülerIn: {{ viewed_student.user.get_full_name }}</p>
     {% elif request.user.role == 'tutor' %}
         <p class="muted">Deine erstellten Lernfortschrittseinträge (alle SchülerInnen).</p>
-    {% elif student_id %}
-        <p class="muted">SchülerIn-ID: {{ student_id }}</p>
     {% endif %}
     <p class="muted" style="margin:12px 0 12px;">
         Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
@@ -80,21 +127,7 @@
                         <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
                         {% for subject_label, subject_rating in entry.rating_display_list %}
                         <span
-                            class="badge info"
-                            style="
-                                {% if subject_rating is None %}background:#d7dde4;color:#364152;
-                                {% elif subject_rating <= 1 %}background:#ff6b6b;color:#1a1a1a;
-                                {% elif subject_rating == 2 %}background:#ff7d61;color:#1a1a1a;
-                                {% elif subject_rating == 3 %}background:#ff9258;color:#1a1a1a;
-                                {% elif subject_rating == 4 %}background:#ffaa52;color:#1a1a1a;
-                                {% elif subject_rating == 5 %}background:#ffc24d;color:#1a1a1a;
-                                {% elif subject_rating == 6 %}background:#e6d64a;color:#1a1a1a;
-                                {% elif subject_rating == 7 %}background:#bddf4c;color:#1a1a1a;
-                                {% elif subject_rating == 8 %}background:#91d15c;color:#1a1a1a;
-                                {% elif subject_rating == 9 %}background:#5cbf5c;color:#1a1a1a;
-                                {% else %}background:#1f6666;color:#f7f7f2;
-                                {% endif %}
-                            "
+                            class="badge info progress-rating-badge {% if subject_rating is None %}is-empty{% elif subject_rating <= 1 %}is-1{% elif subject_rating == 2 %}is-2{% elif subject_rating == 3 %}is-3{% elif subject_rating == 4 %}is-4{% elif subject_rating == 5 %}is-5{% elif subject_rating == 6 %}is-6{% elif subject_rating == 7 %}is-7{% elif subject_rating == 8 %}is-8{% elif subject_rating == 9 %}is-9{% else %}is-10{% endif %}"
                         >{{ subject_label }}: {% if subject_rating is not None %}{{ subject_rating }}/10{% else %}-{% endif %}</span>
                         {% endfor %}
                         </div>
@@ -119,9 +152,9 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="muted">{{ entry.lesson.student.user.get_full_name }} | {{ entry.lesson.subject_display }} | {{ entry.lesson.get_ort_display }}</div>
+                <div class="muted">{{ entry.lesson.student.user.get_full_name }} · {{ entry.lesson.subject_display }} · {{ entry.lesson.get_ort_display }}</div>
                 <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
-                <div class="muted">{{ entry.created_at }}</div>
+                <div class="muted">{{ entry.created_at|date:"d.m.Y H:i" }}</div>
             </li>
         {% empty %}
             <li>Keine Einträge vorhanden.</li>

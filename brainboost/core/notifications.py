@@ -301,6 +301,36 @@ def notify_invoice_payment_selected(
     )
 
 
+def notify_invoice_payment_received_tutor(
+    request,
+    invoice: Invoice,
+    parent: ParentProfile,
+) -> None:
+    if not _notifications_enabled("invoice_payment_received_tutor"):
+        return
+    tutor_user = getattr(invoice.uploaded_by, "user", None)
+    if not tutor_user or not tutor_user.email:
+        return
+    subject = (
+        f"Zahlung eingegangen: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+    )
+    context = {
+        "heading": "Zahlung eingegangen",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        "parent": parent,
+        "payment_method_label": invoice.get_payment_method_display(),
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_payment_received_tutor",
+        context,
+        [tutor_user.email],
+    )
+
+
 def notify_invoice_payment_confirmed(
     request,
     invoice: Invoice,
