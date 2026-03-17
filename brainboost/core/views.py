@@ -1,5 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
+from pathlib import Path
 
 import logging
 import re
@@ -11,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
@@ -535,11 +537,14 @@ def _generate_invoice_pdf(
         period_start=period_start,
         lessons=lessons,
     )
+    payment_qr_path = finders.find("design/InvoicePaymentQR.png")
+    payment_qr_url = Path(payment_qr_path).as_uri() if payment_qr_path else None
     html = render_to_string(
         "invoice_pdf.html",
         {
             **context,
             "logo_url": request.build_absolute_uri("/static/design/LogoPNG.png"),
+            "payment_qr_url": payment_qr_url,
         },
     )
     return HTML(

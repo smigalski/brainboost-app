@@ -166,6 +166,33 @@
         .bank {
             margin-top: 22px;
         }
+
+        .bank-content {
+            display: table;
+            width: 100%;
+        }
+
+        .bank-details {
+            display: table-cell;
+            vertical-align: top;
+            padding-right: 14px;
+        }
+
+        .bank-qr {
+            display: table-cell;
+            width: 124px;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        .bank-qr img {
+            width: 112px;
+            height: 112px;
+            object-fit: contain;
+            background: #fff;
+            border: 1px solid var(--line);
+            padding: 4px;
+        }
     </style>
 </head>
 <body>
@@ -271,10 +298,19 @@
 
     <div class="panel bank">
         <p class="panel-title">Zahlungsdaten</p>
-        <p class="panel-row"><strong>KontoinhaberIn:</strong> {{ account_holder }}</p>
-        <p class="panel-row"><strong>Bank:</strong> {{ bank_name }}</p>
-        <p class="panel-row"><strong>IBAN:</strong> {{ iban }}</p>
-        <p class="panel-row"><strong>BIC:</strong> {{ bic }}</p>
+        <div class="bank-content">
+            <div class="bank-details">
+                <p class="panel-row"><strong>KontoinhaberIn:</strong> {{ account_holder }}</p>
+                <p class="panel-row"><strong>Bank:</strong> {{ bank_name }}</p>
+                <p class="panel-row"><strong>IBAN:</strong> {{ iban }}</p>
+                <p class="panel-row"><strong>BIC:</strong> {{ bic }}</p>
+            </div>
+            {% if payment_qr_url %}
+                <div class="bank-qr">
+                    <img src="{{ payment_qr_url }}" alt="Zahlungs QR-Code">
+                </div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>
