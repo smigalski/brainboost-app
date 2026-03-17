@@ -86,6 +86,9 @@ DATABASES = {
         'PASSWORD': os.getenv('POSTGRES_LOCAL_PASSWORD', 'postgres'),
         'HOST': os.getenv('POSTGRES_LOCAL_HOST', 'localhost'),
         'PORT': os.getenv('POSTGRES_LOCAL_PORT', '5432'),
+        'TEST': {
+            'NAME': os.getenv('POSTGRES_LOCAL_TEST_DB', 'brainboost_local_test'),
+        },
     }
 }
 
@@ -127,6 +130,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
 
 
 # Optional per-event toggles for notifications.
@@ -141,6 +145,7 @@ EMAIL_NOTIFICATIONS = {
     "invoice_payment_confirmed": True,
     "holiday_survey_created": True,
     "material_uploaded": True,
+    "monthly_brainboost_feedback": True,
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

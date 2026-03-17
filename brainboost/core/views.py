@@ -41,6 +41,7 @@ from .forms import (
     ParentProfileForm,
     StudentProfileForm,
     TutorProfileForm,
+    BrainBoostFeedbackForm,
 )
 from .notifications import (
     notify_holiday_survey_created,
@@ -68,6 +69,7 @@ from .models import (
     HolidaySurveyResponse,
     FAQItem,
     TutorTemplate,
+    BrainBoostFeedback,
 )
 
 
@@ -595,6 +597,17 @@ def _limit_news_items(items: list[dict], limit: int = 3) -> list[dict]:
     return sorted(items, key=lambda item: item["timestamp"], reverse=True)[:limit]
 
 
+def _monthly_brainboost_feedback_news_item(audience: str) -> dict:
+    now = timezone.now()
+    return {
+        "timestamp": now,
+        "title": "Monatsfeedback an BrainBoost",
+        "text": "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?",
+        "url": f"{reverse('brainboost_feedback')}?role={audience}&source=news",
+        "action_label": "Anonymes Feedback geben",
+    }
+
+
 def _lesson_news_items(lessons) -> list[dict]:
     items = []
     for lesson in lessons:
@@ -618,7 +631,7 @@ def _lesson_news_items(lessons) -> list[dict]:
 
 
 def _student_news_items(student_profile: StudentProfile) -> list[dict]:
-    items = []
+    items = [_monthly_brainboost_feedback_news_item(BrainBoostFeedback.Audience.STUDENT)]
     lesson_items = Lesson.objects.filter(student=student_profile).select_related("student__user").order_by("-date", "-time")[:4]
     items.extend(_lesson_news_items(lesson_items))
 
@@ -653,7 +666,7 @@ def _student_news_items(student_profile: StudentProfile) -> list[dict]:
 
 
 def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
-    items = []
+    items = [_monthly_brainboost_feedback_news_item(BrainBoostFeedback.Audience.PARENT)]
     students = parent_profile.students.all()
     lesson_items = (
         Lesson.objects.filter(student__in=students)
@@ -725,7 +738,7 @@ def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
 
 
 def _tutor_news_items(tutor_profile: TutorProfile) -> list[dict]:
-    items = []
+    items = [_monthly_brainboost_feedback_news_item(BrainBoostFeedback.Audience.TUTOR)]
     assigned_students = _assigned_students_qs(tutor_profile)
     subordinate_tutors = _assigned_tutors_qs(tutor_profile)
 
@@ -798,6 +811,46 @@ def contact(request):
     return render(request, "contact.html")
 
 
+def brainboost_feedback(request):
+    valid_roles = {choice[0] for choice in BrainBoostFeedback.Audience.choices}
+    valid_sources = {choice[0] for choice in BrainBoostFeedback.Source.choices}
+
+    initial_role = request.GET.get("role", "").strip()
+    initial_source = request.GET.get("source", BrainBoostFeedback.Source.DIRECT).strip()
+    if initial_role not in valid_roles:
+        initial_role = BrainBoostFeedback.Audience.OTHER
+    if initial_source not in valid_sources:
+        initial_source = BrainBoostFeedback.Source.DIRECT
+
+    if request.method == "POST":
+        form = BrainBoostFeedbackForm(request.POST)
+        source = request.POST.get("source", BrainBoostFeedback.Source.DIRECT).strip()
+        if source not in valid_sources:
+            source = BrainBoostFeedback.Source.DIRECT
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.source = source
+            feedback.save()
+            messages.success(request, "Danke! Dein Feedback wurde anonym gespeichert.")
+            return redirect(
+                f"{reverse('brainboost_feedback')}?submitted=1&role={feedback.audience}&source={feedback.source}"
+            )
+    else:
+        form = BrainBoostFeedbackForm(initial={"audience": initial_role})
+
+    submitted = request.GET.get("submitted") == "1"
+    return render(
+        request,
+        "brainboost_feedback.html",
+        {
+            "form": form,
+            "submitted": submitted,
+            "source": initial_source,
+            "headline": "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?",
+        },
+    )
+
+
 def impressum(request):
     return render(request, "impressum.html")
 
@@ -857,6 +910,19 @@ def _assigned_tutors_qs(tutor_profile: TutorProfile):
     return tutor_profile.assigned_tutors.select_related("user").distinct()
 
 
+def _auto_complete_past_lessons(base_qs=None) -> int:
+    """Mark planned lessons as completed once their timeslot is in the past."""
+    today = timezone.localdate()
+    now_time = timezone.localtime().time()
+    queryset = base_qs if base_qs is not None else Lesson.objects.all()
+    return queryset.filter(
+        status=Lesson.Status.PLANNED,
+        reschedule_requested=False,
+    ).filter(
+        Q(date__lt=today) | Q(date=today, time__lt=now_time)
+    ).update(status=Lesson.Status.COMPLETED)
+
+
 def _faq_items_for_target(target: str):
     target_filter = {
         "parent": Q(show_for_parents=True),
@@ -881,6 +947,7 @@ def dashboard(request):
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
+            _auto_complete_past_lessons(Lesson.objects.filter(student=student_profile))
             context["news_items"] = _student_news_items(student_profile)
             context["faq_items"] = _faq_items_for_target("student")
             context["faq_submission_form"] = FAQSubmissionForm(
@@ -904,6 +971,9 @@ def dashboard(request):
     elif request.user.role == CustomUser.Roles.PARENT:
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
+            _auto_complete_past_lessons(
+                Lesson.objects.filter(student__in=request.user.parent_profile.students.all())
+            )
             context["news_items"] = _parent_news_items(request.user.parent_profile)
             context["faq_items"] = _faq_items_for_target("parent")
             context["faq_submission_form"] = FAQSubmissionForm(
@@ -927,6 +997,9 @@ def dashboard(request):
     elif request.user.role == CustomUser.Roles.TUTOR:
         template = "dashboard_tutor.html"
         if hasattr(request.user, "tutor_profile"):
+            _auto_complete_past_lessons(
+                Lesson.objects.filter(tutor=request.user.tutor_profile)
+            )
             assigned_students = _assigned_students_qs(request.user.tutor_profile)
             assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
             context["is_admin_tutor"] = request.user.is_superuser
@@ -1394,6 +1467,8 @@ def lesson_list(request):
         base_qs = Lesson.objects.filter(tutor=request.user.tutor_profile)
     else:
         base_qs = Lesson.objects.none()
+
+    _auto_complete_past_lessons(base_qs)
 
     editable_ids: list[int] = []
     if request.user.role == CustomUser.Roles.TUTOR:
@@ -1903,6 +1978,7 @@ def invoice_upload(request):
         return redirect("dashboard")
 
     tutor_profile = request.user.tutor_profile
+    _auto_complete_past_lessons(Lesson.objects.filter(tutor=tutor_profile))
     allowed_students = _assigned_students_qs(tutor_profile)
     subordinate_tutors = _assigned_tutors_qs(tutor_profile)
 

@@ -26,6 +26,11 @@
                         <div style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
                             <div style="font-weight:800; color:var(--accent);">{{ item.title }}</div>
                             <div class="muted">{{ item.text }}</div>
+                            {% if item.url %}
+                                <div style="margin-top:10px;">
+                                    <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{{ item.url }}">{{ item.action_label|default:"Öffnen" }}</a>
+                                </div>
+                            {% endif %}
                             <div class="muted" style="margin-top:6px; font-size:0.8rem; text-align:right;">{{ item.timestamp|date:"d.m.Y H:i" }}</div>
                         </div>
                     {% empty %}

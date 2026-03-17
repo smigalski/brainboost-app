@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path("", views.landing_page, name="landing_page"),
+    path("feedback/brainboost/", views.brainboost_feedback, name="brainboost_feedback"),
     path("kontakt/", views.contact, name="contact"),
     path("impressum/", views.impressum, name="impressum"),
     path("agbs/", views.agbs, name="agbs"),

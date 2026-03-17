@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost Feedback{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Anonymes BrainBoost Feedback</h1>
+    <p class="muted">{{ headline }}</p>
+    {% if submitted %}
+        <div style="margin:12px 0; padding:10px 12px; border-radius:12px; background:rgba(111,169,75,0.16); border:1px solid rgba(86,148,53,0.35);">
+            Danke! Dein Feedback wurde anonym gespeichert.
+        </div>
+    {% endif %}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="source" value="{{ source }}">
+        {% if form.non_field_errors %}
+            <p class="error" style="color:#b3261e;margin:0 0 8px;font-weight:600;">{{ form.non_field_errors.0 }}</p>
+        {% endif %}
+        <label for="{{ form.audience.id_for_label }}">{{ form.audience.label }}</label>
+        {{ form.audience }}
+        {% if form.audience.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ form.audience.errors.0 }}</p>
+        {% endif %}
+
+        <label for="{{ form.what_is_needed.id_for_label }}">{{ form.what_is_needed.label }}</label>
+        {{ form.what_is_needed }}
+        {% if form.what_is_needed.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ form.what_is_needed.errors.0 }}</p>
+        {% endif %}
+
+        <label for="{{ form.what_went_bad.id_for_label }}">{{ form.what_went_bad.label }}</label>
+        {{ form.what_went_bad }}
+        {% if form.what_went_bad.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ form.what_went_bad.errors.0 }}</p>
+        {% endif %}
+
+        <label for="{{ form.wishes.id_for_label }}">{{ form.wishes.label }}</label>
+        {{ form.wishes }}
+        {% if form.wishes.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ form.wishes.errors.0 }}</p>
+        {% endif %}
+
+        <button class="button" type="submit" style="margin-top:8px;">Feedback anonym absenden</button>
+    </form>
+    <p class="muted" style="margin-top:12px;"><a href="{% url 'landing_page' %}">Zurück zur Startseite</a></p>
+</div>
+{% endblock %}

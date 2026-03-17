@@ -558,6 +558,56 @@ class FAQItem(models.Model):
         return self.question
 
 
+class BrainBoostFeedback(models.Model):
+    class Audience(models.TextChoices):
+        STUDENT = "student", "SchülerIn/StudentIn"
+        PARENT = "parent", "Eltern"
+        TUTOR = "tutor", "TutorIn"
+        OTHER = "other", "Sonstige"
+
+    class Source(models.TextChoices):
+        EMAIL = "email", "E-Mail"
+        NEWS = "news", "News"
+        LANDING = "landing", "Startseite"
+        DIRECT = "direct", "Direkt"
+
+    audience = models.CharField(max_length=20, choices=Audience.choices)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.DIRECT)
+    what_is_needed = models.TextField(blank=True)
+    what_went_bad = models.TextField(blank=True)
+    wishes = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        verbose_name = "BrainBoost Feedback"
+        verbose_name_plural = "BrainBoost Feedback"
+
+    def __str__(self) -> str:
+        return f"{self.get_audience_display()} · {self.submitted_at:%d.%m.%Y %H:%M}"
+
+
+class MonthlyFeedbackReminderLog(models.Model):
+    audience = models.CharField(max_length=20, choices=BrainBoostFeedback.Audience.choices)
+    month = models.DateField(help_text="Monatserster, für den der Reminder gesendet wurde.")
+    recipients_count = models.PositiveIntegerField(default=0)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["audience", "month"],
+                name="unique_monthly_feedback_reminder_per_audience_month",
+            )
+        ]
+        ordering = ["-month", "audience"]
+        verbose_name = "Monatlicher Feedback-Reminder"
+        verbose_name_plural = "Monatliche Feedback-Reminder"
+
+    def __str__(self) -> str:
+        return f"{self.get_audience_display()} · {self.month:%m/%Y}"
+
+
 class Invoice(models.Model):
     class DiscountType(models.TextChoices):
         FIXED = "fixed", "EUR"

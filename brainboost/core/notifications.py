@@ -396,3 +396,38 @@ def notify_holiday_survey_created(request, response: HolidaySurveyResponse) -> N
         **_build_urls(request),
     }
     _send_templated_email(subject, "holiday_survey_created", context, recipients)
+
+
+def notify_monthly_brainboost_feedback(
+    *,
+    base_url: str,
+    audience: str,
+    recipients: Iterable[str],
+) -> bool:
+    if not _notifications_enabled("monthly_brainboost_feedback"):
+        return False
+    normalized_base = (base_url or "").strip().rstrip("/")
+    feedback_path = reverse("brainboost_feedback")
+    feedback_url = (
+        f"{normalized_base}{feedback_path}?role={audience}&source=email"
+        if normalized_base
+        else f"{feedback_path}?role={audience}&source=email"
+    )
+    audience_label = {
+        "student": "SchülerInnen/StudentInnen",
+        "parent": "Eltern",
+        "tutor": "TutorInnen",
+    }.get(audience, "NutzerInnen")
+    subject = "BrainBoost Monatsfeedback: Deine Meinung zählt"
+    context = {
+        "heading": "Monatliches BrainBoost Feedback",
+        "audience_label": audience_label,
+        "feedback_url": feedback_url,
+        "prompt": "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?",
+    }
+    return _send_templated_email(
+        subject,
+        "monthly_brainboost_feedback",
+        context,
+        recipients,
+    )

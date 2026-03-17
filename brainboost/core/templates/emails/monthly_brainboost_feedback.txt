@@ -1,0 +1,10 @@
+{{ heading }}
+
+Hallo {{ audience_label }},
+
+{{ prompt }}
+
+Bitte gib anonym dein Feedback ab:
+{{ feedback_url }}
+
+Vielen Dank für deine Unterstützung.

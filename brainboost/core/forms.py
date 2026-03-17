@@ -21,6 +21,7 @@ from .models import (
     HolidaySurveyResponse,
     FAQItem,
     TutorTemplate,
+    BrainBoostFeedback,
     CustomUser,
 )
 
@@ -516,6 +517,35 @@ class TutorTemplateForm(forms.ModelForm):
         if f.size > max_size:
             raise forms.ValidationError("Datei ist größer als 10 MB.")
         return f
+
+
+class BrainBoostFeedbackForm(forms.ModelForm):
+    class Meta:
+        model = BrainBoostFeedback
+        fields = ["audience", "what_is_needed", "what_went_bad", "wishes"]
+        labels = {
+            "audience": "Ich bin",
+            "what_is_needed": "Was ist dafür nötig?",
+            "what_went_bad": "Was ist in letzter Zeit schlecht gelaufen?",
+            "wishes": "Was wünschst du dir von BrainBoost?",
+        }
+        widgets = {
+            "what_is_needed": forms.Textarea(attrs={"rows": 3}),
+            "what_went_bad": forms.Textarea(attrs={"rows": 3}),
+            "wishes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        what_is_needed = (cleaned.get("what_is_needed") or "").strip()
+        what_went_bad = (cleaned.get("what_went_bad") or "").strip()
+        wishes = (cleaned.get("wishes") or "").strip()
+        if not any([what_is_needed, what_went_bad, wishes]):
+            raise ValidationError("Bitte fülle mindestens eines der drei Feedback-Felder aus.")
+        cleaned["what_is_needed"] = what_is_needed
+        cleaned["what_went_bad"] = what_went_bad
+        cleaned["wishes"] = wishes
+        return cleaned
 
 
 class BaseUserCreateForm(forms.Form):
