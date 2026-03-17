@@ -265,7 +265,7 @@ def _invoice_filename(invoice: Invoice, invoice_number: Optional[int] = None) ->
         f"{invoice.student.user.first_name}{invoice.student.user.last_name}"
     )
     sequence = invoice_number or invoice.invoice_number or _next_invoice_number()
-    return f"RE-{sequence:03d}_{GERMAN_MONTH_NAMES[month]}{str(year)[-2:]}_{student_name}.pdf"
+    return f"WRE-{sequence:05d}_{GERMAN_MONTH_NAMES[month]}{str(year)[-2:]}_{student_name}.pdf"
 
 
 def _rename_invoice_file(invoice: Invoice, filename: str) -> None:
