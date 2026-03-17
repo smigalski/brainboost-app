@@ -2,6 +2,7 @@ import base64
 import io
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
+from pathlib import Path
 
 import logging
 import re
@@ -13,6 +14,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
@@ -307,6 +309,13 @@ def _epc_payment_qr_data_uri(payload: Optional[str]) -> Optional[str]:
     image.save(buffer, format="PNG")
     encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
     return f"data:image/png;base64,{encoded}"
+
+
+def _static_asset_uri(relative_path: str, request) -> str:
+    local_path = finders.find(relative_path)
+    if local_path:
+        return Path(local_path).as_uri()
+    return request.build_absolute_uri(f"/static/{relative_path}")
 
 
 def _invoice_period_parts(invoice: Invoice) -> tuple[int, int]:
@@ -618,7 +627,7 @@ def _generate_invoice_pdf(
         "invoice_pdf.html",
         {
             **context,
-            "logo_url": request.build_absolute_uri("/static/design/LogoPNG.png"),
+            "logo_url": _static_asset_uri("design/LogoPNG.png", request),
             "payment_qr_url": payment_qr_url,
         },
     )
