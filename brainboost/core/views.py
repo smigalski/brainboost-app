@@ -1,6 +1,7 @@
+import base64
+import io
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
-from pathlib import Path
 
 import logging
 import re
@@ -12,7 +13,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
@@ -73,6 +73,8 @@ from .models import (
     TutorTemplate,
     BrainBoostFeedback,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -240,6 +242,71 @@ def _sanitize_invoice_name_part(value: str) -> str:
     ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
     cleaned = "".join(ch for ch in ascii_text if ch.isalnum())
     return cleaned or "Unbekannt"
+
+
+def _normalize_iban(value: str) -> str:
+    return "".join(ch for ch in (value or "").upper() if ch.isalnum())
+
+
+def _build_epc_payment_payload(
+    *,
+    account_holder: str,
+    iban: str,
+    bic: str = "",
+    amount: Optional[Decimal] = None,
+    remittance_information: str = "",
+) -> Optional[str]:
+    account_holder_clean = (account_holder or "").strip()
+    iban_clean = _normalize_iban(iban)
+    bic_clean = "".join(ch for ch in (bic or "").upper() if ch.isalnum())
+    if not account_holder_clean or not iban_clean:
+        return None
+
+    amount_line = ""
+    if amount is not None and amount > Decimal("0.00"):
+        amount_line = f"EUR{amount.quantize(Decimal('0.01'))}"
+
+    remittance_clean = (remittance_information or "").strip()[:140]
+    lines = [
+        "BCD",
+        "002",
+        "1",
+        "SCT",
+        bic_clean[:11],
+        account_holder_clean[:70],
+        iban_clean[:34],
+        amount_line,
+        "",
+        remittance_clean,
+        "BrainBoost Nachhilfe",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def _epc_payment_qr_data_uri(payload: Optional[str]) -> Optional[str]:
+    if not payload:
+        return None
+
+    try:
+        import qrcode
+    except ImportError:
+        logger.warning("QR-Code konnte nicht erzeugt werden: Paket 'qrcode' nicht installiert.")
+        return None
+
+    qr = qrcode.QRCode(
+        version=None,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+    image = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def _invoice_period_parts(invoice: Invoice) -> tuple[int, int]:
@@ -537,8 +604,16 @@ def _generate_invoice_pdf(
         period_start=period_start,
         lessons=lessons,
     )
-    payment_qr_path = finders.find("design/InvoicePaymentQR.png")
-    payment_qr_url = Path(payment_qr_path).as_uri() if payment_qr_path else None
+    payment_qr_payload = _build_epc_payment_payload(
+        account_holder=tutor_profile.account_holder,
+        iban=tutor_profile.iban,
+        bic=tutor_profile.bic,
+        amount=context.get("total_amount"),
+        remittance_information=(
+            f"Rechnung {context.get('period_label', '')} {context.get('student_name', '')}"
+        ),
+    )
+    payment_qr_url = _epc_payment_qr_data_uri(payment_qr_payload)
     html = render_to_string(
         "invoice_pdf.html",
         {
@@ -866,8 +941,6 @@ def agbs(request):
 
 def pricing(request):
     return render(request, "pricing.html")
-
-logger = logging.getLogger(__name__)
 
 
 def _send_set_password_email(request, user: CustomUser) -> None:

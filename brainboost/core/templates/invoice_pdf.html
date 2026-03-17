@@ -6,7 +6,7 @@
     <style>
         @page {
             size: A4;
-            margin: 18mm;
+            margin: 12mm;
         }
 
         :root {
@@ -27,7 +27,7 @@
         }
 
         body {
-            font-family: "DejaVu Sans", sans-serif;
+            font-family: "Century Gothic", "DejaVu Sans", sans-serif;
             font-size: 11pt;
             line-height: 1.45;
             color: var(--ink);
@@ -37,7 +37,6 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 2px solid var(--line);
             padding-bottom: 14px;
             margin-bottom: 20px;
         }
@@ -77,11 +76,40 @@
             color: var(--accent);
         }
 
+        .due-date {
+            color: #c21d1d;
+            font-weight: 700;
+        }
+
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 18px;
             margin-bottom: 22px;
+        }
+
+        .summary-grid .panel-row {
+            font-size: 8.1pt;
+            line-height: 1.25;
+            margin: 0 0 4px 0;
+        }
+
+        .line-items thead th {
+            font-size: 8.1pt;
+            padding: 8px 6px;
+        }
+
+        .line-items tbody td {
+            font-size: 8.1pt;
+            padding: 8px 6px;
+        }
+
+        .line-items .numeric {
+            font-size: 8.1pt;
+        }
+
+        .line-items .notes {
+            font-size: 7.5pt;
         }
 
         .panel {
@@ -154,17 +182,24 @@
         .totals td {
             padding: 7px 0;
             border: none;
+            font-size: 8.1pt;
+            line-height: 1.25;
         }
 
         .totals .grand-total td {
             border-top: 2px solid var(--line);
             font-weight: 800;
-            font-size: 12pt;
+            font-size: 8.1pt;
             padding-top: 10px;
         }
 
         .bank {
             margin-top: 22px;
+        }
+
+        .bank .panel-row {
+            font-size: 9pt;
+            line-height: 1.3;
         }
 
         .bank-content {
@@ -180,9 +215,34 @@
 
         .bank-qr {
             display: table-cell;
-            width: 124px;
-            text-align: right;
+            width: 250px;
             vertical-align: top;
+            position: relative;
+            top: -10px;
+        }
+
+        .bank-qr-inline {
+            display: table;
+            margin-left: auto;
+        }
+
+        .bank-qr-note {
+            display: table-cell;
+            width: 126px;
+            padding-right: 8px;
+            vertical-align: middle;
+            font-size: 7.3pt;
+            line-height: 1.2;
+            color: var(--accent);
+            text-align: right;
+            font-style: italic;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .bank-qr-image {
+            display: table-cell;
+            vertical-align: middle;
         }
 
         .bank-qr img {
@@ -207,10 +267,9 @@
         <div class="invoice-meta">
             <h1>Rechnung</h1>
             <div>Rechnungsdatum: {{ invoice_date|date:"d.m.Y" }}</div>
-            <div>Fällig bis: {{ due_date|date:"d.m.Y" }}</div>
+            <div class="due-date">Fällig bis: {{ due_date|date:"d.m.Y" }}</div>
         </div>
     </div>
-
     <div class="summary-grid">
         <div class="panel">
             <p class="panel-title">Leistungsdaten</p>
@@ -228,7 +287,7 @@
         </div>
     </div>
 
-    <table>
+    <table class="line-items">
         <colgroup>
             <col style="width: 19%;">
             <col style="width: 31%;">
@@ -307,7 +366,12 @@
             </div>
             {% if payment_qr_url %}
                 <div class="bank-qr">
-                    <img src="{{ payment_qr_url }}" alt="Zahlungs QR-Code">
+                    <div class="bank-qr-inline">
+                        <p class="bank-qr-note">Mit der Banking-App mich scannen oder wollen Sie tippen...?</p>
+                        <div class="bank-qr-image">
+                            <img src="{{ payment_qr_url }}" alt="Zahlungs QR-Code">
+                        </div>
+                    </div>
                 </div>
             {% endif %}
         </div>

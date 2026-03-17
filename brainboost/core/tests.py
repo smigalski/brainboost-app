@@ -7,7 +7,11 @@ from django.utils import timezone
 
 from .forms import BrainBoostFeedbackForm, InvoiceGenerateForm
 from .models import BrainBoostFeedback, CustomUser, Invoice, Lesson, StudentProfile, TutorProfile
-from .views import _auto_complete_past_lessons, _build_invoice_pdf_context
+from .views import (
+    _auto_complete_past_lessons,
+    _build_epc_payment_payload,
+    _build_invoice_pdf_context,
+)
 
 
 class InvoiceGenerateFormTests(TestCase):
@@ -207,3 +211,34 @@ class BrainBoostFeedbackViewTests(TestCase):
         feedback = BrainBoostFeedback.objects.get()
         self.assertEqual(feedback.audience, BrainBoostFeedback.Audience.PARENT)
         self.assertEqual(feedback.source, BrainBoostFeedback.Source.NEWS)
+
+
+class InvoicePaymentQrPayloadTests(TestCase):
+    def test_builds_epc_payload_with_tutor_bank_details(self):
+        payload = _build_epc_payment_payload(
+            account_holder="BrainBoost Nachhilfe",
+            iban="DE40 5002 4024 1563 4174 30",
+            bic="DEFFDEFFXXX",
+            amount=Decimal("129.50"),
+            remittance_information="Rechnung Maerz 2026 Max Mustermann",
+        )
+
+        self.assertIsNotNone(payload)
+        lines = payload.splitlines()
+        self.assertEqual(lines[0], "BCD")
+        self.assertEqual(lines[3], "SCT")
+        self.assertEqual(lines[4], "DEFFDEFFXXX")
+        self.assertEqual(lines[5], "BrainBoost Nachhilfe")
+        self.assertEqual(lines[6], "DE40500240241563417430")
+        self.assertEqual(lines[7], "EUR129.50")
+
+    def test_returns_none_without_required_bank_data(self):
+        payload = _build_epc_payment_payload(
+            account_holder="",
+            iban="",
+            bic="",
+            amount=Decimal("25.00"),
+            remittance_information="Test",
+        )
+
+        self.assertIsNone(payload)
