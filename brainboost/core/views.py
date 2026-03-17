@@ -399,24 +399,71 @@ def _lesson_invoice_components(lesson: Lesson) -> dict:
     }
 
 
+def _apply_invoice_discount(
+    subtotal_amount: Decimal,
+    discount_type: str = "",
+    discount_value: Optional[Decimal] = None,
+) -> dict:
+    subtotal_amount = subtotal_amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if not discount_type or discount_value is None:
+        return {
+            "discount_type": "",
+            "discount_value": None,
+            "discount_amount": None,
+            "discount_label": "",
+            "total_amount": subtotal_amount,
+        }
+
+    discount_value = Decimal(str(discount_value)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+    if discount_type == Invoice.DiscountType.FIXED:
+        if discount_value > subtotal_amount:
+            raise ValueError("Der Rabatt in EUR darf die Rechnungssumme nicht übersteigen.")
+        discount_amount = discount_value
+        discount_label = f"{discount_value} EUR"
+    elif discount_type == Invoice.DiscountType.PERCENT:
+        if discount_value > Decimal("100.00"):
+            raise ValueError("Der prozentuale Rabatt darf höchstens 100 betragen.")
+        discount_amount = (subtotal_amount * discount_value / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        discount_label = f"{discount_value}%"
+    else:
+        raise ValueError("Ungültige Rabattart.")
+
+    return {
+        "discount_type": discount_type,
+        "discount_value": discount_value,
+        "discount_amount": discount_amount,
+        "discount_label": discount_label,
+        "total_amount": (subtotal_amount - discount_amount).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        ),
+    }
+
+
 def _build_invoice_pdf_context(
     tutor_profile: TutorProfile,
     student: StudentProfile,
     period_start,
     lessons,
+    discount_type: str = "",
+    discount_value: Optional[Decimal] = None,
 ) -> dict:
     tutor_name = _display_name(tutor_profile.user)
     student_name = _display_name(student.user)
     period_label = date_format(period_start, "F Y")
     today = timezone.localdate()
-    total_amount = Decimal("0.00")
+    subtotal_amount = Decimal("0.00")
     total_travel = Decimal("0.00")
     total_surcharge = Decimal("0.00")
     line_items = []
     for lesson in lessons:
         components = _lesson_invoice_components(lesson)
         lesson_amount = components["total_amount"]
-        total_amount += lesson_amount
+        subtotal_amount += lesson_amount
         total_travel += components["travel_amount"]
         total_surcharge += components["surcharge_amount"]
         line_items.append(
@@ -436,6 +483,12 @@ def _build_invoice_pdf_context(
             }
         )
 
+    discount_data = _apply_invoice_discount(
+        subtotal_amount=subtotal_amount,
+        discount_type=discount_type,
+        discount_value=discount_value,
+    )
+
     return {
         "tutor_name": tutor_name,
         "student_name": student_name,
@@ -445,7 +498,12 @@ def _build_invoice_pdf_context(
         "line_items": line_items,
         "total_travel": total_travel.quantize(Decimal("0.01")),
         "total_surcharge": total_surcharge.quantize(Decimal("0.01")),
-        "total_amount": total_amount.quantize(Decimal("0.01")),
+        "subtotal_amount": subtotal_amount.quantize(Decimal("0.01")),
+        "discount_type": discount_data["discount_type"],
+        "discount_value": discount_data["discount_value"],
+        "discount_amount": discount_data["discount_amount"],
+        "discount_label": discount_data["discount_label"],
+        "total_amount": discount_data["total_amount"],
         "account_holder": tutor_profile.account_holder or "-",
         "bank_name": tutor_profile.bank_name or "-",
         "iban": tutor_profile.iban or "-",
@@ -1874,13 +1932,15 @@ def invoice_upload(request):
                         "Für diesen Monat gibt es keine abgeschlossenen Termine.",
                     )
                 else:
-                    invoice_context = _build_invoice_pdf_context(
-                        tutor_profile=tutor_profile,
-                        student=student,
-                        period_start=period_start,
-                        lessons=lessons,
-                    )
                     try:
+                        invoice_context = _build_invoice_pdf_context(
+                            tutor_profile=tutor_profile,
+                            student=student,
+                            period_start=period_start,
+                            lessons=lessons,
+                            discount_type=generate_form.cleaned_data["discount_type"],
+                            discount_value=generate_form.cleaned_data["discount_value"],
+                        )
                         pdf_bytes = _generate_invoice_pdf(
                             request=request,
                             tutor_profile=tutor_profile,
@@ -1889,6 +1949,9 @@ def invoice_upload(request):
                             lessons=lessons,
                             invoice_context=invoice_context,
                         )
+                    except ValueError as exc:
+                        generate_form.add_error("discount_value", str(exc))
+                        pdf_bytes = None
                     except RuntimeError as exc:
                         generate_form.add_error(None, str(exc))
                         pdf_bytes = None
@@ -1900,6 +1963,9 @@ def invoice_upload(request):
                             uploaded_by=tutor_profile,
                             billing_year=period_start.year,
                             billing_month=period_start.month,
+                            discount_type=invoice_context["discount_type"],
+                            discount_value=invoice_context["discount_value"],
+                            discount_amount=invoice_context["discount_amount"],
                             amount_total=invoice_context["total_amount"],
                         )
                         filename = _invoice_filename(invoice)

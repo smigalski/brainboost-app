@@ -246,6 +246,10 @@
 
     <table class="totals">
         <tr>
+            <td>Summe vor Rabatt</td>
+            <td class="numeric">{{ subtotal_amount }} EUR</td>
+        </tr>
+        <tr>
             <td>Fahrtkosten gesamt</td>
             <td class="numeric">{{ total_travel }} EUR</td>
         </tr>
@@ -253,6 +257,12 @@
             <td>Zuschläge gesamt</td>
             <td class="numeric">{{ total_surcharge }} EUR</td>
         </tr>
+        {% if discount_amount %}
+            <tr>
+                <td>Rabatt{% if discount_label %} ({{ discount_label }}){% endif %}</td>
+                <td class="numeric">-{{ discount_amount }} EUR</td>
+            </tr>
+        {% endif %}
         <tr class="grand-total">
             <td>Betrag</td>
             <td class="numeric">{{ total_amount }} EUR</td>

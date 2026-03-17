@@ -1,6 +1,7 @@
 import json
 import urllib.request
 from datetime import datetime, timedelta
+from decimal import Decimal
 from math import radians, sin, cos, sqrt, atan2
 from pathlib import Path
 from urllib.parse import quote
@@ -558,6 +559,10 @@ class FAQItem(models.Model):
 
 
 class Invoice(models.Model):
+    class DiscountType(models.TextChoices):
+        FIXED = "fixed", "EUR"
+        PERCENT = "percent", "%"
+
     class PaymentMethod(models.TextChoices):
         CASH = "cash", "bar"
         BANK_TRANSFER = "bank_transfer", "Überweisung"
@@ -600,6 +605,9 @@ class Invoice(models.Model):
     billing_year = models.PositiveSmallIntegerField(null=True, blank=True)
     billing_month = models.PositiveSmallIntegerField(null=True, blank=True)
     amount_total = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    discount_type = models.CharField(max_length=20, choices=DiscountType.choices, blank=True, default="")
+    discount_value = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    discount_amount = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=3, default="EUR")
     payment_method = models.CharField(
         max_length=20,
@@ -643,7 +651,26 @@ class Invoice(models.Model):
 
     @property
     def can_pay_online(self):
-        return self.is_approved and self.amount_total is not None and self.payment_status != self.PaymentStatus.PAID
+        return (
+            self.is_approved
+            and self.amount_total is not None
+            and self.amount_total > Decimal("0.00")
+            and self.payment_status != self.PaymentStatus.PAID
+        )
+
+    @property
+    def has_discount(self):
+        return self.discount_amount is not None and self.discount_amount > Decimal("0.00")
+
+    @property
+    def discount_display(self):
+        if not self.has_discount:
+            return ""
+        if self.discount_type == self.DiscountType.PERCENT and self.discount_value is not None:
+            return f"{self.discount_value}% (-{self.discount_amount} {self.currency})"
+        if self.discount_value is not None:
+            return f"{self.discount_value} {self.currency}"
+        return f"-{self.discount_amount} {self.currency}"
 
     @property
     def can_confirm_receipt(self):

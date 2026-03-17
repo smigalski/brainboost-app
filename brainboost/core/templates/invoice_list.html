@@ -12,8 +12,11 @@
                     <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
                     <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
-                    {% if invoice.amount_total %}
+                    {% if invoice.amount_total != None %}
                         <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                    {% endif %}
+                    {% if invoice.has_discount %}
+                        <div class="muted">Rabatt: {{ invoice.discount_display }}</div>
                     {% endif %}
                     <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                     <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>

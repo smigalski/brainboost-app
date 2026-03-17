@@ -21,6 +21,12 @@
         gap: 6px;
         align-items: flex-end;
     }
+    .invoice-discount-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 180px;
+        gap: 10px;
+        align-items: end;
+    }
     @media (max-width: 760px) {
         .invoice-list-item {
             flex-direction: column;
@@ -39,12 +45,14 @@
         .invoice-parent-links {
             align-items: stretch;
         }
+        .invoice-discount-row {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
 <div class="card">
     <h3>Rechnung generieren</h3>
-    <p class="muted">Erstellt automatisch eine PDF-Rechnung für den gewählten Monat auf Basis abgeschlossener Termine. Verwendet feste Preise von 19 EUR / 45 Min., 25 EUR / 60 Min. und 36 EUR / 90 Min. plus Fahrtkosten und 27% Zuschlag an Feiertagen sowie samstags und sonntags.</p>
     <form method="post" novalidate>
         {% csrf_token %}
         <input type="hidden" name="action" value="generate">
@@ -61,9 +69,19 @@
         {% if generate_form.period.errors %}
             <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ generate_form.period.errors.0 }}</p>
         {% endif %}
+        <label for="{{ generate_form.discount_value.id_for_label }}">Rabatt</label>
+        <div class="invoice-discount-row">
+            {{ generate_form.discount_value }}
+            {{ generate_form.discount_type }}
+        </div>
+        {% if generate_form.discount_value.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ generate_form.discount_value.errors.0 }}</p>
+        {% endif %}
+        {% if generate_form.discount_type.errors %}
+            <p class="error" style="color:#b3261e;margin:6px 0 0;font-weight:600;">{{ generate_form.discount_type.errors.0 }}</p>
+        {% endif %}
         <button class="button" type="submit" style="margin-top:8px;">Rechnung generieren</button>
     </form>
-    <p class="muted" style="margin-top:12px;">Die bestehende Upload-Funktion bleibt darunter als Backup erhalten.</p>
 </div>
 
 <div class="card">
@@ -100,8 +118,11 @@
                         <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
-                        {% if invoice.amount_total %}
+                        {% if invoice.amount_total != None %}
                             <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                        {% endif %}
+                        {% if invoice.has_discount %}
+                            <div class="muted">Rabatt: {{ invoice.discount_display }}</div>
                         {% endif %}
                         <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                         <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
@@ -156,8 +177,11 @@
                             <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
                             <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
-                            {% if invoice.amount_total %}
+                            {% if invoice.amount_total != None %}
                                 <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
+                            {% endif %}
+                            {% if invoice.has_discount %}
+                                <div class="muted">Rabatt: {{ invoice.discount_display }}</div>
                             {% endif %}
                             <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                             <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>

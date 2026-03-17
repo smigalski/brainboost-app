@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
 
@@ -291,6 +292,29 @@ class InvoiceGenerateForm(forms.Form):
         label="Monat / Jahr",
         widget=forms.TextInput(attrs={"type": "month"}),
     )
+    discount_value = forms.DecimalField(
+        required=False,
+        min_value=Decimal("0.01"),
+        max_digits=8,
+        decimal_places=2,
+        label="Rabatt",
+        widget=forms.NumberInput(
+            attrs={
+                "step": "0.01",
+                "min": "0.01",
+                "placeholder": "z. B. 10.00",
+            }
+        ),
+    )
+    discount_type = forms.ChoiceField(
+        required=False,
+        label="Rabattart",
+        choices=[
+            ("", "Kein Rabatt"),
+            (Invoice.DiscountType.FIXED, "EUR"),
+            (Invoice.DiscountType.PERCENT, "%"),
+        ],
+    )
 
     def __init__(self, *args, allowed_students=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -303,6 +327,24 @@ class InvoiceGenerateForm(forms.Form):
             return datetime.strptime(value, "%Y-%m").date()
         except ValueError as exc:
             raise forms.ValidationError("Bitte wähle einen gültigen Monat aus.") from exc
+
+    def clean(self):
+        cleaned = super().clean()
+        discount_value = cleaned.get("discount_value")
+        discount_type = cleaned.get("discount_type") or ""
+
+        if discount_value and not discount_type:
+            self.add_error("discount_type", "Bitte wähle EUR oder % für den Rabatt aus.")
+        if discount_type and discount_value is None:
+            self.add_error("discount_value", "Bitte gib einen Rabattwert ein.")
+        if (
+            discount_type == Invoice.DiscountType.PERCENT
+            and discount_value is not None
+            and discount_value > Decimal("100.00")
+        ):
+            self.add_error("discount_value", "Der prozentuale Rabatt darf höchstens 100 betragen.")
+
+        return cleaned
 
 
 class HolidaySurveyForm(forms.ModelForm):
