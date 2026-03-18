@@ -29,3 +29,6 @@ GRANT ALL PRIVILEGES ON DATABASE brainboost_local_test TO brainboost_user;
 ## Deployment-Hinweis
 - Environment-Variablen für Secret Key und Datenbank setzen.
 - Statische Dateien sammeln: `python manage.py collectstatic --noinput`
+
+
+MINI-Änderung
