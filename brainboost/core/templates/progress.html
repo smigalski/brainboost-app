@@ -329,6 +329,7 @@
                     return sourceDatasets.map((dataset, idx) => {
                         const color = linePalette[idx % linePalette.length];
                         const pointStyle = pointStyleForSubject(dataset.label);
+                        const isPolygonMarker = pointStyle === "triangle" || pointStyle === "rect";
                         return {
                             label: dataset.label,
                             data: indexes.map((sourceIndex) => dataset.values[sourceIndex]),
@@ -336,8 +337,9 @@
                             backgroundColor: color,
                             borderWidth: 2,
                             pointStyle,
-                            pointRadius: 3.5,
-                            pointHoverRadius: 5,
+                            pointRadius: isPolygonMarker ? 5 : 3.5,
+                            pointHoverRadius: isPolygonMarker ? 6.5 : 5,
+                            pointHitRadius: 7,
                             pointBorderColor: "#ffffff",
                             pointBorderWidth: 1.1,
                             tension: 0.22,
@@ -366,7 +368,10 @@
                                 position: "top",
                                 labels: {
                                     usePointStyle: true,
-                                    pointStyleWidth: 10,
+                                    pointStyleWidth: 12,
+                                    boxWidth: 12,
+                                    boxHeight: 12,
+                                    padding: 14,
                                 },
                             },
                             tooltip: {
