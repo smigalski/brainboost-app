@@ -1,3 +1,5 @@
+{% extends "emails/base.txt" %}
+{% block content %}
 Hallo {{ user.first_name|default:user.username }},
 
 dein BrainBoost-Konto wurde erstellt.
@@ -9,3 +11,4 @@ Wenn du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.
 
 Viele Grüße
 Dein BrainBoost-Team
+{% endblock %}

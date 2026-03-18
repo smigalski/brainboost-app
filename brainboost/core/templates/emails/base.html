@@ -2,7 +2,7 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <title>{{ heading }}</title>
+    <title>{{ heading|default:"BrainBoost Nachricht" }}</title>
   </head>
   <body style="margin:0;padding:0;background:#f4f6f8;color:#0b1b2a;font-family:Arial,sans-serif;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px;">
@@ -11,11 +11,38 @@
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,0.08);">
             <tr>
               <td>
-                <h2 style="margin:0 0 12px 0;font-size:22px;">{{ heading }}</h2>
+                <h2 style="margin:0 0 12px 0;font-size:22px;">{{ heading|default:"BrainBoost Nachricht" }}</h2>
                 {% block content %}{% endblock %}
-                <p style="margin:24px 0 0 0;font-size:13px;color:#5a6b7b;">
-                  BrainBoost · Stark im Kopf - Stark im Lernen
-                </p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+                  <tr>
+                    <td style="padding-top:12px;border-top:1px solid #d8dee3;color:#2a2a2a;">
+                      <div style="font-size:18px;line-height:1.3;">--</div>
+                      <div style="text-align:center;margin-top:8px;">
+                        <div style="font-size:20px;font-weight:600;line-height:1.35;">Stark im Kopf - Stark im Lernen</div>
+                        <div style="margin:14px 0 10px;">
+                          <img
+                            src="https://nachhilfe-brainboost.de/static/design/LogoPNG.png"
+                            alt="BrainBoost Logo"
+                            width="96"
+                            style="display:inline-block;width:96px;height:auto;border:0;outline:none;text-decoration:none;"
+                          />
+                        </div>
+                        <div style="font-size:18px;line-height:1.45;color:#2a2a2a;">
+                          Copyright &copy; 2025-2026 BrainBoost Nachhilfe. Alle Rechte vorbehalten.
+                        </div>
+                        <div style="margin-top:10px;font-size:18px;line-height:1.45;color:#2a2a2a;">
+                          i.A. von Kiara Puppe<br />
+                          +49 175 9932553<br />
+                          <a href="https://nachhilfe-brainboost.de" style="color:#1457c4;">nachhilfe-brainboost.de</a>
+                        </div>
+                        <div style="margin-top:10px;font-size:18px;line-height:1.45;color:#2a2a2a;">
+                          Karl-Schmidt-Straße 20<br />
+                          38114 Braunschweig
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>

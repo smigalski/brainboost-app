@@ -1,12 +1,10 @@
-<h2>{{ heading }}</h2>
-
-<p>Hallo {{ audience_label }},</p>
-
-<p>{{ prompt }}</p>
-
-<p>
-    Bitte gib anonym dein Feedback ab:<br>
+{% extends "emails/base.html" %}
+{% block content %}
+  <p style="margin:0 0 12px 0;">Hallo {{ audience_label }},</p>
+  <p style="margin:0 0 12px 0;">{{ prompt }}</p>
+  <p style="margin:0 0 12px 0;">
+    Bitte gib anonym dein Feedback ab:<br />
     <a href="{{ feedback_url }}">{{ feedback_url }}</a>
-</p>
-
-<p>Vielen Dank für deine Unterstützung.</p>
+  </p>
+  <p style="margin:0;">Vielen Dank für deine Unterstützung.</p>
+{% endblock %}

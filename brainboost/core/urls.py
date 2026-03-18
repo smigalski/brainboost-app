@@ -96,6 +96,7 @@ urlpatterns = [
             email_template_name="emails/password_reset_email.txt",
             html_email_template_name="emails/password_reset_email.html",
             subject_template_name="emails/password_reset_subject.txt",
+            extra_email_context={"heading": "Passwort zurücksetzen"},
             success_url=reverse_lazy("password_reset_done"),
         ),
         name="password_reset",

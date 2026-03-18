@@ -967,6 +967,7 @@ def _send_set_password_email(request, user: CustomUser) -> None:
     )
     reset_url = request.build_absolute_uri(reset_path)
     context = {
+        "heading": "BrainBoost: Bestätigung & Passwort setzen",
         "user": user,
         "set_password_url": reset_url,
     }
