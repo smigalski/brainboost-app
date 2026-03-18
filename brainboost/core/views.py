@@ -1097,11 +1097,15 @@ def dashboard(request):
                 .order_by("-created_at")
                 .first()
             )
-            context["progress_entries"] = (
+            student_progress_entries = (
                 ProgressEntry.objects.filter(lesson__student=student_profile)
                 .select_related("lesson__tutor__user")
-                .order_by("-lesson__date", "-lesson__time", "-created_at")[:3]
             )
+            context["progress_entries"] = student_progress_entries.order_by(
+                "-lesson__date", "-lesson__time", "-created_at"
+            )[:3]
+            context["show_progress_chart"] = True
+            context["progress_chart_data"] = _build_progress_chart_data(student_progress_entries)
             context["assigned_tutors"] = student_profile.assigned_tutors.select_related(
                 "user"
             ).distinct()
@@ -1128,10 +1132,17 @@ def dashboard(request):
                 .select_related("user")
                 .distinct()
             )
-            context["progress_entries"] = (
+            parent_progress_entries = (
                 ProgressEntry.objects.filter(lesson__student__in=students)
                 .select_related("lesson__student__user", "lesson__tutor__user")
-                .order_by("-lesson__date", "-lesson__time", "-created_at")[:3]
+            )
+            context["progress_entries"] = parent_progress_entries.order_by(
+                "-lesson__date", "-lesson__time", "-created_at"
+            )[:3]
+            context["show_progress_chart"] = True
+            context["progress_chart_data"] = _build_progress_chart_data(
+                parent_progress_entries,
+                include_student_name=True,
             )
             context["solutions"] = LearningMaterial.objects.filter(
                 student__in=students, kind=LearningMaterial.Kind.SOLUTION
@@ -2743,19 +2754,29 @@ def progress_view(request, student_id=None):
             entries = entries.filter(lesson__ort=ort)
 
     entries = entries.order_by("-lesson__date", "-lesson__time", "-created_at")
+
     show_progress_chart = request.user.role in {
         CustomUser.Roles.STUDENT,
         CustomUser.Roles.PARENT,
+        CustomUser.Roles.TUTOR,
     }
+    tutor_chart_requires_student_selection = (
+        request.user.role == CustomUser.Roles.TUTOR
+        and viewed_student is None
+        and not selected_student
+    )
+    chart_entries = (
+        ProgressEntry.objects.none() if tutor_chart_requires_student_selection else entries
+    )
     progress_chart_data = (
         _build_progress_chart_data(
-            entries,
+            chart_entries,
             include_student_name=(
                 request.user.role == CustomUser.Roles.PARENT and viewed_student is None
             ),
         )
         if show_progress_chart
-        else {"labels": [], "datasets": []}
+        else {"labels": [], "date_keys": [], "detail_labels": [], "datasets": []}
     )
 
     period_options = [
@@ -2809,6 +2830,7 @@ def progress_view(request, student_id=None):
             "ort_options": ort_options,
             "weekday_options": weekday_options,
             "show_progress_chart": show_progress_chart,
+            "tutor_chart_requires_student_selection": tutor_chart_requires_student_selection,
             "progress_chart_data": progress_chart_data,
         },
     )

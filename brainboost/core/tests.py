@@ -377,10 +377,14 @@ class DashboardProgressOrderTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
         entries = list(response.context["progress_entries"])
+        chart_data = response.context["progress_chart_data"]
 
         self.assertEqual(len(entries), 2)
         self.assertEqual(entries[0].id, self.newer_entry.id)
         self.assertEqual(entries[1].id, self.older_entry.id)
+        self.assertTrue(response.context["show_progress_chart"])
+        self.assertEqual(chart_data["labels"], ["01.03", "15.03"])
+        self.assertEqual(len(chart_data["datasets"]), 2)
 
     def test_parent_dashboard_lists_progress_newest_first(self):
         logged_in = self.client.login(
@@ -392,10 +396,14 @@ class DashboardProgressOrderTests(TestCase):
         response = self.client.get(reverse("dashboard"))
         self.assertEqual(response.status_code, 200)
         entries = list(response.context["progress_entries"])
+        chart_data = response.context["progress_chart_data"]
 
         self.assertEqual(len(entries), 2)
         self.assertEqual(entries[0].id, self.newer_entry.id)
         self.assertEqual(entries[1].id, self.older_entry.id)
+        self.assertTrue(response.context["show_progress_chart"])
+        self.assertEqual(chart_data["labels"], ["01.03", "15.03"])
+        self.assertEqual(len(chart_data["datasets"]), 2)
 
 
 class ProgressChartDataTests(TestCase):
@@ -466,3 +474,87 @@ class ProgressChartDataTests(TestCase):
         self.assertEqual(chart_data["datasets"][0]["values"], [7, None])
         self.assertEqual(chart_data["datasets"][1]["label"], "Mathe")
         self.assertEqual(chart_data["datasets"][1]["values"], [5, 9])
+
+
+class TutorProgressChartSelectionTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_progress_chart",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_one_user = CustomUser.objects.create_user(
+            username="student_chart_one",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Ava",
+            last_name="Eins",
+        )
+        self.student_two_user = CustomUser.objects.create_user(
+            username="student_chart_two",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Ben",
+            last_name="Zwei",
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student_one = StudentProfile.objects.create(user=self.student_one_user)
+        self.student_two = StudentProfile.objects.create(user=self.student_two_user)
+        self.student_one.assigned_tutors.add(self.tutor)
+        self.student_two.assigned_tutors.add(self.tutor)
+
+        lesson_one = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student_one,
+            date=date(2026, 3, 10),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+        lesson_two = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student_two,
+            date=date(2026, 3, 12),
+            time=time(16, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="deutsch",
+            status=Lesson.Status.COMPLETED,
+        )
+        ProgressEntry.objects.create(lesson=lesson_one, comment="Eintrag A", rating=8)
+        ProgressEntry.objects.create(lesson=lesson_two, comment="Eintrag B", rating=7)
+
+    def test_tutor_progress_chart_requires_student_selection(self):
+        logged_in = self.client.login(
+            username="tutor_progress_chart",
+            password="test12345",
+        )
+        self.assertTrue(logged_in)
+
+        response = self.client.get(reverse("progress"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["show_progress_chart"])
+        self.assertTrue(response.context["tutor_chart_requires_student_selection"])
+        self.assertEqual(response.context["progress_chart_data"]["datasets"], [])
+
+    def test_tutor_progress_chart_shows_selected_student_data(self):
+        logged_in = self.client.login(
+            username="tutor_progress_chart",
+            password="test12345",
+        )
+        self.assertTrue(logged_in)
+
+        response = self.client.get(
+            reverse("progress"),
+            {"student": str(self.student_one.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["tutor_chart_requires_student_selection"])
+        chart_data = response.context["progress_chart_data"]
+        self.assertEqual(chart_data["labels"], ["10.03"])
+        self.assertEqual(len(chart_data["datasets"]), 1)
+        self.assertEqual(chart_data["datasets"][0]["label"], "Mathe")
