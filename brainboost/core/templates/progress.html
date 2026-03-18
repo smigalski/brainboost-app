@@ -238,22 +238,78 @@
                 };
 
                 const linePalette = [
-                    "#1f6666",
-                    "#2563eb",
-                    "#c2410c",
-                    "#7c3aed",
-                    "#be185d",
-                    "#0f766e",
-                    "#166534",
-                    "#b45309",
-                    "#9333ea",
-                    "#0ea5e9"
+                    "#1f77b4",
+                    "#ff7f0e",
+                    "#2ca02c",
+                    "#d62728",
+                    "#9467bd",
+                    "#8c564b",
+                    "#e377c2",
+                    "#7f7f7f",
+                    "#bcbd22",
+                    "#17becf",
+                    "#264653",
+                    "#f4a261"
                 ];
                 const sourceDatasets = chartData.datasets.slice();
                 const sourceLabels = chartData.labels.slice();
                 const sourceDateKeys = chartData.date_keys.slice();
                 let activeSourceIndexes = [];
                 let activeWindowDays = 30;
+
+                function normalizeLabel(value) {
+                    return (value || "")
+                        .toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "");
+                }
+
+                function includesAny(text, values) {
+                    return values.some((value) => text.includes(value));
+                }
+
+                function pointStyleForSubject(label) {
+                    const normalized = normalizeLabel(label);
+                    const societal = [
+                        "politik",
+                        "geschichte",
+                        "wirtschaft",
+                        "gesellschaft",
+                        "sozialkunde",
+                    ];
+                    if (includesAny(normalized, societal)) {
+                        return "triangle";
+                    }
+
+                    const natural = [
+                        "mathe",
+                        "mathematik",
+                        "physik",
+                        "chemie",
+                        "biologie",
+                        "erdkunde",
+                        "informatik",
+                        "mint",
+                        "naturwissenschaft",
+                    ];
+                    if (includesAny(normalized, natural)) {
+                        return "circle";
+                    }
+
+                    const language = [
+                        "deutsch",
+                        "englisch",
+                        "franzosisch",
+                        "spanisch",
+                        "sprache",
+                        "musik",
+                    ];
+                    if (includesAny(normalized, language)) {
+                        return "rect";
+                    }
+
+                    return "circle";
+                }
 
                 function sourceIndexFilter(days) {
                     if (!sourceDateKeys.length) {
@@ -272,14 +328,18 @@
                 function datasetsForIndexes(indexes) {
                     return sourceDatasets.map((dataset, idx) => {
                         const color = linePalette[idx % linePalette.length];
+                        const pointStyle = pointStyleForSubject(dataset.label);
                         return {
                             label: dataset.label,
                             data: indexes.map((sourceIndex) => dataset.values[sourceIndex]),
                             borderColor: color,
                             backgroundColor: color,
                             borderWidth: 2,
-                            pointRadius: 2.5,
-                            pointHoverRadius: 4,
+                            pointStyle,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 5,
+                            pointBorderColor: "#ffffff",
+                            pointBorderWidth: 1.1,
                             tension: 0.22,
                             spanGaps: true
                         };
@@ -303,7 +363,11 @@
                         plugins: {
                             legend: {
                                 display: true,
-                                position: "top"
+                                position: "top",
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyleWidth: 10,
+                                },
                             },
                             tooltip: {
                                 mode: "index",
