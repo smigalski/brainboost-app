@@ -455,12 +455,12 @@ class ProgressChartDataTests(TestCase):
 
         self.assertEqual(
             chart_data["labels"],
-            ["01.03.2026", "10.03.2026"],
+            ["01.03", "10.03"],
         )
         self.assertEqual(chart_data["date_keys"], ["2026-03-01", "2026-03-10"])
         self.assertEqual(
             chart_data["detail_labels"],
-            ["01.03.2026 15:00", "10.03.2026 16:00"],
+            ["01.03 15:00", "10.03 16:00"],
         )
         self.assertEqual(chart_data["datasets"][0]["label"], "Deutsch")
         self.assertEqual(chart_data["datasets"][0]["values"], [7, None])

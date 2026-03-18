@@ -1044,9 +1044,9 @@ def _build_progress_chart_data(entries, include_student_name: bool = False) -> d
     subject_series: dict[str, list[Optional[int]]] = {}
     entry_count = len(ordered_entries)
     for index, entry in enumerate(ordered_entries):
-        labels.append(f"{entry.lesson.date:%d.%m.%Y}")
+        labels.append(f"{entry.lesson.date:%d.%m}")
         date_keys.append(entry.lesson.date.isoformat())
-        base_label = f"{entry.lesson.date:%d.%m.%Y} {entry.lesson.time:%H:%M}"
+        base_label = f"{entry.lesson.date:%d.%m} {entry.lesson.time:%H:%M}"
         if include_student_name:
             detail_label = f"{base_label} · {_display_name(entry.lesson.student.user)}"
         else:
