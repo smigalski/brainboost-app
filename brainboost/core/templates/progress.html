@@ -165,15 +165,17 @@
         {% for entry in entries %}
             <li style="display:block;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                    <strong style="flex:1 1 auto; min-width:0;">{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
-                    <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px;">
-                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-                        {% for subject_label, subject_rating in entry.rating_display_list %}
-                        <span
-                            class="badge info progress-rating-badge {% if subject_rating is None %}is-empty{% elif subject_rating <= 1 %}is-1{% elif subject_rating == 2 %}is-2{% elif subject_rating == 3 %}is-3{% elif subject_rating == 4 %}is-4{% elif subject_rating == 5 %}is-5{% elif subject_rating == 6 %}is-6{% elif subject_rating == 7 %}is-7{% elif subject_rating == 8 %}is-8{% elif subject_rating == 9 %}is-9{% else %}is-10{% endif %}"
-                        >{{ subject_label }}: {% if subject_rating is not None %}{{ subject_rating }}/10{% else %}-{% endif %}</span>
-                        {% endfor %}
+                    <div style="flex:1 1 auto; min-width:0; display:flex; align-items:flex-start; flex-wrap:wrap; gap:8px 10px;">
+                        <strong>{{ entry.lesson.date|date:"l, d.m.Y" }} {{ entry.lesson.time|time:"H:i" }}</strong>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:flex-start;">
+                            {% for subject_label, subject_rating in entry.rating_display_list %}
+                            <span
+                                class="badge info progress-rating-badge {% if subject_rating is None %}is-empty{% elif subject_rating <= 1 %}is-1{% elif subject_rating == 2 %}is-2{% elif subject_rating == 3 %}is-3{% elif subject_rating == 4 %}is-4{% elif subject_rating == 5 %}is-5{% elif subject_rating == 6 %}is-6{% elif subject_rating == 7 %}is-7{% elif subject_rating == 8 %}is-8{% elif subject_rating == 9 %}is-9{% else %}is-10{% endif %}"
+                            >{{ subject_label }}: {% if subject_rating is not None %}{{ subject_rating }}/10{% else %}-{% endif %}</span>
+                            {% endfor %}
                         </div>
+                    </div>
+                    <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px;">
                         {% if request.user.role == 'tutor' %}
                             <a
                                 class="icon-button"
@@ -195,7 +197,7 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="muted"><strong>{{ entry.lesson.student.user.get_full_name }}</strong> · {{ entry.lesson.subject_display }} · {{ entry.lesson.get_ort_display }}</div>
+                <div class="muted"><strong>{{ entry.lesson.student.user.get_full_name }}</strong> · {{ entry.lesson.get_ort_display }}</div>
                 <div>{{ entry.comment|default:"(kein Kommentar)" }}</div>
                 <div class="muted">{{ entry.created_at|date:"d.m.Y H:i" }}</div>
             </li>
