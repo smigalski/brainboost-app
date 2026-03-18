@@ -1026,10 +1026,55 @@ def _has_faq_admin_access(user: CustomUser) -> bool:
     return _has_admin_access(user)
 
 
+def _build_progress_chart_data(entries, include_student_name: bool = False) -> dict:
+    if hasattr(entries, "order_by"):
+        ordered_entries = entries.order_by("lesson__date", "lesson__time", "created_at")
+    else:
+        ordered_entries = sorted(
+            entries,
+            key=lambda entry: (entry.lesson.date, entry.lesson.time, entry.created_at),
+        )
+    ordered_entries = list(ordered_entries)
+    if not ordered_entries:
+        return {"labels": [], "date_keys": [], "detail_labels": [], "datasets": []}
+
+    labels: list[str] = []
+    date_keys: list[str] = []
+    detail_labels: list[str] = []
+    subject_series: dict[str, list[Optional[int]]] = {}
+    entry_count = len(ordered_entries)
+    for index, entry in enumerate(ordered_entries):
+        labels.append(f"{entry.lesson.date:%d.%m.%Y}")
+        date_keys.append(entry.lesson.date.isoformat())
+        base_label = f"{entry.lesson.date:%d.%m.%Y} {entry.lesson.time:%H:%M}"
+        if include_student_name:
+            detail_label = f"{base_label} · {_display_name(entry.lesson.student.user)}"
+        else:
+            detail_label = base_label
+        detail_labels.append(detail_label)
+
+        for subject_label, subject_rating in entry.rating_display_list:
+            if subject_label not in subject_series:
+                subject_series[subject_label] = [None] * entry_count
+            if subject_rating is not None:
+                subject_series[subject_label][index] = int(subject_rating)
+
+    datasets = [
+        {"label": subject_label, "values": values}
+        for subject_label, values in sorted(subject_series.items(), key=lambda item: item[0])
+    ]
+    return {
+        "labels": labels,
+        "date_keys": date_keys,
+        "detail_labels": detail_labels,
+        "datasets": datasets,
+    }
+
+
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)
-    context = {}
+    context = {"show_faq_target_filters": _has_faq_admin_access(request.user)}
     if request.user.role == CustomUser.Roles.STUDENT:
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
@@ -1051,6 +1096,11 @@ def dashboard(request):
                 .select_related("lesson__tutor__user")
                 .order_by("-created_at")
                 .first()
+            )
+            context["progress_entries"] = (
+                ProgressEntry.objects.filter(lesson__student=student_profile)
+                .select_related("lesson__tutor__user")
+                .order_by("-lesson__date", "-lesson__time", "-created_at")[:3]
             )
             context["assigned_tutors"] = student_profile.assigned_tutors.select_related(
                 "user"
@@ -1077,6 +1127,11 @@ def dashboard(request):
                 TutorProfile.objects.filter(assigned_students__in=students)
                 .select_related("user")
                 .distinct()
+            )
+            context["progress_entries"] = (
+                ProgressEntry.objects.filter(lesson__student__in=students)
+                .select_related("lesson__student__user", "lesson__tutor__user")
+                .order_by("-lesson__date", "-lesson__time", "-created_at")[:3]
             )
             context["solutions"] = LearningMaterial.objects.filter(
                 student__in=students, kind=LearningMaterial.Kind.SOLUTION
@@ -1123,7 +1178,19 @@ def faq_submit(request):
     if request.method != "POST":
         return redirect("dashboard")
 
-    form = FAQSubmissionForm(request.POST)
+    form_data = request.POST.copy()
+    if not _has_faq_admin_access(request.user):
+        form_data["audience_all"] = ""
+        form_data["show_on_landing"] = ""
+        if request.user.role == CustomUser.Roles.PARENT:
+            form_data["show_for_parents"] = "on"
+            form_data["show_for_students"] = ""
+            form_data["show_for_tutors"] = ""
+        else:
+            form_data["show_for_students"] = "on"
+            form_data["show_for_parents"] = ""
+            form_data["show_for_tutors"] = ""
+    form = FAQSubmissionForm(form_data)
     if form.is_valid():
         faq_item = form.save(commit=False)
         faq_item.created_by = request.user
@@ -2676,6 +2743,20 @@ def progress_view(request, student_id=None):
             entries = entries.filter(lesson__ort=ort)
 
     entries = entries.order_by("-lesson__date", "-lesson__time", "-created_at")
+    show_progress_chart = request.user.role in {
+        CustomUser.Roles.STUDENT,
+        CustomUser.Roles.PARENT,
+    }
+    progress_chart_data = (
+        _build_progress_chart_data(
+            entries,
+            include_student_name=(
+                request.user.role == CustomUser.Roles.PARENT and viewed_student is None
+            ),
+        )
+        if show_progress_chart
+        else {"labels": [], "datasets": []}
+    )
 
     period_options = [
         {
@@ -2727,6 +2808,8 @@ def progress_view(request, student_id=None):
             "duration_options": duration_options,
             "ort_options": ort_options,
             "weekday_options": weekday_options,
+            "show_progress_chart": show_progress_chart,
+            "progress_chart_data": progress_chart_data,
         },
     )
 

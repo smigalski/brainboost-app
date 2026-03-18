@@ -6,11 +6,22 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import BrainBoostFeedbackForm, InvoiceGenerateForm
-from .models import BrainBoostFeedback, CustomUser, Invoice, Lesson, StudentProfile, TutorProfile
+from .models import (
+    BrainBoostFeedback,
+    CustomUser,
+    FAQItem,
+    Invoice,
+    Lesson,
+    ParentProfile,
+    ProgressEntry,
+    StudentProfile,
+    TutorProfile,
+)
 from .views import (
     _auto_complete_past_lessons,
     _build_epc_payment_payload,
     _build_invoice_pdf_context,
+    _build_progress_chart_data,
 )
 
 
@@ -242,3 +253,216 @@ class InvoicePaymentQrPayloadTests(TestCase):
         )
 
         self.assertIsNone(payload)
+
+
+class FAQSubmissionVisibilityAndDefaultsTests(TestCase):
+    def test_non_admin_parent_submission_uses_parent_default_target(self):
+        parent_user = CustomUser.objects.create_user(
+            username="parent_faq",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+        )
+        logged_in = self.client.login(username="parent_faq", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("faq_submit"),
+            data={"question": "Wie läuft die Terminabsprache?"},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(FAQItem.objects.count(), 1)
+        item = FAQItem.objects.get()
+        self.assertTrue(item.show_for_parents)
+        self.assertFalse(item.show_for_students)
+        self.assertFalse(item.show_for_tutors)
+        self.assertFalse(item.show_on_landing)
+
+    def test_admin_parent_submission_keeps_selected_targets(self):
+        admin_parent_user = CustomUser.objects.create_user(
+            username="parent_admin_faq",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+            is_staff=True,
+        )
+        logged_in = self.client.login(username="parent_admin_faq", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("faq_submit"),
+            data={
+                "question": "Bitte auch für TutorInnen anzeigen.",
+                "show_for_tutors": "on",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(FAQItem.objects.count(), 1)
+        item = FAQItem.objects.get()
+        self.assertFalse(item.show_for_parents)
+        self.assertFalse(item.show_for_students)
+        self.assertTrue(item.show_for_tutors)
+        self.assertFalse(item.show_on_landing)
+
+
+class DashboardProgressOrderTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_progress_order",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutor",
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="student_progress_order",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Sina",
+            last_name="Student",
+        )
+        self.parent_user = CustomUser.objects.create_user(
+            username="parent_progress_order",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+            first_name="Paula",
+            last_name="Parent",
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.parent = ParentProfile.objects.create(user=self.parent_user)
+        self.student.parents.add(self.parent)
+
+        newer_lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 15),
+            time=time(17, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+        older_lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 1),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="deutsch",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        self.newer_entry = ProgressEntry.objects.create(
+            lesson=newer_lesson,
+            comment="Neuer Eintrag",
+            rating=8,
+        )
+        self.older_entry = ProgressEntry.objects.create(
+            lesson=older_lesson,
+            comment="Alter Eintrag",
+            rating=6,
+        )
+
+    def test_student_dashboard_lists_progress_newest_first(self):
+        logged_in = self.client.login(
+            username="student_progress_order",
+            password="test12345",
+        )
+        self.assertTrue(logged_in)
+
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+        entries = list(response.context["progress_entries"])
+
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0].id, self.newer_entry.id)
+        self.assertEqual(entries[1].id, self.older_entry.id)
+
+    def test_parent_dashboard_lists_progress_newest_first(self):
+        logged_in = self.client.login(
+            username="parent_progress_order",
+            password="test12345",
+        )
+        self.assertTrue(logged_in)
+
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+        entries = list(response.context["progress_entries"])
+
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0].id, self.newer_entry.id)
+        self.assertEqual(entries[1].id, self.older_entry.id)
+
+
+class ProgressChartDataTests(TestCase):
+    def test_build_progress_chart_data_groups_by_subject_and_orders_chronologically(self):
+        tutor_user = CustomUser.objects.create_user(
+            username="tutor_chart_data",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        student_user = CustomUser.objects.create_user(
+            username="student_chart_data",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Max",
+            last_name="Muster",
+        )
+        tutor = TutorProfile.objects.create(user=tutor_user)
+        student = StudentProfile.objects.create(user=student_user)
+
+        older_lesson = Lesson.objects.create(
+            tutor=tutor,
+            student=student,
+            date=date(2026, 3, 1),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            fach_2="deutsch",
+            status=Lesson.Status.COMPLETED,
+        )
+        newer_lesson = Lesson.objects.create(
+            tutor=tutor,
+            student=student,
+            date=date(2026, 3, 10),
+            time=time(16, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        ProgressEntry.objects.create(
+            lesson=older_lesson,
+            comment="Alt",
+            rating=5,
+            rating_fach_2=7,
+        )
+        ProgressEntry.objects.create(
+            lesson=newer_lesson,
+            comment="Neu",
+            rating=9,
+        )
+
+        chart_data = _build_progress_chart_data(
+            ProgressEntry.objects.filter(lesson__student=student)
+        )
+
+        self.assertEqual(
+            chart_data["labels"],
+            ["01.03.2026", "10.03.2026"],
+        )
+        self.assertEqual(chart_data["date_keys"], ["2026-03-01", "2026-03-10"])
+        self.assertEqual(
+            chart_data["detail_labels"],
+            ["01.03.2026 15:00", "10.03.2026 16:00"],
+        )
+        self.assertEqual(chart_data["datasets"][0]["label"], "Deutsch")
+        self.assertEqual(chart_data["datasets"][0]["values"], [7, None])
+        self.assertEqual(chart_data["datasets"][1]["label"], "Mathe")
+        self.assertEqual(chart_data["datasets"][1]["values"], [5, 9])

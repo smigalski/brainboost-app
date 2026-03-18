@@ -51,6 +51,16 @@
             background: #1f6666;
             color: #f7f7f2;
         }
+        .js-progress-range {
+            background: #d7dde4;
+            color: #364152;
+            border: 1px solid rgba(54, 65, 82, 0.2);
+        }
+        .js-progress-range.is-active {
+            background: var(--teal-dark);
+            color: #f7f7f2;
+            border-color: var(--teal-dark);
+        }
     </style>
     {% if viewed_student %}
         <p class="muted">SchülerIn: {{ viewed_student.user.get_full_name }}</p>
@@ -61,6 +71,24 @@
         Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
         Die Einschätzung spiegelt die subjektive Wahrnehmung der TutorIn wider.
     </p>
+    {% if show_progress_chart %}
+        <div style="margin:14px 0 18px; padding:14px; border-radius:14px; border:1px solid rgba(0,0,0,0.08); background:rgba(255,255,255,0.82);">
+            <div style="font-weight:700; margin-bottom:10px;">Mitarbeitsgraph nach Fach</div>
+            {% if progress_chart_data.datasets %}
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                    <button type="button" class="button js-progress-range is-active" data-days="30">30 Tage</button>
+                    <button type="button" class="button js-progress-range" data-days="90">3 Monate</button>
+                    <button type="button" class="button js-progress-range" data-days="365">12 Monate</button>
+                </div>
+                <div style="height:260px;">
+                    <canvas id="progress-subject-chart"></canvas>
+                </div>
+                {{ progress_chart_data|json_script:"progress-chart-data" }}
+            {% else %}
+                <div class="muted">Noch keine ausreichenden Einträge für eine grafische Darstellung vorhanden.</div>
+            {% endif %}
+        </div>
+    {% endif %}
     {% if request.user.role == 'tutor' %}
         <form method="get" style="display:grid; gap:12px; margin:12px 0 16px;">
             <div class="grid two" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
@@ -162,4 +190,188 @@
     </ul>
     <p class="muted" style="margin-top:16px;"><a href="{% url 'dashboard' %}">Zurück zum Dashboard</a></p>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    {% if show_progress_chart and progress_chart_data.datasets %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+        <script>
+            (function () {
+                const dataElement = document.getElementById("progress-chart-data");
+                const canvas = document.getElementById("progress-subject-chart");
+                if (!dataElement || !canvas || typeof Chart === "undefined") {
+                    return;
+                }
+
+                const chartData = JSON.parse(dataElement.textContent || "{}");
+                if (!chartData.labels || !chartData.datasets || !chartData.date_keys) {
+                    return;
+                }
+
+                const ratingBackgroundPlugin = {
+                    id: "ratingBackground",
+                    beforeDraw(chart) {
+                        const chartArea = chart.chartArea;
+                        if (!chartArea) {
+                            return;
+                        }
+                        const ctx = chart.ctx;
+                        const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                        gradient.addColorStop(0.00, "rgba(255, 107, 107, 0.20)");
+                        gradient.addColorStop(0.20, "rgba(255, 146, 88, 0.18)");
+                        gradient.addColorStop(0.40, "rgba(255, 194, 77, 0.17)");
+                        gradient.addColorStop(0.60, "rgba(189, 223, 76, 0.16)");
+                        gradient.addColorStop(0.80, "rgba(92, 191, 92, 0.15)");
+                        gradient.addColorStop(1.00, "rgba(31, 102, 102, 0.14)");
+
+                        ctx.save();
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(
+                            chartArea.left,
+                            chartArea.top,
+                            chartArea.right - chartArea.left,
+                            chartArea.bottom - chartArea.top
+                        );
+                        ctx.restore();
+                    }
+                };
+
+                const linePalette = [
+                    "#1f6666",
+                    "#2563eb",
+                    "#c2410c",
+                    "#7c3aed",
+                    "#be185d",
+                    "#0f766e",
+                    "#166534",
+                    "#b45309",
+                    "#9333ea",
+                    "#0ea5e9"
+                ];
+                const sourceDatasets = chartData.datasets.slice();
+                const sourceLabels = chartData.labels.slice();
+                const sourceDateKeys = chartData.date_keys.slice();
+                let activeSourceIndexes = [];
+                let activeWindowDays = 30;
+
+                function sourceIndexFilter(days) {
+                    if (!sourceDateKeys.length) {
+                        return [];
+                    }
+                    const parsedDates = sourceDateKeys.map((value) => new Date(value + "T00:00:00"));
+                    const latestDate = parsedDates[parsedDates.length - 1];
+                    const threshold = new Date(latestDate);
+                    threshold.setDate(threshold.getDate() - days + 1);
+                    return parsedDates
+                        .map((date, index) => ({ date, index }))
+                        .filter((item) => item.date >= threshold)
+                        .map((item) => item.index);
+                }
+
+                function datasetsForIndexes(indexes) {
+                    return sourceDatasets.map((dataset, idx) => {
+                        const color = linePalette[idx % linePalette.length];
+                        return {
+                            label: dataset.label,
+                            data: indexes.map((sourceIndex) => dataset.values[sourceIndex]),
+                            borderColor: color,
+                            backgroundColor: color,
+                            borderWidth: 2,
+                            pointRadius: 2.5,
+                            pointHoverRadius: 4,
+                            tension: 0.22,
+                            spanGaps: true
+                        };
+                    });
+                }
+
+                const chart = new Chart(canvas, {
+                    type: "line",
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    plugins: [ratingBackgroundPlugin],
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "top"
+                            },
+                            tooltip: {
+                                mode: "index",
+                                intersect: false,
+                                callbacks: {
+                                    footer(tooltipItems) {
+                                        if (!tooltipItems.length) {
+                                            return "";
+                                        }
+                                        const chartIndex = tooltipItems[0].dataIndex;
+                                        const sourceIndex = activeSourceIndexes[chartIndex];
+                                        const detailLabels = chartData.detail_labels || [];
+                                        return detailLabels[sourceIndex] || "";
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 10,
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: "Mitarbeitspunktzahl"
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Datum"
+                                },
+                                ticks: {
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 8
+                                }
+                            }
+                        }
+                    }
+                });
+
+                function applyWindow(days) {
+                    activeWindowDays = days;
+                    const indexes = sourceIndexFilter(days);
+                    activeSourceIndexes = indexes;
+                    chart.data.labels = indexes.map((sourceIndex) => sourceLabels[sourceIndex]);
+                    chart.data.datasets = datasetsForIndexes(indexes);
+                    chart.update();
+                }
+
+                const rangeButtons = document.querySelectorAll(".js-progress-range");
+                rangeButtons.forEach((button) => {
+                    button.addEventListener("click", function () {
+                        const days = Number(this.getAttribute("data-days"));
+                        if (!Number.isFinite(days) || days <= 0) {
+                            return;
+                        }
+                        rangeButtons.forEach((item) => item.classList.remove("is-active"));
+                        this.classList.add("is-active");
+                        applyWindow(days);
+                    });
+                });
+
+                applyWindow(activeWindowDays);
+            })();
+        </script>
+    {% endif %}
 {% endblock %}
