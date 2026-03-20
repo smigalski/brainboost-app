@@ -1,3 +1,12 @@
+@font-face {
+    font-family: "Shababa W01 Regular";
+    src: url("../fonts/shababa/shababa-w01-regular.woff2") format("woff2"),
+         url("../fonts/shababa/shababa-w01-regular.woff") format("woff");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --teal: #2c8a8a;
     --teal-dark: #1f6666;
