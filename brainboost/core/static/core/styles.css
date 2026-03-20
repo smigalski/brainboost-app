@@ -10,6 +10,7 @@
     --card-radius: 18px;
     --shadow: 0 15px 45px rgba(0,0,0,0.12);
     --font-sans: "Nunito", "Avenir", "Helvetica Neue", Arial, sans-serif;
+    --font-brand-nav: "Shababa W01 Regular", var(--font-sans);
 }
 
 * { box-sizing: border-box; }
@@ -113,7 +114,12 @@ strong.logo { color: var(--logo-turquoise); }
     font-size: 34px;
 }
 
-.brand-title { font-size: 18px; display: block; line-height: 1; }
+.brand-title {
+    font-family: var(--font-brand-nav);
+    font-size: 15.5pt;
+    display: block;
+    line-height: 1;
+}
 .brand-sub { font-size: 13px; color: var(--slate); }
 
 .nav-links {
@@ -839,7 +845,7 @@ input[type="file"] {
     }
 
     .brand-title {
-        font-size: 16px;
+        font-size: 14pt;
     }
 
     .brand-sub {
