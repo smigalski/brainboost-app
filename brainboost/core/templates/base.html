@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1008">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1009">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
@@ -41,7 +41,11 @@
                     aria-controls="site-navigation"
                     data-menu-toggle
                 >
-                    <span aria-hidden="true">☰</span>
+                    <svg class="menu-toggle__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <line x1="5" y1="7" x2="19" y2="7"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <line x1="5" y1="17" x2="19" y2="17"></line>
+                    </svg>
                 </button>
             </div>
         </div>
@@ -53,7 +57,9 @@
                     aria-label="Menü einklappen"
                     data-menu-close
                 >
-                    <span aria-hidden="true">▴</span>
+                    <svg class="menu-collapse__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <polyline points="6,14 12,8 18,14"></polyline>
+                    </svg>
                 </button>
                 <nav id="site-navigation" class="nav-links nav-links--wrap">
                     {% with request.resolver_match.url_name as current %}

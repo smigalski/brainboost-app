@@ -199,6 +199,18 @@ strong.logo { color: var(--logo-turquoise); }
     transform: translateY(-1px);
 }
 
+.menu-toggle__icon,
+.menu-collapse__icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .topbar-menu {
     width: 100%;
     overflow: hidden;
@@ -227,8 +239,12 @@ strong.logo { color: var(--logo-turquoise); }
 .menu-collapse {
     width: 32px;
     height: 32px;
-    font-size: 16px;
     justify-self: center;
+}
+
+.menu-collapse__icon {
+    width: 16px;
+    height: 16px;
 }
 
 .page {
