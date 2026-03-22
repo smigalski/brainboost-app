@@ -398,6 +398,12 @@ INVOICE_RATE_BY_DURATION = {
     60: Decimal("25.00"),
     90: Decimal("36.00"),
 }
+CANCELLATION_FREE_HOURS = 5
+
+
+def _is_chargeable_cancellation(lesson: Lesson, cancelled_at) -> bool:
+    cancellation_deadline = lesson.scheduled_datetime - timedelta(hours=CANCELLATION_FREE_HOURS)
+    return cancelled_at > cancellation_deadline
 
 
 def _easter_sunday(year: int) -> date:
@@ -546,6 +552,9 @@ def _build_invoice_pdf_context(
         subtotal_amount += lesson_amount
         total_travel += components["travel_amount"]
         total_surcharge += components["surcharge_amount"]
+        line_item_notes = list(components["notes"])
+        if lesson.status == Lesson.Status.CANCELLED and lesson.cancellation_chargeable:
+            line_item_notes.insert(0, "Zu spät storniert (kostenpflichtig)")
         line_items.append(
             {
                 "date": lesson.date,
@@ -557,7 +566,7 @@ def _build_invoice_pdf_context(
                 "travel_amount": components["travel_amount"],
                 "surcharge_amount": components["surcharge_amount"],
                 "total_amount": components["total_amount"],
-                "notes": components["notes"],
+                "notes": line_item_notes,
                 "is_special_day": components["is_special_day"],
                 "distance_km": components["distance_km"],
             }
@@ -704,7 +713,10 @@ def _lesson_news_items(lessons) -> list[dict]:
         if lesson.reschedule_requested:
             labels.append("Terminverlegung angefragt")
         if lesson.status == Lesson.Status.CANCELLED:
-            labels.append("Termin storniert")
+            if lesson.cancellation_chargeable:
+                labels.append("Termin zu spät storniert (kostenpflichtig)")
+            else:
+                labels.append("Termin pünktlich storniert")
         elif lesson.status == Lesson.Status.COMPLETED:
             labels.append("Termin abgeschlossen")
         elif lesson.status == Lesson.Status.PLANNED:
@@ -1231,7 +1243,7 @@ def faq_admin(request):
                 faq_item.is_published = True
                 faq_item.save()
                 messages.success(request, "FAQ wurde gespeichert.")
-                return redirect("faq_admin")
+                return redirect(f"{reverse('faq_admin')}#faq-item-{faq_item.id}")
         elif action == "publish":
             faq_item = get_object_or_404(FAQItem, pk=request.POST.get("faq_id"), is_published=False)
             publish_form = FAQItemForm(request.POST, instance=faq_item)
@@ -1241,14 +1253,14 @@ def faq_admin(request):
                 updated.is_published = True
                 updated.save()
                 messages.success(request, "Frage wurde beantwortet und zur FAQ hinzugefügt.")
-                return redirect("faq_admin")
+                return redirect(f"{reverse('faq_admin')}#faq-item-{updated.id}")
         elif action == "update":
             faq_item = get_object_or_404(FAQItem, pk=request.POST.get("faq_id"), is_published=True)
             update_form = FAQItemForm(request.POST, instance=faq_item)
             if update_form.is_valid():
-                update_form.save()
+                updated = update_form.save()
                 messages.success(request, "FAQ wurde aktualisiert.")
-                return redirect("faq_admin")
+                return redirect(f"{reverse('faq_admin')}#faq-item-{updated.id}")
 
     create_form = FAQItemForm(initial={"audience_all": True})
     published_items = FAQItem.objects.filter(is_published=True).order_by("question")
@@ -1851,14 +1863,22 @@ def lesson_cancel(request, lesson_id):
 
     now = timezone.now()
     time_until_lesson = lesson.scheduled_datetime - now
-    if time_until_lesson < timedelta(hours=5):
-        msg = "Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere die TutorIn sofort."
-        return JsonResponse({"ok": False, "message": msg}, status=400) if is_ajax else redirect("lesson_list")
+    is_chargeable = time_until_lesson < timedelta(hours=CANCELLATION_FREE_HOURS)
 
     lesson.status = Lesson.Status.CANCELLED
     lesson.cancellation_reason = reason
+    lesson.cancelled_at = now
+    lesson.cancellation_chargeable = is_chargeable
     lesson.reschedule_requested = False
-    lesson.save(update_fields=["status", "cancellation_reason", "reschedule_requested"])
+    lesson.save(
+        update_fields=[
+            "status",
+            "cancellation_reason",
+            "cancelled_at",
+            "cancellation_chargeable",
+            "reschedule_requested",
+        ]
+    )
     notify_lesson_cancelled(
         request,
         lesson,
@@ -1866,8 +1886,14 @@ def lesson_cancel(request, lesson_id):
         reason=reason,
         include_tutor=request.user.role != CustomUser.Roles.TUTOR,
     )
+    success_message = "Stornierungsanfrage wurde gespeichert."
+    if is_chargeable:
+        success_message = (
+            "Stornierung wurde gespeichert. Da weniger als 5 Stunden vor Termin storniert wurde, "
+            "ist der Termin kostenpflichtig und erscheint auf der Rechnung."
+        )
     if is_ajax:
-        return JsonResponse({"ok": True, "message": "Stornierungsanfrage wurde gespeichert."})
+        return JsonResponse({"ok": True, "message": success_message})
     return redirect("lesson_list")
 
 
@@ -1986,6 +2012,7 @@ def lesson_edit(request, lesson_id):
         next_url = reverse("lesson_list")
 
     if request.method == "POST":
+        was_cancelled_before = lesson.status == Lesson.Status.CANCELLED
         form = LessonForm(
             data=request.POST,
             instance=lesson,
@@ -1995,6 +2022,16 @@ def lesson_edit(request, lesson_id):
         )
         if form.is_valid():
             updated = form.save(commit=False)
+            if updated.status == Lesson.Status.CANCELLED:
+                if not was_cancelled_before or updated.cancelled_at is None:
+                    cancelled_at = timezone.now()
+                    updated.cancelled_at = cancelled_at
+                    updated.cancellation_chargeable = _is_chargeable_cancellation(
+                        updated, cancelled_at
+                    )
+            else:
+                updated.cancelled_at = None
+                updated.cancellation_chargeable = False
             _assign_location_and_distance(updated)
             updated.save()
             notify_lesson_changed(request, updated)
@@ -2163,15 +2200,22 @@ def invoice_upload(request):
                     Lesson.objects.filter(
                         tutor=tutor_profile,
                         student=student,
-                        status=Lesson.Status.COMPLETED,
                         date__year=period_start.year,
                         date__month=period_start.month,
-                    ).order_by("date", "time")
+                    )
+                    .filter(
+                        Q(status=Lesson.Status.COMPLETED)
+                        | Q(
+                            status=Lesson.Status.CANCELLED,
+                            cancellation_chargeable=True,
+                        )
+                    )
+                    .order_by("date", "time")
                 )
                 if not lessons:
                     generate_form.add_error(
                         "period",
-                        "Für diesen Monat gibt es keine abgeschlossenen Termine.",
+                        "Für diesen Monat gibt es keine abrechenbaren Termine.",
                     )
                 else:
                     try:

@@ -1,5 +1,6 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
@@ -131,6 +132,184 @@ class InvoiceDiscountContextTests(TestCase):
                 discount_type=Invoice.DiscountType.FIXED,
                 discount_value=Decimal("20.00"),
             )
+
+    def test_build_invoice_context_adds_note_for_late_cancelled_lessons(self):
+        lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 12),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.CANCELLED,
+            cancellation_chargeable=True,
+            cancelled_at=timezone.now(),
+            cancellation_reason="Krankheit",
+        )
+
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 3, 1),
+            lessons=[lesson],
+        )
+
+        self.assertIn("Zu spät storniert (kostenpflichtig)", context["line_items"][0]["notes"])
+
+
+class LessonCancellationChargeableTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_cancel_test",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="student_cancel_test",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.parent_user = CustomUser.objects.create_user(
+            username="parent_cancel_test",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.parent = ParentProfile.objects.create(user=self.parent_user)
+        self.student.parents.add(self.parent)
+        self.logged_in = self.client.login(username="parent_cancel_test", password="test12345")
+        self.assertTrue(self.logged_in)
+
+    def test_late_cancellation_is_marked_chargeable(self):
+        soon = timezone.localtime() + timedelta(hours=2)
+        lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=soon.date(),
+            time=soon.time().replace(second=0, microsecond=0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.PLANNED,
+        )
+
+        response = self.client.post(
+            reverse("lesson_cancel", args=[lesson.id]),
+            data={"reason": "Kurzfristig verhindert"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        lesson.refresh_from_db()
+        self.assertEqual(lesson.status, Lesson.Status.CANCELLED)
+        self.assertTrue(lesson.cancellation_chargeable)
+        self.assertIsNotNone(lesson.cancelled_at)
+
+    def test_early_cancellation_stays_not_chargeable(self):
+        later = timezone.localtime() + timedelta(days=2)
+        lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=later.date(),
+            time=later.time().replace(second=0, microsecond=0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.PLANNED,
+        )
+
+        response = self.client.post(
+            reverse("lesson_cancel", args=[lesson.id]),
+            data={"reason": "Rechtzeitig abgesagt"},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 200)
+        lesson.refresh_from_db()
+        self.assertEqual(lesson.status, Lesson.Status.CANCELLED)
+        self.assertFalse(lesson.cancellation_chargeable)
+        self.assertIsNotNone(lesson.cancelled_at)
+
+
+class InvoiceGenerationChargeableCancellationTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_invoice_cancel",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="student_invoice_cancel",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.student.assigned_tutors.add(self.tutor)
+        logged_in = self.client.login(username="tutor_invoice_cancel", password="test12345")
+        self.assertTrue(logged_in)
+
+    def test_invoice_generation_includes_only_completed_and_late_cancelled_lessons(self):
+        completed = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 4),
+            time=time(10, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+        late_cancelled = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 5),
+            time=time(10, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.CANCELLED,
+            cancellation_chargeable=True,
+            cancelled_at=timezone.now(),
+            cancellation_reason="Kurzfristig",
+        )
+        early_cancelled = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 6),
+            time=time(10, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.CANCELLED,
+            cancellation_chargeable=False,
+            cancelled_at=timezone.now(),
+            cancellation_reason="Rechtzeitig",
+        )
+
+        captured = {}
+
+        def fake_generate_invoice_pdf(*args, **kwargs):
+            captured["lessons"] = list(kwargs["lessons"])
+            return b"%PDF-1.4\n%fake\n"
+
+        with patch("core.views._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
+            response = self.client.post(
+                reverse("invoice_upload"),
+                data={
+                    "action": "generate",
+                    "student": str(self.student.id),
+                    "period": "2026-03",
+                    "discount_type": "",
+                    "discount_value": "",
+                },
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Invoice.objects.count(), 1)
+        selected_ids = {lesson.id for lesson in captured["lessons"]}
+        self.assertEqual(selected_ids, {completed.id, late_cancelled.id})
+        self.assertNotIn(early_cancelled.id, selected_ids)
 
 
 class LessonStatusAutoCompleteTests(TestCase):

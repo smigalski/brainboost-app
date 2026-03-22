@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1006">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1008">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
@@ -23,36 +23,60 @@
                     <span class="brand-sub">Stark im Kopf - Stark im Lernen</span>
                 </div>
             </a>
-            {% if request.user.is_authenticated %}
-                <a class="profile-link" href="{% url 'profile' %}" aria-label="Profil">
-                    {% if request.user.profile_image %}
-                        <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
-                    {% else %}
-                        <span class="profile-link__avatar{% if not request.user.avatar_icon %} profile-link__avatar--empty{% endif %}">{{ request.user.avatar_symbol }}</span>
-                    {% endif %}
-                </a>
-            {% endif %}
-        </div>
-        <nav class="nav-links nav-links--wrap">
-            {% with request.resolver_match.url_name as current %}
+            <div class="topbar-actions">
                 {% if request.user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
-                    <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
-                    <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Lernfortschritt</a>
+                    <a class="profile-link" href="{% url 'profile' %}" aria-label="Profil">
+                        {% if request.user.profile_image %}
+                            <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
+                        {% else %}
+                            <span class="profile-link__avatar{% if not request.user.avatar_icon %} profile-link__avatar--empty{% endif %}">{{ request.user.avatar_symbol }}</span>
+                        {% endif %}
+                    </a>
                 {% endif %}
-                {% if not request.user.is_authenticated or request.user.role == 'parent' %}
-                    <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
-                {% endif %}
-                {% if not request.user.is_authenticated %}
-                    <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
-                {% endif %}
-            {% endwith %}
-            {% if request.user.is_authenticated %}
-                <a class="pill{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}" href="{% url 'logout' %}">Ausloggen</a>
-            {% else %}
-                <a class="pill" href="{% url 'login' %}">Einloggen</a>
-            {% endif %}
-        </nav>
+                <button
+                    class="menu-toggle"
+                    type="button"
+                    aria-label="Menü ausrollen"
+                    aria-expanded="false"
+                    aria-controls="site-navigation"
+                    data-menu-toggle
+                >
+                    <span aria-hidden="true">☰</span>
+                </button>
+            </div>
+        </div>
+        <div class="topbar-menu" data-menu-panel>
+            <div class="topbar-menu__inner">
+                <button
+                    class="menu-collapse"
+                    type="button"
+                    aria-label="Menü einklappen"
+                    data-menu-close
+                >
+                    <span aria-hidden="true">▴</span>
+                </button>
+                <nav id="site-navigation" class="nav-links nav-links--wrap">
+                    {% with request.resolver_match.url_name as current %}
+                        {% if request.user.is_authenticated %}
+                            <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
+                            <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
+                            <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Lernfortschritt</a>
+                        {% endif %}
+                        {% if not request.user.is_authenticated or request.user.role == 'parent' %}
+                            <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
+                        {% endif %}
+                        {% if not request.user.is_authenticated %}
+                            <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
+                        {% endif %}
+                    {% endwith %}
+                    {% if request.user.is_authenticated %}
+                        <a class="pill{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}" href="{% url 'logout' %}">Ausloggen</a>
+                    {% else %}
+                        <a class="pill" href="{% url 'login' %}">Einloggen</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
     </header>
 <main class="page">
     {% if messages %}
@@ -80,6 +104,117 @@
 {% include "partials/price_banner.html" %}
 <script src="{% static 'core/cookie_notice.js' %}?v=1"></script>
 <script src="{% static 'js/price_banner.js' %}?v=1"></script>
+<script>
+    (function () {
+        var topbar = document.querySelector(".topbar");
+        var menuToggle = document.querySelector("[data-menu-toggle]");
+        var menuClose = document.querySelector("[data-menu-close]");
+        var menuPanel = document.querySelector("[data-menu-panel]");
+        var menuIsOpen = false;
+        var menuIsAnimating = false;
+        var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function setMenuState(isOpen) {
+            menuIsOpen = isOpen;
+            menuToggle.setAttribute("aria-expanded", String(isOpen));
+            menuPanel.classList.toggle("is-open", isOpen);
+            menuPanel.classList.remove("is-animating");
+            menuPanel.style.height = isOpen ? "auto" : "0px";
+            menuPanel.style.opacity = isOpen ? "1" : "0";
+            menuPanel.style.pointerEvents = isOpen ? "auto" : "none";
+        }
+
+        function toggleMenu(nextOpenState) {
+            if (menuIsAnimating || nextOpenState === menuIsOpen) {
+                return;
+            }
+
+            if (prefersReducedMotion) {
+                setMenuState(nextOpenState);
+                return;
+            }
+
+            var startHeight = menuPanel.getBoundingClientRect().height;
+            menuPanel.style.height = startHeight + "px";
+            menuPanel.style.opacity = menuIsOpen ? "1" : "0";
+            menuPanel.style.pointerEvents = "auto";
+            menuPanel.classList.add("is-animating");
+
+            var targetHeight = nextOpenState ? menuPanel.scrollHeight : 0;
+            var distance = Math.abs(targetHeight - startHeight);
+            var duration = Math.max(220, Math.min(460, Math.round(distance * 1.6)));
+            menuPanel.style.transitionDuration = duration + "ms";
+
+            requestAnimationFrame(function () {
+                menuPanel.style.height = targetHeight + "px";
+                menuPanel.style.opacity = nextOpenState ? "1" : "0";
+            });
+
+            menuIsAnimating = true;
+            menuToggle.setAttribute("aria-expanded", String(nextOpenState));
+
+            function onTransitionEnd(event) {
+                if (event.propertyName !== "height") {
+                    return;
+                }
+                menuPanel.removeEventListener("transitionend", onTransitionEnd);
+                menuPanel.style.transitionDuration = "";
+                menuIsAnimating = false;
+                setMenuState(nextOpenState);
+            }
+
+            menuPanel.addEventListener("transitionend", onTransitionEnd);
+        }
+
+        if (menuToggle && menuClose && menuPanel) {
+            setMenuState(false);
+            menuToggle.addEventListener("click", function () {
+                toggleMenu(!menuIsOpen);
+            });
+            menuClose.addEventListener("click", function () {
+                toggleMenu(false);
+            });
+            menuPanel.addEventListener("click", function (event) {
+                var link = event.target.closest("a");
+                if (!link || !menuPanel.contains(link)) {
+                    return;
+                }
+                toggleMenu(false);
+            });
+            document.addEventListener("click", function (event) {
+                if (!menuIsOpen || menuIsAnimating) {
+                    return;
+                }
+                if (topbar && topbar.contains(event.target)) {
+                    return;
+                }
+                toggleMenu(false);
+            });
+        }
+
+        document.addEventListener(
+            "toggle",
+            function (event) {
+                var opened = event.target;
+                if (!opened || opened.tagName !== "DETAILS" || !opened.open) {
+                    return;
+                }
+
+                var accordion = opened.closest("[data-faq-accordion]");
+                if (!accordion) {
+                    return;
+                }
+
+                accordion.querySelectorAll("details[open]").forEach(function (item) {
+                    if (item !== opened) {
+                        item.open = false;
+                    }
+                });
+            },
+            true
+        );
+    })();
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

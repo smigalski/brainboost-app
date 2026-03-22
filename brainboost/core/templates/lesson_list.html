@@ -124,9 +124,16 @@
                     {% if lesson.cancellation_reason %}
                         <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                     {% endif %}
+                    {% if lesson.status == 'cancelled' %}
+                        {% if lesson.cancellation_chargeable %}
+                            <div class="muted" style="color: var(--red);">Zu spät storniert: kostenpflichtig und abrechenbar.</div>
+                        {% else %}
+                            <div class="muted" style="color: var(--teal-dark);">Pünktlich storniert: nicht kostenpflichtig.</div>
+                        {% endif %}
+                    {% endif %}
                     <div style="margin-top:8px;">
-                        <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                            {{ lesson.get_status_display }}
+                        <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' and lesson.cancellation_chargeable %}alert{% elif lesson.status == 'cancelled' %}success{% else %}info{% endif %}">
+                            {{ lesson.cancellation_status_display }}
                         </span>
                     </div>
                 </div>
@@ -218,9 +225,16 @@
                                 {% if lesson.cancellation_reason %}
                                     <div class="muted" style="color: var(--red);">Stornierungsgrund: {{ lesson.cancellation_reason }}</div>
                                 {% endif %}
+                                {% if lesson.status == 'cancelled' %}
+                                    {% if lesson.cancellation_chargeable %}
+                                        <div class="muted" style="color: var(--red);">Zu spät storniert: kostenpflichtig und abrechenbar.</div>
+                                    {% else %}
+                                        <div class="muted" style="color: var(--teal-dark);">Pünktlich storniert: nicht kostenpflichtig.</div>
+                                    {% endif %}
+                                {% endif %}
                                 <div style="margin-top:8px;">
-                                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' %}alert{% else %}info{% endif %}">
-                                        {{ lesson.get_status_display }}
+                                    <span class="badge {% if lesson.status == 'completed' %}success{% elif lesson.status == 'cancelled' and lesson.cancellation_chargeable %}alert{% elif lesson.status == 'cancelled' %}success{% else %}info{% endif %}">
+                                        {{ lesson.cancellation_status_display }}
                                     </span>
                                 </div>
                                 <div class="icon-action-row" style="margin-top:8px;">
@@ -260,7 +274,7 @@
         </div>
         <p class="muted" id="cancel-lesson-info"></p>
         <div id="cancel-warning" class="muted" style="display:none; color: var(--red); font-weight:700;">
-            Keine kostenlose Stornierung mehr möglich. Bitte kontaktiere die TutorIn sofort.
+            Achtung: Bei einer Stornierung weniger als 5 Stunden vor Termin ist der Termin kostenpflichtig und erscheint auf der Rechnung.
         </div>
         <form id="cancel-form">
             {% csrf_token %}
@@ -364,7 +378,7 @@ function openCancelModalFromChange() {
     const tooLate = hoursUntil < 5;
     cancelLessonInfo.textContent = `Termin am ${currentLessonLabel}`;
     cancelWarning.style.display = tooLate ? "block" : "none";
-    cancelSubmitBtn.disabled = tooLate;
+    cancelSubmitBtn.disabled = false;
     changeModal.classList.remove('open');
     cancelModal.classList.add('open');
 }

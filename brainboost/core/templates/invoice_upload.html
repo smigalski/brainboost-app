@@ -53,6 +53,7 @@
 
 <div class="card">
     <h3>Rechnung generieren</h3>
+    <p class="muted">Abgerechnet werden abgeschlossene Termine sowie zu spät stornierte (kostenpflichtige) Termine.</p>
     <form method="post" novalidate>
         {% csrf_token %}
         <input type="hidden" name="action" value="generate">

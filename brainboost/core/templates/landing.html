@@ -173,20 +173,6 @@
 </div>
 
 <div class="card">
-    <h3>FAQ</h3>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-        {% for item in faq_items %}
-            <details style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
-                <summary style="font-weight:800; cursor:pointer;">{{ item.question }}</summary>
-                <div class="muted" style="margin-top:10px;">{{ item.answer|linebreaksbr }}</div>
-            </details>
-        {% empty %}
-            <div class="muted">Noch keine FAQ für die Startseite vorhanden.</div>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="card">
     <h3>BrainBoost Feedback</h3>
     <p class="muted" style="margin-bottom:12px;">BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?</p>
     <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'brainboost_feedback' %}?source=landing">Anonymes Feedback geben</a>
@@ -359,6 +345,20 @@
         <p class="tile-placeholder">Studierst Du vielleicht <strong>Lehramt?</strong> Suchst du nach einem gut bezahlten und selbständigen <strong>StudentInnenjob</strong>? Möchtest du dein/e <strong>eigene/r ChefIn</strong> sein?
             Dann kontaktiere mich gerne, um weitere Details zu besprechen!<a href="{% url 'contact' %}"> Hier</a>
         </p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>FAQ</h3>
+    <div data-faq-accordion style="display:flex; flex-direction:column; gap:10px;">
+        {% for item in faq_items %}
+            <details style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                <summary style="font-weight:800; cursor:pointer;">{{ item.question }}</summary>
+                <div class="muted" style="margin-top:10px;">{{ item.answer|linebreaksbr }}</div>
+            </details>
+        {% empty %}
+            <div class="muted">Noch keine FAQ für die Startseite vorhanden.</div>
+        {% endfor %}
     </div>
 </div>
 

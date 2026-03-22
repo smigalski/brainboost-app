@@ -242,6 +242,8 @@ class Lesson(models.Model):
         default=Status.PLANNED,
     )
     cancellation_reason = models.TextField(blank=True, default="")
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancellation_chargeable = models.BooleanField(default=False)
     reschedule_requested = models.BooleanField(default=False)
     location_address = models.CharField(max_length=255, blank=True)
     distance_km = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
@@ -319,6 +321,14 @@ class Lesson(models.Model):
     @property
     def end_datetime(self) -> datetime:
         return self.scheduled_datetime + timedelta(minutes=self.duration_minutes)
+
+    @property
+    def cancellation_status_display(self) -> str:
+        if self.status != self.Status.CANCELLED:
+            return self.get_status_display()
+        if self.cancellation_chargeable:
+            return "zu spät storniert (kostenpflichtig)"
+        return "pünktlich storniert (nicht kostenpflichtig)"
 
     @classmethod
     def upcoming_qs(cls):

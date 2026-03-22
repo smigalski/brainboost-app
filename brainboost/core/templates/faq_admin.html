@@ -33,7 +33,7 @@
 <div class="card">
     <h3>Offene Fragen</h3>
     {% for item, form in pending_forms %}
-        <form method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06);">
+        <form id="faq-item-{{ item.id }}" method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06); scroll-margin-top:120px;">
             {% csrf_token %}
             <input type="hidden" name="action" value="publish">
             <input type="hidden" name="faq_id" value="{{ item.id }}">
@@ -66,7 +66,7 @@
 <div class="card">
     <h3>Veröffentlichte FAQ</h3>
     {% for item, form in published_forms %}
-        <form method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06);">
+        <form id="faq-item-{{ item.id }}" method="post" style="padding:14px 0; border-top:1px solid rgba(0,0,0,0.06); scroll-margin-top:120px;">
             {% csrf_token %}
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="faq_id" value="{{ item.id }}">
@@ -94,4 +94,54 @@
         <p class="muted">Noch keine FAQ veröffentlicht.</p>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        (function () {
+            var TARGET_SELECTOR = [
+                'input[name="show_for_parents"]',
+                'input[name="show_for_students"]',
+                'input[name="show_for_tutors"]',
+                'input[name="show_on_landing"]'
+            ].join(", ");
+
+            document.querySelectorAll("form").forEach(function (form) {
+                var allCheckbox = form.querySelector('input[name="audience_all"]');
+                if (!allCheckbox) {
+                    return;
+                }
+
+                var targetCheckboxes = Array.from(form.querySelectorAll(TARGET_SELECTOR));
+                if (!targetCheckboxes.length) {
+                    return;
+                }
+
+                var uncheckTargets = function () {
+                    targetCheckboxes.forEach(function (input) {
+                        input.checked = false;
+                    });
+                };
+
+                if (allCheckbox.checked) {
+                    uncheckTargets();
+                }
+
+                allCheckbox.addEventListener("change", function () {
+                    if (allCheckbox.checked) {
+                        uncheckTargets();
+                    }
+                });
+
+                targetCheckboxes.forEach(function (input) {
+                    input.addEventListener("change", function () {
+                        if (input.checked) {
+                            allCheckbox.checked = false;
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
 {% endblock %}
