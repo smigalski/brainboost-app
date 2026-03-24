@@ -741,6 +741,10 @@ class TutorCreateForm(BaseUserCreateForm):
         ),
     )
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
+    bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
+    iban = forms.CharField(max_length=34, required=False, label="IBAN")
+    bic = forms.CharField(max_length=11, required=False, label="BIC")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -756,6 +760,10 @@ class TutorCreateForm(BaseUserCreateForm):
                 "is_active",
                 "role_display",
                 "address",
+                "account_holder",
+                "bank_name",
+                "iban",
+                "bic",
             ]
         )
 
@@ -768,6 +776,10 @@ class TutorCreateForm(BaseUserCreateForm):
                 user=user,
                 address=self.cleaned_data.get("address", ""),
                 phone_number=self.cleaned_data.get("phone_number", ""),
+                account_holder=self.cleaned_data.get("account_holder", ""),
+                bank_name=self.cleaned_data.get("bank_name", ""),
+                iban=self.cleaned_data.get("iban", ""),
+                bic=self.cleaned_data.get("bic", ""),
             )
         return user
 
