@@ -2,6 +2,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 
 from . import views
+from .forms import EmailOrUsernameAuthenticationForm
 
 urlpatterns = [
     path("", views.landing_page, name="landing_page"),
@@ -14,6 +15,7 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
     path("faq/", views.faq_admin, name="faq_admin"),
     path("faq/frage/", views.faq_submit, name="faq_submit"),
+    path("organisation/rundmail/", views.broadcast_email_send, name="broadcast_email_send"),
     path("profil/", views.profile_view, name="profile"),
     path(
         "profil/passwort/",
@@ -116,7 +118,10 @@ urlpatterns = [
     ),
     path(
         "login/",
-        auth_views.LoginView.as_view(template_name="login.html"),
+        auth_views.LoginView.as_view(
+            template_name="login.html",
+            authentication_form=EmailOrUsernameAuthenticationForm,
+        ),
         name="login",
     ),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),

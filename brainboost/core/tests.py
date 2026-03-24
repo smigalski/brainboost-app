@@ -2,7 +2,10 @@ from datetime import date, time, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.contrib.auth import authenticate
+from django.core import mail
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -62,6 +65,113 @@ class InvoiceGenerateFormTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("discount_value", form.errors)
+
+
+class EmailOrUsernameLoginTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="login_user",
+            email="login.user@example.com",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+
+    def test_authenticate_with_username(self):
+        auth_user = authenticate(username="login_user", password="test12345")
+        self.assertIsNotNone(auth_user)
+        self.assertEqual(auth_user.pk, self.user.pk)
+
+    def test_authenticate_with_email(self):
+        auth_user = authenticate(username="login.user@example.com", password="test12345")
+        self.assertIsNotNone(auth_user)
+        self.assertEqual(auth_user.pk, self.user.pk)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class BroadcastEmailTests(TestCase):
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            username="admin_sender",
+            email="admin.sender@example.com",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            is_superuser=True,
+            is_staff=True,
+        )
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_receiver",
+            email="tutor.receiver@example.com",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.staff_admin_user = CustomUser.objects.create_user(
+            username="staff_admin_sender",
+            email="staff.admin@example.com",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            is_staff=True,
+        )
+        self.parent_user = CustomUser.objects.create_user(
+            username="parent_receiver",
+            email="parent.receiver@example.com",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+        )
+
+    def test_admin_can_send_broadcast_to_tutors(self):
+        logged_in = self.client.login(username="admin_sender", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("broadcast_email_send"),
+            data={
+                "audience": "tutors",
+                "subject": "Team Info",
+                "message": "Bitte morgen an die neuen Zeiten denken.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard"))
+        recipients = {email.to[0] for email in mail.outbox}
+        self.assertIn("admin.sender@example.com", recipients)
+        self.assertIn("tutor.receiver@example.com", recipients)
+        self.assertNotIn("parent.receiver@example.com", recipients)
+
+    def test_non_admin_cannot_send_broadcast(self):
+        logged_in = self.client.login(username="tutor_receiver", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("broadcast_email_send"),
+            data={
+                "audience": "all",
+                "subject": "Info",
+                "message": "Test",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard"))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_staff_admin_can_send_broadcast(self):
+        logged_in = self.client.login(username="staff_admin_sender", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("broadcast_email_send"),
+            data={
+                "audience": "parents",
+                "subject": "Eltern-Info",
+                "message": "Bitte die neuen Termine im Portal prüfen.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard"))
+        recipients = {email.to[0] for email in mail.outbox}
+        self.assertEqual(recipients, {"parent.receiver@example.com"})
 
 
 class InvoiceDiscountContextTests(TestCase):

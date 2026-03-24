@@ -5,6 +5,7 @@ from pathlib import Path
 
 from django import forms
 from django.contrib.auth import password_validation
+from django.contrib.auth.forms import AuthenticationForm
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -24,6 +25,37 @@ from .models import (
     BrainBoostFeedback,
     CustomUser,
 )
+
+
+class EmailOrUsernameAuthenticationForm(AuthenticationForm):
+    def __init__(self, request=None, *args, **kwargs):
+        super().__init__(request=request, *args, **kwargs)
+        self.fields["username"].label = "E-Mail oder Benutzername"
+
+
+class BroadcastEmailForm(forms.Form):
+    AUDIENCE_ALL = "all"
+    AUDIENCE_ADMINS = "admins"
+    AUDIENCE_PARENTS = "parents"
+    AUDIENCE_STUDENTS = "students"
+    AUDIENCE_TUTORS = "tutors"
+
+    audience = forms.ChoiceField(
+        label="Empfängergruppe",
+        choices=[
+            (AUDIENCE_ALL, "Alle"),
+            (AUDIENCE_ADMINS, "Nur Admins"),
+            (AUDIENCE_PARENTS, "Eltern"),
+            (AUDIENCE_STUDENTS, "SchülerInnen/StudentInnen"),
+            (AUDIENCE_TUTORS, "TutorInnen"),
+        ],
+        initial=AUDIENCE_ALL,
+    )
+    subject = forms.CharField(max_length=160, label="Betreff")
+    message = forms.CharField(
+        label="Nachricht",
+        widget=forms.Textarea(attrs={"rows": 5}),
+    )
 
 
 class LessonForm(forms.ModelForm):

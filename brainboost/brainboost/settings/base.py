@@ -151,6 +151,9 @@ EMAIL_NOTIFICATIONS = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.CustomUser'
+AUTHENTICATION_BACKENDS = [
+    "core.backends.EmailOrUsernameModelBackend",
+]
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'landing_page'

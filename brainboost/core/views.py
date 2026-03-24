@@ -12,7 +12,6 @@ from urllib.parse import quote, urlencode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
@@ -46,6 +45,8 @@ from .forms import (
     StudentProfileForm,
     TutorProfileForm,
     BrainBoostFeedbackForm,
+    EmailOrUsernameAuthenticationForm,
+    BroadcastEmailForm,
 )
 from .notifications import (
     notify_holiday_survey_created,
@@ -104,7 +105,7 @@ def _haversine_km(lat1, lon1, lat2, lon2):
 
 
 def landing_page(request):
-    form = AuthenticationForm(request)
+    form = EmailOrUsernameAuthenticationForm(request)
     return render(
         request,
         "landing.html",
@@ -1002,6 +1003,46 @@ def _has_admin_access(user: CustomUser) -> bool:
     return bool(user.is_staff or user.is_superuser)
 
 
+def _broadcast_recipient_emails(audience: str) -> list[str]:
+    users = CustomUser.objects.filter(is_active=True).exclude(email="")
+    if audience == BroadcastEmailForm.AUDIENCE_ADMINS:
+        users = users.filter(Q(is_staff=True) | Q(is_superuser=True))
+    elif audience == BroadcastEmailForm.AUDIENCE_PARENTS:
+        users = users.filter(role=CustomUser.Roles.PARENT)
+    elif audience == BroadcastEmailForm.AUDIENCE_STUDENTS:
+        users = users.filter(role=CustomUser.Roles.STUDENT)
+    elif audience == BroadcastEmailForm.AUDIENCE_TUTORS:
+        users = users.filter(role=CustomUser.Roles.TUTOR)
+
+    seen: set[str] = set()
+    unique_emails: list[str] = []
+    for email in users.values_list("email", flat=True).iterator():
+        normalized = email.strip().lower()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique_emails.append(email.strip())
+    return unique_emails
+
+
+def _send_broadcast_emails(subject: str, body: str, recipients: list[str]) -> tuple[int, int]:
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
+    sent = 0
+    failed = 0
+    for recipient in recipients:
+        try:
+            message = EmailMultiAlternatives(subject, body, from_email, [recipient])
+            delivered = message.send()
+            if delivered:
+                sent += 1
+            else:
+                failed += 1
+        except Exception:
+            failed += 1
+            logger.exception("Rundmail Versand fehlgeschlagen fuer %s", recipient)
+    return sent, failed
+
+
 def _assigned_students_qs(tutor_profile: TutorProfile):
     return (
         StudentProfile.objects.filter(assigned_tutors=tutor_profile)
@@ -1173,6 +1214,7 @@ def dashboard(request):
             assigned_students = _assigned_students_qs(request.user.tutor_profile)
             assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
             context["is_admin_tutor"] = request.user.is_superuser
+            context["can_send_broadcast_email"] = _has_admin_access(request.user)
             context["can_manage_faq"] = _has_faq_admin_access(request.user)
             context["has_parent_profiles"] = ParentProfile.objects.exists()
             context["news_items"] = _tutor_news_items(request.user.tutor_profile)
@@ -1193,9 +1235,46 @@ def dashboard(request):
                 .first()
             )
             context["pending_faq_count"] = FAQItem.objects.filter(is_published=False).count()
+            if context["can_send_broadcast_email"]:
+                context["broadcast_email_form"] = BroadcastEmailForm()
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
+
+
+@login_required
+def broadcast_email_send(request):
+    _ensure_profile_for_user(request.user)
+    if request.method != "POST":
+        return redirect("dashboard")
+    if not _has_admin_access(request.user):
+        messages.error(request, "Nur AdministratorInnen dürfen Rundmails versenden.")
+        return redirect("dashboard")
+
+    form = BroadcastEmailForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Rundmail konnte nicht gesendet werden. Bitte Eingaben prüfen.")
+        return redirect("dashboard")
+
+    audience = form.cleaned_data["audience"]
+    subject = form.cleaned_data["subject"].strip()
+    body = form.cleaned_data["message"].strip()
+    recipients = _broadcast_recipient_emails(audience)
+    if not recipients:
+        messages.error(request, "Keine EmpfängerInnen mit hinterlegter E-Mail gefunden.")
+        return redirect("dashboard")
+
+    sent_count, failed_count = _send_broadcast_emails(subject, body, recipients)
+    if sent_count and not failed_count:
+        messages.success(request, f"Rundmail erfolgreich an {sent_count} EmpfängerInnen versendet.")
+    elif sent_count and failed_count:
+        messages.warning(
+            request,
+            f"Rundmail teilweise versendet: {sent_count} erfolgreich, {failed_count} fehlgeschlagen.",
+        )
+    else:
+        messages.error(request, "Rundmail konnte nicht versendet werden.")
+    return redirect("dashboard")
 
 
 @login_required
