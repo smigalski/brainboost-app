@@ -36,7 +36,10 @@
     </div>
 </div>
 <div class="card">
-    <h1>Willkommen bei BrainBoost!</h1>
+    <h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>Willkommen bei</span>
+        <img src="{% static 'design/BrainBoost_wasserzeichen.svg' %}" alt="BrainBoost" style="height:2.0em;width:auto;display:inline-block;transform:translateY(-0.12em);">
+    </h1>
     <p class="muted"><strong>Stark im Kopf - Stark im Lernen</strong></p>
     <form method="post" action="{% url 'login' %}">
         {% csrf_token %}
