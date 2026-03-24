@@ -912,6 +912,10 @@ def contact(request):
     return render(request, "contact.html")
 
 
+def tutorin_werden(request):
+    return render(request, "tutorin_werden.html")
+
+
 def brainboost_feedback(request):
     valid_roles = {choice[0] for choice in BrainBoostFeedback.Audience.choices}
     valid_sources = {choice[0] for choice in BrainBoostFeedback.Source.choices}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | TutorIn werden!{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="info-tile">
+        <h1>TutorIn werden!</h1>
+        <ul class="tile-placeholder">
+            <li>Studierst Du vielleicht <strong>Lehramt?</strong>, <strong>Mathematik, Informatik, Physik?</strong> oder <strong>Germanistik, Englisch?</strong> und hast <strong>gute</strong> Noten?</li>
+            <li>Suchst du nach einem gut bezahlten und selbständigen <strong>StudentInnenjob</strong>, in dem du <strong>1000€</strong> monatlich mit <strong>10</strong> Nachhilfestunden in der Woche verdienen kannst?</li>
+            <li>Möchtest du flexibel deine eigenen Nachhilfeeinheiten vor Ort oder online terminieren?</li>
+        </ul>
+        <p class="tile-placeholder">
+            Dann kontaktiere mich gerne, um weitere Details zu besprechen.
+            <a href="{% url 'contact' %}">Hier</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

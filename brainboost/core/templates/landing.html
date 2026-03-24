@@ -68,7 +68,8 @@
             <span class="badge info">Preis &amp; Qualität</span>
             <p style="margin:0;font-weight:800;color:var(--accent);line-height:1.4;">Wir verbinden günstige und faire Preise mit professioneller digitalisierter Nachhilfe!</p>
         </div>
-        <p class="tile-placeholder">Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose Probestunde oder kontaktiere mich! <a href="{% url 'contact' %}">Hier</a></p>
+        <a class="button" href="{% url 'pricing' %}" style="margin-top:10px;display:inline-flex;">Zu den Preisen</a>
+        <p class="tile-placeholder">Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose Probestunde oder kontaktiere mich! <a class="button" href="{% url 'contact' %}" style="display:inline-flex;margin-left:8px;background:linear-gradient(135deg,#ffc928,#ffb300);color:#1f2a30;font-weight:800;box-shadow:0 8px 20px rgba(255,201,40,0.35);">Jetzt anfragen</a></p>
     </div>
 </div>
 
@@ -339,12 +340,10 @@
 
 
 <div class="card">
-    
     <div class="info-tile">
         <h3>TutorIn werden!</h3>
-        <p class="tile-placeholder">Studierst Du vielleicht <strong>Lehramt?</strong> Suchst du nach einem gut bezahlten und selbständigen <strong>StudentInnenjob</strong>? Möchtest du dein/e <strong>eigene/r ChefIn</strong> sein?
-            Dann kontaktiere mich gerne, um weitere Details zu besprechen!<a href="{% url 'contact' %}"> Hier</a>
-        </p>
+        <p class="tile-placeholder">Alle Infos zur Tätigkeit als TutorIn findest du jetzt auf der eigenen Seite.</p>
+        <a class="button" style="background: var(--teal-dark);" href="{% url 'tutorin_werden' %}">Zur Seite „TutorIn werden!“</a>
     </div>
 </div>
 
