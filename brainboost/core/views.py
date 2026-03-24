@@ -1029,9 +1029,17 @@ def _send_broadcast_emails(subject: str, body: str, recipients: list[str]) -> tu
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
     sent = 0
     failed = 0
+    context = {
+        "heading": subject,
+        "subject": subject,
+        "message": body,
+    }
+    text_body = render_to_string("emails/broadcast_email.txt", context)
+    html_body = render_to_string("emails/broadcast_email.html", context)
     for recipient in recipients:
         try:
-            message = EmailMultiAlternatives(subject, body, from_email, [recipient])
+            message = EmailMultiAlternatives(subject, text_body, from_email, [recipient])
+            message.attach_alternative(html_body, "text/html")
             delivered = message.send()
             if delivered:
                 sent += 1
