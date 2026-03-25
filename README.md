@@ -135,5 +135,5 @@ Danach Web-App in PythonAnywhere neu laden.
 
 ## Lizenz
 
-Platzhalter: `MIT` (oder eure gewuenschte Lizenz eintragen).
+Copyright © 2025-2026 BrainBoost Nachhilfe. Alle Rechte vorbehalten.
 
