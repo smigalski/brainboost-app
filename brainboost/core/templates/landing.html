@@ -2,6 +2,30 @@
 {% load static %}
 {% block title %}BrainBoost | Startseite{% endblock %}
 {% block content %}
+<style>
+    @font-face {
+        font-family: "ShababaW01-Regular";
+        src: url("{% static 'fonts/shababa/shababa-w01-regular.woff2' %}") format("woff2"),
+             url("{% static 'fonts/shababa/shababa-w01-regular.woff' %}") format("woff");
+        font-weight: 250;
+        font-style: normal;
+        font-display: swap;
+    }
+    .brainboost-wordmark {
+        display: inline-flex;
+        align-items: flex-end;
+        font-family: "ShababaW01-Regular", Georgia, serif;
+        font-weight: 250;
+        font-size: 2em;
+        line-height: 1;
+        color: #519391;
+        transform: translateY(0.06em);
+        white-space: nowrap;
+    }
+    .brainboost-wordmark__initial {
+        color: #fdcd02;
+    }
+</style>
 <div style="display:flex;justify-content:center;margin:8px 0 18px;">
     <button id="open-contact-modal" type="button" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;">
         <span style="position:absolute;inset:-35%;background:radial-gradient(circle, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.2s infinite ease-in-out;pointer-events:none;"></span>
@@ -38,7 +62,9 @@
 <div class="card">
     <h1 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span>Willkommen bei</span>
-        <img src="{% static 'design/BrainBoost_wasserzeichen.svg' %}" alt="BrainBoost" style="height:2.0em;width:auto;display:inline-block;transform:translateY(-0.12em);">
+        <span class="brainboost-wordmark" aria-label="BrainBoost">
+            <span class="brainboost-wordmark__initial">B</span>rain<span class="brainboost-wordmark__initial">B</span>oost
+        </span>
     </h1>
     <p class="muted"><strong>Stark im Kopf - Stark im Lernen</strong></p>
     <form method="post" action="{% url 'login' %}">
