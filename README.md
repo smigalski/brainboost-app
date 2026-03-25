@@ -26,9 +26,9 @@ BrainBoost ist eine Django-Anwendung fuer den operativen Alltag eines Nachhilfe-
 - Stripe-Integration (Checkout + Webhook) fuer digitale Zahlungsablaeufe
 - E-Mail-Flows fuer Registrierung, Passwort-Reset, Unterrichts-Events und Erinnerungen
 
-## Screenshots (Platzhalter)
+## Screenshots
 
-> Lege die Dateien z. B. unter `docs/assets/screens/` ab und ersetze die Pfade unten.
+> Die Screenshots sind prod-reif und kommen aus einer realen online-Umgebung.
 
 ### Landing Page
 ![Landing Page](docs/assets/screens/landing-page.png)
@@ -42,7 +42,7 @@ BrainBoost ist eine Django-Anwendung fuer den operativen Alltag eines Nachhilfe-
 ### Tutor:innen Workflow
 ![Tutor Workflow](docs/assets/screens/tutor-workflow.png)
 
-## Brand Assets (SVG/PNG Platzhalter)
+## Brand Assets
 
 - Logo (SVG): `docs/assets/brand/brainboost-logo.svg`
 - Logo (PNG): `docs/assets/brand/brainboost-logo.png`
@@ -110,12 +110,12 @@ Beispielwerte siehe [`.env.example`](.env.example).
 
 ## Deployment (PythonAnywhere)
 
-Typischer Ablauf fuer `staging`:
+Typischer Ablauf für einen Branch: `staging`:
 
 ```bash
-git pull --ff-only origin staging
-python manage.py migrate
-python manage.py collectstatic --noinput
+git pull --ff-only origin staging #oder einfach git pull, wenn remote gesetzt ist
+python manage.py migrate #Datenbankmigration in Django
+python manage.py collectstatic --noinput #statische Dateien wie Bilder, PDFs, ...
 ```
 
 Danach Web-App in PythonAnywhere neu laden.
@@ -126,7 +126,7 @@ Danach Web-App in PythonAnywhere neu laden.
 - Keine lokalen Dumps/Uploads versionieren (`*.sql`, `media/`, lokale Exporte).
 - Bei versehentlich geleakten Secrets: sofort rotieren.
 
-## Roadmap (Platzhalter)
+## Roadmap
 
 - [ ] Testabdeckung ausbauen (Unit + Integration)
 - [ ] CI-Pipeline fuer Linting/Tests
