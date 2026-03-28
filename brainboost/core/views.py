@@ -47,6 +47,7 @@ from .forms import (
     BrainBoostFeedbackForm,
     EmailOrUsernameAuthenticationForm,
     BroadcastEmailForm,
+    TutorStudentAssignmentForm,
 )
 from .notifications import (
     notify_holiday_survey_created,
@@ -75,6 +76,7 @@ from .models import (
     FAQItem,
     TutorTemplate,
     BrainBoostFeedback,
+    TemporaryTutorAssignment,
 )
 
 logger = logging.getLogger(__name__)
@@ -1063,17 +1065,89 @@ def _assigned_tutors_qs(tutor_profile: TutorProfile):
     return tutor_profile.assigned_tutors.select_related("user").distinct()
 
 
+def _tutor_student_assignment_url_with_source(
+    current_tutor: TutorProfile, source_tutor: Optional[TutorProfile]
+) -> str:
+    base_url = reverse("tutor_student_assignment")
+    if source_tutor and source_tutor.pk != current_tutor.pk:
+        return f"{base_url}?{urlencode({'source_tutor': source_tutor.pk})}"
+    return base_url
+
+
+def _completed_lessons_for_temporary_assignment(assignment: TemporaryTutorAssignment) -> int:
+    created_local = timezone.localtime(assignment.created_at)
+    return Lesson.objects.filter(
+        tutor_id=assignment.target_tutor_id,
+        student_id=assignment.student_id,
+        status=Lesson.Status.COMPLETED,
+    ).filter(
+        Q(date__gt=created_local.date())
+        | Q(date=created_local.date(), time__gte=created_local.time())
+    ).count()
+
+
+def _close_temporary_assignment(
+    assignment: TemporaryTutorAssignment,
+    reason: str,
+    *,
+    remove_target_assignment: bool = True,
+) -> None:
+    if not assignment.is_active:
+        return
+
+    should_remove_target = False
+    if remove_target_assignment and not assignment.target_was_preassigned:
+        has_other_active = TemporaryTutorAssignment.objects.filter(
+            is_active=True,
+            student_id=assignment.student_id,
+            target_tutor_id=assignment.target_tutor_id,
+        ).exclude(pk=assignment.pk).exists()
+        should_remove_target = not has_other_active
+
+    assignment.is_active = False
+    assignment.ended_reason = reason
+    assignment.ended_at = timezone.now()
+    assignment.save(update_fields=["is_active", "ended_reason", "ended_at"])
+
+    if should_remove_target:
+        assignment.student.assigned_tutors.remove(assignment.target_tutor)
+
+
+def _sync_temporary_tutor_assignments() -> None:
+    today = timezone.localdate()
+    active_assignments = TemporaryTutorAssignment.objects.filter(is_active=True).select_related(
+        "student",
+        "target_tutor",
+    )
+    for assignment in active_assignments:
+        if assignment.ends_on and today > assignment.ends_on:
+            _close_temporary_assignment(
+                assignment,
+                TemporaryTutorAssignment.EndReason.DATE_REACHED,
+            )
+            continue
+        if assignment.max_lessons:
+            completed_lessons = _completed_lessons_for_temporary_assignment(assignment)
+            if completed_lessons >= assignment.max_lessons:
+                _close_temporary_assignment(
+                    assignment,
+                    TemporaryTutorAssignment.EndReason.LESSONS_REACHED,
+                )
+
+
 def _auto_complete_past_lessons(base_qs=None) -> int:
     """Mark planned lessons as completed once their timeslot is in the past."""
     today = timezone.localdate()
     now_time = timezone.localtime().time()
     queryset = base_qs if base_qs is not None else Lesson.objects.all()
-    return queryset.filter(
+    updated_count = queryset.filter(
         status=Lesson.Status.PLANNED,
         reschedule_requested=False,
     ).filter(
         Q(date__lt=today) | Q(date=today, time__lt=now_time)
     ).update(status=Lesson.Status.COMPLETED)
+    _sync_temporary_tutor_assignments()
+    return updated_count
 
 
 def _faq_items_for_target(target: str):
@@ -1216,16 +1290,18 @@ def dashboard(request):
     elif request.user.role == CustomUser.Roles.TUTOR:
         template = "dashboard_tutor.html"
         if hasattr(request.user, "tutor_profile"):
+            tutor_profile = request.user.tutor_profile
             _auto_complete_past_lessons(
-                Lesson.objects.filter(tutor=request.user.tutor_profile)
+                Lesson.objects.filter(tutor=tutor_profile)
             )
-            assigned_students = _assigned_students_qs(request.user.tutor_profile)
-            assigned_tutors = _assigned_tutors_qs(request.user.tutor_profile)
+            assigned_students = _assigned_students_qs(tutor_profile)
+            assigned_tutors = _assigned_tutors_qs(tutor_profile)
+
             context["is_admin_tutor"] = request.user.is_superuser
             context["can_send_broadcast_email"] = _has_admin_access(request.user)
             context["can_manage_faq"] = _has_faq_admin_access(request.user)
             context["has_parent_profiles"] = ParentProfile.objects.exists()
-            context["news_items"] = _tutor_news_items(request.user.tutor_profile)
+            context["news_items"] = _tutor_news_items(tutor_profile)
             context["faq_items"] = _faq_items_for_target("tutor")
             bbb_students = assigned_students
             context["bbb_students"] = bbb_students
@@ -1233,18 +1309,16 @@ def dashboard(request):
             context["assigned_tutor_count"] = assigned_tutors.count()
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
-                .filter(tutor=request.user.tutor_profile)
+                .filter(tutor=tutor_profile)
                 .select_related("student__user")
                 .order_by("date", "time")[:5]
             )
             context["latest_holiday_survey"] = (
-                HolidaySurvey.objects.filter(tutor=request.user.tutor_profile)
+                HolidaySurvey.objects.filter(tutor=tutor_profile)
                 .prefetch_related("responses__student__user")
                 .first()
             )
             context["pending_faq_count"] = FAQItem.objects.filter(is_published=False).count()
-            if context["can_send_broadcast_email"]:
-                context["broadcast_email_form"] = BroadcastEmailForm()
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
@@ -1253,16 +1327,17 @@ def dashboard(request):
 @login_required
 def broadcast_email_send(request):
     _ensure_profile_for_user(request.user)
-    if request.method != "POST":
-        return redirect("dashboard")
     if not _has_admin_access(request.user):
         messages.error(request, "Nur AdministratorInnen dürfen Rundmails versenden.")
+        return redirect("dashboard")
+    if request.method == "GET":
+        return render(request, "broadcast_email.html", {"form": BroadcastEmailForm()})
+    if request.method != "POST":
         return redirect("dashboard")
 
     form = BroadcastEmailForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Rundmail konnte nicht gesendet werden. Bitte Eingaben prüfen.")
-        return redirect("dashboard")
+        return render(request, "broadcast_email.html", {"form": form})
 
     audience = form.cleaned_data["audience"]
     subject = form.cleaned_data["subject"].strip()
@@ -1270,7 +1345,7 @@ def broadcast_email_send(request):
     recipients = _broadcast_recipient_emails(audience)
     if not recipients:
         messages.error(request, "Keine EmpfängerInnen mit hinterlegter E-Mail gefunden.")
-        return redirect("dashboard")
+        return render(request, "broadcast_email.html", {"form": form})
 
     sent_count, failed_count = _send_broadcast_emails(subject, body, recipients)
     if sent_count and not failed_count:
@@ -1282,7 +1357,134 @@ def broadcast_email_send(request):
         )
     else:
         messages.error(request, "Rundmail konnte nicht versendet werden.")
-    return redirect("dashboard")
+    return redirect("broadcast_email_send")
+
+
+@login_required
+def tutor_student_assignment(request):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+    _sync_temporary_tutor_assignments()
+
+    tutor_profile = request.user.tutor_profile
+    is_admin_tutor = _has_admin_access(request.user)
+    requested_source_tutor = tutor_profile
+    raw_source_tutor_id = request.GET.get("source_tutor")
+    if request.method == "POST":
+        raw_source_tutor_id = request.POST.get("source_tutor")
+    if is_admin_tutor:
+        if raw_source_tutor_id:
+            try:
+                requested_source_tutor = TutorProfile.objects.get(pk=int(raw_source_tutor_id))
+            except (TutorProfile.DoesNotExist, TypeError, ValueError):
+                requested_source_tutor = tutor_profile
+
+    redirect_url = _tutor_student_assignment_url_with_source(
+        current_tutor=tutor_profile,
+        source_tutor=requested_source_tutor if is_admin_tutor else None,
+    )
+    if request.method == "POST":
+        form = TutorStudentAssignmentForm(
+            request.POST,
+            current_tutor=tutor_profile,
+            is_admin_tutor=is_admin_tutor,
+            source_tutor=requested_source_tutor,
+        )
+        if not form.is_valid():
+            for errors in form.errors.values():
+                for error in errors:
+                    messages.error(request, error)
+            return redirect(redirect_url)
+
+        source_tutor = form.cleaned_data["effective_source_tutor"]
+        target_tutor = form.cleaned_data["target_tutor"]
+        reason = form.cleaned_data["reason"]
+        selected_students = list(form.cleaned_data["student_ids"])
+        end_mode = form.cleaned_data.get("temporary_end_mode") or ""
+        temporary_lessons = form.cleaned_data.get("temporary_lessons")
+        temporary_end_date = form.cleaned_data.get("temporary_end_date")
+
+        for student in selected_students:
+            target_was_preassigned = student.assigned_tutors.filter(pk=target_tutor.pk).exists()
+            student.assigned_tutors.add(target_tutor)
+            if reason == TutorStudentAssignmentForm.REASON_SUBSTITUTION:
+                active_same_pair = TemporaryTutorAssignment.objects.filter(
+                    is_active=True,
+                    student=student,
+                    source_tutor=source_tutor,
+                    target_tutor=target_tutor,
+                )
+                for assignment in active_same_pair:
+                    _close_temporary_assignment(
+                        assignment,
+                        TemporaryTutorAssignment.EndReason.SUPERSEDED,
+                        remove_target_assignment=False,
+                    )
+                TemporaryTutorAssignment.objects.create(
+                    source_tutor=source_tutor,
+                    target_tutor=target_tutor,
+                    student=student,
+                    created_by=request.user,
+                    end_mode=end_mode,
+                    max_lessons=temporary_lessons
+                    if end_mode == TutorStudentAssignmentForm.END_MODE_LESSONS
+                    else None,
+                    ends_on=temporary_end_date
+                    if end_mode == TutorStudentAssignmentForm.END_MODE_DATE
+                    else None,
+                    target_was_preassigned=target_was_preassigned,
+                )
+        if reason == TutorStudentAssignmentForm.REASON_HANDOVER:
+            for student in selected_students:
+                student.assigned_tutors.remove(source_tutor)
+                active_same_pair = TemporaryTutorAssignment.objects.filter(
+                    is_active=True,
+                    student=student,
+                    source_tutor=source_tutor,
+                    target_tutor=target_tutor,
+                )
+                for assignment in active_same_pair:
+                    _close_temporary_assignment(
+                        assignment,
+                        TemporaryTutorAssignment.EndReason.HANDOVER,
+                        remove_target_assignment=False,
+                    )
+
+        source_name = _display_name(source_tutor.user)
+        target_name = _display_name(target_tutor.user)
+        if reason == TutorStudentAssignmentForm.REASON_HANDOVER:
+            messages.success(
+                request,
+                f"{len(selected_students)} SchülerInnen wurden von {source_name} an {target_name} abgegeben.",
+            )
+        else:
+            if end_mode == TutorStudentAssignmentForm.END_MODE_LESSONS:
+                end_hint = f" (automatische Rücknahme nach {temporary_lessons} Terminen)"
+            else:
+                end_hint = f" (automatische Rücknahme bis {temporary_end_date.strftime('%d.%m.%Y')})"
+            messages.success(
+                request,
+                f"{len(selected_students)} SchülerInnen wurden {target_name} zur Vertretung zugewiesen{end_hint}.",
+            )
+        return redirect(redirect_url)
+
+    form = TutorStudentAssignmentForm(
+        current_tutor=tutor_profile,
+        is_admin_tutor=is_admin_tutor,
+        source_tutor=requested_source_tutor,
+    )
+    context = {
+        "tutor_student_assignment_form": form,
+        "assignment_available_students": form.fields["student_ids"].queryset,
+        "assignment_source_tutor_id": requested_source_tutor.pk,
+        "can_assign_students_from_other_tutors": is_admin_tutor,
+    }
+    if is_admin_tutor:
+        context["assignment_source_tutors"] = TutorProfile.objects.select_related("user").order_by(
+            "user__first_name", "user__last_name", "user__username"
+        )
+    return render(request, "tutor_student_assignment.html", context)
 
 
 @login_required

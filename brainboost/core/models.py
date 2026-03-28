@@ -175,6 +175,60 @@ class TutorProfile(models.Model):
         return f"TutorIn: {self.user.username}"
 
 
+class TemporaryTutorAssignment(models.Model):
+    class EndMode(models.TextChoices):
+        LESSONS = "lessons", "Nach Terminen"
+        DATE = "date", "Bis Datum"
+
+    class EndReason(models.TextChoices):
+        LESSONS_REACHED = "lessons_reached", "Termine erreicht"
+        DATE_REACHED = "date_reached", "Enddatum erreicht"
+        HANDOVER = "handover", "Abgabe"
+        SUPERSEDED = "superseded", "Überschrieben"
+
+    source_tutor = models.ForeignKey(
+        "TutorProfile",
+        on_delete=models.CASCADE,
+        related_name="temporary_outgoing_assignments",
+    )
+    target_tutor = models.ForeignKey(
+        "TutorProfile",
+        on_delete=models.CASCADE,
+        related_name="temporary_incoming_assignments",
+    )
+    student = models.ForeignKey(
+        "StudentProfile",
+        on_delete=models.CASCADE,
+        related_name="temporary_tutor_assignments",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_temporary_tutor_assignments",
+    )
+    end_mode = models.CharField(max_length=20, choices=EndMode.choices)
+    max_lessons = models.PositiveIntegerField(null=True, blank=True)
+    ends_on = models.DateField(null=True, blank=True)
+    target_was_preassigned = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    ended_reason = models.CharField(max_length=30, blank=True, choices=EndReason.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Temporäre TutorInnen-Zuweisung"
+        verbose_name_plural = "Temporäre TutorInnen-Zuweisungen"
+
+    def __str__(self) -> str:
+        return (
+            f"{self.student} von {self.source_tutor} zu {self.target_tutor} "
+            f"({self.get_end_mode_display()})"
+        )
+
+
 class Lesson(models.Model):
     SUBJECT_CHOICES = [
         ("mathe", "Mathe"),

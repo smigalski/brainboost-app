@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Rundmail{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Rundmail</h1>
+    <p class="muted">Sende eine Nachricht an eine ausgewählte Empfängergruppe.</p>
+    <form method="post" action="{% url 'broadcast_email_send' %}" style="display:flex;flex-direction:column;gap:10px;max-width:640px;">
+        {% csrf_token %}
+        <label for="{{ form.audience.id_for_label }}">{{ form.audience.label }}</label>
+        {{ form.audience }}
+        {% if form.audience.errors %}
+            <div class="muted" style="color:#b42318;">{{ form.audience.errors|join:", " }}</div>
+        {% endif %}
+
+        <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+        {{ form.subject }}
+        {% if form.subject.errors %}
+            <div class="muted" style="color:#b42318;">{{ form.subject.errors|join:", " }}</div>
+        {% endif %}
+
+        <label for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+        {{ form.message }}
+        {% if form.message.errors %}
+            <div class="muted" style="color:#b42318;">{{ form.message.errors|join:", " }}</div>
+        {% endif %}
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="button" type="submit" style="background: var(--teal-dark);">Rundmail senden</button>
+            <a class="button" href="{% url 'dashboard' %}" style="background:#64748b;">Zurück zum Dashboard</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ db.sqlite3
 !.env.example
 credentials.txt
 credentials*.txt
+WORKFLOW.MD 
 
 # Local exports/backups
 brainboost_local.sql

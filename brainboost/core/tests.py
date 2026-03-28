@@ -20,12 +20,14 @@ from .models import (
     ProgressEntry,
     StudentProfile,
     TutorProfile,
+    TemporaryTutorAssignment,
 )
 from .views import (
     _auto_complete_past_lessons,
     _build_epc_payment_payload,
     _build_invoice_pdf_context,
     _build_progress_chart_data,
+    _sync_temporary_tutor_assignments,
 )
 
 
@@ -132,7 +134,7 @@ class BroadcastEmailTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("dashboard"))
+        self.assertEqual(response.url, reverse("broadcast_email_send"))
         recipients = {email.to[0] for email in mail.outbox}
         self.assertIn("admin.sender@example.com", recipients)
         self.assertIn("tutor.receiver@example.com", recipients)
@@ -169,7 +171,7 @@ class BroadcastEmailTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("dashboard"))
+        self.assertEqual(response.url, reverse("broadcast_email_send"))
         recipients = {email.to[0] for email in mail.outbox}
         self.assertEqual(recipients, {"parent.receiver@example.com"})
 
@@ -847,3 +849,219 @@ class TutorProgressChartSelectionTests(TestCase):
         self.assertEqual(chart_data["labels"], ["10.03"])
         self.assertEqual(len(chart_data["datasets"]), 1)
         self.assertEqual(chart_data["datasets"][0]["label"], "Mathe")
+
+
+class TutorStudentAssignmentTests(TestCase):
+    def setUp(self):
+        self.source_user = CustomUser.objects.create_user(
+            username="tutor_source_assign",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Sofia",
+            last_name="Source",
+        )
+        self.target_user = CustomUser.objects.create_user(
+            username="tutor_target_assign",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tim",
+            last_name="Target",
+        )
+        self.admin_user = CustomUser.objects.create_user(
+            username="tutor_admin_assign",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Alex",
+            last_name="Admin",
+            is_staff=True,
+        )
+        self.source_tutor = TutorProfile.objects.create(user=self.source_user)
+        self.target_tutor = TutorProfile.objects.create(user=self.target_user)
+        self.admin_tutor = TutorProfile.objects.create(user=self.admin_user)
+
+        self.student_user = CustomUser.objects.create_user(
+            username="student_assign_one",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Mia",
+            last_name="Student",
+        )
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.student.assigned_tutors.add(self.source_tutor)
+
+        self.foreign_student_user = CustomUser.objects.create_user(
+            username="student_assign_foreign",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Noah",
+            last_name="Foreign",
+        )
+        self.foreign_student = StudentProfile.objects.create(user=self.foreign_student_user)
+        self.foreign_student.assigned_tutors.add(self.target_tutor)
+
+    def test_tutor_dashboard_renders_assignment_section(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "SchülerInnen zuweisen")
+
+    def test_vertretung_assigns_student_to_target_and_keeps_source(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "target_tutor": str(self.target_tutor.id),
+                "reason": "vertretung",
+                "temporary_end_mode": "lessons",
+                "temporary_lessons": "2",
+                "student_ids": [str(self.student.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("tutor_student_assignment"))
+        self.student.refresh_from_db()
+        assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.source_tutor.id, self.target_tutor.id})
+
+    def test_abgabe_transfers_student_from_source_to_target(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "target_tutor": str(self.target_tutor.id),
+                "reason": "abgabe",
+                "student_ids": [str(self.student.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("tutor_student_assignment"))
+        self.student.refresh_from_db()
+        assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.target_tutor.id})
+
+    def test_non_admin_cannot_assign_students_of_other_tutors(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "target_tutor": str(self.admin_tutor.id),
+                "reason": "vertretung",
+                "temporary_end_mode": "lessons",
+                "temporary_lessons": "2",
+                "student_ids": [str(self.foreign_student.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("tutor_student_assignment"))
+        self.foreign_student.refresh_from_db()
+        assigned_ids = set(self.foreign_student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.target_tutor.id})
+
+    def test_admin_can_assign_other_tutor_students_to_self_without_consent(self):
+        logged_in = self.client.login(username="tutor_admin_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "source_tutor": str(self.source_tutor.id),
+                "target_tutor": str(self.admin_tutor.id),
+                "reason": "vertretung",
+                "temporary_end_mode": "lessons",
+                "temporary_lessons": "2",
+                "student_ids": [str(self.student.id)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            f"{reverse('tutor_student_assignment')}?source_tutor={self.source_tutor.id}",
+        )
+        self.student.refresh_from_db()
+        assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.source_tutor.id, self.admin_tutor.id})
+
+    def test_temporary_vertretung_is_removed_after_configured_lessons(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "target_tutor": str(self.target_tutor.id),
+                "reason": "vertretung",
+                "temporary_end_mode": "lessons",
+                "temporary_lessons": "2",
+                "student_ids": [str(self.student.id)],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+        now = timezone.localtime()
+        lesson_day = now.date() + timedelta(days=1)
+        Lesson.objects.create(
+            tutor=self.target_tutor,
+            student=self.student,
+            date=lesson_day,
+            time=time(10, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+        Lesson.objects.create(
+            tutor=self.target_tutor,
+            student=self.student,
+            date=lesson_day,
+            time=time(11, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="deutsch",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        _sync_temporary_tutor_assignments()
+
+        self.student.refresh_from_db()
+        assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.source_tutor.id})
+        self.assertEqual(
+            TemporaryTutorAssignment.objects.filter(is_active=True).count(),
+            0,
+        )
+
+    def test_temporary_vertretung_is_removed_after_end_date(self):
+        logged_in = self.client.login(username="tutor_source_assign", password="test12345")
+        self.assertTrue(logged_in)
+
+        yesterday = (timezone.localdate() - timedelta(days=1)).isoformat()
+        response = self.client.post(
+            reverse("tutor_student_assignment"),
+            data={
+                "target_tutor": str(self.target_tutor.id),
+                "reason": "vertretung",
+                "temporary_end_mode": "date",
+                "temporary_end_date": yesterday,
+                "student_ids": [str(self.student.id)],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+
+        _sync_temporary_tutor_assignments()
+
+        self.student.refresh_from_db()
+        assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
+        self.assertEqual(assigned_ids, {self.source_tutor.id})

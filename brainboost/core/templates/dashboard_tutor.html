@@ -57,24 +57,13 @@
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark);">Organisation</div>
                 <a class="button" style="background: var(--teal-dark);" href="{% url 'invoice_upload' %}">Rechnungen</a>
                 <a class="button" style="background: var(--teal-dark);" href="{% url 'holiday_surveys' %}">Umfrage</a>
+                <a class="button" style="background: var(--teal-dark);" href="{% url 'tutor_student_assignment' %}">SchülerInnen zuweisen</a>
+                {% if can_send_broadcast_email %}
+                    <a class="button" style="background: var(--teal-dark);" href="{% url 'broadcast_email_send' %}">Rundmail</a>
+                {% endif %}
                 {% if latest_holiday_survey %}
                     <div class="muted" style="font-size:0.82rem;">
                         Letzte Umfrage: {{ latest_holiday_survey.question }}
-                    </div>
-                {% endif %}
-                {% if can_send_broadcast_email and broadcast_email_form %}
-                    <div style="margin-top:8px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);">
-                        <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:8px;">Rundmail</div>
-                        <form method="post" action="{% url 'broadcast_email_send' %}" style="display:flex;flex-direction:column;gap:8px;">
-                            {% csrf_token %}
-                            <label for="{{ broadcast_email_form.audience.id_for_label }}">{{ broadcast_email_form.audience.label }}</label>
-                            {{ broadcast_email_form.audience }}
-                            <label for="{{ broadcast_email_form.subject.id_for_label }}">{{ broadcast_email_form.subject.label }}</label>
-                            {{ broadcast_email_form.subject }}
-                            <label for="{{ broadcast_email_form.message.id_for_label }}">{{ broadcast_email_form.message.label }}</label>
-                            {{ broadcast_email_form.message }}
-                            <button class="button" type="submit" style="background: var(--teal-dark);">Rundmail senden</button>
-                        </form>
                     </div>
                 {% endif %}
             </div>
