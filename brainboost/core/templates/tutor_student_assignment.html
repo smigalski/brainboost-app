@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | SchülerInnen zuweisen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>SchülerInnen zuweisen</h1>
+    <p class="muted">Weise SchülerInnen per Vertretung oder Abgabe einer anderen TutorIn zu.</p>
+
+    {% if can_assign_students_from_other_tutors and assignment_source_tutors %}
+        <form method="get" action="{% url 'tutor_student_assignment' %}" style="display:flex;flex-direction:column;gap:8px;max-width:520px;margin-bottom:14px;">
+            <label for="assignment-source-tutor">SchülerInnen von TutorIn</label>
+            <select id="assignment-source-tutor" name="source_tutor" onchange="this.form.submit();">
+                {% for tutor in assignment_source_tutors %}
+                    <option value="{{ tutor.id }}"{% if tutor.id == assignment_source_tutor_id %} selected{% endif %}>
+                        {{ tutor.user.get_full_name|default:tutor.user.username }}
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="muted" style="font-size:0.85rem;">Adminrolle: Zuweisung von SchülerInnen anderer TutorInnen ohne zusätzliche Zustimmung.</div>
+        </form>
+    {% endif %}
+
+    <form method="post" action="{% url 'tutor_student_assignment' %}" data-student-assignment-form style="display:flex;flex-direction:column;gap:10px;">
+        {% csrf_token %}
+        {% if can_assign_students_from_other_tutors %}
+            <input type="hidden" name="{{ tutor_student_assignment_form.source_tutor.html_name }}" value="{{ assignment_source_tutor_id }}">
+        {% endif %}
+
+        <label for="{{ tutor_student_assignment_form.target_tutor.id_for_label }}">{{ tutor_student_assignment_form.target_tutor.label }}</label>
+        {{ tutor_student_assignment_form.target_tutor }}
+
+        <label for="{{ tutor_student_assignment_form.reason.id_for_label }}">{{ tutor_student_assignment_form.reason.label }}</label>
+        {{ tutor_student_assignment_form.reason }}
+
+        <div data-temporary-settings style="display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;background:rgba(31,102,102,0.08);">
+            <label for="{{ tutor_student_assignment_form.temporary_end_mode.id_for_label }}">{{ tutor_student_assignment_form.temporary_end_mode.label }}</label>
+            {{ tutor_student_assignment_form.temporary_end_mode }}
+
+            <div data-temporary-lessons>
+                <label for="{{ tutor_student_assignment_form.temporary_lessons.id_for_label }}">{{ tutor_student_assignment_form.temporary_lessons.label }}</label>
+                {{ tutor_student_assignment_form.temporary_lessons }}
+            </div>
+
+            <div data-temporary-date>
+                <label for="{{ tutor_student_assignment_form.temporary_end_date.id_for_label }}">{{ tutor_student_assignment_form.temporary_end_date.label }}</label>
+                {{ tutor_student_assignment_form.temporary_end_date }}
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <label for="assignment-available-students">Verfügbar</label>
+                <select id="assignment-available-students" multiple size="10">
+                    {% for student in assignment_available_students %}
+                        <option value="{{ student.id }}">{{ student.user.get_full_name|default:student.user.username }}</option>
+                    {% empty %}
+                        <option value="" disabled>Keine SchülerInnen verfügbar.</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;justify-content:center;align-self:center;">
+                <button type="button" class="button" data-assignment-add style="padding:8px 10px;background:var(--teal-dark);">&gt;&gt;</button>
+                <button type="button" class="button" data-assignment-remove style="padding:8px 10px;background:#6b7280;">&lt;&lt;</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <label for="assignment-selected-students">Ausgewählt</label>
+                <select
+                    id="assignment-selected-students"
+                    name="{{ tutor_student_assignment_form.student_ids.html_name }}"
+                    multiple
+                    size="10"
+                ></select>
+            </div>
+        </div>
+
+        <div class="muted" style="font-size:0.85rem;">Vertretung: bestehende Zuweisung bleibt und endet automatisch nach Terminen oder Datum. Abgabe: Quell-TutorIn wird entfernt.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="button" type="submit" style="background: var(--teal-dark);">Zuweisung ausführen</button>
+            <a class="button" href="{% url 'dashboard' %}" style="background:#64748b;">Zurück zum Dashboard</a>
+        </div>
+    </form>
+</div>
+{% block scripts %}
+<script>
+function moveAssignmentOptions(fromSelect, toSelect) {
+    if (!fromSelect || !toSelect) return;
+    const optionsToMove = Array.from(fromSelect.selectedOptions)
+        .filter((option) => option.value && !option.disabled);
+    optionsToMove.forEach((option) => {
+        option.selected = false;
+        toSelect.appendChild(option);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const assignmentForm = document.querySelector("[data-student-assignment-form]");
+    if (!assignmentForm) return;
+
+    const availableSelect = document.getElementById("assignment-available-students");
+    const selectedSelect = document.getElementById("assignment-selected-students");
+    const addButton = assignmentForm.querySelector("[data-assignment-add]");
+    const removeButton = assignmentForm.querySelector("[data-assignment-remove]");
+
+    if (!availableSelect || !selectedSelect || !addButton || !removeButton) return;
+    const reasonSelect = document.getElementById("id_reason");
+    const endModeSelect = document.getElementById("id_temporary_end_mode");
+    const temporarySettings = assignmentForm.querySelector("[data-temporary-settings]");
+    const temporaryLessons = assignmentForm.querySelector("[data-temporary-lessons]");
+    const temporaryDate = assignmentForm.querySelector("[data-temporary-date]");
+
+    function updateTemporaryFields() {
+        if (!reasonSelect || !endModeSelect || !temporarySettings || !temporaryLessons || !temporaryDate) return;
+        const isSubstitution = reasonSelect.value === "vertretung";
+        temporarySettings.style.display = isSubstitution ? "flex" : "none";
+        temporaryLessons.style.display = "none";
+        temporaryDate.style.display = "none";
+        if (!isSubstitution) {
+            endModeSelect.value = "";
+            return;
+        }
+        if (endModeSelect.value === "lessons") {
+            temporaryLessons.style.display = "block";
+        }
+        if (endModeSelect.value === "date") {
+            temporaryDate.style.display = "block";
+        }
+    }
+
+    addButton.addEventListener("click", function () {
+        moveAssignmentOptions(availableSelect, selectedSelect);
+    });
+    removeButton.addEventListener("click", function () {
+        moveAssignmentOptions(selectedSelect, availableSelect);
+    });
+    availableSelect.addEventListener("dblclick", function () {
+        moveAssignmentOptions(availableSelect, selectedSelect);
+    });
+    selectedSelect.addEventListener("dblclick", function () {
+        moveAssignmentOptions(selectedSelect, availableSelect);
+    });
+    assignmentForm.addEventListener("submit", function () {
+        Array.from(selectedSelect.options).forEach((option) => {
+            option.selected = true;
+        });
+    });
+    if (reasonSelect) {
+        reasonSelect.addEventListener("change", updateTemporaryFields);
+    }
+    if (endModeSelect) {
+        endModeSelect.addEventListener("change", updateTemporaryFields);
+    }
+    updateTemporaryFields();
+});
+</script>
+{% endblock %}
+{% endblock %}

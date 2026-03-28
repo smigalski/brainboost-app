@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+from typing import Optional
 
 from django import forms
 from django.contrib.auth import password_validation
@@ -57,6 +58,132 @@ class BroadcastEmailForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 5}),
     )
 
+
+class TutorStudentAssignmentForm(forms.Form):
+    REASON_SUBSTITUTION = "vertretung"
+    REASON_HANDOVER = "abgabe"
+    END_MODE_NONE = ""
+    END_MODE_LESSONS = "lessons"
+    END_MODE_DATE = "date"
+
+    source_tutor = forms.ModelChoiceField(
+        queryset=TutorProfile.objects.none(),
+        required=False,
+        label="Quell-TutorIn",
+    )
+    target_tutor = forms.ModelChoiceField(
+        queryset=TutorProfile.objects.none(),
+        label="Ziel-TutorIn",
+    )
+    reason = forms.ChoiceField(
+        choices=[
+            (REASON_SUBSTITUTION, "Vertretung"),
+            (REASON_HANDOVER, "Abgabe"),
+        ],
+        label="Grund der Zuweisung",
+        initial=REASON_SUBSTITUTION,
+    )
+    student_ids = forms.ModelMultipleChoiceField(
+        queryset=StudentProfile.objects.none(),
+        label="SchülerInnen",
+        required=True,
+    )
+    temporary_end_mode = forms.ChoiceField(
+        choices=[
+            (END_MODE_NONE, "Bitte auswählen"),
+            (END_MODE_LESSONS, "Nach Anzahl Terminen"),
+            (END_MODE_DATE, "Bis Datum"),
+        ],
+        required=False,
+        label="Vertretung automatisch beenden",
+    )
+    temporary_lessons = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label="Anzahl Terminen",
+    )
+    temporary_end_date = forms.DateField(
+        required=False,
+        label="Enddatum",
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        input_formats=["%Y-%m-%d"],
+    )
+
+    def __init__(
+        self,
+        *args,
+        current_tutor: TutorProfile,
+        is_admin_tutor: bool = False,
+        source_tutor: Optional[TutorProfile] = None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.current_tutor = current_tutor
+        self.is_admin_tutor = is_admin_tutor
+        tutor_qs = TutorProfile.objects.select_related("user").order_by(
+            "user__first_name", "user__last_name", "user__username"
+        )
+
+        if is_admin_tutor:
+            self.fields["source_tutor"].queryset = tutor_qs
+        else:
+            self.fields.pop("source_tutor")
+
+        selected_source = source_tutor or current_tutor
+        if is_admin_tutor and self.is_bound:
+            raw_source = self.data.get(self.add_prefix("source_tutor"))
+            if raw_source:
+                try:
+                    selected_source = tutor_qs.get(pk=int(raw_source))
+                except (TutorProfile.DoesNotExist, TypeError, ValueError):
+                    selected_source = current_tutor
+        if is_admin_tutor and not self.is_bound:
+            self.initial.setdefault("source_tutor", selected_source.pk)
+
+        if is_admin_tutor:
+            self.fields["target_tutor"].queryset = tutor_qs
+        else:
+            self.fields["target_tutor"].queryset = tutor_qs.exclude(pk=current_tutor.pk)
+
+        self.fields["student_ids"].queryset = (
+            StudentProfile.objects.filter(assigned_tutors=selected_source)
+            .select_related("user")
+            .distinct()
+            .order_by("user__first_name", "user__last_name", "user__username")
+        )
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.is_admin_tutor:
+            source_tutor = cleaned.get("source_tutor")
+        else:
+            source_tutor = self.current_tutor
+        if not source_tutor:
+            self.add_error("source_tutor", "Bitte wähle eine Quell-TutorIn aus.")
+            return cleaned
+        target_tutor = cleaned.get("target_tutor")
+        if source_tutor and target_tutor and source_tutor.pk == target_tutor.pk:
+            self.add_error("target_tutor", "Quell- und Ziel-TutorIn dürfen nicht identisch sein.")
+
+        reason = cleaned.get("reason")
+        end_mode = (cleaned.get("temporary_end_mode") or "").strip()
+        if reason == self.REASON_SUBSTITUTION:
+            if not end_mode:
+                self.add_error(
+                    "temporary_end_mode",
+                    "Bitte wähle, wann die Vertretung automatisch enden soll.",
+                )
+            elif end_mode == self.END_MODE_LESSONS and not cleaned.get("temporary_lessons"):
+                self.add_error("temporary_lessons", "Bitte gib die Anzahl Terminen an.")
+            elif end_mode == self.END_MODE_DATE and not cleaned.get("temporary_end_date"):
+                self.add_error("temporary_end_date", "Bitte gib ein Enddatum an.")
+        else:
+            cleaned["temporary_end_mode"] = self.END_MODE_NONE
+            cleaned["temporary_lessons"] = None
+            cleaned["temporary_end_date"] = None
+
+        cleaned["effective_source_tutor"] = source_tutor
+        return cleaned
 
 class LessonForm(forms.ModelForm):
     date = forms.DateField(

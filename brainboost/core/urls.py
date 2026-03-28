@@ -16,6 +16,11 @@ urlpatterns = [
     path("faq/", views.faq_admin, name="faq_admin"),
     path("faq/frage/", views.faq_submit, name="faq_submit"),
     path("organisation/rundmail/", views.broadcast_email_send, name="broadcast_email_send"),
+    path(
+        "organisation/schueler-zuweisen/",
+        views.tutor_student_assignment,
+        name="tutor_student_assignment",
+    ),
     path("profil/", views.profile_view, name="profile"),
     path(
         "profil/passwort/",
