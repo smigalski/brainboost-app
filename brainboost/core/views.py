@@ -640,6 +640,14 @@ def _generate_invoice_pdf(
         {
             **context,
             "logo_url": _static_asset_uri("design/LogoPNG.png", request),
+            "shababa_font_woff2_url": _static_asset_uri(
+                "fonts/shababa/shababa-w01-regular.woff2",
+                request,
+            ),
+            "shababa_font_woff_url": _static_asset_uri(
+                "fonts/shababa/shababa-w01-regular.woff",
+                request,
+            ),
             "payment_qr_url": payment_qr_url,
         },
     )
