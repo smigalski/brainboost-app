@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+import re
 from typing import Optional
 
 from django import forms
@@ -32,6 +33,40 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request=request, *args, **kwargs)
         self.fields["username"].label = "E-Mail oder Benutzername"
+
+
+def _normalize_iban(raw_iban: str) -> str:
+    value = (raw_iban or "").strip().upper()
+    value = re.sub(r"[^A-Z0-9]", "", value)
+    return value
+
+
+def _validate_iban(value: str) -> str:
+    iban = _normalize_iban(value)
+    if not iban:
+        return ""
+    if len(iban) < 15 or len(iban) > 34:
+        raise ValidationError("Die IBAN muss zwischen 15 und 34 Zeichen enthalten.")
+    if not re.fullmatch(r"[A-Z]{2}[0-9]{2}[A-Z0-9]+", iban):
+        raise ValidationError("Bitte gib eine gueltige IBAN ein.")
+    return iban
+
+
+def _normalize_bic(raw_bic: str) -> str:
+    value = (raw_bic or "").strip().upper()
+    value = re.sub(r"[^A-Z0-9]", "", value)
+    return value
+
+
+def _validate_bic(value: str) -> str:
+    bic = _normalize_bic(value)
+    if not bic:
+        return ""
+    if len(bic) not in (8, 11):
+        raise ValidationError("Die BIC muss genau 8 oder 11 Zeichen enthalten.")
+    if not re.fullmatch(r"[A-Z0-9]{8}([A-Z0-9]{3})?", bic):
+        raise ValidationError("Bitte gib eine gueltige BIC ein.")
+    return bic
 
 
 class BroadcastEmailForm(forms.Form):
@@ -902,8 +937,33 @@ class TutorCreateForm(BaseUserCreateForm):
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
     account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
     bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
-    iban = forms.CharField(max_length=34, required=False, label="IBAN")
-    bic = forms.CharField(max_length=11, required=False, label="BIC")
+    iban = forms.CharField(
+        max_length=42,
+        required=False,
+        label="IBAN",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "DE00-0000-0000-0000-0000-00",
+                "autocomplete": "off",
+                "inputmode": "text",
+                "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.06em; text-transform:uppercase;",
+                "data-iban-input": "true",
+            }
+        ),
+    )
+    bic = forms.CharField(
+        max_length=20,
+        required=False,
+        label="BIC",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "DEUTDEFFXXX",
+                "autocomplete": "off",
+                "inputmode": "text",
+                "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.04em; text-transform:uppercase;",
+            }
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -941,6 +1001,12 @@ class TutorCreateForm(BaseUserCreateForm):
                 bic=self.cleaned_data.get("bic", ""),
             )
         return user
+
+    def clean_iban(self):
+        return _validate_iban(self.cleaned_data.get("iban", ""))
+
+    def clean_bic(self):
+        return _validate_bic(self.cleaned_data.get("bic", ""))
 
 
 class BaseProfileUpdateForm(forms.Form):
@@ -1150,8 +1216,33 @@ class TutorProfileForm(BaseProfileUpdateForm):
     )
     account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
     bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
-    iban = forms.CharField(max_length=34, required=False, label="IBAN")
-    bic = forms.CharField(max_length=11, required=False, label="BIC")
+    iban = forms.CharField(
+        max_length=42,
+        required=False,
+        label="IBAN",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "DE00-0000-0000-0000-0000-00",
+                "autocomplete": "off",
+                "inputmode": "text",
+                "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.06em; text-transform:uppercase;",
+                "data-iban-input": "true",
+            }
+        ),
+    )
+    bic = forms.CharField(
+        max_length=20,
+        required=False,
+        label="BIC",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "DEUTDEFFXXX",
+                "autocomplete": "off",
+                "inputmode": "text",
+                "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.04em; text-transform:uppercase;",
+            }
+        ),
+    )
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
@@ -1191,3 +1282,9 @@ class TutorProfileForm(BaseProfileUpdateForm):
         profile.bic = self.cleaned_data.get("bic", "")
         profile.save()
         return user
+
+    def clean_iban(self):
+        return _validate_iban(self.cleaned_data.get("iban", ""))
+
+    def clean_bic(self):
+        return _validate_bic(self.cleaned_data.get("bic", ""))

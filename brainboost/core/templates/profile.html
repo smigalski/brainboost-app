@@ -71,6 +71,9 @@
             {% for field in form %}
                 {% if field.name != "avatar_icon" and field.name != "profile_image" and field.name != "remove_profile_image" %}
                     <div>
+                        {% if field.name == "account_holder" %}
+                            <div id="bankdaten"></div>
+                        {% endif %}
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
                         </label>
@@ -99,6 +102,33 @@
         <script src="{% static 'core/address_autocomplete.js' %}"></script>
         <script async
             src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initAddressAutocomplete">
+        </script>
+    {% endif %}
+    {% if is_tutor_profile_form %}
+        <script>
+            (function () {
+                var ibanInput = document.querySelector('input[name="iban"]');
+                var bicInput = document.querySelector('input[name="bic"]');
+
+                function formatIban(rawValue) {
+                    var compact = (rawValue || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+                    var groups = compact.match(/.{1,4}/g);
+                    return groups ? groups.join("-") : "";
+                }
+
+                if (ibanInput) {
+                    ibanInput.value = formatIban(ibanInput.value);
+                    ibanInput.addEventListener("input", function () {
+                        ibanInput.value = formatIban(ibanInput.value);
+                    });
+                }
+
+                if (bicInput) {
+                    bicInput.addEventListener("input", function () {
+                        bicInput.value = (bicInput.value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
+                    });
+                }
+            })();
         </script>
     {% endif %}
 {% endblock %}

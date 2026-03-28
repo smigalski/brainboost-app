@@ -9,7 +9,7 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import BrainBoostFeedbackForm, InvoiceGenerateForm
+from .forms import BrainBoostFeedbackForm, InvoiceGenerateForm, TutorProfileForm
 from .models import (
     BrainBoostFeedback,
     CustomUser,
@@ -87,6 +87,90 @@ class EmailOrUsernameLoginTests(TestCase):
         auth_user = authenticate(username="login.user@example.com", password="test12345")
         self.assertIsNotNone(auth_user)
         self.assertEqual(auth_user.pk, self.user.pk)
+
+
+class TutorBankDataReminderTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="tutor_missing_bank_data",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor_profile = TutorProfile.objects.create(user=self.user)
+
+    def test_dashboard_shows_bank_data_popup_once_per_login_session(self):
+        logged_in = self.client.login(username="tutor_missing_bank_data", password="test12345")
+        self.assertTrue(logged_in)
+
+        first_response = self.client.get(reverse("dashboard"))
+        self.assertEqual(first_response.status_code, 200)
+        self.assertTrue(first_response.context.get("show_bank_data_popup"))
+        self.assertEqual(
+            first_response.context.get("missing_tutor_bank_fields"),
+            ["KontoinhaberIn", "Bankname", "IBAN", "BIC"],
+        )
+
+        second_response = self.client.get(reverse("dashboard"))
+        self.assertEqual(second_response.status_code, 200)
+        self.assertFalse(second_response.context.get("show_bank_data_popup", False))
+
+    def test_dashboard_does_not_show_popup_when_bank_data_complete(self):
+        self.tutor_profile.account_holder = "Max Mustermann"
+        self.tutor_profile.bank_name = "Sparkasse"
+        self.tutor_profile.iban = "DE44500105175407324931"
+        self.tutor_profile.bic = "DEUTDEFFXXX"
+        self.tutor_profile.save()
+
+        logged_in = self.client.login(username="tutor_missing_bank_data", password="test12345")
+        self.assertTrue(logged_in)
+
+        response = self.client.get(reverse("dashboard"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context.get("show_bank_data_popup", False))
+        self.assertEqual(response.context.get("missing_tutor_bank_fields"), [])
+
+
+class TutorProfileBankFieldValidationTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="tutor_profile_form",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            email="tutor.profile@example.com",
+        )
+        TutorProfile.objects.create(user=self.user)
+
+    def _base_form_data(self):
+        return {
+            "username": self.user.username,
+            "first_name": "Tina",
+            "last_name": "Tutor",
+            "email": self.user.email,
+            "phone_number": "",
+            "address": "",
+            "account_holder": "",
+            "bank_name": "",
+            "iban": "",
+            "bic": "",
+        }
+
+    def test_profile_form_normalizes_iban_and_bic(self):
+        data = self._base_form_data()
+        data["iban"] = "de44-5001 0517 5407 3249 31"
+        data["bic"] = "deut deff xxx"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["iban"], "DE44500105175407324931")
+        self.assertEqual(form.cleaned_data["bic"], "DEUTDEFFXXX")
+
+    def test_profile_form_rejects_invalid_bic_length(self):
+        data = self._base_form_data()
+        data["bic"] = "DEUTDEFFXX"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("bic", form.errors)
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")

@@ -149,6 +149,16 @@ function openOnlineRoom(kind) {
         window.open(link, '_blank', 'noopener');
     }
 }
+
+{% if show_bank_data_popup %}
+window.addEventListener('DOMContentLoaded', function () {
+    const message = "Bitte ergänze für die Rechnungserstellung unbedingt deine Bankdaten im Profil.\n\nFehlende Felder: {{ missing_tutor_bank_fields_text|escapejs }}";
+    const goToProfile = window.confirm(message + "\n\nJetzt zum Profil wechseln?");
+    if (goToProfile) {
+        window.location.href = "{% url 'profile' %}#bankdaten";
+    }
+});
+{% endif %}
 </script>
 {% endblock %}
 {% endblock %}

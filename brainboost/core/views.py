@@ -157,6 +157,19 @@ def _display_name(user: CustomUser) -> str:
     return full_name or user.username
 
 
+def _missing_tutor_bank_field_labels(tutor_profile: TutorProfile) -> list[str]:
+    missing_fields: list[str] = []
+    if not (tutor_profile.account_holder or "").strip():
+        missing_fields.append("KontoinhaberIn")
+    if not (tutor_profile.bank_name or "").strip():
+        missing_fields.append("Bankname")
+    if not (tutor_profile.iban or "").strip():
+        missing_fields.append("IBAN")
+    if not (tutor_profile.bic or "").strip():
+        missing_fields.append("BIC")
+    return missing_fields
+
+
 def _normalize_whatsapp_number(raw_number: str) -> str:
     if not raw_number:
         return ""
@@ -1327,6 +1340,12 @@ def dashboard(request):
                 .first()
             )
             context["pending_faq_count"] = FAQItem.objects.filter(is_published=False).count()
+            missing_bank_fields = _missing_tutor_bank_field_labels(tutor_profile)
+            context["missing_tutor_bank_fields"] = missing_bank_fields
+            if missing_bank_fields and not request.session.get("bank_data_reminder_shown", False):
+                context["show_bank_data_popup"] = True
+                context["missing_tutor_bank_fields_text"] = ", ".join(missing_bank_fields)
+                request.session["bank_data_reminder_shown"] = True
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
@@ -1698,6 +1717,7 @@ def profile_view(request):
         {
             "form": form,
             "uses_address_autocomplete": uses_address_autocomplete,
+            "is_tutor_profile_form": request.user.role == CustomUser.Roles.TUTOR,
         },
     )
 
