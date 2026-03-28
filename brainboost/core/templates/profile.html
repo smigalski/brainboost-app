@@ -113,7 +113,7 @@
                 function formatIban(rawValue) {
                     var compact = (rawValue || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
                     var groups = compact.match(/.{1,4}/g);
-                    return groups ? groups.join("-") : "";
+                    return groups ? groups.join(" ") : "";
                 }
 
                 if (ibanInput) {

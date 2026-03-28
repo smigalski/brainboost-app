@@ -943,7 +943,7 @@ class TutorCreateForm(BaseUserCreateForm):
         label="IBAN",
         widget=forms.TextInput(
             attrs={
-                "placeholder": "DE00-0000-0000-0000-0000-00",
+                "placeholder": "DE00 0000 0000 0000 0000 00",
                 "autocomplete": "off",
                 "inputmode": "text",
                 "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.06em; text-transform:uppercase;",
@@ -1222,7 +1222,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
         label="IBAN",
         widget=forms.TextInput(
             attrs={
-                "placeholder": "DE00-0000-0000-0000-0000-00",
+                "placeholder": "DE00 0000 0000 0000 0000 00",
                 "autocomplete": "off",
                 "inputmode": "text",
                 "style": "background:#f1f5f9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:0.06em; text-transform:uppercase;",

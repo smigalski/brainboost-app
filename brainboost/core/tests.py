@@ -353,6 +353,29 @@ class InvoiceDiscountContextTests(TestCase):
 
         self.assertIn("Zu spät storniert (kostenpflichtig)", context["line_items"][0]["notes"])
 
+    def test_build_invoice_context_formats_iban_for_display(self):
+        self.tutor.iban = "DE44500105175407324931"
+        self.tutor.save(update_fields=["iban"])
+        lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 3, 13),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 3, 1),
+            lessons=[lesson],
+        )
+
+        self.assertEqual(context["iban"], "DE44 5001 0517 5407 3249 31")
+
 
 class LessonCancellationChargeableTests(TestCase):
     def setUp(self):

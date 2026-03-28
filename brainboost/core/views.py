@@ -266,6 +266,15 @@ def _normalize_iban(value: str) -> str:
     return "".join(ch for ch in (value or "").upper() if ch.isalnum())
 
 
+def _format_iban_for_display(value: str) -> str:
+    normalized = _normalize_iban(value)
+    if not normalized:
+        return "-"
+    return " ".join(
+        normalized[index : index + 4] for index in range(0, len(normalized), 4)
+    )
+
+
 def _build_epc_payment_payload(
     *,
     account_holder: str,
@@ -611,7 +620,7 @@ def _build_invoice_pdf_context(
         "total_amount": discount_data["total_amount"],
         "account_holder": tutor_profile.account_holder or "-",
         "bank_name": tutor_profile.bank_name or "-",
-        "iban": tutor_profile.iban or "-",
+        "iban": _format_iban_for_display(tutor_profile.iban),
         "bic": tutor_profile.bic or "-",
     }
 
