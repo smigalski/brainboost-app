@@ -14,7 +14,7 @@
     <div class="hero-bg"></div>
     <header class="topbar">
         <div class="topbar-main">
-            <a class="brand brand-link" href="{% if request.user.is_authenticated %}{% url 'logout' %}{% else %}{% url 'landing_page' %}{% endif %}">
+            <a class="brand brand-link" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">
                 <div class="brand-icon">
                     <img src="/static/design/LogoPNG.png" alt="icon">
                 </div>
