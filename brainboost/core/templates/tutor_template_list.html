@@ -28,7 +28,16 @@
                     <div class="muted">Hochgeladen von {{ template.uploaded_by.user.username }}</div>
                     <div class="muted">Hochgeladen am {{ template.uploaded_at|date:"d.m.Y H:i" }}</div>
                 </div>
-                <a class="button" style="padding:6px 10px; background:#e0b126; color:#1f1600;" href="{{ template.file.url }}" download>Download</a>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                    {% if is_admin_tutor or template.uploaded_by_id == request.user.tutor_profile.id %}
+                        <form method="post" action="{% url 'tutor_template_delete' template.id %}" onsubmit="return confirm('Vorlage wirklich löschen?');" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button class="button" type="submit" aria-label="Vorlage löschen" title="Vorlage löschen" style="padding:6px 10px; background:#b42318;">X</button>
+                        </form>
+                    {% endif %}
+                    <a class="button" style="padding:6px 10px; background:#e0b126; color:#1f1600;" href="{{ template.file.url }}" download>Download</a>
+                </div>
             </li>
         {% empty %}
             <li>Keine Vorlagen vorhanden.</li>

@@ -196,6 +196,12 @@
                             {% endif %}
                         </div>
                         <div class="invoice-list-actions">
+                            {% if request.user.is_staff or request.user.is_superuser or invoice.uploaded_by_id == request.user.tutor_profile.id %}
+                                <form method="post" action="{% url 'invoice_delete' invoice.id %}" onsubmit="return confirm('Rechnung wirklich löschen?');">
+                                    {% csrf_token %}
+                                    <button class="button" type="submit" aria-label="Rechnung löschen" title="Rechnung löschen" style="padding:6px 10px; background:#b42318;">X</button>
+                                </form>
+                            {% endif %}
                             <a class="button" style="padding:6px 10px;" href="{{ invoice.file.url }}" download>Download</a>
                             {% if not invoice.is_approved %}
                                 <form method="post" action="{% url 'invoice_approve' invoice.id %}">

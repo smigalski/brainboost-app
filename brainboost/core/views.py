@@ -2472,6 +2472,39 @@ def tutor_solution_list(request):
 
 
 @login_required
+def material_delete(request, material_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("tutor_solution_list")
+
+    tutor_profile = request.user.tutor_profile
+    material = get_object_or_404(
+        LearningMaterial.objects.select_related("student__user", "uploaded_by__user"),
+        pk=material_id,
+    )
+    can_delete = (
+        material.uploaded_by_id == tutor_profile.id
+        or _has_admin_access(request.user)
+    )
+    if not can_delete:
+        messages.error(request, "Du darfst diese Datei nicht löschen.")
+        return redirect("tutor_solution_list")
+
+    next_url = request.POST.get("next") or reverse("tutor_solution_list")
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("tutor_solution_list")
+
+    material.file.delete(save=False)
+    material.delete()
+    messages.success(request, "Datei wurde gelöscht.")
+    return redirect(next_url)
+
+
+@login_required
 def tutor_template_list(request):
     _ensure_profile_for_user(request.user)
     if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
@@ -2502,6 +2535,35 @@ def tutor_template_list(request):
             "is_admin_tutor": is_admin_tutor,
         },
     )
+
+
+@login_required
+def tutor_template_delete(request, template_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("tutor_template_list")
+
+    tutor_profile = request.user.tutor_profile
+    template = get_object_or_404(
+        TutorTemplate.objects.select_related("uploaded_by__user"),
+        pk=template_id,
+    )
+    if not (_has_admin_access(request.user) or template.uploaded_by_id == tutor_profile.id):
+        messages.error(request, "Du darfst diese Vorlage nicht löschen.")
+        return redirect("tutor_template_list")
+
+    next_url = request.POST.get("next") or reverse("tutor_template_list")
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("tutor_template_list")
+
+    template.file.delete(save=False)
+    template.delete()
+    messages.success(request, "Vorlage wurde gelöscht.")
+    return redirect(next_url)
 
 
 @login_required
@@ -2735,10 +2797,17 @@ def invoice_delete(request, invoice_id):
 
     tutor_profile = request.user.tutor_profile
     invoice = get_object_or_404(
-        Invoice.objects.select_related("student__user"),
+        Invoice.objects.select_related("student__user", "uploaded_by__user"),
         pk=invoice_id,
-        uploaded_by=tutor_profile,
     )
+    can_delete = (
+        invoice.uploaded_by_id == tutor_profile.id
+        or _has_admin_access(request.user)
+    )
+    if not can_delete:
+        messages.error(request, "Du darfst diese Rechnung nicht löschen.")
+        return redirect("invoice_upload")
+
     invoice.file.delete(save=False)
     invoice.delete()
     messages.success(request, "Rechnung wurde gelöscht.")
@@ -3100,13 +3169,12 @@ def progress_view(request, student_id=None):
         student_list = _assigned_students_qs(request.user.tutor_profile)
         if student_id is None:
             entries = ProgressEntry.objects.filter(
-                lesson__tutor=request.user.tutor_profile
+                lesson__student__in=student_list
             )
         else:
             viewed_student = get_object_or_404(student_list, pk=student_id)
             entries = ProgressEntry.objects.filter(
                 lesson__student=viewed_student,
-                lesson__tutor=request.user.tutor_profile,
             )
 
         if period:
@@ -3128,7 +3196,11 @@ def progress_view(request, student_id=None):
         if ort:
             entries = entries.filter(lesson__ort=ort)
 
-    entries = entries.order_by("-lesson__date", "-lesson__time", "-created_at")
+    entries = entries.select_related("lesson__student__user", "lesson__tutor__user").order_by(
+        "-lesson__date",
+        "-lesson__time",
+        "-created_at",
+    )
 
     show_progress_chart = request.user.role in {
         CustomUser.Roles.STUDENT,
@@ -3207,6 +3279,12 @@ def progress_view(request, student_id=None):
             "show_progress_chart": show_progress_chart,
             "tutor_chart_requires_student_selection": tutor_chart_requires_student_selection,
             "progress_chart_data": progress_chart_data,
+            "current_tutor_profile_id": (
+                request.user.tutor_profile.id
+                if request.user.role == CustomUser.Roles.TUTOR
+                and hasattr(request.user, "tutor_profile")
+                else None
+            ),
         },
     )
 

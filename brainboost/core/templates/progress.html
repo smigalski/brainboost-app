@@ -78,7 +78,7 @@
     {% if viewed_student %}
         <p class="muted">SchülerIn: {{ viewed_student.user.get_full_name }}</p>
     {% elif request.user.role == 'tutor' %}
-        <p class="muted">Deine erstellten Lernfortschrittseinträge (alle SchülerInnen).</p>
+        <p class="muted">Lernfortschrittseinträge deiner zugewiesenen SchülerInnen (inkl. Historie anderer TutorInnen).</p>
     {% endif %}
     <p class="muted" style="margin:12px 0 12px;">
         Mitarbeit-Notiz: <strong>1</strong> steht für sehr geringe Mitarbeit, <strong>5</strong> für normale Mitarbeit und <strong>10</strong> für besonders starke Mitarbeit und Eigeninitiative.
@@ -176,7 +176,7 @@
                         </div>
                     </div>
                     <div style="flex:0 0 auto; display:flex; align-items:flex-start; gap:8px;">
-                        {% if request.user.role == 'tutor' %}
+                        {% if request.user.role == 'tutor' and entry.lesson.tutor_id == current_tutor_profile_id %}
                             <a
                                 class="icon-button"
                                 href="{% url 'progress_edit' entry.id %}?next={{ request.get_full_path|urlencode }}"

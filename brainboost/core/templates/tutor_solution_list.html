@@ -12,11 +12,30 @@
                     <div class="muted">Für: {{ material.student.user.username }}</div>
                     {% if material.related_task %}
                         <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px;">
+                            {% if request.user.is_staff or request.user.is_superuser or material.related_task.uploaded_by_id == request.user.tutor_profile.id %}
+                                <form method="post" action="{% url 'material_delete' material.related_task.id %}" onsubmit="return confirm('Aufgabe wirklich löschen?');" style="margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button class="button" type="submit" aria-label="Aufgabe löschen" title="Aufgabe löschen" style="padding:4px 8px; background:#b42318;">X</button>
+                                </form>
+                            {% endif %}
+                            <a class="button" style="padding:4px 8px;" href="{{ material.related_task.file.url }}">Aufgabe Download</a>
+                        </div>
                     {% endif %}
                     <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Hochgeladen von: {{ material.uploaded_by.user.username }}</div>
                 </div>
-                <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                    {% if request.user.is_staff or request.user.is_superuser or material.uploaded_by_id == request.user.tutor_profile.id %}
+                        <form method="post" action="{% url 'material_delete' material.id %}" onsubmit="return confirm('Datei wirklich löschen?');" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button class="button" type="submit" aria-label="Datei löschen" title="Datei löschen" style="padding:6px 10px; background:#b42318;">X</button>
+                        </form>
+                    {% endif %}
+                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                </div>
             </li>
         {% empty %}
             <li>Keine Lösungen vorhanden.</li>
