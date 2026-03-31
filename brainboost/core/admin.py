@@ -11,6 +11,7 @@ from .models import (
     ProgressEntry,
     Invoice,
     TutorTemplate,
+    AdminTask,
 )
 
 
@@ -99,6 +100,13 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(TutorTemplate)
 class TutorTemplateAdmin(admin.ModelAdmin):
-    list_display = ("file", "uploaded_by", "uploaded_at")
+    list_display = ("file", "uploaded_by", "visibility", "uploaded_at")
     list_filter = ("uploaded_at",)
     search_fields = ("file", "uploaded_by__user__username")
+
+
+@admin.register(AdminTask)
+class AdminTaskAdmin(admin.ModelAdmin):
+    list_display = ("title", "importance", "days", "status", "owner", "created_at")
+    list_filter = ("importance", "status", "owner")
+    search_fields = ("title", "owner__username", "owner__first_name", "owner__last_name")

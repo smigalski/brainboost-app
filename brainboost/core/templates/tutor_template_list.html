@@ -5,7 +5,7 @@
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
         <div>
             <h1>Vorlagen</h1>
-            <p class="muted">Von Admin-TutorInnen hochgeladene Vorlagen für alle TutorInnen.</p>
+            <p class="muted">Von Admin-TutorInnen hochgeladene Vorlagen mit steuerbarer Sichtbarkeit für TutorInnen/Admins.</p>
         </div>
         <a class="button" href="{% url 'dashboard' %}">Zurück zum Dashboard</a>
     </div>
@@ -26,6 +26,7 @@
                 <div>
                     <strong>{{ template.file.name|cut:"tutor_templates/" }}</strong>
                     <div class="muted">Hochgeladen von {{ template.uploaded_by.user.username }}</div>
+                    <div class="muted">Sichtbar für {{ template.get_visibility_display }}</div>
                     <div class="muted">Hochgeladen am {{ template.uploaded_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">

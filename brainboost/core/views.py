@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from pathlib import Path
@@ -48,6 +49,8 @@ from .forms import (
     EmailOrUsernameAuthenticationForm,
     BroadcastEmailForm,
     TutorStudentAssignmentForm,
+    AdminTaskCreateForm,
+    AdminTaskUpdateForm,
 )
 from .notifications import (
     notify_holiday_survey_created,
@@ -77,6 +80,7 @@ from .models import (
     TutorTemplate,
     BrainBoostFeedback,
     TemporaryTutorAssignment,
+    AdminTask,
 )
 
 logger = logging.getLogger(__name__)
@@ -1035,6 +1039,50 @@ def _has_admin_access(user: CustomUser) -> bool:
     return bool(user.is_staff or user.is_superuser)
 
 
+def _admin_users_queryset():
+    return CustomUser.objects.filter(is_active=True).filter(
+        Q(is_staff=True) | Q(is_superuser=True)
+    ).order_by("first_name", "last_name", "username")
+
+
+def _admin_task_days_by_importance() -> dict[str, tuple[int, int]]:
+    return {
+        AdminTask.Importance.PRIO: (1, 7),
+        AdminTask.Importance.NORMAL: (7, 14),
+        AdminTask.Importance.IDEA: (14, 28),
+    }
+
+
+def _admin_task_view_data(task: AdminTask, today: date) -> dict:
+    created_on = timezone.localtime(task.created_at).date() if task.created_at else today
+    due_date = created_on + timedelta(days=task.days)
+    days_left = (due_date - today).days
+    total_days = max(task.days, 1)
+    if days_left < 0:
+        progress_ratio = 1.0
+    else:
+        progress_ratio = min(max((total_days - days_left) / total_days, 0.0), 1.0)
+    urgency_alpha = 0.06 + (progress_ratio * 0.34)
+    if task.status == AdminTask.Status.DONE:
+        urgency_alpha = min(urgency_alpha, 0.12)
+
+    if days_left < 0:
+        deadline_label = f"ueberfaellig seit {abs(days_left)} Tag(en)"
+    elif days_left == 0:
+        deadline_label = "heute faellig"
+    else:
+        deadline_label = f"noch {days_left} Tag(e)"
+
+    return {
+        "task": task,
+        "owner_name": _display_name(task.owner),
+        "due_date": due_date,
+        "days_left": days_left,
+        "deadline_label": deadline_label,
+        "urgency_alpha": f"{urgency_alpha:.2f}",
+    }
+
+
 def _broadcast_recipient_emails(audience: str) -> list[str]:
     users = CustomUser.objects.filter(is_active=True).exclude(email="")
     if audience == BroadcastEmailForm.AUDIENCE_ADMINS:
@@ -1604,6 +1652,131 @@ def faq_admin(request):
             "pending_forms": pending_forms,
             "published_forms": published_forms,
         },
+    )
+
+
+@login_required
+def admin_tasks(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+
+    selected_tab = request.GET.get("tab", "tasks")
+    if selected_tab not in {"tasks", "kanban"}:
+        selected_tab = "tasks"
+
+    create_form = AdminTaskCreateForm()
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        if action == "create":
+            create_form = AdminTaskCreateForm(request.POST)
+            if create_form.is_valid():
+                task = create_form.save(commit=False)
+                task.status = AdminTask.Status.TODO
+                task.created_by = request.user
+                task.save()
+                messages.success(request, "Aufgabe wurde hinzugefügt.")
+                return redirect(f"{reverse('admin_tasks')}?tab=tasks#task-{task.id}")
+            messages.error(request, "Aufgabe konnte nicht gespeichert werden. Bitte Eingaben prüfen.")
+            selected_tab = "tasks"
+        elif action == "update":
+            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
+            update_form = AdminTaskUpdateForm(request.POST, instance=task)
+            if update_form.is_valid():
+                update_form.save()
+                messages.success(request, "Aufgabe wurde aktualisiert.")
+            else:
+                messages.error(request, "Aufgabe konnte nicht aktualisiert werden.")
+            return redirect(f"{reverse('admin_tasks')}?tab=tasks#task-{task.id}")
+        elif action == "delete":
+            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
+            task.delete()
+            messages.success(request, "Aufgabe wurde gelöscht.")
+            return redirect(f"{reverse('admin_tasks')}?tab=tasks")
+
+    tasks = list(
+        AdminTask.objects.select_related("owner")
+        .order_by("status", "created_at", "id")
+    )
+    today = timezone.localdate()
+    task_rows = [_admin_task_view_data(task, today) for task in tasks]
+
+    kanban_columns = [
+        {
+            "status": AdminTask.Status.TODO,
+            "label": dict(AdminTask.Status.choices)[AdminTask.Status.TODO],
+            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.TODO],
+        },
+        {
+            "status": AdminTask.Status.DOING,
+            "label": dict(AdminTask.Status.choices)[AdminTask.Status.DOING],
+            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.DOING],
+        },
+        {
+            "status": AdminTask.Status.DONE,
+            "label": dict(AdminTask.Status.choices)[AdminTask.Status.DONE],
+            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.DONE],
+        },
+    ]
+
+    return render(
+        request,
+        "admin_tasks.html",
+        {
+            "selected_tab": selected_tab,
+            "create_form": create_form,
+            "task_rows": task_rows,
+            "kanban_columns": kanban_columns,
+            "admins": _admin_users_queryset(),
+            "importance_choices": AdminTask.Importance.choices,
+            "days_by_importance": _admin_task_days_by_importance(),
+            "status_choices": AdminTask.Status.choices,
+        },
+    )
+
+
+@login_required
+def admin_task_status_update(request, task_id: int):
+    if not _has_admin_access(request.user):
+        return JsonResponse({"ok": False, "error": "unauthorized"}, status=403)
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "method_not_allowed"}, status=405)
+
+    task = get_object_or_404(AdminTask, pk=task_id)
+    next_status = (request.POST.get("status") or "").strip()
+    if not next_status:
+        try:
+            payload = json.loads(request.body.decode("utf-8"))
+            next_status = str(payload.get("status", "")).strip()
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            next_status = ""
+
+    valid_statuses = {choice[0] for choice in AdminTask.Status.choices}
+    if next_status not in valid_statuses:
+        return JsonResponse({"ok": False, "error": "invalid_status"}, status=400)
+
+    allowed_moves = {
+        AdminTask.Status.TODO: {AdminTask.Status.DOING},
+        AdminTask.Status.DOING: {AdminTask.Status.TODO, AdminTask.Status.DONE},
+        AdminTask.Status.DONE: {AdminTask.Status.DOING},
+    }
+    if next_status != task.status and next_status not in allowed_moves.get(task.status, set()):
+        return JsonResponse({"ok": False, "error": "move_not_allowed"}, status=400)
+
+    task.status = next_status
+    task.save(update_fields=["status", "updated_at"])
+    today = timezone.localdate()
+    task_data = _admin_task_view_data(task, today)
+    return JsonResponse(
+        {
+            "ok": True,
+            "task_id": task.id,
+            "status": task.status,
+            "status_label": task.get_status_display(),
+            "deadline_label": task_data["deadline_label"],
+            "urgency_alpha": task_data["urgency_alpha"],
+        }
     )
 
 
@@ -2515,7 +2688,7 @@ def tutor_template_list(request):
     if request.method == "POST":
         if not is_admin_tutor:
             return redirect("tutor_template_list")
-        form = TutorTemplateForm(request.POST, request.FILES)
+        form = TutorTemplateForm(request.POST, request.FILES, is_admin_tutor=is_admin_tutor)
         if form.is_valid():
             template = form.save(commit=False)
             template.uploaded_by = request.user.tutor_profile
@@ -2523,9 +2696,20 @@ def tutor_template_list(request):
             messages.success(request, "Vorlage wurde hochgeladen.")
             return redirect("tutor_template_list")
     else:
-        form = TutorTemplateForm()
+        form = TutorTemplateForm(is_admin_tutor=is_admin_tutor)
 
     templates = TutorTemplate.objects.select_related("uploaded_by__user")
+    if is_admin_tutor:
+        templates = templates.filter(
+            Q(visibility=TutorTemplate.Visibility.ADMINS)
+            | Q(visibility=TutorTemplate.Visibility.BOTH)
+        )
+    else:
+        templates = templates.filter(
+            Q(visibility=TutorTemplate.Visibility.TUTORS)
+            | Q(visibility=TutorTemplate.Visibility.BOTH)
+        )
+
     return render(
         request,
         "tutor_template_list.html",

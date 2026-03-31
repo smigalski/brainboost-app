@@ -9,6 +9,7 @@ from django import forms
 from django.contrib.auth import password_validation
 from django.contrib.auth.forms import AuthenticationForm
 from django.db import transaction
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 
@@ -26,6 +27,7 @@ from .models import (
     TutorTemplate,
     BrainBoostFeedback,
     CustomUser,
+    AdminTask,
 )
 
 
@@ -92,6 +94,47 @@ class BroadcastEmailForm(forms.Form):
         label="Nachricht",
         widget=forms.Textarea(attrs={"rows": 5}),
     )
+
+
+def _admin_users_queryset():
+    return CustomUser.objects.filter(is_active=True).filter(
+        Q(is_staff=True) | Q(is_superuser=True)
+    ).order_by("first_name", "last_name", "username")
+
+
+class AdminTaskBaseForm(forms.ModelForm):
+    class Meta:
+        model = AdminTask
+        fields = ["title", "importance", "days", "owner"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["title"].label = "Aufgabe"
+        self.fields["importance"].label = "Wichtigkeit"
+        self.fields["days"].label = "Tage"
+        self.fields["owner"].label = "Verantwortlicher"
+        self.fields["owner"].queryset = _admin_users_queryset()
+
+    def clean(self):
+        cleaned = super().clean()
+        importance = cleaned.get("importance")
+        days = cleaned.get("days")
+        if importance and days is not None:
+            min_days, max_days = AdminTask.day_range_for_importance(importance)
+            if not (min_days <= days <= max_days):
+                self.add_error(
+                    "days",
+                    f"Für '{importance}' sind nur {min_days} bis {max_days} Tage erlaubt.",
+                )
+        return cleaned
+
+
+class AdminTaskCreateForm(AdminTaskBaseForm):
+    pass
+
+
+class AdminTaskUpdateForm(AdminTaskBaseForm):
+    pass
 
 
 class TutorStudentAssignmentForm(forms.Form):
@@ -699,11 +742,15 @@ class FAQSubmissionForm(forms.ModelForm):
 class TutorTemplateForm(forms.ModelForm):
     class Meta:
         model = TutorTemplate
-        fields = ["file"]
+        fields = ["file", "visibility"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, is_admin_tutor: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["file"].help_text = "Erlaubt: pdf, png, jpg, jpeg, docx. Max 10 MB."
+        self.fields["visibility"].label = "Sichtbar für"
+        if not is_admin_tutor:
+            self.fields["visibility"].initial = TutorTemplate.Visibility.BOTH
+            self.fields["visibility"].widget = forms.HiddenInput()
 
     def clean_file(self):
         f = self.cleaned_data["file"]

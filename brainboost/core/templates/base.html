@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1009">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1010">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
@@ -66,6 +66,9 @@
                         <a href="{% url 'tutorin_werden' %}" class="{% if current == 'tutorin_werden' %}active{% endif %}">TutorIn werden!</a>
                         {% if request.user.is_authenticated %}
                             <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
+                            {% if request.user.is_staff or request.user.is_superuser %}
+                                <a href="{% url 'admin_tasks' %}" class="nav-links__admins{% if current == 'admin_tasks' %} active{% endif %}">Admins</a>
+                            {% endif %}
                             <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
                             <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Lernfortschritt</a>
                         {% endif %}

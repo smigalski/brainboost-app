@@ -169,6 +169,14 @@ strong.logo { color: var(--logo-turquoise); }
     color: var(--teal-dark);
     box-shadow: inset 0 0 0 1px rgba(44,138,138,0.35);
 }
+.nav-links a.nav-links__admins,
+.nav-links a.nav-links__admins:visited,
+.nav-links a.nav-links__admins:hover,
+.nav-links a.nav-links__admins:focus,
+.nav-links a.nav-links__admins.active {
+    color: #ff6a00 !important;
+    text-shadow: 0 0 8px rgba(255, 106, 0, 0.45);
+}
 .nav-links .pill {
     background: var(--teal-dark);
     color: var(--cream);

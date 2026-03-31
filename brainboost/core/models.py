@@ -622,6 +622,84 @@ class FAQItem(models.Model):
         return self.question
 
 
+class AdminTask(models.Model):
+    class Importance(models.TextChoices):
+        PRIO = "prio", "prio"
+        NORMAL = "normal", "normal"
+        IDEA = "idee", "idee"
+
+    class Status(models.TextChoices):
+        TODO = "todo", "to do"
+        DOING = "doing", "doing"
+        DONE = "done", "done"
+
+    title = models.CharField(max_length=255)
+    importance = models.CharField(
+        max_length=20,
+        choices=Importance.choices,
+        default=Importance.NORMAL,
+    )
+    days = models.PositiveSmallIntegerField(
+        default=7,
+        validators=[MinValueValidator(1), MaxValueValidator(28)],
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.TODO,
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="owned_admin_tasks",
+        limit_choices_to=Q(is_staff=True) | Q(is_superuser=True),
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="created_admin_tasks",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["status", "created_at"]
+        verbose_name = "Admin-Aufgabe"
+        verbose_name_plural = "Admin-Aufgaben"
+
+    def __str__(self) -> str:
+        return self.title
+
+    @classmethod
+    def day_range_for_importance(cls, importance: str) -> tuple[int, int]:
+        return {
+            cls.Importance.PRIO: (1, 7),
+            cls.Importance.NORMAL: (7, 14),
+            cls.Importance.IDEA: (14, 28),
+        }.get(importance, (1, 28))
+
+    @property
+    def due_date(self):
+        base_date = timezone.localtime(self.created_at).date() if self.created_at else timezone.localdate()
+        return base_date + timedelta(days=self.days)
+
+    def clean(self):
+        super().clean()
+        min_days, max_days = self.day_range_for_importance(self.importance)
+        if not (min_days <= self.days <= max_days):
+            raise ValidationError(
+                {
+                    "days": (
+                        f"Für Wichtigkeit '{self.importance}' sind nur {min_days} bis {max_days} Tage erlaubt."
+                    )
+                }
+            )
+        if self.owner and not (self.owner.is_staff or self.owner.is_superuser):
+            raise ValidationError({"owner": "Verantwortlich muss ein Admin-Benutzer sein."})
+
+
 class BrainBoostFeedback(models.Model):
     class Audience(models.TextChoices):
         STUDENT = "student", "SchülerIn/StudentIn"
@@ -796,6 +874,11 @@ class Invoice(models.Model):
 
 
 class TutorTemplate(models.Model):
+    class Visibility(models.TextChoices):
+        TUTORS = "tutors", "TutorInnen"
+        ADMINS = "admins", "Admins"
+        BOTH = "both", "TutorInnen und Admins"
+
     uploaded_by = models.ForeignKey(
         TutorProfile,
         on_delete=models.CASCADE,
@@ -808,6 +891,11 @@ class TutorTemplate(models.Model):
                 allowed_extensions=["pdf", "png", "jpg", "jpeg", "docx"]
             )
         ],
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.BOTH,
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
