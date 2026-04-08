@@ -46,6 +46,7 @@ urlpatterns = [
     path("termine/<int:lesson_id>/ics/", views.lesson_ics, name="lesson_ics"),
     path("termine/<int:lesson_id>/loeschen/", views.lesson_delete, name="lesson_delete"),
     path("material/<str:kind>/upload/", views.material_upload, name="material_upload"),
+    path("material/<int:material_id>/download/", views.material_download, name="material_download"),
     path("material/<int:material_id>/loeschen/", views.material_delete, name="material_delete"),
     path("loesungen/", views.tutor_solution_list, name="tutor_solution_list"),
     path("vorlagen/", views.tutor_template_list, name="tutor_template_list"),

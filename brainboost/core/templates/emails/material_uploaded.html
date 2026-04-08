@@ -8,6 +8,9 @@
     <li><strong>Hochgeladen am:</strong> {{ material.uploaded_at|date:"d.m.Y H:i" }}</li>
   </ul>
   <p style="margin:0;">
+    Material herunterladen: <a href="{{ material_download_url }}">{{ material_download_url }}</a>
+  </p>
+  <p style="margin:8px 0 0 0;">
     Dashboard: <a href="{{ dashboard_url }}">{{ dashboard_url }}</a>
   </p>
 {% endblock %}

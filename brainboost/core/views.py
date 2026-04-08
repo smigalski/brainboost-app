@@ -22,7 +22,7 @@ from django.db.models import Count, Q
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
 from django.urls import reverse
@@ -1143,6 +1143,25 @@ def _assigned_tutors_qs(tutor_profile: TutorProfile):
     return tutor_profile.assigned_tutors.select_related("user").distinct()
 
 
+def _can_access_material(user: CustomUser, material: LearningMaterial) -> bool:
+    if _has_admin_access(user):
+        return True
+
+    if user.role == CustomUser.Roles.TUTOR and hasattr(user, "tutor_profile"):
+        tutor_profile = user.tutor_profile
+        if material.uploaded_by_id == tutor_profile.id:
+            return True
+        return material.student.assigned_tutors.filter(pk=tutor_profile.pk).exists()
+
+    if user.role == CustomUser.Roles.STUDENT and hasattr(user, "student_profile"):
+        return material.student_id == user.student_profile.id
+
+    if user.role == CustomUser.Roles.PARENT and hasattr(user, "parent_profile"):
+        return material.student.parents.filter(pk=user.parent_profile.pk).exists()
+
+    return False
+
+
 def _tutor_student_assignment_url_with_source(
     current_tutor: TutorProfile, source_tutor: Optional[TutorProfile]
 ) -> str:
@@ -1327,6 +1346,13 @@ def dashboard(request):
             context["assigned_tutors"] = student_profile.assigned_tutors.select_related(
                 "user"
             ).distinct()
+            context["materials"] = (
+                LearningMaterial.objects.filter(student=student_profile)
+                .select_related("student__user", "uploaded_by__user", "related_task")
+                .order_by("-uploaded_at")
+            )
+            context["student_online_bbb_link"] = student_profile.zoom_link
+            context["student_online_zumpad_link"] = student_profile.zumpad_link
     elif request.user.role == CustomUser.Roles.PARENT:
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
@@ -1362,9 +1388,16 @@ def dashboard(request):
                 parent_progress_entries,
                 include_student_name=True,
             )
-            context["solutions"] = LearningMaterial.objects.filter(
-                student__in=students, kind=LearningMaterial.Kind.SOLUTION
-            ).select_related("student__user", "related_task")
+            context["materials"] = (
+                LearningMaterial.objects.filter(student__in=students)
+                .select_related("student__user", "uploaded_by__user", "related_task")
+                .order_by("-uploaded_at")
+            )
+            context["online_students"] = (
+                students.filter(Q(zoom_link__gt="") | Q(zumpad_link__gt=""))
+                .select_related("user")
+                .order_by("user__first_name", "user__last_name", "user__username")
+            )
     elif request.user.role == CustomUser.Roles.TUTOR:
         template = "dashboard_tutor.html"
         if hasattr(request.user, "tutor_profile"):
@@ -2577,6 +2610,26 @@ def lesson_delete(request, lesson_id):
         lesson.delete()
         return redirect(next_url)
     return redirect("lesson_edit", lesson_id=lesson_id)
+
+
+@login_required
+def material_download(request, material_id):
+    _ensure_profile_for_user(request.user)
+    material = get_object_or_404(
+        LearningMaterial.objects.select_related("student__user", "uploaded_by__user"),
+        pk=material_id,
+    )
+    if not _can_access_material(request.user, material):
+        messages.error(request, "Du darfst dieses Material nicht herunterladen.")
+        return redirect("dashboard")
+
+    try:
+        material.file.open("rb")
+    except FileNotFoundError:
+        messages.error(request, "Die angeforderte Datei wurde nicht gefunden.")
+        return redirect("dashboard")
+    filename = Path(material.file.name).name
+    return FileResponse(material.file, as_attachment=True, filename=filename)
 
 
 @login_required

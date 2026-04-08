@@ -20,7 +20,7 @@
                                     <button class="button" type="submit" aria-label="Aufgabe löschen" title="Aufgabe löschen" style="padding:4px 8px; background:#b42318;">X</button>
                                 </form>
                             {% endif %}
-                            <a class="button" style="padding:4px 8px;" href="{{ material.related_task.file.url }}">Aufgabe Download</a>
+                            <a class="button" style="padding:4px 8px;" href="{% url 'material_download' material.related_task.id %}">Aufgabe Download</a>
                         </div>
                     {% endif %}
                     <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
@@ -34,7 +34,7 @@
                             <button class="button" type="submit" aria-label="Datei löschen" title="Datei löschen" style="padding:6px 10px; background:#b42318;">X</button>
                         </form>
                     {% endif %}
-                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                    <a class="button" style="padding:6px 10px;" href="{% url 'material_download' material.id %}">Download</a>
                 </div>
             </li>
         {% empty %}

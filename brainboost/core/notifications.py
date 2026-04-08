@@ -373,6 +373,9 @@ def notify_material_uploaded(request, material: LearningMaterial) -> None:
         "material": material,
         "student": material.student,
         "tutor": material.uploaded_by,
+        "material_download_url": request.build_absolute_uri(
+            reverse("material_download", args=[material.id])
+        ),
         **_build_urls(request),
     }
     _send_templated_email(subject, "material_uploaded", context, _student_recipients(material.student))

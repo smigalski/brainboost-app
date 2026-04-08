@@ -110,31 +110,75 @@
             {% endif %}
         </div>
 
-        <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
-            <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:12px;">Zugewiesene TutorInnen</div>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                {% for tutor in assigned_tutors %}
-                    <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
-                        {% if tutor.user.profile_image %}
-                            <img src="{{ tutor.user.profile_image.url }}" alt="Profilbild von {{ tutor.user.get_full_name }}" style="width:56px; height:56px; border-radius:16px; object-fit:cover; border:1px solid rgba(31,102,102,0.18); flex-shrink:0;">
-                        {% else %}
-                            <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-size:26px; flex-shrink:0;">
-                                {{ tutor.user.avatar_symbol }}
-                            </div>
-                        {% endif %}
-                        <div style="min-width:0;">
-                            <div style="font-weight:800; color:var(--accent);">{{ tutor.user.get_full_name }}</div>
-                            {% if tutor.address %}
-                                <div class="muted">{{ tutor.address }}</div>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.16); border:1px solid rgba(74,128,255,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">Online</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    {% if student_online_bbb_link %}
+                        <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{{ student_online_bbb_link }}" target="_blank" rel="noopener">Online-Lernraum (BigBlueButton)</a>
+                    {% else %}
+                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">Online-Lernraum (BigBlueButton)</span>
+                    {% endif %}
+                    {% if student_online_zumpad_link %}
+                        <a class="button" style="background:#90d2ff; color:#0b1b2a;" href="{{ student_online_zumpad_link }}" target="_blank" rel="noopener">ZUMPad</a>
+                    {% else %}
+                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">ZUMPad</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
+                <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:12px;">Zugewiesene TutorInnen</div>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    {% for tutor in assigned_tutors %}
+                        <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
+                            {% if tutor.user.profile_image %}
+                                <img src="{{ tutor.user.profile_image.url }}" alt="Profilbild von {{ tutor.user.get_full_name }}" style="width:56px; height:56px; border-radius:16px; object-fit:cover; border:1px solid rgba(31,102,102,0.18); flex-shrink:0;">
+                            {% else %}
+                                <div style="width:56px; height:56px; border-radius:16px; background:linear-gradient(135deg, #d8e6ea, #f4f7f8); border:1px dashed rgba(31,102,102,0.35); display:flex; align-items:center; justify-content:center; color:#52747a; font-size:26px; flex-shrink:0;">
+                                    {{ tutor.user.avatar_symbol }}
+                                </div>
                             {% endif %}
+                            <div style="min-width:0;">
+                                <div style="font-weight:800; color:var(--accent);">{{ tutor.user.get_full_name }}</div>
+                                {% if tutor.address %}
+                                    <div class="muted">{{ tutor.address }}</div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                {% empty %}
-                    <div class="muted">Noch keine TutorInnen zugewiesen.</div>
-                {% endfor %}
+                    {% empty %}
+                        <div class="muted">Noch keine TutorInnen zugewiesen.</div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
+</div>
+<div class="card">
+    <h3>Materialien zum Download</h3>
+    {% if materials %}
+        <ul class="list">
+            {% for material in materials %}
+                <li>
+                    <div>
+                        <strong>{{ material.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</strong>
+                        <div class="muted">Art: {{ material.get_kind_display }}</div>
+                        <div class="muted">TutorIn: {{ material.uploaded_by.user.get_full_name }}</div>
+                        {% if material.related_task %}
+                            <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</div>
+                            <div style="margin-top:8px;">
+                                <a class="button" style="padding:6px 10px; background:#d0b588; color:#1f1600;" href="{% url 'material_download' material.related_task.id %}">Aufgabe Download</a>
+                            </div>
+                        {% endif %}
+                        <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    <a class="button" style="padding:6px 10px;" href="{% url 'material_download' material.id %}">Download</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">Keine Materialien verfügbar.</p>
+    {% endif %}
 </div>
 <div class="card">
     <h3>FAQ</h3>

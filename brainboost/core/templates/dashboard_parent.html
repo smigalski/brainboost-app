@@ -68,6 +68,20 @@
                     <a class="button" style="background: var(--teal-dark);" href="{% url 'holiday_surveys' %}">Umfragen beantworten</a>
                 </div>
             </div>
+            {% if online_students %}
+                <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.16); border:1px solid rgba(74,128,255,0.18);">
+                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">Online</div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <select id="parent-online-student-select" style="width:100%;">
+                            {% for student in online_students %}
+                                <option value="{{ student.zoom_link }}" data-zumpad="{{ student.zumpad_link }}">{{ student.user.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="button" style="background:#5fb5ff; color:#0b1b2a;" onclick="openParentOnlineRoom('bbb')">Online-Lernraum (BigBlueButton)</button>
+                        <button type="button" class="button" style="background:#90d2ff; color:#0b1b2a;" onclick="openParentOnlineRoom('zumpad')">ZUMPad</button>
+                    </div>
+                </div>
+            {% endif %}
 
             <div style="padding:18px; border-radius:18px; background:rgba(255,201,40,0.12); border:1px solid rgba(191,139,0,0.18);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#9a6200; margin-bottom:8px;">Uebersicht</div>
@@ -160,25 +174,30 @@
     </div>
 </div>
 <div class="card">
-    <h3>Musterlösungen zum Download</h3>
-    {% if solutions %}
+    <h3>Materialien zum Download</h3>
+    {% if materials %}
         <ul class="list">
-            {% for material in solutions %}
+            {% for material in materials %}
                 <li>
                     <div>
-                        <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
+                        <strong>{{ material.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</strong>
+                        <div class="muted">Art: {{ material.get_kind_display }}</div>
                         <div class="muted">Für: {{ material.student.user.get_full_name }}</div>
+                        <div class="muted">TutorIn: {{ material.uploaded_by.user.get_full_name }}</div>
                         {% if material.related_task %}
-                            <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
+                            <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/"|cut:"materials/solution/" }}</div>
+                            <div style="margin-top:8px;">
+                                <a class="button" style="padding:6px 10px; background:#d0b588; color:#1f1600;" href="{% url 'material_download' material.related_task.id %}">Aufgabe Download</a>
+                            </div>
                         {% endif %}
                         <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
                     </div>
-                    <a class="button" style="padding:6px 10px;" href="{{ material.file.url }}">Download</a>
+                    <a class="button" style="padding:6px 10px;" href="{% url 'material_download' material.id %}">Download</a>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p class="muted">Keine Lösungen verfügbar.</p>
+        <p class="muted">Keine Materialien verfügbar.</p>
     {% endif %}
 </div>
 <div class="card">
@@ -218,6 +237,18 @@
 
 {% block scripts %}
     {{ block.super }}
+    <script>
+        function openParentOnlineRoom(kind) {
+            const select = document.getElementById("parent-online-student-select");
+            if (!select) return;
+            const option = select.selectedOptions[0];
+            if (!option) return;
+            const link = kind === "zumpad" ? option.dataset.zumpad : option.value;
+            if (link) {
+                window.open(link, "_blank", "noopener");
+            }
+        }
+    </script>
     {% if show_progress_chart and progress_chart_data.datasets %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
         <script>

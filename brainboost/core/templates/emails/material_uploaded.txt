@@ -7,5 +7,6 @@ TutorIn: {{ tutor.user.username }}
 Art: {{ kind_label }}
 Hochgeladen am: {{ material.uploaded_at|date:"d.m.Y H:i" }}
 
+Material herunterladen: {{ material_download_url }}
 Dashboard: {{ dashboard_url }}
 {% endblock %}
