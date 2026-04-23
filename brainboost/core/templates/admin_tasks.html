@@ -83,6 +83,11 @@
             font-size: 0.95rem;
         }
 
+        .admin-tasks-table th:first-child,
+        .admin-tasks-table td:first-child {
+            min-width: 320px;
+        }
+
         .admin-task-row {
             background: linear-gradient(
                 90deg,
@@ -111,6 +116,31 @@
 
         .task-add-row {
             background: rgba(31, 102, 102, 0.08);
+        }
+
+        .task-field-display,
+        .task-title-display {
+            user-select: text;
+            cursor: default;
+            line-height: 1.4;
+        }
+
+        .task-title-display {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .task-edit-field {
+            display: none;
+        }
+
+        .admin-task-row.is-editing .task-field-display,
+        .admin-task-row.is-editing .task-title-display {
+            display: none;
+        }
+
+        .admin-task-row.is-editing .task-edit-field {
+            display: block;
         }
 
         .table-actions {
@@ -347,10 +377,13 @@
                             style="--urgency-alpha: {{ item.urgency_alpha }};"
                         >
                             <td>
-                                <input type="text" name="title" value="{{ item.task.title }}" form="update-task-{{ item.task.id }}" required>
+                                <div class="task-title-display">{{ item.task.title }}</div>
+                                <input class="task-edit-field" data-task-title-input type="text" name="title" value="{{ item.task.title }}" form="update-task-{{ item.task.id }}" required>
                             </td>
                             <td>
+                                <div class="task-field-display">{{ item.task.get_importance_display }}</div>
                                 <select
+                                    class="task-edit-field"
                                     name="importance"
                                     form="update-task-{{ item.task.id }}"
                                     data-importance-select
@@ -362,7 +395,9 @@
                                 </select>
                             </td>
                             <td>
+                                <div class="task-field-display">{{ item.task.days }} Tage</div>
                                 <select
+                                    class="task-edit-field"
                                     id="task-days-{{ item.task.id }}"
                                     name="days"
                                     form="update-task-{{ item.task.id }}"
@@ -375,7 +410,8 @@
                                 <div class="task-meta-line" data-task-deadline-label data-task-id="{{ item.task.id }}">{{ item.deadline_label }}</div>
                             </td>
                             <td>
-                                <select name="owner" form="update-task-{{ item.task.id }}" required>
+                                <div class="task-field-display">{{ item.owner_name }}</div>
+                                <select class="task-edit-field" name="owner" form="update-task-{{ item.task.id }}" required>
                                     {% for admin_user in admins %}
                                         <option value="{{ admin_user.id }}"{% if item.task.owner_id == admin_user.id %} selected{% endif %}>
                                             {{ admin_user.get_full_name|default:admin_user.username }}
@@ -385,7 +421,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
-                                    <button class="button" type="submit" form="update-task-{{ item.task.id }}">Ändern</button>
+                                    <button class="button" type="button" form="update-task-{{ item.task.id }}" data-task-edit-toggle>Ändern</button>
                                     <button class="button button-danger" type="submit" form="delete-task-{{ item.task.id }}">Löschen</button>
                                 </div>
                                 <form id="update-task-{{ item.task.id }}" method="post">
@@ -621,6 +657,53 @@
                 });
             }
 
+            function setTaskRowEditing(row, editing) {
+                row.classList.toggle("is-editing", editing);
+                var toggleButton = row.querySelector("[data-task-edit-toggle]");
+                if (toggleButton) {
+                    toggleButton.textContent = editing ? "Speichern" : "Ändern";
+                }
+            }
+
+            function submitForm(form) {
+                if (!form) {
+                    return;
+                }
+                if (typeof form.requestSubmit === "function") {
+                    form.requestSubmit();
+                    return;
+                }
+                form.submit();
+            }
+
+            function initTaskRowEditing() {
+                document.querySelectorAll("[data-task-row]").forEach(function (row) {
+                    setTaskRowEditing(row, false);
+                    var toggleButton = row.querySelector("[data-task-edit-toggle]");
+                    if (!toggleButton) {
+                        return;
+                    }
+                    toggleButton.addEventListener("click", function () {
+                        var isEditing = row.classList.contains("is-editing");
+                        if (!isEditing) {
+                            setTaskRowEditing(row, true);
+                            var titleInput = row.querySelector("[data-task-title-input]");
+                            if (titleInput) {
+                                titleInput.focus();
+                                if (typeof titleInput.setSelectionRange === "function") {
+                                    var textLength = titleInput.value.length;
+                                    titleInput.setSelectionRange(textLength, textLength);
+                                }
+                            }
+                            return;
+                        }
+
+                        var formId = toggleButton.getAttribute("form");
+                        submitForm(formId ? document.getElementById(formId) : null);
+                    });
+                });
+            }
+
             function allowedMove(fromStatus, toStatus) {
                 var moves = allowedMoves[fromStatus] || [];
                 return moves.indexOf(toStatus) !== -1;
@@ -727,6 +810,7 @@
             });
 
             initDaySelectors();
+            initTaskRowEditing();
             initKanban();
         })();
     </script>
