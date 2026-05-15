@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}TutorIn werden bei BrainBoost | Flexible Nachhilfe geben{% endblock %}
+{% block meta_description %}
+    <meta name="description" content="Werde TutorIn bei BrainBoost und gib flexibel Nachhilfe online oder vor Ort. Jetzt bewerben.">
+{% endblock %}
+
+{% block extra_tracking %}
+<script type="text/plain" data-cookieconsent="marketing">
+    fbq("track", "ViewContent", {
+        content_name: "Tutor Bewerbung Landingpage",
+        content_category: "tutors"
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="lead-landing lead-landing--tutor">
+    <section class="lead-hero">
+        <div class="lead-hero__content">
+            <span class="lead-eyebrow">TutorInnen bei BrainBoost</span>
+            <h1>Werde TutorIn bei BrainBoost</h1>
+            <p>Gib flexible Nachhilfe, unterstütze SchülerInnen und arbeite mit einer modernen Plattform.</p>
+            <a class="button lead-cta" href="{% url 'contact' %}?role=tutor" data-cta="tutor-bewerbung-hero">Als TutorIn bewerben</a>
+        </div>
+        <div class="lead-hero__visual" aria-label="BrainBoost TutorInnen-Bewerbung">
+            <img src="{% static 'design/LogoPNG.png' %}" alt="BrainBoost Logo">
+            <div>
+                <strong>Flexible Nachhilfe geben</strong>
+                <span>Fächer, Verfügbarkeit und passende SchülerInnen werden gemeinsam abgestimmt.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>Vorteile</h2>
+        <div class="lead-card-grid lead-card-grid--wide">
+            <article class="lead-info-card">
+                <h3>Flexible Zeiten</h3>
+                <p>Stimme deine Verfügbarkeit passend zu Studium, Schule oder Beruf ab.</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>Online oder vor Ort</h3>
+                <p>Nachhilfe kann je nach Bedarf digital oder in Braunschweig vor Ort stattfinden.</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>Unterstützung durch BrainBoost</h3>
+                <p>Du arbeitest nicht allein, sondern mit einer klar organisierten Plattform im Hintergrund.</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>Klare Organisation</h3>
+                <p>Fächer, Zeiten und Kommunikation werden strukturiert abgestimmt.</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>Sinnvolle Tätigkeit mit Wirkung</h3>
+                <p>Du unterstützt SchülerInnen dabei, Inhalte besser zu verstehen und Lernziele anzugehen.</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>Ideal für Studierende</h3>
+                <p>Die Tätigkeit lässt sich gut mit einem flexiblen Wochenplan verbinden.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lead-split">
+        <div class="lead-section-block">
+            <h2>Für wen geeignet?</h2>
+            <ul class="lead-check-list">
+                <li>Studierende</li>
+                <li>OberstufenschülerInnen mit sehr guten Leistungen</li>
+                <li>Lehrkräfte</li>
+                <li>Personen mit Fachkompetenz und Freude am Erklären</li>
+            </ul>
+        </div>
+        <div class="lead-section-block">
+            <h2>Anforderungen</h2>
+            <ul class="lead-check-list">
+                <li>zuverlässig</li>
+                <li>fachlich sicher</li>
+                <li>freundlich und geduldig</li>
+                <li>klare Kommunikation</li>
+                <li>verantwortungsvoller Umgang mit SchülerInnen</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>Ablauf</h2>
+        <ol class="lead-step-list lead-step-list--horizontal">
+            <li>Kurze Bewerbung senden</li>
+            <li>Kennenlerngespräch</li>
+            <li>Fächer und Verfügbarkeit klären</li>
+            <li>Aufnahme als TutorIn</li>
+            <li>passende SchülerInnen erhalten</li>
+        </ol>
+    </section>
+
+    <section class="lead-final-cta">
+        <h2>Jetzt als TutorIn bewerben</h2>
+        <a class="button lead-cta" href="{% url 'contact' %}?role=tutor" data-cta="tutor-bewerbung-bottom">Als TutorIn bewerben</a>
+    </section>
+</div>
+{% endblock %}

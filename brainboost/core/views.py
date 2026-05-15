@@ -51,7 +51,9 @@ from .forms import (
     TutorStudentAssignmentForm,
     AdminTaskCreateForm,
     AdminTaskUpdateForm,
+    LeadForm,
 )
+from .middleware import UTM_KEYS, UTM_SESSION_KEY
 from .notifications import (
     notify_holiday_survey_created,
     notify_invoice_parent,
@@ -64,6 +66,7 @@ from .notifications import (
     notify_lesson_created,
     notify_lesson_reschedule_requested,
     notify_material_uploaded,
+    notify_lead_created,
 )
 from .models import (
     CustomUser,
@@ -81,6 +84,7 @@ from .models import (
     BrainBoostFeedback,
     TemporaryTutorAssignment,
     AdminTask,
+    Lead,
 )
 
 logger = logging.getLogger(__name__)
@@ -945,12 +949,114 @@ def _tutor_news_items(tutor_profile: TutorProfile) -> list[dict]:
     return _limit_news_items(items)
 
 
+def _lead_initial_from_query(request) -> dict:
+    valid_roles = {choice[0] for choice in Lead.Role.choices}
+    attribution = request.session.get(UTM_SESSION_KEY, {}) if hasattr(request, "session") else {}
+    initial = {
+        "source": request.GET.get("source", "").strip()
+        or attribution.get("source", "")
+        or "website"
+    }
+    role = request.GET.get("role", "").strip()
+    if role in valid_roles:
+        initial["role"] = role
+    for key in ["campaign", *UTM_KEYS]:
+        value = request.GET.get(key, "").strip() or attribution.get(key, "")
+        if value:
+            initial[key] = value
+    if not initial.get("campaign") and initial.get("utm_campaign"):
+        initial["campaign"] = initial["utm_campaign"]
+    return initial
+
+
+def _lead_attribution_from_request(request) -> dict:
+    attribution = request.session.get(UTM_SESSION_KEY, {}) if hasattr(request, "session") else {}
+    values = {}
+    for key in UTM_KEYS:
+        values[key] = (request.GET.get(key, "").strip() or attribution.get(key, ""))[:120]
+
+    campaign = (
+        request.GET.get("campaign", "").strip()
+        or request.GET.get("utm_campaign", "").strip()
+        or attribution.get("campaign", "")
+    )
+    if not campaign:
+        campaign = values.get("utm_campaign", "")
+    values["campaign"] = campaign[:120]
+    values["referrer"] = attribution.get("referrer", "")[:500]
+    values["landing_page_path"] = attribution.get("landing_page_path", "")[:500]
+    values["initial_querystring"] = attribution.get("initial_querystring", "")
+    return values
+
+
 def contact(request):
-    return render(request, "contact.html")
+    initial = _lead_initial_from_query(request)
+    if request.method == "POST":
+        post_data = request.POST.copy()
+        for key, value in initial.items():
+            if key in {"role"}:
+                continue
+            if value and not post_data.get(key):
+                post_data[key] = value
+        form = LeadForm(post_data, initial=initial)
+        if form.is_valid():
+            lead = form.save(commit=False)
+            if lead.role == Lead.Role.TUTOR:
+                lead.subject = lead.teaching_subjects
+                lead.grade = lead.teaching_grades
+            for key, value in _lead_attribution_from_request(request).items():
+                if value:
+                    setattr(lead, key, value)
+            lead.save()
+            notify_lead_created(lead)
+            if lead.role == Lead.Role.TUTOR:
+                request.session["lead_tracking_pending"] = "tutor"
+                return redirect("lead_thanks_tutor")
+            request.session["lead_tracking_pending"] = "tutoring"
+            return redirect("lead_thanks_tutoring")
+    else:
+        form = LeadForm(initial=initial)
+    return render(request, "contact.html", {"form": form})
+
+
+def lead_thanks_tutoring(request):
+    tracking_pending = request.session.pop("lead_tracking_pending", "") == "tutoring"
+    return render(
+        request,
+        "lead_thanks.html",
+        {
+            "title": "Danke für deine Anfrage",
+            "message": "Wir melden uns zeitnah bei dir und besprechen die passenden nächsten Schritte.",
+            "meta_lead_content_name": "Nachhilfe Anfrage" if tracking_pending else "",
+            "meta_lead_content_category": "parents_students" if tracking_pending else "",
+        },
+    )
+
+
+def lead_thanks_tutor(request):
+    tracking_pending = request.session.pop("lead_tracking_pending", "") == "tutor"
+    return render(
+        request,
+        "lead_thanks.html",
+        {
+            "title": "Danke für deine Bewerbung",
+            "message": "Wir prüfen deine Angaben und melden uns zeitnah bei dir.",
+            "meta_lead_content_name": "Tutor Bewerbung" if tracking_pending else "",
+            "meta_lead_content_category": "tutors" if tracking_pending else "",
+        },
+    )
+
+
+def nachhilfe_anfrage(request):
+    return render(request, "nachhilfe_anfrage.html")
+
+
+def tutor_werden(request):
+    return render(request, "tutor_werden.html")
 
 
 def tutorin_werden(request):
-    return render(request, "tutorin_werden.html")
+    return redirect("tutor_werden")
 
 
 def brainboost_feedback(request):

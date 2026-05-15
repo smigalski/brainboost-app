@@ -14,6 +14,7 @@ from .models import (
     Invoice,
     TutorProfile,
     HolidaySurveyResponse,
+    Lead,
 )
 
 
@@ -84,6 +85,14 @@ def _build_urls(request) -> dict:
     }
 
 
+def _lead_operator_recipients() -> list[str]:
+    configured = getattr(settings, "LEAD_NOTIFICATION_EMAIL", "")
+    if configured:
+        return [email.strip() for email in configured.split(",") if email.strip()]
+    fallback = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    return [fallback] if fallback else []
+
+
 def _send_templated_email(
     subject: str,
     template_base: str,
@@ -111,6 +120,35 @@ def _send_templated_email(
         except Exception:
             logger.exception("E-Mail Versand fehlgeschlagen (%s)", template_base)
     return ok
+
+
+def notify_lead_created(lead: Lead) -> None:
+    if not _notifications_enabled("lead_created"):
+        return
+    role_label = lead.get_role_display()
+    internal_subject = f"Neue BrainBoost Anfrage: {role_label} - {lead.name}"
+    context = {
+        "heading": "Neue Anfrage",
+        "lead": lead,
+    }
+    _send_templated_email(
+        internal_subject,
+        "lead_internal",
+        context,
+        _lead_operator_recipients(),
+    )
+    if lead.email:
+        public_subject = (
+            "Deine BrainBoost Bewerbung ist eingegangen"
+            if lead.role == Lead.Role.TUTOR
+            else "Deine BrainBoost Anfrage ist eingegangen"
+        )
+        _send_templated_email(
+            public_subject,
+            "lead_confirmation",
+            context,
+            [lead.email],
+        )
 
 
 def notify_lesson_created(request, lesson: Lesson) -> None:

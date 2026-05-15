@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | {{ title }}{% endblock %}
+{% block extra_tracking %}
+{% if meta_lead_content_name and meta_lead_content_category %}
+<script type="text/plain" data-cookieconsent="marketing">
+    fbq("track", "Lead", {
+        content_name: "{{ meta_lead_content_name|escapejs }}",
+        content_category: "{{ meta_lead_content_category|escapejs }}"
+    });
+</script>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>{{ title }}</h1>
+    <p>{{ message }}</p>
+    <a class="button" href="{% url 'landing_page' %}">Zur Startseite</a>
+</div>
+{% endblock %}

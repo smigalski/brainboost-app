@@ -21,6 +21,7 @@ from .models import (
     StudentProfile,
     TutorProfile,
     TemporaryTutorAssignment,
+    Lead,
 )
 from .views import (
     _auto_complete_past_lessons,
@@ -29,6 +30,223 @@ from .views import (
     _build_progress_chart_data,
     _sync_temporary_tutor_assignments,
 )
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    LEAD_NOTIFICATION_EMAIL="operator@example.com",
+)
+class LeadFormFlowTests(TestCase):
+    def _parent_data(self, **overrides):
+        data = {
+            "role": Lead.Role.PARENT,
+            "name": "Maria Muster",
+            "email": "maria@example.com",
+            "phone": "",
+            "preferred_contact": Lead.PreferredContact.EMAIL,
+            "subject": "Mathe",
+            "grade": "8. Klasse",
+            "tutoring_type": Lead.TutoringType.ONLINE,
+            "goal": "Noten verbessern",
+            "urgency": "Möglichst bald",
+            "message": "Bitte melden.",
+            "privacy_consent": "on",
+        }
+        data.update(overrides)
+        return data
+
+    def _tutor_data(self, **overrides):
+        data = {
+            "role": Lead.Role.TUTOR,
+            "name": "Tina Tutor",
+            "email": "tina@example.com",
+            "phone": "",
+            "preferred_contact": Lead.PreferredContact.EMAIL,
+            "tutoring_type": Lead.TutoringType.BOTH,
+            "education_status": Lead.EducationStatus.STUDENT,
+            "teaching_subjects": "Mathe, Physik",
+            "teaching_grades": "5-10",
+            "weekly_availability": "4 Stunden",
+            "experience_level": Lead.ExperienceLevel.SOME,
+            "motivation": "Ich arbeite gern mit SchülerInnen.",
+            "privacy_consent": "on",
+        }
+        data.update(overrides)
+        return data
+
+    def test_parent_lead_is_created_and_emails_are_sent(self):
+        response = self.client.post(reverse("contact"), data=self._parent_data())
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.role, Lead.Role.PARENT)
+        self.assertEqual(lead.subject, "Mathe")
+        self.assertEqual(lead.status, Lead.Status.NEW)
+        self.assertTrue(lead.privacy_consent)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn("operator@example.com", mail.outbox[0].to)
+        self.assertIn("maria@example.com", mail.outbox[1].to)
+
+    def test_utm_parameters_are_saved_from_query_string(self):
+        response = self.client.post(
+            reverse("contact")
+            + "?utm_source=meta&utm_medium=paid&utm_campaign=abi2026&utm_content=story&utm_term=mathe&role=student",
+            data=self._parent_data(role=Lead.Role.STUDENT),
+        )
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.role, Lead.Role.STUDENT)
+        self.assertEqual(lead.utm_source, "meta")
+        self.assertEqual(lead.utm_medium, "paid")
+        self.assertEqual(lead.utm_campaign, "abi2026")
+        self.assertEqual(lead.utm_content, "story")
+        self.assertEqual(lead.utm_term, "mathe")
+        self.assertEqual(lead.campaign, "abi2026")
+
+    def test_utm_parameters_are_saved_from_session_after_landing_visit(self):
+        self.client.get(
+            reverse("nachhilfe_anfrage")
+            + "?utm_source=meta&utm_medium=paid&utm_campaign=abi2026&utm_content=story&utm_term=mathe",
+            HTTP_REFERER="https://example.com/ad",
+        )
+
+        response = self.client.post(reverse("contact"), data=self._parent_data())
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.utm_source, "meta")
+        self.assertEqual(lead.utm_medium, "paid")
+        self.assertEqual(lead.utm_campaign, "abi2026")
+        self.assertEqual(lead.utm_content, "story")
+        self.assertEqual(lead.utm_term, "mathe")
+        self.assertEqual(lead.referrer, "https://example.com/ad")
+        self.assertEqual(lead.landing_page_path, reverse("nachhilfe_anfrage"))
+        self.assertEqual(
+            lead.initial_querystring,
+            "utm_source=meta&utm_medium=paid&utm_campaign=abi2026&utm_content=story&utm_term=mathe",
+        )
+
+    def test_direct_utm_parameters_override_session_values(self):
+        self.client.get(reverse("nachhilfe_anfrage") + "?utm_source=old&utm_campaign=old-campaign")
+
+        response = self.client.post(
+            reverse("contact") + "?utm_source=meta&utm_campaign=new-campaign",
+            data=self._parent_data(),
+        )
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.utm_source, "meta")
+        self.assertEqual(lead.utm_campaign, "new-campaign")
+        self.assertEqual(lead.campaign, "new-campaign")
+
+    def test_invalid_form_without_contact_detail_is_not_saved(self):
+        response = self.client.post(
+            reverse("contact"),
+            data=self._parent_data(email="", phone=""),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Lead.objects.count(), 0)
+        self.assertContains(response, "mindestens eine E-Mail-Adresse")
+
+    def test_privacy_checkbox_is_required(self):
+        data = self._parent_data()
+        data.pop("privacy_consent")
+
+        response = self.client.post(reverse("contact"), data=data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Lead.objects.count(), 0)
+        self.assertContains(response, "Bitte stimme der Verarbeitung")
+
+    def test_tutor_lead_redirects_to_tutor_thank_you_page(self):
+        response = self.client.post(reverse("contact"), data=self._tutor_data())
+
+        self.assertRedirects(response, reverse("lead_thanks_tutor"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.role, Lead.Role.TUTOR)
+        self.assertEqual(lead.subject, "Mathe, Physik")
+        self.assertEqual(lead.grade, "5-10")
+
+    def test_parent_landing_links_to_prefilled_contact_form(self):
+        response = self.client.get(reverse("nachhilfe_anfrage"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nachhilfe in Braunschweig &amp; online")
+        self.assertContains(response, "Individuelle Nachhilfe für SchülerInnen")
+        self.assertContains(response, reverse("contact") + "?role=parent")
+        self.assertContains(response, 'data-cta="nachhilfe-anfrage-hero"')
+        self.assertContains(response, 'data-cta="nachhilfe-anfrage-bottom"')
+
+    def test_tutor_landing_links_to_prefilled_contact_form(self):
+        response = self.client.get(reverse("tutor_werden"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Werde TutorIn bei BrainBoost")
+        self.assertContains(response, "Flexible Nachhilfe geben")
+        self.assertContains(response, reverse("contact") + "?role=tutor")
+        self.assertContains(response, 'data-cta="tutor-bewerbung-hero"')
+        self.assertContains(response, 'data-cta="tutor-bewerbung-bottom"')
+
+    def test_legacy_tutorin_route_redirects_to_new_tutor_landing(self):
+        response = self.client.get(reverse("tutorin_werden"))
+
+        self.assertRedirects(response, reverse("tutor_werden"))
+
+    def test_meta_pixel_is_not_rendered_without_pixel_id(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, "connect.facebook.net")
+        self.assertNotContains(response, "fbq('track', 'PageView')")
+
+    @override_settings(COOKIEBOT_ID="", META_PIXEL_ID="123456789")
+    def test_meta_pixel_is_not_rendered_without_cookiebot_id(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertNotContains(response, "connect.facebook.net")
+        self.assertNotContains(response, "fbq('track', 'PageView')")
+
+    @override_settings(COOKIEBOT_ID="34936317-2b98-4a57-82fc-98e5d67b4203", META_PIXEL_ID="123456789")
+    def test_meta_pixel_pageview_is_rendered_with_pixel_id(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertContains(response, 'id="Cookiebot"')
+        self.assertContains(response, 'data-cbid="34936317-2b98-4a57-82fc-98e5d67b4203"')
+        self.assertContains(response, 'data-blockingmode="auto"')
+        self.assertContains(response, 'type="text/plain" data-cookieconsent="marketing"')
+        self.assertContains(response, "connect.facebook.net")
+        self.assertContains(response, "fbq('init', '123456789')")
+        self.assertContains(response, "fbq('track', 'PageView')")
+        self.assertNotContains(response, "facebook.com/tr?id=123456789")
+
+    @override_settings(COOKIEBOT_ID="34936317-2b98-4a57-82fc-98e5d67b4203", META_PIXEL_ID="123456789")
+    def test_landing_pages_render_view_content_events(self):
+        parent_response = self.client.get(reverse("nachhilfe_anfrage"))
+        tutor_response = self.client.get(reverse("tutor_werden"))
+
+        self.assertContains(parent_response, 'type="text/plain" data-cookieconsent="marketing"')
+        self.assertContains(parent_response, 'fbq("track", "ViewContent"')
+        self.assertContains(parent_response, "Nachhilfe Anfrage Landingpage")
+        self.assertContains(parent_response, "parents_students")
+        self.assertContains(tutor_response, "Tutor Bewerbung Landingpage")
+        self.assertContains(tutor_response, "tutors")
+
+    @override_settings(COOKIEBOT_ID="34936317-2b98-4a57-82fc-98e5d67b4203", META_PIXEL_ID="123456789")
+    def test_lead_event_is_rendered_only_after_successful_submission(self):
+        direct_response = self.client.get(reverse("lead_thanks_tutoring"))
+        self.assertNotContains(direct_response, 'fbq("track", "Lead"')
+
+        post_response = self.client.post(reverse("contact"), data=self._parent_data())
+        self.assertEqual(post_response.status_code, 302)
+        thanks_response = self.client.get(reverse("lead_thanks_tutoring"))
+        self.assertContains(thanks_response, 'fbq("track", "Lead"')
+        self.assertContains(thanks_response, "Nachhilfe Anfrage")
+        self.assertContains(thanks_response, "parents_students")
+
+        refresh_response = self.client.get(reverse("lead_thanks_tutoring"))
+        self.assertNotContains(refresh_response, 'fbq("track", "Lead"')
 
 
 class InvoiceGenerateFormTests(TestCase):

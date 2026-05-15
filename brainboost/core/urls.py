@@ -6,9 +6,13 @@ from .forms import EmailOrUsernameAuthenticationForm
 
 urlpatterns = [
     path("", views.landing_page, name="landing_page"),
+    path("nachhilfe-anfrage/", views.nachhilfe_anfrage, name="nachhilfe_anfrage"),
+    path("tutor-werden/", views.tutor_werden, name="tutor_werden"),
     path("tutorin-werden/", views.tutorin_werden, name="tutorin_werden"),
     path("feedback/brainboost/", views.brainboost_feedback, name="brainboost_feedback"),
     path("kontakt/", views.contact, name="contact"),
+    path("danke-nachhilfe-anfrage/", views.lead_thanks_tutoring, name="lead_thanks_tutoring"),
+    path("danke-tutor-bewerbung/", views.lead_thanks_tutor, name="lead_thanks_tutor"),
     path("impressum/", views.impressum, name="impressum"),
     path("agbs/", views.agbs, name="agbs"),
     path("preise/", views.pricing, name="pricing"),

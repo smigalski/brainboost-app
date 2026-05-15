@@ -1,0 +1,34 @@
+Neue BrainBoost Anfrage
+
+Rolle: {{ lead.get_role_display }}
+Name: {{ lead.name }}
+E-Mail: {{ lead.email|default:"-" }}
+Telefon: {{ lead.phone|default:"-" }}
+Bevorzugter Kontakt: {{ lead.get_preferred_contact_display }}
+Unterrichtsform: {{ lead.get_tutoring_type_display }}
+Fach/Fächer: {{ lead.subject|default:"-" }}
+Klassenstufe: {{ lead.grade|default:"-" }}
+Ziel: {{ lead.goal|default:"-" }}
+Dringlichkeit: {{ lead.urgency|default:"-" }}
+
+TutorIn-Daten:
+Status/Ausbildung: {{ lead.get_education_status_display|default:"-" }}
+Fächer: {{ lead.teaching_subjects|default:"-" }}
+Klassenstufen: {{ lead.teaching_grades|default:"-" }}
+Verfügbarkeit: {{ lead.weekly_availability|default:"-" }}
+Erfahrung: {{ lead.get_experience_level_display|default:"-" }}
+Motivation: {{ lead.motivation|default:"-" }}
+
+Nachricht:
+{{ lead.message|default:"-" }}
+
+Marketing:
+Source: {{ lead.source|default:"-" }}
+Campaign: {{ lead.campaign|default:"-" }}
+UTM Source: {{ lead.utm_source|default:"-" }}
+UTM Medium: {{ lead.utm_medium|default:"-" }}
+UTM Campaign: {{ lead.utm_campaign|default:"-" }}
+UTM Content: {{ lead.utm_content|default:"-" }}
+UTM Term: {{ lead.utm_term|default:"-" }}
+
+Eingegangen am: {{ lead.created_at|date:"d.m.Y H:i" }}

@@ -1,151 +1,315 @@
-
 {% extends "base.html" %}
 {% load static %}
 {% block title %}BrainBoost | Kontakt{% endblock %}
 {% block content %}
-<div style="margin-bottom:16px;">
-    <button id="open-contact-modal" class="button" type="button">Jetzt kostenlos Probestunde buchen!</button>
-</div>
-<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="contact-modal-title">Kontaktformular</h3>
-            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
-        </div>
-        <form id="contact-form" novalidate>
-            <label for="contact-first-name">Vorname</label>
-            <input id="contact-first-name" type="text" autocomplete="given-name">
-            <label for="contact-last-name">Nachname</label>
-            <input id="contact-last-name" type="text" autocomplete="family-name">
-            <label for="contact-phone">Telefonnummer</label>
-            <input id="contact-phone" type="tel" autocomplete="tel">
-            <label for="contact-email">E-Mail</label>
-            <input id="contact-email" type="email" autocomplete="email">
-            <label for="contact-message">Nachricht</label>
-            <textarea id="contact-message" rows="4" placeholder="Hallo, ich würde gerne für mein Kind/für mich eine Probestunde buchen. Mit freundlichen Grüßen"></textarea>
-            <p id="contact-form-error" style="display:none;color:#b30000;margin:4px 0 0;">
-                Bitte gib Vorname oder Nachname sowie Telefonnummer oder E-Mail an.
-            </p>
-        </form>
-        <div class="modal-actions">
-            <button type="button" class="button ghost" id="contact-cancel">Abbrechen</button>
-            <button type="submit" class="button" form="contact-form" id="contact-submit" disabled>Absenden</button>
-        </div>
-    </div>
-</div>
-<div class="card">
-    <h1>Kontakt</h1>
-    <p>Melde dich bei Fragen, Feedback oder Kooperationen gern direkt. Ich freue mich auf Deine Nachricht!</p>
-    <div class="grid two">
-        <div>
-            <div style="max-width:200px;">
-                <img src="{% static 'design/Student_Photo_Kiara_Puppe.jpg' %}" alt="Kiara Puppe" class="location-image">
+<style>
+    .lead-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+        gap: 20px;
+        align-items: start;
+    }
+    .lead-form {
+        gap: 18px;
+    }
+    .lead-section {
+        display: grid;
+        gap: 12px;
+        padding-top: 4px;
+    }
+    .lead-section + .lead-section {
+        border-top: 1px solid rgba(31,102,102,0.16);
+        padding-top: 18px;
+    }
+    .lead-section__title {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--accent);
+        margin: 0;
+    }
+    .lead-field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .lead-field {
+        display: grid;
+        gap: 6px;
+    }
+    .lead-field--full {
+        grid-column: 1 / -1;
+    }
+    .lead-label {
+        font-weight: 700;
+        color: var(--accent);
+    }
+    .lead-role-options > div {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0;
+        margin: 0;
+    }
+    .lead-role-options > div > div {
+        min-width: 0;
+    }
+    .lead-role-options label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 10px 12px;
+        border: 1px solid rgba(31,102,102,0.2);
+        border-radius: 12px;
+        background: #fff;
+        font-weight: 800;
+        cursor: pointer;
+        text-align: center;
+    }
+    .lead-role-options label:has(input:checked) {
+        border-color: var(--teal-dark);
+        background: rgba(44,138,138,0.1);
+        color: var(--teal-dark);
+    }
+    .lead-checkbox {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(44,138,138,0.08);
+    }
+    .lead-checkbox input {
+        margin-top: 3px;
+    }
+    .lead-error {
+        color: #b3261e;
+        font-weight: 700;
+        font-size: 14px;
+        margin: 0;
+    }
+    .lead-required {
+        color: var(--red);
+    }
+    .lead-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .lead-contact-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+    }
+    .lead-contact-list p {
+        margin: 0;
+    }
+    @media (max-width: 780px) {
+        .lead-layout,
+        .lead-field-grid,
+        .lead-role-options > div {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="lead-layout">
+    <div class="card">
+        <h1>Kontakt</h1>
+        <p>Stelle deine Anfrage für Nachhilfe oder bewirb dich als TutorIn. Wir melden uns zeitnah über deinen bevorzugten Kontaktweg.</p>
+
+        <form class="lead-form" method="post" novalidate data-lead-form>
+            {% csrf_token %}
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+                <p class="lead-error">{{ form.non_field_errors|join:", " }}</p>
+            {% endif %}
+
+            <section class="lead-section">
+                <h2 class="lead-section__title">Rolle</h2>
+                <div class="lead-role-options">
+                    {{ form.role }}
+                </div>
+                {% if form.role.errors %}<p class="lead-error">{{ form.role.errors|join:", " }}</p>{% endif %}
+            </section>
+
+            <section class="lead-section">
+                <h2 class="lead-section__title">Kontakt</h2>
+                <div class="lead-field-grid">
+                    <div class="lead-field lead-field--full">
+                        <label class="lead-label" for="{{ form.name.id_for_label }}">{{ form.name.label }} <span class="lead-required">*</span></label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="lead-error">{{ form.name.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<p class="lead-error">{{ form.email.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<p class="lead-error">{{ form.phone.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field lead-field--full">
+                        <label class="lead-label" for="{{ form.preferred_contact.id_for_label }}">{{ form.preferred_contact.label }} <span class="lead-required">*</span></label>
+                        {{ form.preferred_contact }}
+                        {% if form.preferred_contact.errors %}<p class="lead-error">{{ form.preferred_contact.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field lead-field--full">
+                        <label class="lead-label" for="{{ form.tutoring_type.id_for_label }}">{{ form.tutoring_type.label }} <span class="lead-required">*</span></label>
+                        {{ form.tutoring_type }}
+                        {% if form.tutoring_type.errors %}<p class="lead-error">{{ form.tutoring_type.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="lead-section" data-role-fields="learning">
+                <h2 class="lead-section__title">Nachhilfe</h2>
+                <div class="lead-field-grid">
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.subject.id_for_label }}">{{ form.subject.label }} <span class="lead-required">*</span></label>
+                        {{ form.subject }}
+                        {% if form.subject.errors %}<p class="lead-error">{{ form.subject.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.grade.id_for_label }}">{{ form.grade.label }} <span class="lead-required">*</span></label>
+                        {{ form.grade }}
+                        {% if form.grade.errors %}<p class="lead-error">{{ form.grade.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.urgency.id_for_label }}">{{ form.urgency.label }} <span class="lead-required">*</span></label>
+                        {{ form.urgency }}
+                        {% if form.urgency.errors %}<p class="lead-error">{{ form.urgency.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field lead-field--full">
+                        <label class="lead-label" for="{{ form.goal.id_for_label }}">{{ form.goal.label }} <span class="lead-required">*</span></label>
+                        {{ form.goal }}
+                        {% if form.goal.errors %}<p class="lead-error">{{ form.goal.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="lead-section" data-role-fields="tutor">
+                <h2 class="lead-section__title">TutorIn-Profil</h2>
+                <div class="lead-field-grid">
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.education_status.id_for_label }}">{{ form.education_status.label }}</label>
+                        {{ form.education_status }}
+                        {% if form.education_status.errors %}<p class="lead-error">{{ form.education_status.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.experience_level.id_for_label }}">{{ form.experience_level.label }} <span class="lead-required">*</span></label>
+                        {{ form.experience_level }}
+                        {% if form.experience_level.errors %}<p class="lead-error">{{ form.experience_level.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.teaching_subjects.id_for_label }}">{{ form.teaching_subjects.label }} <span class="lead-required">*</span></label>
+                        {{ form.teaching_subjects }}
+                        {% if form.teaching_subjects.errors %}<p class="lead-error">{{ form.teaching_subjects.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.teaching_grades.id_for_label }}">{{ form.teaching_grades.label }} <span class="lead-required">*</span></label>
+                        {{ form.teaching_grades }}
+                        {% if form.teaching_grades.errors %}<p class="lead-error">{{ form.teaching_grades.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.weekly_availability.id_for_label }}">{{ form.weekly_availability.label }} <span class="lead-required">*</span></label>
+                        {{ form.weekly_availability }}
+                        {% if form.weekly_availability.errors %}<p class="lead-error">{{ form.weekly_availability.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field lead-field--full">
+                        <label class="lead-label" for="{{ form.motivation.id_for_label }}">{{ form.motivation.label }}</label>
+                        {{ form.motivation }}
+                        {% if form.motivation.errors %}<p class="lead-error">{{ form.motivation.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="lead-section">
+                <h2 class="lead-section__title">Ergänzung</h2>
+                <div class="lead-field">
+                    <label class="lead-label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
+                    {{ form.message }}
+                    {% if form.message.errors %}<p class="lead-error">{{ form.message.errors|join:", " }}</p>{% endif %}
+                </div>
+                <label class="lead-checkbox" for="{{ form.privacy_consent.id_for_label }}">
+                    {{ form.privacy_consent }}
+                    <span>{{ form.privacy_consent.label }} <span class="lead-required">*</span></span>
+                </label>
+                {% if form.privacy_consent.errors %}<p class="lead-error">{{ form.privacy_consent.errors|join:", " }}</p>{% endif %}
+            </section>
+
+            <div class="lead-actions">
+                <button class="button" type="submit" data-lead-submit>Anfrage senden</button>
+                <span class="muted">Wir nutzen deine Angaben nur zur Bearbeitung dieser Anfrage.</span>
             </div>
-            <p></p>
-            <p><strong>E-Mail:</strong> <a href="mailto:brainboost.nachhilfe@gmail.com">brainboost.nachhilfe@gmail.com</a></p>
-            <p><strong>Telefon:</strong> +49 (0)175 9932553 oder: <a href="https://wa.me/491759932553" target="_blank" rel="noreferrer noopener"><img src="{% static 'design/WhatsAppLogo.png' %}" alt="WhatsApp" style="width:24px;height:24px;vertical-align:middle;margin-left:6px;"></a></p>
-            <p><strong>Adresse:</strong> Karl-Schmidt-Straße 20, 38114 Braunschweig</p>
-        </div>
-        <div>
-            <h3>Erreichbarkeit</h3>
-            <p>Montag–Freitag, 9:00 - 21:00 Uhr</p>
-            <p><strong>Social:</strong>
-                <a href="https://www.linkedin.com/in/kiara-puppe-bb80b4351/" target="_blank" rel="noreferrer noopener">LinkedIn</a> ·
-                <a href="https://www.instagram.com/brainboost.nachhilfe/" target="_blank" rel="noreferrer noopener">Instagram</a>
-            </p>
-            <p><strong>Support:</strong> Ich antworte in der Regel innerhalb von 24 Stunden.</p>
-        </div>
+        </form>
     </div>
+
+    <aside class="card">
+        <h2>Direktkontakt</h2>
+        <div style="max-width:200px;margin-bottom:14px;">
+            <img src="{% static 'design/Student_Photo_Kiara_Puppe.jpg' %}" alt="Kiara Puppe" class="location-image">
+        </div>
+        <div class="lead-contact-list">
+            <p><strong>E-Mail:</strong><br><a href="mailto:brainboost.nachhilfe@gmail.com">brainboost.nachhilfe@gmail.com</a></p>
+            <p><strong>Telefon:</strong><br>+49 (0)175 9932553</p>
+            <p><strong>WhatsApp:</strong><br><a href="https://wa.me/491759932553" target="_blank" rel="noreferrer noopener">Nachricht schreiben</a></p>
+            <p><strong>Erreichbarkeit:</strong><br>Montag bis Freitag, 9:00 - 21:00 Uhr</p>
+        </div>
+    </aside>
 </div>
-<div class="card">
-    <h3>Google-Bewertung</h3>
-    <p class="muted" style="margin-bottom:10px;">Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google.</p>
-    <a href="https://g.page/r/CQre9mQfg_gGEAE/review" target="_blank" rel="noreferrer noopener" class="button">
-        Jetzt bei Google bewerten
-    </a>
-</div>
+
 <script>
-    (function() {
-        var modal = document.getElementById('contact-modal');
-        var openBtn = document.getElementById('open-contact-modal');
-        var closeBtns = modal.querySelectorAll('.modal-close, #contact-cancel');
-        var form = document.getElementById('contact-form');
-        var submitBtn = document.getElementById('contact-submit');
-        var error = document.getElementById('contact-form-error');
-        var firstName = document.getElementById('contact-first-name');
-        var lastName = document.getElementById('contact-last-name');
-        var phone = document.getElementById('contact-phone');
-        var email = document.getElementById('contact-email');
-        var message = document.getElementById('contact-message');
-        var touched = false;
+    (function () {
+        var form = document.querySelector("[data-lead-form]");
+        if (!form) {
+            return;
+        }
+        var learningSection = form.querySelector('[data-role-fields="learning"]');
+        var tutorSection = form.querySelector('[data-role-fields="tutor"]');
+        var submitButton = form.querySelector("[data-lead-submit]");
+        var roleInputs = Array.from(form.querySelectorAll('input[name="role"]'));
 
-        var updateValidity = function(forceShow) {
-            var hasName = firstName.value.trim() || lastName.value.trim();
-            var hasContact = phone.value.trim() || email.value.trim();
-            var ok = Boolean(hasName && hasContact);
-            submitBtn.disabled = !ok;
-            if (forceShow || touched) {
-                error.style.display = ok ? 'none' : 'block';
-            } else {
-                error.style.display = 'none';
-            }
-            return ok;
-        };
+        function selectedRole() {
+            var checked = roleInputs.find(function (input) { return input.checked; });
+            return checked ? checked.value : "parent";
+        }
 
-        var openModal = function() {
-            modal.classList.add('open');
-        };
-
-        var closeModal = function() {
-            modal.classList.remove('open');
-        };
-
-        openBtn.addEventListener('click', openModal);
-        closeBtns.forEach(function(btn) {
-            btn.addEventListener('click', closeModal);
-        });
-        modal.addEventListener('click', function(event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && modal.classList.contains('open')) {
-                closeModal();
-            }
-        });
-
-        [firstName, lastName, phone, email, message].forEach(function(input) {
-            input.addEventListener('input', function() {
-                touched = true;
-                updateValidity(false);
-            });
-        });
-
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            touched = true;
-            if (!updateValidity(true)) {
+        function setDisabled(section, disabled) {
+            if (!section) {
                 return;
             }
-            var bodyLines = [
-                'Vorname: ' + firstName.value.trim(),
-                'Nachname: ' + lastName.value.trim(),
-                'Telefonnummer: ' + phone.value.trim(),
-                'E-Mail: ' + email.value.trim(),
-                '',
-                'Nachricht:',
-                message.value.trim()
-            ];
-            var mailto = 'mailto:brainboost.nachhilfe@gmail.com'
-                + '?subject=' + encodeURIComponent('Kontaktformular Probestunde')
-                + '&body=' + encodeURIComponent(bodyLines.join('\n'));
-            window.location.href = mailto;
-            form.reset();
-            touched = false;
-            updateValidity(false);
-            closeModal();
+            Array.from(section.querySelectorAll("input, select, textarea")).forEach(function (field) {
+                field.disabled = disabled;
+            });
+        }
+
+        function updateRoleSections() {
+            var isTutor = selectedRole() === "tutor";
+            if (learningSection) {
+                learningSection.hidden = isTutor;
+                setDisabled(learningSection, isTutor);
+            }
+            if (tutorSection) {
+                tutorSection.hidden = !isTutor;
+                setDisabled(tutorSection, !isTutor);
+            }
+            if (submitButton) {
+                submitButton.textContent = isTutor ? "Bewerbung senden" : "Anfrage senden";
+            }
+        }
+
+        roleInputs.forEach(function (input) {
+            input.addEventListener("change", updateRoleSections);
         });
+        updateRoleSections();
     })();
 </script>
 {% endblock %}

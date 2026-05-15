@@ -12,6 +12,7 @@ from .models import (
     Invoice,
     TutorTemplate,
     AdminTask,
+    Lead,
 )
 
 
@@ -110,3 +111,94 @@ class AdminTaskAdmin(admin.ModelAdmin):
     list_display = ("title", "importance", "days", "status", "owner", "created_at")
     list_filter = ("importance", "status", "owner")
     search_fields = ("title", "owner__username", "owner__first_name", "owner__last_name")
+
+
+@admin.register(Lead)
+class LeadAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "role",
+        "subject",
+        "grade",
+        "status",
+        "preferred_contact",
+        "created_at",
+        "utm_campaign",
+    )
+    list_filter = (
+        "role",
+        "status",
+        "subject",
+        "tutoring_type",
+        "utm_campaign",
+        "created_at",
+    )
+    search_fields = (
+        "name",
+        "email",
+        "phone",
+        "subject",
+        "teaching_subjects",
+        "message",
+    )
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (
+            "Kontakt",
+            {
+                "fields": (
+                    "status",
+                    "role",
+                    "name",
+                    "email",
+                    "phone",
+                    "preferred_contact",
+                    "privacy_consent",
+                )
+            },
+        ),
+        (
+            "Nachhilfe",
+            {
+                "fields": (
+                    "subject",
+                    "grade",
+                    "tutoring_type",
+                    "goal",
+                    "urgency",
+                    "message",
+                )
+            },
+        ),
+        (
+            "TutorIn",
+            {
+                "fields": (
+                    "education_status",
+                    "teaching_subjects",
+                    "teaching_grades",
+                    "weekly_availability",
+                    "experience_level",
+                    "motivation",
+                )
+            },
+        ),
+        (
+            "Marketing",
+            {
+                "fields": (
+                    "source",
+                    "campaign",
+                    "utm_source",
+                    "utm_medium",
+                    "utm_campaign",
+                    "utm_content",
+                    "utm_term",
+                    "referrer",
+                    "landing_page_path",
+                    "initial_querystring",
+                )
+            },
+        ),
+        ("Zeitpunkte", {"fields": ("created_at", "updated_at")}),
+    )

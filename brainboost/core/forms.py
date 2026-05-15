@@ -28,6 +28,7 @@ from .models import (
     BrainBoostFeedback,
     CustomUser,
     AdminTask,
+    Lead,
 )
 
 
@@ -94,6 +95,166 @@ class BroadcastEmailForm(forms.Form):
         label="Nachricht",
         widget=forms.Textarea(attrs={"rows": 5}),
     )
+
+
+class LeadForm(forms.ModelForm):
+    privacy_consent = forms.BooleanField(
+        label=(
+            "Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage "
+            "gespeichert und verarbeitet werden."
+        ),
+        required=True,
+        error_messages={"required": "Bitte stimme der Verarbeitung deiner Angaben zu."},
+    )
+
+    class Meta:
+        model = Lead
+        fields = [
+            "role",
+            "name",
+            "email",
+            "phone",
+            "preferred_contact",
+            "subject",
+            "grade",
+            "tutoring_type",
+            "goal",
+            "urgency",
+            "message",
+            "source",
+            "campaign",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+            "privacy_consent",
+            "education_status",
+            "teaching_subjects",
+            "teaching_grades",
+            "weekly_availability",
+            "experience_level",
+            "motivation",
+        ]
+        widgets = {
+            "role": forms.RadioSelect,
+            "phone": forms.TextInput(attrs={"type": "tel"}),
+            "message": forms.Textarea(attrs={"rows": 4}),
+            "motivation": forms.Textarea(attrs={"rows": 4}),
+            "source": forms.HiddenInput,
+            "campaign": forms.HiddenInput,
+            "utm_source": forms.HiddenInput,
+            "utm_medium": forms.HiddenInput,
+            "utm_campaign": forms.HiddenInput,
+            "utm_content": forms.HiddenInput,
+            "utm_term": forms.HiddenInput,
+        }
+        labels = {
+            "role": "Ich frage an als",
+            "name": "Name",
+            "email": "E-Mail",
+            "phone": "Telefonnummer",
+            "preferred_contact": "Bevorzugte Kontaktart",
+            "subject": "Fach/Fächer",
+            "grade": "Klassenstufe",
+            "tutoring_type": "Unterrichtsform",
+            "goal": "Ziel der Nachhilfe",
+            "urgency": "Dringlichkeit",
+            "message": "Nachricht",
+            "education_status": "Aktueller Status",
+            "teaching_subjects": "Fächer",
+            "teaching_grades": "Klassenstufen",
+            "weekly_availability": "Verfügbarkeit pro Woche",
+            "experience_level": "Erfahrung",
+            "motivation": "Motivation",
+        }
+        help_texts = {
+            "email": "E-Mail oder Telefonnummer reicht aus.",
+            "phone": "E-Mail oder Telefonnummer reicht aus.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["role"].choices = [
+            (Lead.Role.PARENT, "Elternteil"),
+            (Lead.Role.STUDENT, "SchülerIn"),
+            (Lead.Role.TUTOR, "TutorIn"),
+        ]
+        self.fields["role"].initial = self.initial.get("role") or Lead.Role.PARENT
+        self.fields["preferred_contact"].empty_label = "Bitte auswählen"
+        self.fields["tutoring_type"].empty_label = "Bitte auswählen"
+        self.fields["education_status"].empty_label = "Bitte auswählen"
+        self.fields["experience_level"].empty_label = "Bitte auswählen"
+
+        placeholders = {
+            "name": "Vor- und Nachname",
+            "email": "name@example.com",
+            "phone": "+49 ...",
+            "subject": "z. B. Mathe, Englisch",
+            "grade": "z. B. 8. Klasse",
+            "goal": "z. B. Noten verbessern, Prüfung vorbereiten",
+            "urgency": "z. B. möglichst bald, innerhalb der nächsten Wochen",
+            "teaching_subjects": "z. B. Mathe, Physik, Englisch",
+            "teaching_grades": "z. B. Klasse 5-10, Oberstufe",
+            "weekly_availability": "z. B. 4-6 Stunden, Mo/Di abends",
+        }
+        for field_name, placeholder in placeholders.items():
+            self.fields[field_name].widget.attrs.setdefault("placeholder", placeholder)
+        self.fields["email"].widget.attrs.update({"autocomplete": "email"})
+        self.fields["phone"].widget.attrs.update({"autocomplete": "tel"})
+        self.fields["name"].widget.attrs.update({"autocomplete": "name"})
+        self.fields["source"].initial = self.initial.get("source", "website")
+
+        optional_fields = {
+            "email",
+            "phone",
+            "message",
+            "source",
+            "campaign",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+            "education_status",
+            "teaching_subjects",
+            "teaching_grades",
+            "weekly_availability",
+            "experience_level",
+            "motivation",
+        }
+        for field_name in optional_fields:
+            self.fields[field_name].required = False
+        for field_name in ["subject", "grade", "goal", "urgency"]:
+            self.fields[field_name].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        role = cleaned.get("role")
+        email = (cleaned.get("email") or "").strip()
+        phone = (cleaned.get("phone") or "").strip()
+        if not email and not phone:
+            message = "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
+            self.add_error("email", message)
+            self.add_error("phone", message)
+
+        if role in {Lead.Role.PARENT, Lead.Role.STUDENT}:
+            for field_name in ["subject", "grade", "goal", "urgency"]:
+                if not (cleaned.get(field_name) or "").strip():
+                    self.add_error(field_name, "Dieses Feld ist erforderlich.")
+        elif role == Lead.Role.TUTOR:
+            required_tutor_fields = [
+                "teaching_subjects",
+                "teaching_grades",
+                "weekly_availability",
+                "experience_level",
+            ]
+            for field_name in required_tutor_fields:
+                if not (cleaned.get(field_name) or "").strip():
+                    self.add_error(field_name, "Dieses Feld ist erforderlich.")
+            cleaned["subject"] = cleaned.get("teaching_subjects", "")
+            cleaned["grade"] = cleaned.get("teaching_grades", "")
+        return cleaned
 
 
 def _admin_users_queryset():

@@ -1,0 +1,26 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Eine neue BrainBoost Anfrage ist eingegangen.</p>
+<table style="width:100%;border-collapse:collapse;">
+    <tr><td><strong>Rolle</strong></td><td>{{ lead.get_role_display }}</td></tr>
+    <tr><td><strong>Name</strong></td><td>{{ lead.name }}</td></tr>
+    <tr><td><strong>E-Mail</strong></td><td>{{ lead.email|default:"-" }}</td></tr>
+    <tr><td><strong>Telefon</strong></td><td>{{ lead.phone|default:"-" }}</td></tr>
+    <tr><td><strong>Kontaktart</strong></td><td>{{ lead.get_preferred_contact_display }}</td></tr>
+    <tr><td><strong>Unterrichtsform</strong></td><td>{{ lead.get_tutoring_type_display }}</td></tr>
+    <tr><td><strong>Fach/Fächer</strong></td><td>{{ lead.subject|default:"-" }}</td></tr>
+    <tr><td><strong>Klassenstufe</strong></td><td>{{ lead.grade|default:"-" }}</td></tr>
+    <tr><td><strong>Ziel</strong></td><td>{{ lead.goal|default:"-" }}</td></tr>
+    <tr><td><strong>Dringlichkeit</strong></td><td>{{ lead.urgency|default:"-" }}</td></tr>
+    <tr><td><strong>Verfügbarkeit</strong></td><td>{{ lead.weekly_availability|default:"-" }}</td></tr>
+    <tr><td><strong>Erfahrung</strong></td><td>{{ lead.get_experience_level_display|default:"-" }}</td></tr>
+    <tr><td><strong>Quelle</strong></td><td>{{ lead.source|default:"-" }}</td></tr>
+    <tr><td><strong>UTM-Kampagne</strong></td><td>{{ lead.utm_campaign|default:"-" }}</td></tr>
+</table>
+{% if lead.motivation %}
+<p><strong>Motivation:</strong><br>{{ lead.motivation|linebreaksbr }}</p>
+{% endif %}
+{% if lead.message %}
+<p><strong>Nachricht:</strong><br>{{ lead.message|linebreaksbr }}</p>
+{% endif %}
+{% endblock %}

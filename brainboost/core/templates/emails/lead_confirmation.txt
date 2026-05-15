@@ -1,0 +1,8 @@
+Hallo {{ lead.name }},
+
+vielen Dank für deine {% if lead.role == "tutor" %}Bewerbung{% else %}Anfrage{% endif %} bei BrainBoost.
+
+Wir haben deine Angaben erhalten und melden uns zeitnah über deinen bevorzugten Kontaktweg.
+
+Viele Grüße
+BrainBoost Nachhilfe

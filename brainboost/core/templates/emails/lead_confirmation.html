@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Hallo {{ lead.name }},</p>
+<p>vielen Dank für deine {% if lead.role == "tutor" %}Bewerbung{% else %}Anfrage{% endif %} bei BrainBoost.</p>
+<p>Wir haben deine Angaben erhalten und melden uns zeitnah über deinen bevorzugten Kontaktweg.</p>
+<p>Viele Grüße<br>BrainBoost Nachhilfe</p>
+{% endblock %}

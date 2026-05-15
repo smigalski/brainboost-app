@@ -750,6 +750,101 @@ class MonthlyFeedbackReminderLog(models.Model):
         return f"{self.get_audience_display()} · {self.month:%m/%Y}"
 
 
+class Lead(models.Model):
+    class Role(models.TextChoices):
+        PARENT = "parent", "Elternteil"
+        STUDENT = "student", "SchülerIn"
+        TUTOR = "tutor", "TutorIn"
+
+    class PreferredContact(models.TextChoices):
+        WHATSAPP = "whatsapp", "WhatsApp"
+        PHONE = "phone", "Telefon"
+        EMAIL = "email", "E-Mail"
+
+    class TutoringType(models.TextChoices):
+        ONLINE = "online", "Online"
+        IN_PERSON = "in_person", "Vor Ort"
+        BOTH = "both", "Beides"
+
+    class Status(models.TextChoices):
+        NEW = "new", "Neu"
+        CONTACTED = "contacted", "Kontaktiert"
+        APPOINTMENT_PLANNED = "appointment_planned", "Termin geplant"
+        WON = "won", "Gewonnen"
+        LOST = "lost", "Verloren"
+        UNSUITABLE = "unsuitable", "Unpassend"
+
+    class EducationStatus(models.TextChoices):
+        UPPER_SCHOOL = "upper_school", "SchülerIn Oberstufe"
+        STUDENT = "student", "StudentIn"
+        TEACHER = "teacher", "Lehrkraft"
+        PROFESSIONAL = "professional", "Berufstätig"
+        OTHER = "other", "Sonstiges"
+
+    class ExperienceLevel(models.TextChoices):
+        NONE = "none", "Noch keine Erfahrung"
+        SOME = "some", "Etwas Erfahrung"
+        REGULAR = "regular", "Regelmäßig Nachhilfe gegeben"
+        PROFESSIONAL = "professional", "Professionelle Unterrichtserfahrung"
+
+    role = models.CharField(max_length=20, choices=Role.choices)
+    name = models.CharField(max_length=255)
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    preferred_contact = models.CharField(
+        max_length=20,
+        choices=PreferredContact.choices,
+    )
+    subject = models.CharField(max_length=255, blank=True)
+    grade = models.CharField(max_length=120, blank=True)
+    tutoring_type = models.CharField(max_length=20, choices=TutoringType.choices)
+    goal = models.CharField(max_length=255, blank=True)
+    urgency = models.CharField(max_length=120, blank=True)
+    message = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.NEW,
+    )
+    source = models.CharField(max_length=120, blank=True)
+    campaign = models.CharField(max_length=120, blank=True)
+    utm_source = models.CharField(max_length=120, blank=True)
+    utm_medium = models.CharField(max_length=120, blank=True)
+    utm_campaign = models.CharField(max_length=120, blank=True)
+    utm_content = models.CharField(max_length=120, blank=True)
+    utm_term = models.CharField(max_length=120, blank=True)
+    referrer = models.CharField(max_length=500, blank=True)
+    landing_page_path = models.CharField(max_length=500, blank=True)
+    initial_querystring = models.TextField(blank=True)
+    privacy_consent = models.BooleanField(default=False)
+    education_status = models.CharField(
+        max_length=30,
+        choices=EducationStatus.choices,
+        blank=True,
+    )
+    teaching_subjects = models.CharField(max_length=255, blank=True)
+    teaching_grades = models.CharField(max_length=255, blank=True)
+    weekly_availability = models.CharField(max_length=120, blank=True)
+    experience_level = models.CharField(
+        max_length=30,
+        choices=ExperienceLevel.choices,
+        blank=True,
+    )
+    motivation = models.TextField(blank=True)
+    # Future extension: add an optional FileField here if tutor application
+    # documents should be uploaded with leads, e.g. upload_to="lead_uploads/%Y/%m/".
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Lead"
+        verbose_name_plural = "Leads"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.get_role_display()})"
+
+
 class Invoice(models.Model):
     class DiscountType(models.TextChoices):
         FIXED = "fixed", "EUR"
