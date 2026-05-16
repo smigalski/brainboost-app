@@ -806,6 +806,11 @@ class Lead(models.Model):
         choices=Status.choices,
         default=Status.NEW,
     )
+    internal_notes = models.TextField(blank=True)
+    contacted_at = models.DateTimeField(blank=True, null=True)
+    last_status_change_at = models.DateTimeField(blank=True, null=True)
+    follow_up_date = models.DateField(blank=True, null=True)
+    follow_up_done = models.BooleanField(default=False)
     source = models.CharField(max_length=120, blank=True)
     campaign = models.CharField(max_length=120, blank=True)
     utm_source = models.CharField(max_length=120, blank=True)
@@ -843,6 +848,30 @@ class Lead(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.get_role_display()})"
+
+    def save(self, *args, **kwargs):
+        old_status = None
+        if self.pk:
+            old_status = (
+                type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first()
+            )
+
+        status_changed = old_status != self.status
+        if status_changed or not self.last_status_change_at:
+            self.last_status_change_at = timezone.now()
+        if self.status == self.Status.CONTACTED and status_changed and not self.contacted_at:
+            self.contacted_at = timezone.now()
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            if status_changed or "status" in update_fields:
+                update_fields.add("last_status_change_at")
+                if self.status == self.Status.CONTACTED and not self.contacted_at:
+                    update_fields.add("contacted_at")
+            kwargs["update_fields"] = update_fields
+
+        super().save(*args, **kwargs)
 
 
 class Invoice(models.Model):

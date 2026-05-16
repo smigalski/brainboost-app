@@ -1,6 +1,8 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
+import json
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import authenticate
 from django.core import mail
@@ -22,12 +24,15 @@ from .models import (
     TutorProfile,
     TemporaryTutorAssignment,
     Lead,
+    AdminTask,
 )
 from .views import (
     _auto_complete_past_lessons,
     _build_epc_payment_payload,
+    _build_campaign_url,
     _build_invoice_pdf_context,
     _build_progress_chart_data,
+    _lead_campaign_stats,
     _sync_temporary_tutor_assignments,
 )
 
@@ -195,6 +200,7 @@ class LeadFormFlowTests(TestCase):
 
         self.assertRedirects(response, reverse("tutor_werden"))
 
+    @override_settings(META_PIXEL_ID="")
     def test_meta_pixel_is_not_rendered_without_pixel_id(self):
         response = self.client.get(reverse("landing_page"))
 
@@ -217,6 +223,7 @@ class LeadFormFlowTests(TestCase):
         self.assertContains(response, 'data-blockingmode="auto"')
         self.assertContains(response, 'type="text/plain" data-cookieconsent="marketing"')
         self.assertContains(response, "connect.facebook.net")
+        self.assertContains(response, "fbq('set', 'autoConfig', false, '123456789')")
         self.assertContains(response, "fbq('init', '123456789')")
         self.assertContains(response, "fbq('track', 'PageView')")
         self.assertNotContains(response, "facebook.com/tr?id=123456789")
@@ -247,6 +254,203 @@ class LeadFormFlowTests(TestCase):
 
         refresh_response = self.client.get(reverse("lead_thanks_tutoring"))
         self.assertNotContains(refresh_response, 'fbq("track", "Lead"')
+
+
+class LeadAdminToolsTests(TestCase):
+    def setUp(self):
+        self.staff_user = CustomUser.objects.create_user(
+            username="staff",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            is_staff=True,
+        )
+        self.normal_user = CustomUser.objects.create_user(
+            username="student",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+
+    def _lead(self, **overrides):
+        data = {
+            "role": Lead.Role.PARENT,
+            "name": "Maria Muster",
+            "email": "maria@example.com",
+            "preferred_contact": Lead.PreferredContact.EMAIL,
+            "subject": "Mathe",
+            "grade": "8. Klasse",
+            "tutoring_type": Lead.TutoringType.ONLINE,
+            "goal": "Noten verbessern",
+            "urgency": "bald",
+            "privacy_consent": True,
+            "source": "website",
+        }
+        data.update(overrides)
+        return Lead.objects.create(**data)
+
+    def test_anonymous_users_cannot_see_lead_dashboard(self):
+        response = self.client.get(reverse("lead_dashboard"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response["Location"])
+
+    def test_non_staff_users_cannot_see_lead_dashboard(self):
+        self.client.force_login(self.normal_user)
+
+        response = self.client.get(reverse("lead_dashboard"))
+
+        self.assertRedirects(response, reverse("dashboard"))
+
+    def test_staff_users_can_see_lead_dashboard(self):
+        self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("lead_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Lead-Zentrale")
+        self.assertContains(response, "Neue Leads")
+
+    def test_csv_export_is_staff_only_and_contains_expected_fields(self):
+        self._lead(utm_campaign="eltern_mathe_braunschweig", internal_notes="Anrufen")
+
+        anonymous_response = self.client.get(reverse("lead_export_csv"))
+        self.assertEqual(anonymous_response.status_code, 302)
+
+        self.client.force_login(self.normal_user)
+        normal_response = self.client.get(reverse("lead_export_csv"))
+        self.assertRedirects(normal_response, reverse("dashboard"))
+
+        self.client.force_login(self.staff_user)
+        staff_response = self.client.get(reverse("lead_export_csv"))
+
+        self.assertEqual(staff_response.status_code, 200)
+        self.assertEqual(staff_response["Content-Type"], "text/csv; charset=utf-8")
+        csv_body = staff_response.content.decode("utf-8")
+        self.assertIn("created_at,role,name,email,phone,preferred_contact", csv_body)
+        self.assertIn("eltern_mathe_braunschweig", csv_body)
+        self.assertIn("Anrufen", csv_body)
+
+    def test_utm_campaign_grouping_uses_unknown_and_counts_statuses(self):
+        self._lead(utm_campaign="eltern_mathe_braunschweig", status=Lead.Status.WON)
+        self._lead(utm_campaign="eltern_mathe_braunschweig", status=Lead.Status.LOST)
+        self._lead(utm_campaign="", status=Lead.Status.UNSUITABLE)
+
+        rows = {row["campaign"]: row for row in _lead_campaign_stats(Lead.objects.all())}
+
+        self.assertEqual(rows["eltern_mathe_braunschweig"]["total"], 2)
+        self.assertEqual(rows["eltern_mathe_braunschweig"]["won"], 1)
+        self.assertEqual(rows["eltern_mathe_braunschweig"]["lost"], 1)
+        self.assertEqual(rows["unknown"]["total"], 1)
+        self.assertEqual(rows["unknown"]["unsuitable"], 1)
+
+    def test_campaign_link_builder_creates_valid_url(self):
+        generated_url = _build_campaign_url(
+            "https://www.nachhilfe-brainboost.de/nachhilfe-anfrage/?existing=1",
+            {
+                "utm_source": "meta",
+                "utm_medium": "paid_social",
+                "utm_campaign": "eltern_mathe_braunschweig",
+                "utm_content": "video_1",
+                "utm_term": "",
+                "role": Lead.Role.PARENT,
+            },
+        )
+
+        parsed = urlsplit(generated_url)
+        query = parse_qs(parsed.query)
+        self.assertEqual(parsed.scheme, "https")
+        self.assertEqual(parsed.netloc, "www.nachhilfe-brainboost.de")
+        self.assertEqual(parsed.path, "/nachhilfe-anfrage/")
+        self.assertEqual(query["existing"], ["1"])
+        self.assertEqual(query["utm_source"], ["meta"])
+        self.assertEqual(query["utm_medium"], ["paid_social"])
+        self.assertEqual(query["utm_campaign"], ["eltern_mathe_braunschweig"])
+        self.assertEqual(query["utm_content"], ["video_1"])
+        self.assertNotIn("utm_term", query)
+        self.assertEqual(query["role"], [Lead.Role.PARENT])
+
+    def test_campaign_link_builder_view_is_staff_only(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(
+            reverse("campaign_link_builder"),
+            {
+                "base_url": "https://www.nachhilfe-brainboost.de/nachhilfe-anfrage/",
+                "utm_source": "meta",
+                "utm_medium": "paid_social",
+                "utm_campaign": "eltern_mathe_braunschweig",
+                "utm_content": "video_1",
+                "role": Lead.Role.PARENT,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "utm_campaign=eltern_mathe_braunschweig")
+        self.assertContains(response, "role=parent")
+
+
+class AdminTaskManagerTests(TestCase):
+    def setUp(self):
+        self.staff_user = CustomUser.objects.create_user(
+            username="staff-tasks",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            is_staff=True,
+        )
+
+    def _task(self, **overrides):
+        data = {
+            "title": "Eltern nachfassen",
+            "importance": AdminTask.Importance.NORMAL,
+            "days": 7,
+            "status": AdminTask.Status.TODO,
+            "owner": self.staff_user,
+            "created_by": self.staff_user,
+        }
+        data.update(overrides)
+        return AdminTask.objects.create(**data)
+
+    def test_complete_button_marks_task_done_and_removes_it_from_task_rows(self):
+        task = self._task()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("admin_tasks"),
+            {"action": "complete", "task_id": task.id},
+        )
+
+        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=tasks")
+        task.refresh_from_db()
+        self.assertEqual(task.status, AdminTask.Status.DONE)
+
+        response = self.client.get(reverse("admin_tasks"))
+        self.assertNotIn(task, [row["task"] for row in response.context["task_rows"]])
+
+    def test_done_task_can_move_directly_back_to_todo_in_kanban(self):
+        task = self._task(status=AdminTask.Status.DONE)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("admin_task_status_update", args=[task.id]),
+            data=json.dumps({"status": AdminTask.Status.TODO}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        task.refresh_from_db()
+        self.assertEqual(task.status, AdminTask.Status.TODO)
+
+    def test_admin_page_has_leads_tab_with_lead_tool_links(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("admin_tasks") + "?tab=leads")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_tab"], "leads")
+        self.assertContains(response, "Lead-Zentrale")
+        self.assertContains(response, reverse("lead_dashboard"))
+        self.assertContains(response, reverse("campaign_link_builder"))
+        self.assertContains(response, reverse("meta_ads_guide"))
 
 
 class InvoiceGenerateFormTests(TestCase):

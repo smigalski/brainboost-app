@@ -1,5 +1,8 @@
+import csv
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 
 from .models import (
@@ -115,19 +118,25 @@ class AdminTaskAdmin(admin.ModelAdmin):
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
+    actions = ("export_leads_csv",)
     list_display = (
         "name",
         "role",
         "subject",
         "grade",
         "status",
+        "follow_up_date",
+        "follow_up_done",
         "preferred_contact",
         "created_at",
         "utm_campaign",
     )
+    list_editable = ("status", "follow_up_date", "follow_up_done")
     list_filter = (
         "role",
         "status",
+        "follow_up_done",
+        "follow_up_date",
         "subject",
         "tutoring_type",
         "utm_campaign",
@@ -140,8 +149,9 @@ class LeadAdmin(admin.ModelAdmin):
         "subject",
         "teaching_subjects",
         "message",
+        "internal_notes",
     )
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at", "last_status_change_at")
     fieldsets = (
         (
             "Kontakt",
@@ -154,6 +164,18 @@ class LeadAdmin(admin.ModelAdmin):
                     "phone",
                     "preferred_contact",
                     "privacy_consent",
+                )
+            },
+        ),
+        (
+            "Pipeline",
+            {
+                "fields": (
+                    "contacted_at",
+                    "last_status_change_at",
+                    "follow_up_date",
+                    "follow_up_done",
+                    "internal_notes",
                 )
             },
         ),
@@ -202,3 +224,35 @@ class LeadAdmin(admin.ModelAdmin):
         ),
         ("Zeitpunkte", {"fields": ("created_at", "updated_at")}),
     )
+
+    @admin.action(description="Ausgewählte Leads als CSV exportieren")
+    def export_leads_csv(self, request, queryset):
+        fields = [
+            "created_at",
+            "role",
+            "name",
+            "email",
+            "phone",
+            "preferred_contact",
+            "subject",
+            "grade",
+            "tutoring_type",
+            "goal",
+            "urgency",
+            "status",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "utm_content",
+            "utm_term",
+            "source",
+            "campaign",
+            "internal_notes",
+        ]
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = 'attachment; filename="brainboost-leads.csv"'
+        writer = csv.writer(response)
+        writer.writerow(fields)
+        for lead in queryset.order_by("-created_at"):
+            writer.writerow([getattr(lead, field) for field in fields])
+        return response

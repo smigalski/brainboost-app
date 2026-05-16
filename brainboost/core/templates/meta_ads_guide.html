@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Meta-Ads-Struktur{% endblock %}
+{% block content %}
+<div class="card">
+    <style>
+        .campaign-guide {
+            display: grid;
+            gap: 18px;
+            margin-top: 18px;
+            max-width: 880px;
+        }
+
+        .campaign-guide article {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        .campaign-guide code {
+            overflow-wrap: anywhere;
+        }
+    </style>
+
+    <p><a href="{% url 'lead_dashboard' %}">Zurück zur Lead-Zentrale</a></p>
+    <h1>Empfohlene Meta-Ads-Teststruktur</h1>
+
+    <div class="campaign-guide">
+        <article>
+            <h2>Kampagne 1</h2>
+            <p><strong>Name:</strong><br><code>eltern_mathe_braunschweig</code></p>
+            <p><strong>Zielgruppe:</strong><br>Eltern in Braunschweig und Umgebung</p>
+            <p><strong>Landingpage:</strong><br><code>/nachhilfe-anfrage/</code></p>
+            <p><strong>UTM:</strong></p>
+            <ul>
+                <li><code>utm_source=meta</code></li>
+                <li><code>utm_medium=paid_social</code></li>
+                <li><code>utm_campaign=eltern_mathe_braunschweig</code></li>
+            </ul>
+        </article>
+
+        <article>
+            <h2>Kampagne 2</h2>
+            <p><strong>Name:</strong><br><code>tutoren_studierende_braunschweig</code></p>
+            <p><strong>Zielgruppe:</strong><br>Studierende / potenzielle TutorInnen</p>
+            <p><strong>Landingpage:</strong><br><code>/tutor-werden/</code></p>
+            <p><strong>UTM:</strong></p>
+            <ul>
+                <li><code>utm_source=meta</code></li>
+                <li><code>utm_medium=paid_social</code></li>
+                <li><code>utm_campaign=tutoren_studierende_braunschweig</code></li>
+            </ul>
+        </article>
+    </div>
+</div>
+{% endblock %}

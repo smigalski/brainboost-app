@@ -1,4 +1,5 @@
 import base64
+import csv
 import io
 import json
 from decimal import Decimal, ROUND_HALF_UP
@@ -9,7 +10,7 @@ import logging
 import re
 import unicodedata
 from typing import Optional
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -18,7 +19,8 @@ from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db.models import Count, Q
+from django.db.models import Case, CharField, Count, F, Q, Value, When
+from django.db.models.functions import TruncDate
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
 from django.utils import timezone
@@ -51,6 +53,7 @@ from .forms import (
     TutorStudentAssignmentForm,
     AdminTaskCreateForm,
     AdminTaskUpdateForm,
+    CampaignLinkBuilderForm,
     LeadForm,
 )
 from .middleware import UTM_KEYS, UTM_SESSION_KEY
@@ -1145,6 +1148,132 @@ def _has_admin_access(user: CustomUser) -> bool:
     return bool(user.is_staff or user.is_superuser)
 
 
+LEAD_EXPORT_FIELDS = [
+    "created_at",
+    "role",
+    "name",
+    "email",
+    "phone",
+    "preferred_contact",
+    "subject",
+    "grade",
+    "tutoring_type",
+    "goal",
+    "urgency",
+    "status",
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "utm_term",
+    "source",
+    "campaign",
+    "internal_notes",
+]
+
+
+def _lead_group_expression(field_name: str):
+    return Case(
+        When(**{field_name: ""}, then=Value("unknown")),
+        default=F(field_name),
+        output_field=CharField(),
+    )
+
+
+def _lead_group_counts(queryset, field_name: str, choices=None) -> list[dict]:
+    label_map = dict(choices or [])
+    rows = (
+        queryset.annotate(group_value=_lead_group_expression(field_name))
+        .values("group_value")
+        .annotate(total=Count("id"))
+        .order_by("group_value")
+    )
+    return [
+        {
+            "value": row["group_value"] or "unknown",
+            "label": label_map.get(row["group_value"], row["group_value"] or "unknown"),
+            "total": row["total"],
+        }
+        for row in rows
+    ]
+
+
+def _lead_campaign_stats(queryset) -> list[dict]:
+    rows = (
+        queryset.annotate(utm_campaign_group=_lead_group_expression("utm_campaign"))
+        .values("utm_campaign_group")
+        .annotate(
+            total=Count("id"),
+            won=Count("id", filter=Q(status=Lead.Status.WON)),
+            lost=Count("id", filter=Q(status=Lead.Status.LOST)),
+            unsuitable=Count("id", filter=Q(status=Lead.Status.UNSUITABLE)),
+        )
+        .order_by("utm_campaign_group")
+    )
+    stats = []
+    for row in rows:
+        total = row["total"] or 0
+        stats.append(
+            {
+                "campaign": row["utm_campaign_group"] or "unknown",
+                "total": total,
+                "won": row["won"],
+                "lost": row["lost"],
+                "unsuitable": row["unsuitable"],
+                "conversion_rate": (row["won"] / total * 100) if total else 0,
+            }
+        )
+    return stats
+
+
+def _filter_leads_by_period(queryset, start_date: str, end_date: str):
+    if start_date:
+        queryset = queryset.filter(created_at__date__gte=start_date)
+    if end_date:
+        queryset = queryset.filter(created_at__date__lte=end_date)
+    return queryset
+
+
+def _valid_iso_date(value: str) -> str:
+    value = (value or "").strip()
+    if not value:
+        return ""
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return ""
+    return value
+
+
+def _write_leads_csv(queryset) -> HttpResponse:
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="brainboost-leads.csv"'
+    writer = csv.writer(response)
+    writer.writerow(LEAD_EXPORT_FIELDS)
+    for lead in queryset.order_by("-created_at"):
+        writer.writerow([getattr(lead, field) for field in LEAD_EXPORT_FIELDS])
+    return response
+
+
+def _build_campaign_url(base_url: str, params: dict[str, str]) -> str:
+    parsed = urlsplit(base_url.strip())
+    query_items = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=False)
+        if key not in params
+    ]
+    query_items.extend((key, value) for key, value in params.items() if value)
+    return urlunsplit(
+        (
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            urlencode(query_items),
+            parsed.fragment,
+        )
+    )
+
+
 def _admin_users_queryset():
     return CustomUser.objects.filter(is_active=True).filter(
         Q(is_staff=True) | Q(is_superuser=True)
@@ -1801,7 +1930,7 @@ def admin_tasks(request):
         return redirect("dashboard")
 
     selected_tab = request.GET.get("tab", "tasks")
-    if selected_tab not in {"tasks", "kanban"}:
+    if selected_tab not in {"tasks", "kanban", "leads"}:
         selected_tab = "tasks"
 
     create_form = AdminTaskCreateForm()
@@ -1833,29 +1962,38 @@ def admin_tasks(request):
             task.delete()
             messages.success(request, "Aufgabe wurde gelöscht.")
             return redirect(f"{reverse('admin_tasks')}?tab=tasks")
+        elif action == "complete":
+            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
+            task.status = AdminTask.Status.DONE
+            task.save(update_fields=["status", "updated_at"])
+            messages.success(request, "Aufgabe wurde als erledigt markiert.")
+            return redirect(f"{reverse('admin_tasks')}?tab=tasks")
 
     tasks = list(
         AdminTask.objects.select_related("owner")
         .order_by("status", "created_at", "id")
     )
     today = timezone.localdate()
-    task_rows = [_admin_task_view_data(task, today) for task in tasks]
+    all_task_rows = [_admin_task_view_data(task, today) for task in tasks]
+    task_rows = [
+        item for item in all_task_rows if item["task"].status != AdminTask.Status.DONE
+    ]
 
     kanban_columns = [
         {
             "status": AdminTask.Status.TODO,
             "label": dict(AdminTask.Status.choices)[AdminTask.Status.TODO],
-            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.TODO],
+            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.TODO],
         },
         {
             "status": AdminTask.Status.DOING,
             "label": dict(AdminTask.Status.choices)[AdminTask.Status.DOING],
-            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.DOING],
+            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.DOING],
         },
         {
             "status": AdminTask.Status.DONE,
             "label": dict(AdminTask.Status.choices)[AdminTask.Status.DONE],
-            "tasks": [item for item in task_rows if item["task"].status == AdminTask.Status.DONE],
+            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.DONE],
         },
     ]
 
@@ -1873,6 +2011,101 @@ def admin_tasks(request):
             "status_choices": AdminTask.Status.choices,
         },
     )
+
+
+@login_required
+def lead_dashboard(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+
+    start_date = _valid_iso_date(request.GET.get("start_date", ""))
+    end_date = _valid_iso_date(request.GET.get("end_date", ""))
+    leads = _filter_leads_by_period(Lead.objects.all(), start_date, end_date)
+
+    period_rows = (
+        leads.annotate(day=TruncDate("created_at"))
+        .values("day")
+        .annotate(total=Count("id"))
+        .order_by("-day")
+    )
+    open_leads = leads.filter(
+        status__in=[Lead.Status.NEW, Lead.Status.CONTACTED],
+        follow_up_done=False,
+    ).order_by("follow_up_date", "-created_at")[:30]
+
+    context = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "total_leads": leads.count(),
+        "new_leads_count": leads.filter(status=Lead.Status.NEW).count(),
+        "open_leads_count": leads.filter(
+            status__in=[Lead.Status.NEW, Lead.Status.CONTACTED],
+            follow_up_done=False,
+        ).count(),
+        "role_rows": _lead_group_counts(leads, "role", Lead.Role.choices),
+        "status_rows": _lead_group_counts(leads, "status", Lead.Status.choices),
+        "subject_rows": _lead_group_counts(leads, "subject"),
+        "grade_rows": _lead_group_counts(leads, "grade"),
+        "campaign_rows": _lead_campaign_stats(leads),
+        "period_rows": period_rows,
+        "open_leads": open_leads,
+        "recent_leads": leads.order_by("-created_at")[:30],
+    }
+    return render(request, "lead_dashboard.html", context)
+
+
+@login_required
+def lead_export_csv(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+
+    start_date = _valid_iso_date(request.GET.get("start_date", ""))
+    end_date = _valid_iso_date(request.GET.get("end_date", ""))
+    leads = _filter_leads_by_period(Lead.objects.all(), start_date, end_date)
+    return _write_leads_csv(leads)
+
+
+@login_required
+def campaign_link_builder(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+
+    initial = {
+        "base_url": request.build_absolute_uri(reverse("nachhilfe_anfrage")),
+        "utm_source": "meta",
+        "utm_medium": "paid_social",
+    }
+    form = CampaignLinkBuilderForm(request.GET or None, initial=initial)
+    generated_url = ""
+    if form.is_valid():
+        params = {
+            "utm_source": form.cleaned_data["utm_source"].strip(),
+            "utm_medium": form.cleaned_data["utm_medium"].strip(),
+            "utm_campaign": form.cleaned_data["utm_campaign"].strip(),
+            "utm_content": form.cleaned_data["utm_content"].strip(),
+            "utm_term": form.cleaned_data["utm_term"].strip(),
+            "role": form.cleaned_data["role"].strip(),
+        }
+        generated_url = _build_campaign_url(form.cleaned_data["base_url"], params)
+    elif not request.GET:
+        form = CampaignLinkBuilderForm(initial=initial)
+
+    return render(
+        request,
+        "campaign_link_builder.html",
+        {"form": form, "generated_url": generated_url},
+    )
+
+
+@login_required
+def meta_ads_guide(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+    return render(request, "meta_ads_guide.html")
 
 
 @login_required
@@ -1898,7 +2131,7 @@ def admin_task_status_update(request, task_id: int):
     allowed_moves = {
         AdminTask.Status.TODO: {AdminTask.Status.DOING},
         AdminTask.Status.DOING: {AdminTask.Status.TODO, AdminTask.Status.DONE},
-        AdminTask.Status.DONE: {AdminTask.Status.DOING},
+        AdminTask.Status.DONE: {AdminTask.Status.TODO, AdminTask.Status.DOING},
     }
     if next_status != task.status and next_status not in allowed_moves.get(task.status, set()):
         return JsonResponse({"ok": False, "error": "move_not_allowed"}, status=400)

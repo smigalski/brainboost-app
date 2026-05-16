@@ -97,6 +97,32 @@ class BroadcastEmailForm(forms.Form):
     )
 
 
+class CampaignLinkBuilderForm(forms.Form):
+    ROLE_CHOICES = [
+        ("", "Keine Rolle"),
+        (Lead.Role.PARENT, "Eltern"),
+        (Lead.Role.STUDENT, "SchülerInnen"),
+        (Lead.Role.TUTOR, "TutorInnen"),
+    ]
+
+    base_url = forms.CharField(
+        label="Basis-URL",
+        initial="/nachhilfe-anfrage/",
+        max_length=500,
+    )
+    utm_source = forms.CharField(label="utm_source", initial="meta", max_length=120)
+    utm_medium = forms.CharField(label="utm_medium", initial="paid_social", max_length=120)
+    utm_campaign = forms.CharField(label="utm_campaign", max_length=120, required=False)
+    utm_content = forms.CharField(label="utm_content", max_length=120, required=False)
+    utm_term = forms.CharField(label="utm_term", max_length=120, required=False)
+    role = forms.ChoiceField(label="role", choices=ROLE_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "form-control")
+
+
 class LeadForm(forms.ModelForm):
     privacy_consent = forms.BooleanField(
         label=(

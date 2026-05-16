@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Kampagnen-Link bauen{% endblock %}
+{% block content %}
+<div class="card">
+    <style>
+        .link-form {
+            display: grid;
+            gap: 12px;
+            max-width: 760px;
+            margin-top: 18px;
+        }
+
+        .link-form label {
+            display: grid;
+            gap: 5px;
+            font-weight: 700;
+            color: #25323a;
+        }
+
+        .link-form input,
+        .link-form select {
+            width: 100%;
+            padding: 10px 11px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+        }
+
+        .generated-link {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(31, 102, 102, 0.1);
+            overflow-wrap: anywhere;
+            font-weight: 700;
+        }
+    </style>
+
+    <p><a href="{% url 'lead_dashboard' %}">Zurück zur Lead-Zentrale</a></p>
+    <h1>Kampagnen-Link bauen</h1>
+    <p class="muted">Für Meta Ads nur UTM-Parameter und optional die Rolle in die URL schreiben.</p>
+
+    <form class="link-form" method="get">
+        {% for field in form %}
+            <label>
+                {{ field.label }}
+                {{ field }}
+                {% if field.errors %}
+                    <span class="muted">{{ field.errors|join:", " }}</span>
+                {% endif %}
+            </label>
+        {% endfor %}
+        <button class="button" type="submit">Link erzeugen</button>
+    </form>
+
+    {% if generated_url %}
+        <div class="generated-link" data-generated-url>{{ generated_url }}</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Lead-Zentrale{% endblock %}
+{% block content %}
+<div class="card">
+    <style>
+        .lead-toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: end;
+            margin: 18px 0;
+        }
+
+        .lead-toolbar label {
+            display: grid;
+            gap: 5px;
+            font-weight: 700;
+            color: #25323a;
+        }
+
+        .lead-toolbar input {
+            padding: 9px 10px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+        }
+
+        .lead-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .lead-kpi {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.78);
+        }
+
+        .lead-kpi strong {
+            display: block;
+            font-size: 28px;
+            color: var(--teal-dark);
+            line-height: 1.1;
+        }
+
+        .lead-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .lead-section {
+            margin-top: 22px;
+        }
+
+        .lead-table-wrap {
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        .lead-table {
+            width: 100%;
+            min-width: 420px;
+            border-collapse: collapse;
+        }
+
+        .lead-table th,
+        .lead-table td {
+            text-align: left;
+            padding: 9px 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            vertical-align: top;
+        }
+
+        .lead-table thead th {
+            background: rgba(31, 102, 102, 0.1);
+            color: #124444;
+        }
+
+        .lead-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+    </style>
+
+    <h1>Lead-Zentrale</h1>
+    <p class="muted">Interne Auswertung für Meta-Ads-Tests und Lead-Nachverfolgung.</p>
+
+    <div class="lead-actions">
+        <a class="button" href="{% url 'campaign_link_builder' %}">Kampagnen-Link bauen</a>
+        <a class="button" href="{% url 'meta_ads_guide' %}">Meta-Ads-Struktur</a>
+        <a class="button" href="{% url 'lead_export_csv' %}?start_date={{ start_date }}&end_date={{ end_date }}">CSV exportieren</a>
+        <a class="button" href="{% url 'admin:core_lead_changelist' %}">Leads im Django-Admin</a>
+    </div>
+
+    <form class="lead-toolbar" method="get">
+        <label>
+            Von
+            <input type="date" name="start_date" value="{{ start_date }}">
+        </label>
+        <label>
+            Bis
+            <input type="date" name="end_date" value="{{ end_date }}">
+        </label>
+        <button class="button" type="submit">Zeitraum anwenden</button>
+    </form>
+
+    <div class="lead-kpis">
+        <div class="lead-kpi"><span>Leads gesamt</span><strong>{{ total_leads }}</strong></div>
+        <div class="lead-kpi"><span>Neue Leads</span><strong>{{ new_leads_count }}</strong></div>
+        <div class="lead-kpi"><span>Offene Follow-ups</span><strong>{{ open_leads_count }}</strong></div>
+    </div>
+
+    <div class="lead-grid">
+        <section>
+            <h2>Nach Rolle</h2>
+            <div class="lead-table-wrap">
+                <table class="lead-table">
+                    <thead><tr><th>Rolle</th><th>Anzahl</th></tr></thead>
+                    <tbody>
+                        {% for row in role_rows %}
+                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
+                        {% empty %}
+                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Nach Status</h2>
+            <div class="lead-table-wrap">
+                <table class="lead-table">
+                    <thead><tr><th>Status</th><th>Anzahl</th></tr></thead>
+                    <tbody>
+                        {% for row in status_rows %}
+                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
+                        {% empty %}
+                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Nach Fach</h2>
+            <div class="lead-table-wrap">
+                <table class="lead-table">
+                    <thead><tr><th>Fach</th><th>Anzahl</th></tr></thead>
+                    <tbody>
+                        {% for row in subject_rows %}
+                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
+                        {% empty %}
+                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2>Nach Klassenstufe</h2>
+            <div class="lead-table-wrap">
+                <table class="lead-table">
+                    <thead><tr><th>Klassenstufe</th><th>Anzahl</th></tr></thead>
+                    <tbody>
+                        {% for row in grade_rows %}
+                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
+                        {% empty %}
+                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="lead-section">
+        <h2>UTM-Kampagnen</h2>
+        <div class="lead-table-wrap">
+            <table class="lead-table">
+                <thead>
+                    <tr>
+                        <th>utm_campaign</th>
+                        <th>Leads</th>
+                        <th>Gewonnen</th>
+                        <th>Verloren</th>
+                        <th>Ungeeignet</th>
+                        <th>Conversion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in campaign_rows %}
+                        <tr>
+                            <td>{{ row.campaign }}</td>
+                            <td>{{ row.total }}</td>
+                            <td>{{ row.won }}</td>
+                            <td>{{ row.lost }}</td>
+                            <td>{{ row.unsuitable }}</td>
+                            <td>{{ row.conversion_rate|floatformat:1 }}%</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">Keine Kampagnendaten im Zeitraum.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="lead-section">
+        <h2>Nach Zeitraum</h2>
+        <div class="lead-table-wrap">
+            <table class="lead-table">
+                <thead><tr><th>Datum</th><th>Anzahl</th></tr></thead>
+                <tbody>
+                    {% for row in period_rows %}
+                        <tr><td>{{ row.day|date:"d.m.Y" }}</td><td>{{ row.total }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="lead-section">
+        <h2>Offene Leads</h2>
+        <div class="lead-table-wrap">
+            <table class="lead-table">
+                <thead><tr><th>Lead</th><th>Status</th><th>Follow-up</th><th>Kampagne</th></tr></thead>
+                <tbody>
+                    {% for lead in open_leads %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a><br>
+                                <span class="muted">{{ lead.email|default:lead.phone }}</span>
+                            </td>
+                            <td>{{ lead.get_status_display }}</td>
+                            <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"-" }}</td>
+                            <td>{{ lead.utm_campaign|default:"unknown" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">Keine offenen Leads.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="lead-section">
+        <h2>Neueste Leads</h2>
+        <div class="lead-table-wrap">
+            <table class="lead-table">
+                <thead><tr><th>Datum</th><th>Name</th><th>Rolle</th><th>Fach</th><th>Status</th><th>UTM</th></tr></thead>
+                <tbody>
+                    {% for lead in recent_leads %}
+                        <tr>
+                            <td>{{ lead.created_at|date:"d.m.Y H:i" }}</td>
+                            <td><a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a></td>
+                            <td>{{ lead.get_role_display }}</td>
+                            <td>{{ lead.subject|default:"-" }}</td>
+                            <td>{{ lead.get_status_display }}</td>
+                            <td>{{ lead.utm_campaign|default:"unknown" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">Keine Leads im Zeitraum.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

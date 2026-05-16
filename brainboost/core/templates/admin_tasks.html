@@ -52,6 +52,34 @@
             display: none;
         }
 
+        .lead-admin-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .lead-admin-action {
+            display: grid;
+            gap: 8px;
+            align-content: start;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 8px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .lead-admin-action h3 {
+            margin: 0;
+            color: var(--accent);
+        }
+
+        .lead-admin-action p {
+            margin: 0;
+            color: #5a5a5a;
+            line-height: 1.45;
+        }
+
         .admin-note {
             margin-bottom: 14px;
             color: #5a5a5a;
@@ -341,6 +369,15 @@
         >
             Kanban
         </button>
+        <button
+            class="admin-tab{% if selected_tab == 'leads' %} is-active{% endif %}"
+            type="button"
+            role="tab"
+            aria-selected="{% if selected_tab == 'leads' %}true{% else %}false{% endif %}"
+            data-admin-tab="leads"
+        >
+            Leads
+        </button>
     </div>
 
     <section class="admin-panel" data-admin-panel="tasks"{% if selected_tab != 'tasks' %} hidden{% endif %}>
@@ -422,11 +459,17 @@
                             <td>
                                 <div class="table-actions">
                                     <button class="button" type="button" form="update-task-{{ item.task.id }}" data-task-edit-toggle>Ändern</button>
+                                    <button class="button" type="submit" form="complete-task-{{ item.task.id }}">Erledigt</button>
                                     <button class="button button-danger" type="submit" form="delete-task-{{ item.task.id }}">Löschen</button>
                                 </div>
                                 <form id="update-task-{{ item.task.id }}" method="post">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="update">
+                                    <input type="hidden" name="task_id" value="{{ item.task.id }}">
+                                </form>
+                                <form id="complete-task-{{ item.task.id }}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="complete">
                                     <input type="hidden" name="task_id" value="{{ item.task.id }}">
                                 </form>
                                 <form id="delete-task-{{ item.task.id }}" method="post" onsubmit="return confirm('Aufgabe wirklich löschen?');">
@@ -533,6 +576,32 @@
             {% endfor %}
         </div>
     </section>
+
+    <section class="admin-panel" data-admin-panel="leads"{% if selected_tab != 'leads' %} hidden{% endif %}>
+        <p class="admin-note">Werkzeuge für Lead-Auswertung, Meta-Ads-Testlinks und Kampagnenvorbereitung.</p>
+        <div class="lead-admin-actions">
+            <article class="lead-admin-action">
+                <h3>Lead-Zentrale</h3>
+                <p>Übersicht nach Status, Rolle, Fach, Klassenstufe, Zeitraum und UTM-Kampagne.</p>
+                <a class="button" href="{% url 'lead_dashboard' %}">Öffnen</a>
+            </article>
+            <article class="lead-admin-action">
+                <h3>Kampagnen-Link bauen</h3>
+                <p>Meta-Ad-Links mit UTM-Parametern und optionaler Rollen-Vorauswahl erzeugen.</p>
+                <a class="button" href="{% url 'campaign_link_builder' %}">Link bauen</a>
+            </article>
+            <article class="lead-admin-action">
+                <h3>Meta-Ads-Struktur</h3>
+                <p>Interne Vorlage für kleine Tests mit Eltern- und TutorInnen-Kampagnen.</p>
+                <a class="button" href="{% url 'meta_ads_guide' %}">Ansehen</a>
+            </article>
+            <article class="lead-admin-action">
+                <h3>Django-Admin</h3>
+                <p>Leads bearbeiten, Status schnell ändern, Notizen pflegen und ausgewählte Leads exportieren.</p>
+                <a class="button" href="{% url 'admin:core_lead_changelist' %}">Leads verwalten</a>
+            </article>
+        </div>
+    </section>
 </div>
 
 {{ days_by_importance|json_script:"admin-days-rules" }}
@@ -547,7 +616,7 @@
             var allowedMoves = {
                 todo: ["doing"],
                 doing: ["todo", "done"],
-                done: ["doing"]
+                done: ["todo", "doing"]
             };
 
             function populateDays(importanceSelect, daysSelect) {
