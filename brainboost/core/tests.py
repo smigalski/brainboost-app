@@ -1,11 +1,13 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
 import json
+import tempfile
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import authenticate
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -25,6 +27,7 @@ from .models import (
     TemporaryTutorAssignment,
     Lead,
     AdminTask,
+    AdminIdea,
 )
 from .views import (
     _auto_complete_past_lessons,
@@ -451,6 +454,102 @@ class AdminTaskManagerTests(TestCase):
         self.assertContains(response, reverse("lead_dashboard"))
         self.assertContains(response, reverse("campaign_link_builder"))
         self.assertContains(response, reverse("meta_ads_guide"))
+
+    def test_admin_page_has_ideas_tab_with_idea_fields_and_todo_copy(self):
+        idea = AdminIdea.objects.create(
+            title="Landingpage stark vereinfachen",
+            category=AdminIdea.Category.IMPROVEMENT,
+            created_by=self.staff_user,
+        )
+        task = self._task(title="Lead anrufen", status=AdminTask.Status.TODO)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_tab"], "ideas")
+        self.assertContains(response, "Ideen")
+        self.assertContains(response, "Große Ideen/Vision")
+        self.assertContains(response, "Kleine Ideen, Verbesserungen")
+        self.assertContains(response, idea.title)
+        self.assertContains(response, task.title)
+
+    def test_admin_idea_can_be_created(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("admin_tasks"),
+            {
+                "action": "create_idea",
+                "category": AdminIdea.Category.VISION,
+                "title": "BrainBoost Lernanalyse",
+            },
+        )
+
+        idea = AdminIdea.objects.get()
+        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
+        self.assertEqual(idea.category, AdminIdea.Category.VISION)
+        self.assertEqual(idea.created_by, self.staff_user)
+
+    def test_improvement_idea_can_be_created_with_image(self):
+        image = SimpleUploadedFile(
+            "idea.gif",
+            (
+                b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00"
+                b"\xff\xff\xff,\x00\x00\x00\x00\x01\x00\x01\x00"
+                b"\x00\x02\x02D\x01\x00;"
+            ),
+            content_type="image/gif",
+        )
+        self.client.force_login(self.staff_user)
+
+        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            response = self.client.post(
+                reverse("admin_tasks"),
+                {
+                    "action": "create_idea",
+                    "category": AdminIdea.Category.IMPROVEMENT,
+                    "title": "Screenshot vom Formular",
+                    "image": image,
+                },
+            )
+
+            idea = AdminIdea.objects.get()
+            self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
+            self.assertTrue(idea.image.name.startswith("admin_ideas/"))
+
+            response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
+            self.assertContains(response, idea.image.url)
+            self.assertContains(response, 'class="idea-card__image"')
+            self.assertContains(response, f'data-idea-image-preview="{idea.image.url}"')
+            self.assertContains(response, "data-idea-image-preview-modal")
+
+    def test_idea_task_modal_submission_creates_todo_task_and_removes_idea(self):
+        idea = AdminIdea.objects.create(
+            title="WhatsApp Follow-up Vorlage",
+            category=AdminIdea.Category.IMPROVEMENT,
+            created_by=self.staff_user,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("admin_tasks"),
+            {
+                "action": "create",
+                "return_tab": "ideas",
+                "source_idea_id": idea.id,
+                "title": idea.title,
+                "importance": AdminTask.Importance.IDEA,
+                "days": 14,
+                "owner": self.staff_user.id,
+            },
+        )
+
+        task = AdminTask.objects.get(title=idea.title)
+        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#task-{task.id}")
+        self.assertEqual(task.status, AdminTask.Status.TODO)
+        self.assertEqual(task.importance, AdminTask.Importance.IDEA)
+        self.assertFalse(AdminIdea.objects.filter(pk=idea.pk).exists())
 
 
 class InvoiceGenerateFormTests(TestCase):

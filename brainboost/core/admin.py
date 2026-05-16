@@ -15,6 +15,7 @@ from .models import (
     Invoice,
     TutorTemplate,
     AdminTask,
+    AdminIdea,
     Lead,
 )
 
@@ -114,6 +115,13 @@ class AdminTaskAdmin(admin.ModelAdmin):
     list_display = ("title", "importance", "days", "status", "owner", "created_at")
     list_filter = ("importance", "status", "owner")
     search_fields = ("title", "owner__username", "owner__first_name", "owner__last_name")
+
+
+@admin.register(AdminIdea)
+class AdminIdeaAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "image", "created_by", "created_at")
+    list_filter = ("category", "created_by")
+    search_fields = ("title", "created_by__username", "created_by__first_name", "created_by__last_name")
 
 
 @admin.register(Lead)

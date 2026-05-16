@@ -52,6 +52,212 @@
             display: none;
         }
 
+        .ideas-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 1.15fr) minmax(260px, 0.85fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .ideas-stack {
+            display: grid;
+            gap: 14px;
+        }
+
+        .idea-field,
+        .idea-todo-field {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.72);
+            padding: 14px;
+        }
+
+        .idea-field h3,
+        .idea-todo-field h3 {
+            margin: 0 0 10px;
+            color: var(--accent);
+        }
+
+        .idea-form {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .idea-form input,
+        .idea-task-modal input,
+        .idea-task-modal select {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: #fff;
+        }
+
+        .idea-list {
+            display: grid;
+            gap: 9px;
+            min-height: 80px;
+        }
+
+        .idea-card {
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            background: #fff;
+            padding: 10px;
+            cursor: grab;
+            display: grid;
+            gap: 8px;
+        }
+
+        .idea-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .idea-card__title {
+            font-weight: 800;
+            color: #1f2a30;
+            line-height: 1.35;
+        }
+
+        .idea-card__image {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: zoom-in;
+            background: #f3f6f8;
+        }
+
+        .idea-card__image-button {
+            justify-self: start;
+            border: none;
+            background: transparent;
+            padding: 0;
+            line-height: 0;
+            cursor: zoom-in;
+        }
+
+        .idea-card .button {
+            justify-self: start;
+            padding: 7px 10px;
+            font-size: 13px;
+            box-shadow: none;
+        }
+
+        .idea-todo-dropzone {
+            display: grid;
+            gap: 9px;
+            min-height: 190px;
+            border: 1px dashed rgba(31, 102, 102, 0.36);
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(31, 102, 102, 0.06);
+            transition: background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .idea-todo-dropzone.is-over {
+            border-color: rgba(31, 102, 102, 0.7);
+            background: rgba(31, 102, 102, 0.14);
+        }
+
+        .idea-task-card {
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            background: #fff;
+            padding: 10px;
+        }
+
+        .idea-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .idea-modal-backdrop[hidden] {
+            display: none;
+        }
+
+        .idea-task-modal {
+            width: min(520px, 100%);
+            border-radius: 10px;
+            background: #fff;
+            padding: 18px;
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+        }
+
+        .idea-task-modal h3 {
+            margin: 0 0 12px;
+            color: var(--accent);
+        }
+
+        .idea-task-modal__grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .idea-modal-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        .idea-image-preview {
+            position: fixed;
+            inset: 0;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.64);
+        }
+
+        .idea-image-preview[hidden] {
+            display: none;
+        }
+
+        .idea-image-preview__inner {
+            position: relative;
+            max-width: min(920px, 100%);
+            max-height: 90vh;
+            border-radius: 10px;
+            background: #fff;
+            padding: 12px;
+            box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+        }
+
+        .idea-image-preview__inner img {
+            display: block;
+            max-width: 100%;
+            max-height: calc(90vh - 24px);
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .idea-image-preview__close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(11, 27, 42, 0.84);
+            color: #fff;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
         .lead-admin-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -344,6 +550,10 @@
             .kanban-board {
                 grid-template-columns: 1fr;
             }
+
+            .ideas-layout {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
@@ -351,6 +561,15 @@
     <p class="muted">Interaktiver Task-Manager für Admin-Aufgaben mit Tabelle und Kanban-Sync.</p>
 
     <div class="admin-tabs" role="tablist" aria-label="Admin Tabs">
+        <button
+            class="admin-tab{% if selected_tab == 'ideas' %} is-active{% endif %}"
+            type="button"
+            role="tab"
+            aria-selected="{% if selected_tab == 'ideas' %}true{% else %}false{% endif %}"
+            data-admin-tab="ideas"
+        >
+            Ideen
+        </button>
         <button
             class="admin-tab{% if selected_tab == 'tasks' %} is-active{% endif %}"
             type="button"
@@ -379,6 +598,108 @@
             Leads
         </button>
     </div>
+
+    <section class="admin-panel" data-admin-panel="ideas"{% if selected_tab != 'ideas' %} hidden{% endif %}>
+        <p class="admin-note">Ideen sammeln und bei Bedarf per Drag &amp; Drop in eine konkrete Aufgabe umwandeln.</p>
+
+        <div class="ideas-layout">
+            <div class="ideas-stack">
+                <section class="idea-field">
+                    <h3>Kleine Ideen, Verbesserungen</h3>
+                    {% if improvement_create_form.errors %}
+                        <div class="admin-form-errors">
+                            {% for field, errors in improvement_create_form.errors.items %}
+                                <div><strong>{{ field }}:</strong> {{ errors|join:", " }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <form class="idea-form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create_idea">
+                        <input type="hidden" name="category" value="improvement">
+                        <input type="text" name="title" placeholder="Verbesserung hinzufügen" value="{{ improvement_create_form.title.value|default:'' }}" required>
+                        <input type="file" name="image" accept="image/*">
+                        <button class="button" type="submit">Idee hinzufügen</button>
+                    </form>
+                    <div class="idea-list">
+                        {% for idea in improvement_ideas %}
+                            <article
+                                id="idea-{{ idea.id }}"
+                                class="idea-card"
+                                draggable="true"
+                                data-idea-card
+                                data-idea-id="{{ idea.id }}"
+                                data-idea-title="{{ idea.title }}"
+                            >
+                                <div class="idea-card__title">{{ idea.title }}</div>
+                                {% if idea.image %}
+                                    <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ idea.image.url }}" aria-label="Bildvorschau öffnen">
+                                        <img class="idea-card__image" src="{{ idea.image.url }}" alt="">
+                                    </button>
+                                {% endif %}
+                                <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                            </article>
+                        {% empty %}
+                            <p class="kanban-empty">Noch keine kleinen Ideen.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="idea-field">
+                    <h3>Große Ideen/Vision</h3>
+                    {% if vision_create_form.errors %}
+                        <div class="admin-form-errors">
+                            {% for field, errors in vision_create_form.errors.items %}
+                                <div><strong>{{ field }}:</strong> {{ errors|join:", " }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <form class="idea-form" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create_idea">
+                        <input type="hidden" name="category" value="vision">
+                        <input type="text" name="title" placeholder="Vision hinzufügen" value="{{ vision_create_form.title.value|default:'' }}" required>
+                        <button class="button" type="submit">Idee hinzufügen</button>
+                    </form>
+                    <div class="idea-list">
+                        {% for idea in vision_ideas %}
+                            <article
+                                id="idea-{{ idea.id }}"
+                                class="idea-card"
+                                draggable="true"
+                                data-idea-card
+                                data-idea-id="{{ idea.id }}"
+                                data-idea-title="{{ idea.title }}"
+                            >
+                                <div class="idea-card__title">{{ idea.title }}</div>
+                                <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                            </article>
+                        {% empty %}
+                            <p class="kanban-empty">Noch keine großen Ideen.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <section class="idea-todo-field">
+                <h3>to do</h3>
+                <p class="admin-note">Idee hierhin ziehen, um daraus eine Aufgabe zu machen.</p>
+                <div class="idea-todo-dropzone" data-idea-todo-zone>
+                    {% for item in todo_task_rows %}
+                        <article class="idea-task-card">
+                            <div class="idea-card__title">{{ item.task.title }}</div>
+                            <div class="kanban-card__meta">
+                                <span>{{ item.task.importance }}</span>
+                                <span>{{ item.task.days }} Tage</span>
+                            </div>
+                        </article>
+                    {% empty %}
+                        <p class="kanban-empty">Noch keine to-do-Aufgaben.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </section>
 
     <section class="admin-panel" data-admin-panel="tasks"{% if selected_tab != 'tasks' %} hidden{% endif %}>
         <p class="admin-note">Die Zeilen werden automatisch röter, je näher die Deadline kommt. Status wird direkt aus dem Kanban übernommen.</p>
@@ -602,6 +923,65 @@
             </article>
         </div>
     </section>
+</div>
+
+<div class="idea-image-preview" data-idea-image-preview-modal hidden>
+    <div class="idea-image-preview__inner" role="dialog" aria-modal="true" aria-label="Bildvorschau">
+        <button class="idea-image-preview__close" type="button" data-idea-image-preview-close aria-label="Bildvorschau schließen">×</button>
+        <img src="" alt="" data-idea-image-preview-img>
+    </div>
+</div>
+
+<div class="idea-modal-backdrop" data-idea-task-modal hidden>
+    <div class="idea-task-modal" role="dialog" aria-modal="true" aria-labelledby="idea-task-modal-title">
+        <h3 id="idea-task-modal-title">Aufgabe hinzufügen</h3>
+        <form method="post" class="idea-task-modal__grid">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <input type="hidden" name="return_tab" value="ideas">
+            <input type="hidden" name="source_idea_id" data-idea-modal-source-id>
+            <label>
+                Aufgabe
+                <input type="text" name="title" data-idea-modal-title required>
+            </label>
+            <label>
+                Wichtigkeit
+                <select
+                    id="idea-task-importance"
+                    name="importance"
+                    data-importance-select
+                    data-days-target="idea-task-days"
+                >
+                    {% for value, label in importance_choices %}
+                        <option value="{{ value }}"{% if value == 'idee' %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Tage
+                <select
+                    id="idea-task-days"
+                    name="days"
+                    data-days-select
+                    data-selected-days="14"
+                ></select>
+            </label>
+            <label>
+                Verantwortlicher
+                <select name="owner" required>
+                    {% for admin_user in admins %}
+                        <option value="{{ admin_user.id }}"{% if admin_user.id == request.user.id %} selected{% endif %}>
+                            {{ admin_user.get_full_name|default:admin_user.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="idea-modal-actions">
+                <button class="button" type="submit">Aufgabe hinzufügen</button>
+                <button class="button button-danger" type="button" data-idea-modal-close>Abbrechen</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {{ days_by_importance|json_script:"admin-days-rules" }}
@@ -872,6 +1252,136 @@
                 updateKanbanEmptyState();
             }
 
+            function initIdeas() {
+                var draggedIdea = null;
+                var todoZone = document.querySelector("[data-idea-todo-zone]");
+                var modal = document.querySelector("[data-idea-task-modal]");
+                var modalTitleInput = document.querySelector("[data-idea-modal-title]");
+                var modalSourceInput = document.querySelector("[data-idea-modal-source-id]");
+                var modalClose = document.querySelector("[data-idea-modal-close]");
+                var imagePreviewModal = document.querySelector("[data-idea-image-preview-modal]");
+                var imagePreviewImg = document.querySelector("[data-idea-image-preview-img]");
+                var imagePreviewClose = document.querySelector("[data-idea-image-preview-close]");
+
+                function openIdeaTaskModal(ideaCard) {
+                    if (!modal || !modalTitleInput || !modalSourceInput || !ideaCard) {
+                        return;
+                    }
+                    modalTitleInput.value = ideaCard.dataset.ideaTitle || "";
+                    modalSourceInput.value = ideaCard.dataset.ideaId || "";
+                    modal.hidden = false;
+                    modalTitleInput.focus();
+                    if (typeof modalTitleInput.setSelectionRange === "function") {
+                        var length = modalTitleInput.value.length;
+                        modalTitleInput.setSelectionRange(length, length);
+                    }
+                }
+
+                function closeIdeaTaskModal() {
+                    if (modal) {
+                        modal.hidden = true;
+                    }
+                    if (modalSourceInput) {
+                        modalSourceInput.value = "";
+                    }
+                }
+
+                function openImagePreview(imageUrl) {
+                    if (!imagePreviewModal || !imagePreviewImg || !imageUrl) {
+                        return;
+                    }
+                    imagePreviewImg.src = imageUrl;
+                    imagePreviewModal.hidden = false;
+                    if (imagePreviewClose) {
+                        imagePreviewClose.focus();
+                    }
+                }
+
+                function closeImagePreview() {
+                    if (imagePreviewModal) {
+                        imagePreviewModal.hidden = true;
+                    }
+                    if (imagePreviewImg) {
+                        imagePreviewImg.src = "";
+                    }
+                }
+
+                document.querySelectorAll("[data-idea-card]").forEach(function (card) {
+                    card.addEventListener("dragstart", function () {
+                        draggedIdea = card;
+                        card.classList.add("dragging");
+                    });
+                    card.addEventListener("dragend", function () {
+                        card.classList.remove("dragging");
+                        if (todoZone) {
+                            todoZone.classList.remove("is-over");
+                        }
+                    });
+                    var taskButton = card.querySelector("[data-idea-task-button]");
+                    if (taskButton) {
+                        taskButton.addEventListener("click", function () {
+                            openIdeaTaskModal(card);
+                        });
+                    }
+                    card.querySelectorAll("[data-idea-image-preview]").forEach(function (previewButton) {
+                        previewButton.addEventListener("click", function () {
+                            openImagePreview(previewButton.dataset.ideaImagePreview);
+                        });
+                    });
+                });
+
+                if (todoZone) {
+                    todoZone.addEventListener("dragover", function (event) {
+                        if (!draggedIdea) {
+                            return;
+                        }
+                        event.preventDefault();
+                        todoZone.classList.add("is-over");
+                    });
+                    todoZone.addEventListener("dragleave", function () {
+                        todoZone.classList.remove("is-over");
+                    });
+                    todoZone.addEventListener("drop", function (event) {
+                        event.preventDefault();
+                        todoZone.classList.remove("is-over");
+                        if (!draggedIdea) {
+                            return;
+                        }
+                        openIdeaTaskModal(draggedIdea);
+                        draggedIdea = null;
+                    });
+                }
+
+                if (modalClose) {
+                    modalClose.addEventListener("click", closeIdeaTaskModal);
+                }
+                if (modal) {
+                    modal.addEventListener("click", function (event) {
+                        if (event.target === modal) {
+                            closeIdeaTaskModal();
+                        }
+                    });
+                }
+                if (imagePreviewClose) {
+                    imagePreviewClose.addEventListener("click", closeImagePreview);
+                }
+                if (imagePreviewModal) {
+                    imagePreviewModal.addEventListener("click", function (event) {
+                        if (event.target === imagePreviewModal) {
+                            closeImagePreview();
+                        }
+                    });
+                }
+                document.addEventListener("keydown", function (event) {
+                    if (event.key === "Escape" && modal && !modal.hidden) {
+                        closeIdeaTaskModal();
+                    }
+                    if (event.key === "Escape" && imagePreviewModal && !imagePreviewModal.hidden) {
+                        closeImagePreview();
+                    }
+                });
+            }
+
             document.querySelectorAll("[data-admin-tab]").forEach(function (tab) {
                 tab.addEventListener("click", function () {
                     activateTab(tab.dataset.adminTab, true);
@@ -881,6 +1391,7 @@
             initDaySelectors();
             initTaskRowEditing();
             initKanban();
+            initIdeas();
         })();
     </script>
 {% endblock %}

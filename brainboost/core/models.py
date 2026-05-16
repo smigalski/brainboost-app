@@ -622,6 +622,36 @@ class FAQItem(models.Model):
         return self.question
 
 
+class AdminIdea(models.Model):
+    class Category(models.TextChoices):
+        VISION = "vision", "große Ideen/Vision"
+        IMPROVEMENT = "improvement", "kleine Ideen, Verbesserungen"
+
+    title = models.CharField(max_length=255)
+    image = models.ImageField(upload_to="admin_ideas/%Y/%m/", blank=True)
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.IMPROVEMENT,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="created_admin_ideas",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["category", "-created_at"]
+        verbose_name = "Admin-Idee"
+        verbose_name_plural = "Admin-Ideen"
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class AdminTask(models.Model):
     class Importance(models.TextChoices):
         PRIO = "prio", "prio"

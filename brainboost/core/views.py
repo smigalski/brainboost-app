@@ -53,6 +53,7 @@ from .forms import (
     TutorStudentAssignmentForm,
     AdminTaskCreateForm,
     AdminTaskUpdateForm,
+    AdminIdeaCreateForm,
     CampaignLinkBuilderForm,
     LeadForm,
 )
@@ -87,6 +88,7 @@ from .models import (
     BrainBoostFeedback,
     TemporaryTutorAssignment,
     AdminTask,
+    AdminIdea,
     Lead,
 )
 
@@ -1930,10 +1932,17 @@ def admin_tasks(request):
         return redirect("dashboard")
 
     selected_tab = request.GET.get("tab", "tasks")
-    if selected_tab not in {"tasks", "kanban", "leads"}:
+    if selected_tab not in {"ideas", "tasks", "kanban", "leads"}:
         selected_tab = "tasks"
 
     create_form = AdminTaskCreateForm()
+    idea_create_form = AdminIdeaCreateForm()
+    vision_create_form = AdminIdeaCreateForm(
+        initial={"category": AdminIdea.Category.VISION}
+    )
+    improvement_create_form = AdminIdeaCreateForm(
+        initial={"category": AdminIdea.Category.IMPROVEMENT}
+    )
 
     if request.method == "POST":
         action = (request.POST.get("action") or "").strip()
@@ -1944,10 +1953,16 @@ def admin_tasks(request):
                 task.status = AdminTask.Status.TODO
                 task.created_by = request.user
                 task.save()
+                source_idea_id = request.POST.get("source_idea_id")
+                if source_idea_id:
+                    AdminIdea.objects.filter(pk=source_idea_id).delete()
                 messages.success(request, "Aufgabe wurde hinzugefügt.")
-                return redirect(f"{reverse('admin_tasks')}?tab=tasks#task-{task.id}")
+                return_tab = request.POST.get("return_tab")
+                if return_tab not in {"ideas", "tasks", "kanban"}:
+                    return_tab = "tasks"
+                return redirect(f"{reverse('admin_tasks')}?tab={return_tab}#task-{task.id}")
             messages.error(request, "Aufgabe konnte nicht gespeichert werden. Bitte Eingaben prüfen.")
-            selected_tab = "tasks"
+            selected_tab = request.POST.get("return_tab") if request.POST.get("return_tab") in {"ideas", "tasks"} else "tasks"
         elif action == "update":
             task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
             update_form = AdminTaskUpdateForm(request.POST, instance=task)
@@ -1968,6 +1983,23 @@ def admin_tasks(request):
             task.save(update_fields=["status", "updated_at"])
             messages.success(request, "Aufgabe wurde als erledigt markiert.")
             return redirect(f"{reverse('admin_tasks')}?tab=tasks")
+        elif action == "create_idea":
+            idea_create_form = AdminIdeaCreateForm(request.POST, request.FILES)
+            selected_tab = "ideas"
+            if idea_create_form.is_valid():
+                idea = idea_create_form.save(commit=False)
+                idea.created_by = request.user
+                if idea.category != AdminIdea.Category.IMPROVEMENT:
+                    idea.image = None
+                idea.save()
+                messages.success(request, "Idee wurde hinzugefügt.")
+                return redirect(f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
+            messages.error(request, "Idee konnte nicht gespeichert werden. Bitte Eingabe prüfen.")
+            category = request.POST.get("category")
+            if category == AdminIdea.Category.VISION:
+                vision_create_form = idea_create_form
+            else:
+                improvement_create_form = idea_create_form
 
     tasks = list(
         AdminTask.objects.select_related("owner")
@@ -1978,6 +2010,12 @@ def admin_tasks(request):
     task_rows = [
         item for item in all_task_rows if item["task"].status != AdminTask.Status.DONE
     ]
+    todo_task_rows = [
+        item for item in all_task_rows if item["task"].status == AdminTask.Status.TODO
+    ]
+    ideas = list(
+        AdminIdea.objects.select_related("created_by").order_by("category", "-created_at")
+    )
 
     kanban_columns = [
         {
@@ -2003,7 +2041,16 @@ def admin_tasks(request):
         {
             "selected_tab": selected_tab,
             "create_form": create_form,
+            "vision_create_form": vision_create_form,
+            "improvement_create_form": improvement_create_form,
+            "vision_ideas": [
+                idea for idea in ideas if idea.category == AdminIdea.Category.VISION
+            ],
+            "improvement_ideas": [
+                idea for idea in ideas if idea.category == AdminIdea.Category.IMPROVEMENT
+            ],
             "task_rows": task_rows,
+            "todo_task_rows": todo_task_rows,
             "kanban_columns": kanban_columns,
             "admins": _admin_users_queryset(),
             "importance_choices": AdminTask.Importance.choices,

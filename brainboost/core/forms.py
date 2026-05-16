@@ -28,6 +28,7 @@ from .models import (
     BrainBoostFeedback,
     CustomUser,
     AdminTask,
+    AdminIdea,
     Lead,
 )
 
@@ -322,6 +323,19 @@ class AdminTaskCreateForm(AdminTaskBaseForm):
 
 class AdminTaskUpdateForm(AdminTaskBaseForm):
     pass
+
+
+class AdminIdeaCreateForm(forms.ModelForm):
+    class Meta:
+        model = AdminIdea
+        fields = ["title", "category", "image"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["title"].label = "Idee"
+        self.fields["category"].label = "Kategorie"
+        self.fields["image"].label = "Bild"
+        self.fields["image"].required = False
 
 
 class TutorStudentAssignmentForm(forms.Form):
