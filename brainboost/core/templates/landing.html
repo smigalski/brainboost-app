@@ -156,45 +156,77 @@
         color: var(--teal);
         text-decoration: underline;
     }
+    .angebot-header {
+        align-items: flex-start;
+        gap: 14px;
+    }
+    .angebot-tools-box {
+        width: min(100%, 360px);
+        padding: 12px;
+        border: 1px solid rgba(44, 138, 138, 0.18);
+        border-radius: 14px;
+        background:
+            linear-gradient(135deg, rgba(255, 201, 40, 0.18), rgba(255, 255, 255, 0.98)),
+            #ffffff;
+        box-shadow: 0 14px 28px rgba(29, 76, 87, 0.12);
+    }
+    .angebot-tools-title {
+        margin: 0 0 8px;
+        color: #1d4c57;
+        font-size: 0.82rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .angebot-tools-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .angebot-tool-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 54px;
+        padding: 9px 10px;
+        border: 1px solid rgba(29, 76, 87, 0.14);
+        border-radius: 12px;
+        background: linear-gradient(135deg, #ffffff, #f6fbfb);
+        color: #12343b;
+        text-decoration: none;
+        font-weight: 900;
+        line-height: 1.1;
+        box-shadow: 0 10px 22px rgba(0,0,0,0.07);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .angebot-tool-button:hover,
+    .angebot-tool-button:focus {
+        border-color: rgba(255, 201, 40, 0.85);
+        box-shadow: 0 16px 30px rgba(29, 76, 87, 0.16);
+        transform: translateY(-2px);
+    }
+    .angebot-tool-logo {
+        flex: 0 0 auto;
+        max-width: 38px;
+        max-height: 38px;
+        object-fit: contain;
+    }
     @media (max-width: 700px) {
         .landing-pricing-grid,
-        .landing-pricing-benefits {
+        .landing-pricing-benefits,
+        .angebot-tools-actions {
             grid-template-columns: 1fr;
+        }
+        .angebot-tools-box {
+            width: 100%;
         }
     }
 </style>
 <div style="display:flex;justify-content:center;margin:8px 0 18px;">
-    <button id="open-contact-modal" type="button" data-cta="probestunde-modal-open" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;">
+    <a href="{% url 'contact' %}?role=parent" data-cta="probestunde-kontakt" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;text-decoration:none;">
         <span style="position:absolute;inset:-35%;background:radial-gradient(circle, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.2s infinite ease-in-out;pointer-events:none;"></span>
         <span style="position:relative;z-index:1;">Jetzt kostenlos Probestunde buchen!</span>
-    </button>
-</div>
-<div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="contact-modal-title">Kontaktformular</h3>
-            <button type="button" class="modal-close" aria-label="Fenster schließen">&times;</button>
-        </div>
-        <form id="contact-form" novalidate>
-            <label for="contact-first-name">Vorname</label>
-            <input id="contact-first-name" type="text" autocomplete="given-name">
-            <label for="contact-last-name">Nachname</label>
-            <input id="contact-last-name" type="text" autocomplete="family-name">
-            <label for="contact-phone">Telefonnummer</label>
-            <input id="contact-phone" type="tel" autocomplete="tel">
-            <label for="contact-email">E-Mail</label>
-            <input id="contact-email" type="email" autocomplete="email">
-            <label for="contact-message">Nachricht</label>
-            <textarea id="contact-message" rows="4" placeholder="Hallo, ich würde gerne für mein Kind/für mich eine Probestunde buchen. Mit freundlichen Grüßen"></textarea>
-            <p id="contact-form-error" style="display:none;color:#b30000;margin:4px 0 0;">
-                Bitte gib Vorname oder Nachname sowie Telefonnummer oder E-Mail an.
-            </p>
-        </form>
-        <div class="modal-actions">
-            <button type="button" class="button ghost" id="contact-cancel">Abbrechen</button>
-            <button type="submit" class="button" form="contact-form" id="contact-submit" disabled>Absenden</button>
-        </div>
-    </div>
+    </a>
 </div>
 <div class="card">
     <h1>
@@ -216,7 +248,7 @@
             <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn.</p>
         </div>
     </div>
-    <a href="mailto:brainboost.nachhilfe@gmail.com?subject=Wir%20brauchen%20Nachhilfe!&body=Hallo%20Kiara,%0A%0Akannst%20du%20mich%20gleich%20unter%20dieser%20Rufnummer:%20%0A%0Azur%C3%BCckrufen.%20Danke%20dir!%0A%0A%20Mit%20freundlichen%20Gr%C3%BC%C3%9Fen" data-cta="mail-rueckruf" style="margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg, #ff6a00, #ffdd00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 12px 28px rgba(255,106,0,0.35), 0 6px 16px rgba(0,0,0,0.18);text-decoration:none;position:relative;overflow:hidden;">
+    <a href="{% url 'contact' %}?role=parent" data-cta="kontakt-schnell-melden" style="margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg, #ff6a00, #ffdd00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 12px 28px rgba(255,106,0,0.35), 0 6px 16px rgba(0,0,0,0.18);text-decoration:none;position:relative;overflow:hidden;">
         <span style="position:absolute;inset:-30%;background:radial-gradient(circle, rgba(255,255,255,0.35) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.4s infinite ease-in-out;pointer-events:none;"></span>
         <span style="position:relative;z-index:1;">Sei schnell! Melde Dich jetzt!</span>
     </a>
@@ -246,9 +278,23 @@
 <div class="card">
           
     <div class="info-tile">
-        <div class="tile-header">
-                        <h3>Unser Angebot</h3>
-            <span class="tagline">Nur wenige Plätze · Sei schnell!</span>
+        <div class="tile-header angebot-header">
+            <div>
+                <h3>Unser Angebot</h3>
+            </div>
+            <div class="angebot-tools-box" aria-label="Digitale Lernorte">
+                <p class="angebot-tools-title">Digitale Lernräume</p>
+                <div class="angebot-tools-actions">
+                    <a class="angebot-tool-button" href="https://bigbluebutton.org/" target="_blank" rel="noopener noreferrer" data-cta="landing-bigbluebutton">
+                        <img class="angebot-tool-logo" src="{% static 'design/bigbluebuttonlogo.png' %}" alt="" aria-hidden="true">
+                        <span>BigBlueButton</span>
+                    </a>
+                    <a class="angebot-tool-button" href="https://zumpad.zum.de/" target="_blank" rel="noopener noreferrer" data-cta="landing-zumpad">
+                        <img class="angebot-tool-logo" src="{% static 'design/zumpadlogo.png' %}" alt="" aria-hidden="true">
+                        <span>ZUMPad</span>
+                    </a>
+                </div>
+            </div>
         </div>
         <p class="tile-placeholder"></p>
         <style>
@@ -282,15 +328,15 @@
                 </tr>
                 <tr>
                     <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);font-weight:600;">Weiterführende Schule</td>
-                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">Deutsch, Mathe, Englisch, Französisch, Politik (5-13), Physik, Bio, Chemie, Erdkunde, Musik (5-10)</td>
+                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, Englisch, Französisch, Politik, Mathematik, Physik und Chemie. <strong>BBS-Fächer:</strong> z. B. Wirtschaft, Rechnungswesen, Pädagogik, Gesundheit und Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse</td>
                 </tr>
                 <tr>
                     <td style="padding:10px 12px;font-weight:600;">Erweitertes Lernangebot</td>
-                    <td style="padding:10px 12px;word-break:break-word;">Zertifizierter Unterricht in DaF/DaZ, Vorbereitung auf Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten</td>
+                    <td style="padding:10px 12px;word-break:break-word;">Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten</td>
                 </tr>
                 <tr>
                     <td style="padding:10px 12px;font-weight:600;">Für Studierende</td>
-                    <td style="padding:10px 12px;word-break:break-word;">Professionelle Betreuung von Abschlussarbeiten (Seminar-, Projekt-, Studien-, Bachelor-, Masterarbeit)</td>
+                    <td style="padding:10px 12px;word-break:break-word;">Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und Masterarbeiten - von der Struktur bis zur finalen Überarbeitung</td>
                 </tr>
             </tbody>
         </table>
@@ -337,7 +383,6 @@
     <div class="info-tile">
         <div class="tile-header">
             <h3>Lernorte</h3>
-            <span class="tagline">Alle Infos auf einen Blick</span>
         </div>
             <div style="display:flex;flex-wrap:wrap;gap:18px;">
                 <div style="flex:1 1 280px;min-width:260px;padding:10px 12px;border:1px solid rgba(0,0,0,0.05);border-radius:14px;background:linear-gradient(135deg, rgba(64,168,177,0.08), rgba(255,201,40,0.18));box-shadow:0 10px 22px rgba(0,0,0,0.06);">
@@ -346,7 +391,6 @@
                         <span>In OpenStreetMap öffnen</span>
                     </a>
                     <div id="brainboost-map" class="brainboost-map" aria-label="Interaktive Karte mit BrainBoost Lernorten"></div>
-                    <p class="tile-placeholder" style="margin:10px 0 0;"><strong>Weitere Lernorte: </strong>Bei Dir, deinem/r TutorIn oder online! Über <a href="https://bigbluebutton.org/" target="_blank" rel="noopener noreferrer" style="color:var(--teal);"><strong>BigBlueButton</strong></a> und <a href="https://zumpad.zum.de/" target="_blank" rel="noopener noreferrer" style="color:var(--teal);"><strong>ZUMPad</strong></a>!</p>
                 </div>
             </div>
         </div>
@@ -373,92 +417,6 @@
     </a>
 </div>
 
-    <script>
-        (function() {
-            var modal = document.getElementById('contact-modal');
-            var openBtn = document.getElementById('open-contact-modal');
-            var closeBtns = modal.querySelectorAll('.modal-close, #contact-cancel');
-            var form = document.getElementById('contact-form');
-            var submitBtn = document.getElementById('contact-submit');
-            var error = document.getElementById('contact-form-error');
-            var firstName = document.getElementById('contact-first-name');
-            var lastName = document.getElementById('contact-last-name');
-            var phone = document.getElementById('contact-phone');
-            var email = document.getElementById('contact-email');
-            var message = document.getElementById('contact-message');
-            var touched = false;
-
-            var updateValidity = function(forceShow) {
-                var hasName = firstName.value.trim() || lastName.value.trim();
-                var hasContact = phone.value.trim() || email.value.trim();
-                var ok = Boolean(hasName && hasContact);
-                submitBtn.disabled = !ok;
-                if (forceShow || touched) {
-                    error.style.display = ok ? 'none' : 'block';
-                } else {
-                    error.style.display = 'none';
-                }
-                return ok;
-            };
-
-            var openModal = function() {
-                modal.classList.add('open');
-            };
-
-            var closeModal = function() {
-                modal.classList.remove('open');
-            };
-
-            if (openBtn) {
-                openBtn.addEventListener('click', openModal);
-            }
-            closeBtns.forEach(function(btn) {
-                btn.addEventListener('click', closeModal);
-            });
-            modal.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            });
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape' && modal.classList.contains('open')) {
-                    closeModal();
-                }
-            });
-
-            [firstName, lastName, phone, email, message].forEach(function(input) {
-                input.addEventListener('input', function() {
-                    touched = true;
-                    updateValidity(false);
-                });
-            });
-
-            form.addEventListener('submit', function(event) {
-                event.preventDefault();
-                touched = true;
-                if (!updateValidity(true)) {
-                    return;
-                }
-                var bodyLines = [
-                    'Vorname: ' + firstName.value.trim(),
-                    'Nachname: ' + lastName.value.trim(),
-                    'Telefonnummer: ' + phone.value.trim(),
-                    'E-Mail: ' + email.value.trim(),
-                    '',
-                    'Nachricht:',
-                    message.value.trim()
-                ];
-                var mailto = 'mailto:brainboost.nachhilfe@gmail.com'
-                    + '?subject=' + encodeURIComponent('Kontaktformular Probestunde')
-                    + '&body=' + encodeURIComponent(bodyLines.join('\n'));
-                window.location.href = mailto;
-                form.reset();
-                touched = false;
-                updateValidity(false);
-                closeModal();
-            });
-        })();
-    </script>
 <div class="card">
     <h3>FAQ</h3>
     <div data-faq-accordion style="display:flex; flex-direction:column; gap:10px;">

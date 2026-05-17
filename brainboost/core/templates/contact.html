@@ -43,34 +43,43 @@
         font-weight: 700;
         color: var(--accent);
     }
-    .lead-role-options > div {
+    .lead-role-tabs {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        padding: 0;
-        margin: 0;
+        gap: 8px;
+        width: 100%;
+        padding: 6px;
+        border-radius: 14px;
+        background: rgba(31, 102, 102, 0.1);
     }
-    .lead-role-options > div > div {
-        min-width: 0;
-    }
-    .lead-role-options label {
+    .lead-role-tab {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        min-height: 48px;
-        padding: 10px 12px;
-        border: 1px solid rgba(31,102,102,0.2);
-        border-radius: 12px;
-        background: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--teal-dark);
+        background: transparent;
         font-weight: 800;
         cursor: pointer;
         text-align: center;
+        min-height: 54px;
     }
-    .lead-role-options label:has(input:checked) {
-        border-color: var(--teal-dark);
-        background: rgba(44,138,138,0.1);
-        color: var(--teal-dark);
+    .lead-role-tab.is-active {
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+    }
+    .lead-role-field {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+    .lead-section[hidden] {
+        display: none;
     }
     .lead-checkbox {
         display: flex;
@@ -108,8 +117,10 @@
     }
     @media (max-width: 780px) {
         .lead-layout,
-        .lead-field-grid,
-        .lead-role-options > div {
+        .lead-field-grid {
+            grid-template-columns: 1fr;
+        }
+        .lead-role-tabs {
             grid-template-columns: 1fr;
         }
     }
@@ -131,8 +142,13 @@
             {% endif %}
 
             <section class="lead-section">
-                <h2 class="lead-section__title">Rolle</h2>
-                <div class="lead-role-options">
+                <h2 class="lead-section__title">Du bist ...</h2>
+                <div class="lead-role-tabs" role="tablist" aria-label="Du bist">
+                    <button class="lead-role-tab" type="button" role="tab" aria-selected="false" data-role-tab="parent" data-role-panel-target="learning">Elternteil</button>
+                    <button class="lead-role-tab" type="button" role="tab" aria-selected="false" data-role-tab="student" data-role-panel-target="learning">SchülerIn</button>
+                    <button class="lead-role-tab" type="button" role="tab" aria-selected="false" data-role-tab="tutor" data-role-panel-target="tutor">TutorIn</button>
+                </div>
+                <div class="lead-role-field" aria-hidden="true">
                     {{ form.role }}
                 </div>
                 {% if form.role.errors %}<p class="lead-error">{{ form.role.errors|join:", " }}</p>{% endif %}
@@ -161,17 +177,17 @@
                         {{ form.preferred_contact }}
                         {% if form.preferred_contact.errors %}<p class="lead-error">{{ form.preferred_contact.errors|join:", " }}</p>{% endif %}
                     </div>
+                </div>
+            </section>
+
+            <section class="lead-section" data-role-fields="learning" role="tabpanel">
+                <h2 class="lead-section__title">Nachhilfe</h2>
+                <div class="lead-field-grid">
                     <div class="lead-field lead-field--full">
                         <label class="lead-label" for="{{ form.tutoring_type.id_for_label }}">{{ form.tutoring_type.label }} <span class="lead-required">*</span></label>
                         {{ form.tutoring_type }}
                         {% if form.tutoring_type.errors %}<p class="lead-error">{{ form.tutoring_type.errors|join:", " }}</p>{% endif %}
                     </div>
-                </div>
-            </section>
-
-            <section class="lead-section" data-role-fields="learning">
-                <h2 class="lead-section__title">Nachhilfe</h2>
-                <div class="lead-field-grid">
                     <div class="lead-field">
                         <label class="lead-label" for="{{ form.subject.id_for_label }}">{{ form.subject.label }} <span class="lead-required">*</span></label>
                         {{ form.subject }}
@@ -195,7 +211,7 @@
                 </div>
             </section>
 
-            <section class="lead-section" data-role-fields="tutor">
+            <section class="lead-section" data-role-fields="tutor" role="tabpanel">
                 <h2 class="lead-section__title">TutorIn-Profil</h2>
                 <div class="lead-field-grid">
                     <div class="lead-field">
@@ -232,7 +248,7 @@
             </section>
 
             <section class="lead-section">
-                <h2 class="lead-section__title">Ergänzung</h2>
+                <h2 class="lead-section__title">Nachricht</h2>
                 <div class="lead-field">
                     <label class="lead-label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
                     {{ form.message }}
@@ -272,10 +288,10 @@
         if (!form) {
             return;
         }
-        var learningSection = form.querySelector('[data-role-fields="learning"]');
-        var tutorSection = form.querySelector('[data-role-fields="tutor"]');
         var submitButton = form.querySelector("[data-lead-submit]");
         var roleInputs = Array.from(form.querySelectorAll('input[name="role"]'));
+        var roleTabs = Array.from(form.querySelectorAll("[data-role-tab]"));
+        var rolePanels = Array.from(form.querySelectorAll("[data-role-fields]"));
 
         function selectedRole() {
             var checked = roleInputs.find(function (input) { return input.checked; });
@@ -292,20 +308,40 @@
         }
 
         function updateRoleSections() {
-            var isTutor = selectedRole() === "tutor";
-            if (learningSection) {
-                learningSection.hidden = isTutor;
-                setDisabled(learningSection, isTutor);
-            }
-            if (tutorSection) {
-                tutorSection.hidden = !isTutor;
-                setDisabled(tutorSection, !isTutor);
-            }
+            var role = selectedRole();
+            roleTabs.forEach(function (tab) {
+                var isActive = tab.dataset.roleTab === role;
+                tab.classList.toggle("is-active", isActive);
+                tab.setAttribute("aria-selected", String(isActive));
+            });
+            rolePanels.forEach(function (panel) {
+                var shouldShow = panel.dataset.roleFields === "learning"
+                    ? role === "parent" || role === "student"
+                    : panel.dataset.roleFields === role;
+                panel.hidden = !shouldShow;
+                panel.setAttribute("aria-hidden", String(!shouldShow));
+                setDisabled(panel, !shouldShow);
+            });
             if (submitButton) {
-                submitButton.textContent = isTutor ? "Bewerbung senden" : "Anfrage senden";
+                submitButton.textContent = role === "tutor" ? "Bewerbung senden" : "Anfrage senden";
             }
         }
 
+        roleTabs.forEach(function (tab) {
+            tab.addEventListener("click", function () {
+                var matchingInput = roleInputs.find(function (input) {
+                    return input.value === tab.dataset.roleTab;
+                });
+                if (matchingInput) {
+                    roleInputs.forEach(function (input) {
+                        input.checked = input === matchingInput;
+                    });
+                    matchingInput.checked = true;
+                    matchingInput.dispatchEvent(new Event("change", { bubbles: true }));
+                    updateRoleSections();
+                }
+            });
+        });
         roleInputs.forEach(function (input) {
             input.addEventListener("change", updateRoleSections);
         });

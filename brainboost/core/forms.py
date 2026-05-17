@@ -236,6 +236,7 @@ class LeadForm(forms.ModelForm):
             "email",
             "phone",
             "message",
+            "tutoring_type",
             "source",
             "campaign",
             "utm_source",
@@ -266,7 +267,7 @@ class LeadForm(forms.ModelForm):
             self.add_error("phone", message)
 
         if role in {Lead.Role.PARENT, Lead.Role.STUDENT}:
-            for field_name in ["subject", "grade", "goal", "urgency"]:
+            for field_name in ["tutoring_type", "subject", "grade", "goal", "urgency"]:
                 if not (cleaned.get(field_name) or "").strip():
                     self.add_error(field_name, "Dieses Feld ist erforderlich.")
         elif role == Lead.Role.TUTOR:
@@ -281,6 +282,7 @@ class LeadForm(forms.ModelForm):
                     self.add_error(field_name, "Dieses Feld ist erforderlich.")
             cleaned["subject"] = cleaned.get("teaching_subjects", "")
             cleaned["grade"] = cleaned.get("teaching_grades", "")
+            cleaned["tutoring_type"] = ""
         return cleaned
 
 
