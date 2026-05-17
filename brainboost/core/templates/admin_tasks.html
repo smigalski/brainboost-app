@@ -331,6 +331,7 @@
         }
 
         .admin-task-row td input,
+        .admin-task-row td textarea,
         .admin-task-row td select,
         .admin-tasks-table .task-add-row input,
         .admin-tasks-table .task-add-row select {
@@ -338,6 +339,7 @@
         }
 
         .admin-task-row td input[type="text"],
+        .admin-task-row td textarea,
         .admin-task-row td select,
         .admin-tasks-table .task-add-row input[type="text"],
         .admin-tasks-table .task-add-row select {
@@ -346,6 +348,15 @@
             border: 1px solid rgba(0, 0, 0, 0.15);
             background: #fff;
             width: 100%;
+        }
+
+        .admin-task-row td textarea {
+            min-height: 92px;
+            resize: vertical;
+            overflow: hidden;
+            line-height: 1.45;
+            font: inherit;
+            white-space: pre-wrap;
         }
 
         .task-add-row {
@@ -746,7 +757,7 @@
                                         <img class="idea-card__image" src="{{ item.task.image.url }}" alt="">
                                     </button>
                                 {% endif %}
-                                <input class="task-edit-field" data-task-title-input type="text" name="title" value="{{ item.task.title }}" form="update-task-{{ item.task.id }}" required>
+                                <textarea class="task-edit-field" data-task-title-input name="title" form="update-task-{{ item.task.id }}" rows="3" required>{{ item.task.title }}</textarea>
                             </td>
                             <td>
                                 <div class="task-field-display">{{ item.task.get_importance_display }}</div>
@@ -1129,6 +1140,14 @@
                 }
             }
 
+            function fitTextareaToContent(textarea) {
+                if (!textarea) {
+                    return;
+                }
+                textarea.style.height = "auto";
+                textarea.style.height = textarea.scrollHeight + "px";
+            }
+
             function submitForm(form) {
                 if (!form) {
                     return;
@@ -1143,6 +1162,12 @@
             function initTaskRowEditing() {
                 document.querySelectorAll("[data-task-row]").forEach(function (row) {
                     setTaskRowEditing(row, false);
+                    var titleInput = row.querySelector("[data-task-title-input]");
+                    if (titleInput) {
+                        titleInput.addEventListener("input", function () {
+                            fitTextareaToContent(titleInput);
+                        });
+                    }
                     var toggleButton = row.querySelector("[data-task-edit-toggle]");
                     if (!toggleButton) {
                         return;
@@ -1153,6 +1178,7 @@
                             setTaskRowEditing(row, true);
                             var titleInput = row.querySelector("[data-task-title-input]");
                             if (titleInput) {
+                                fitTextareaToContent(titleInput);
                                 titleInput.focus();
                                 if (typeof titleInput.setSelectionRange === "function") {
                                     var textLength = titleInput.value.length;
