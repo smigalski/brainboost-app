@@ -403,7 +403,7 @@ def notify_invoice_payment_confirmed(
 def notify_material_uploaded(request, material: LearningMaterial) -> None:
     if not _notifications_enabled("material_uploaded"):
         return
-    kind_label = "Musterlösung" if material.kind == material.Kind.SOLUTION else material.get_kind_display()
+    kind_label = "Ergebnisse" if material.kind == material.Kind.SOLUTION else material.get_kind_display()
     subject = f"Neues Material ({kind_label}) für {material.student.user.username}"
     context = {
         "heading": f"Neues Material: {kind_label}",

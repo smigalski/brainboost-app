@@ -805,8 +805,8 @@ def _student_news_items(student_profile: StudentProfile) -> list[dict]:
         items.append(
             {
                 "timestamp": material.uploaded_at,
-                "title": "Neue Musterlösung",
-                "text": f"Neue Musterlösung von {_display_name(material.uploaded_by.user)} wurde hochgeladen.",
+                "title": "Neue Ergebnisse",
+                "text": f"Neue Ergebnisse von {_display_name(material.uploaded_by.user)} wurden hochgeladen.",
             }
         )
     return _limit_news_items(items)
@@ -859,8 +859,8 @@ def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
         items.append(
             {
                 "timestamp": material.uploaded_at,
-                "title": f"Neue Musterlösung: {_display_name(material.student.user)}",
-                "text": "Es wurde eine neue Musterlösung hochgeladen.",
+                "title": f"Neue Ergebnisse: {_display_name(material.student.user)}",
+                "text": "Es wurden neue Ergebnisse hochgeladen.",
             }
         )
     survey_responses = (
@@ -3056,7 +3056,7 @@ def material_upload(request, kind: str):
     allowed_students = StudentProfile.objects.filter(
         assigned_tutors=request.user.tutor_profile
     ).distinct()
-    heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Musterlösung hochladen"
+    heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Ergebnisse hochladen"
 
     if request.method == "POST":
         form = LearningMaterialForm(

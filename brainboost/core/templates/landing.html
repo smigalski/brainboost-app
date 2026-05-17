@@ -108,7 +108,9 @@
     }
     .brainboost-map {
         width: 100%;
-        min-height: 360px;
+        flex: 1 1 auto;
+        min-height: 420px;
+        height: 100%;
         border: 1px solid rgba(0,0,0,0.08);
         border-radius: 14px;
         overflow: hidden;
@@ -156,12 +158,108 @@
         color: var(--teal);
         text-decoration: underline;
     }
+    .page > .card {
+        border: 1px solid rgba(255, 201, 40, 0.34);
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, rgba(255, 201, 40, 0.12), rgba(255, 255, 255, 0.97)),
+            #ffffff;
+        box-shadow: 0 18px 34px rgba(29, 76, 87, 0.12);
+    }
+    .page > .card .info-tile {
+        border-color: rgba(44, 138, 138, 0.12);
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 14px 28px rgba(29, 76, 87, 0.1);
+    }
+    .learning-location-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+        gap: 18px;
+        align-items: stretch;
+    }
+    .brainboost-map-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 100%;
+        padding: 22px;
+        border: 1px solid rgba(255, 201, 40, 0.55);
+        border-radius: 18px;
+        background:
+            linear-gradient(135deg, rgba(255, 201, 40, 0.16), rgba(255, 255, 255, 0.97)),
+            #ffffff;
+        box-shadow: 0 18px 34px rgba(29, 76, 87, 0.16);
+    }
+    .home-tutoring-card {
+        position: relative;
+        display: grid;
+        gap: 12px;
+        align-content: center;
+        min-height: 360px;
+        padding: 22px;
+        border: 1px solid rgba(255, 201, 40, 0.55);
+        border-radius: 18px;
+        background:
+            linear-gradient(135deg, rgba(255, 201, 40, 0.28), rgba(255, 255, 255, 0.97)),
+            #ffffff;
+        box-shadow: 0 18px 34px rgba(29, 76, 87, 0.16);
+        overflow: hidden;
+    }
+    .home-tutoring-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -24px -38px auto;
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        background: rgba(44, 138, 138, 0.1);
+        pointer-events: none;
+    }
+    .home-tutoring-image {
+        width: 94px;
+        height: 94px;
+        object-fit: contain;
+        filter: drop-shadow(0 12px 18px rgba(29, 76, 87, 0.18));
+    }
+    .home-tutoring-eyebrow {
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(44, 138, 138, 0.12);
+        color: var(--teal-dark);
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .home-tutoring-title {
+        margin: 0;
+        color: #12343b;
+        font-size: clamp(1.55rem, 3vw, 2.2rem);
+        line-height: 1.05;
+    }
+    .home-tutoring-text {
+        margin: 0;
+        color: #334155;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+    .home-tutoring-note {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.84rem;
+        line-height: 1.35;
+    }
+    .home-tutoring-card .button {
+        width: fit-content;
+        background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+    }
     .angebot-header {
         align-items: flex-start;
         gap: 14px;
     }
     .angebot-tools-box {
-        width: min(100%, 360px);
+        width: min(100%, 690px);
         padding: 12px;
         border: 1px solid rgba(44, 138, 138, 0.18);
         border-radius: 14px;
@@ -180,13 +278,14 @@
     }
     .angebot-tools-actions {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(230px, 1fr));
         gap: 8px;
     }
     .angebot-tool-button {
         display: flex;
         align-items: center;
         gap: 8px;
+        min-width: 0;
         min-height: 54px;
         padding: 9px 10px;
         border: 1px solid rgba(29, 76, 87, 0.14);
@@ -198,6 +297,10 @@
         line-height: 1.1;
         box-shadow: 0 10px 22px rgba(0,0,0,0.07);
         transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .angebot-tool-button span {
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
     .angebot-tool-button:hover,
     .angebot-tool-button:focus {
@@ -214,11 +317,19 @@
     @media (max-width: 700px) {
         .landing-pricing-grid,
         .landing-pricing-benefits,
+        .learning-location-grid,
         .angebot-tools-actions {
             grid-template-columns: 1fr;
         }
         .angebot-tools-box {
             width: 100%;
+        }
+        .brainboost-map-card,
+        .home-tutoring-card {
+            min-height: auto;
+        }
+        .brainboost-map {
+            min-height: 340px;
         }
     }
 </style>
@@ -384,14 +495,22 @@
         <div class="tile-header">
             <h3>Lernorte</h3>
         </div>
-            <div style="display:flex;flex-wrap:wrap;gap:18px;">
-                <div style="flex:1 1 280px;min-width:260px;padding:10px 12px;border:1px solid rgba(0,0,0,0.05);border-radius:14px;background:linear-gradient(135deg, rgba(64,168,177,0.08), rgba(255,201,40,0.18));box-shadow:0 10px 22px rgba(0,0,0,0.06);">
-                    <a class="brainboost-map-link" href="https://www.openstreetmap.org/search?query=Karl-Schmidt-Stra%C3%9Fe%2020%2C%2038114%20Braunschweig" target="_blank" rel="noreferrer noopener" aria-label="OpenStreetMap (externer Link)" title="OpenStreetMap (externer Link)">
-                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4c57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.686-6-10a6 6 0 1 1 12 0c0 4.314-6 10-6 10z"></path><circle cx="12" cy="11" r="2.5"></circle></svg>
-                        <span>In OpenStreetMap öffnen</span>
+            <div class="learning-location-grid">
+                <div class="brainboost-map-card">
+                    <a class="brainboost-map-link" href="https://maps.app.goo.gl/oJqDhaqh4QXWDcu57" target="_blank" rel="noreferrer noopener" aria-label="Google Maps öffnen (externer Link)" title="Google Maps öffnen (externer Link)">
+                        <span>Google Maps</span>
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4c57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M9 7h8v8"></path></svg>
                     </a>
                     <div id="brainboost-map" class="brainboost-map" aria-label="Interaktive Karte mit BrainBoost Lernorten"></div>
                 </div>
+                <aside class="home-tutoring-card" aria-labelledby="home-tutoring-title">
+                    <img class="home-tutoring-image" src="{% static 'design/house.png' %}" alt="" aria-hidden="true">
+                    <span class="home-tutoring-eyebrow">Ganz bequem lernen</span>
+                    <h4 id="home-tutoring-title" class="home-tutoring-title">Nachhilfe vor Ort bei dir!*</h4>
+                    <p class="home-tutoring-text">Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem gewohnten Umfeld.</p>
+                    <a class="button" href="{% url 'contact' %}?role=parent" data-cta="landing-vor-ort-nachhilfe">Vor-Ort-Nachhilfe anfragen</a>
+                    <p class="home-tutoring-note">* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab transparent abgestimmt.</p>
+                </aside>
             </div>
         </div>
 </div>
@@ -444,8 +563,13 @@
         }
 
         var logoUrl = "{% static 'design/LogoPNG.png' %}";
+        var googleMapsUrl = 'https://maps.app.goo.gl/oJqDhaqh4QXWDcu57';
         var map = L.map(mapEl, {
             scrollWheelZoom: false
+        });
+        mapEl.style.cursor = 'pointer';
+        map.on('click', function() {
+            window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
         });
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
