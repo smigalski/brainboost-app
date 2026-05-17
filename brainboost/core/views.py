@@ -2612,7 +2612,7 @@ def lesson_list(request):
     else:
         lessons = Lesson.upcoming_qs().filter(
             pk__in=filtered_qs.values_list("pk", flat=True)
-        ).order_by("-date", "-time")
+        ).order_by("date", "time")
 
     filter_pairs = [
         ("period", period),
@@ -2998,7 +2998,28 @@ def lesson_delete(request, lesson_id):
             next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
         ):
             next_url = reverse("lesson_list")
-        lesson.delete()
+        delete_scope = request.POST.get("delete_scope", "single")
+        lessons_to_delete = Lesson.objects.filter(pk=lesson.pk)
+        if delete_scope == "same_weekday_time":
+            lessons_to_delete = Lesson.objects.filter(
+                tutor=lesson.tutor,
+                student=lesson.student,
+                date__week_day=lesson.date.isoweekday() % 7 + 1,
+                time=lesson.time,
+            )
+        elif delete_scope == "future_student":
+            lessons_to_delete = Lesson.objects.filter(
+                tutor=lesson.tutor,
+                student=lesson.student,
+            ).filter(
+                Q(date__gt=lesson.date)
+                | Q(date=lesson.date, time__gte=lesson.time)
+            )
+        deleted_count, _ = lessons_to_delete.delete()
+        if deleted_count == 1:
+            messages.success(request, "Termin wurde gelöscht.")
+        else:
+            messages.success(request, f"{deleted_count} Termine wurden gelöscht.")
         return redirect(next_url)
     return redirect("lesson_edit", lesson_id=lesson_id)
 

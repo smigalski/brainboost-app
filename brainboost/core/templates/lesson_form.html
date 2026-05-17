@@ -150,8 +150,86 @@
         <button class="button" type="submit">Speichern</button>
         <a class="button" style="background: var(--teal);" href="{% if cancel_url %}{{ cancel_url }}{% else %}{% url 'lesson_list' %}{% endif %}">Abbrechen</a>
         {% if is_edit and lesson %}
-            <button class="button" style="background: var(--red);" formaction="{% url 'lesson_delete' lesson.id %}" formmethod="post" onclick="return confirm('Diesen Termin wirklich löschen?');">Löschen</button>
+            <button class="button" type="button" style="background: var(--red);" data-delete-lesson-open>Löschen</button>
         {% endif %}
     </form>
 </div>
+
+{% if is_edit and lesson %}
+<div class="modal" id="delete-lesson-modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="delete-lesson-title">
+        <div class="modal-header">
+            <h3 id="delete-lesson-title">Termin löschen</h3>
+            <button type="button" class="modal-close" data-delete-lesson-close aria-label="Fenster schließen">&times;</button>
+        </div>
+        <p class="muted">
+            Was soll gelöscht werden?
+        </p>
+        <form method="post" action="{% url 'lesson_delete' lesson.id %}">
+            {% csrf_token %}
+            {% if next_url %}
+                <input type="hidden" name="next" value="{{ next_url }}">
+            {% endif %}
+            <label style="display:block; margin:10px 0;">
+                <input type="radio" name="delete_scope" value="single" checked>
+                Nur diesen Termin löschen
+            </label>
+            <label style="display:block; margin:10px 0;">
+                <input type="radio" name="delete_scope" value="same_weekday_time">
+                Diesen Termin und alle Termine mit diesem Schüler an diesem Wochentag und dieser Uhrzeit löschen
+            </label>
+            <label style="display:block; margin:10px 0;">
+                <input type="radio" name="delete_scope" value="future_student">
+                Diesen Termin und alle darauffolgenden Termine mit diesem Schüler löschen
+            </label>
+            <div class="modal-actions">
+                <button class="button" style="background: var(--red);" type="submit">Löschen</button>
+                <button class="button ghost" type="button" data-delete-lesson-close>Abbrechen</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+{% if is_edit and lesson %}
+<script>
+    (function () {
+        var openButton = document.querySelector("[data-delete-lesson-open]");
+        var modal = document.getElementById("delete-lesson-modal");
+        var closeButtons = document.querySelectorAll("[data-delete-lesson-close]");
+
+        if (!openButton || !modal) {
+            return;
+        }
+
+        function openModal() {
+            modal.classList.add("open");
+            modal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeModal() {
+            modal.classList.remove("open");
+            modal.setAttribute("aria-hidden", "true");
+        }
+
+        openButton.addEventListener("click", openModal);
+        closeButtons.forEach(function (button) {
+            button.addEventListener("click", closeModal);
+        });
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeModal();
+            }
+        });
+    })();
+</script>
+{% endif %}
 {% endblock %}

@@ -1063,6 +1063,167 @@ class LessonCancellationChargeableTests(TestCase):
         self.assertIsNotNone(lesson.cancelled_at)
 
 
+class LessonDeleteScopeTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_delete_test",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.other_tutor_user = CustomUser.objects.create_user(
+            username="other_tutor_delete_test",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="student_delete_test",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.other_student_user = CustomUser.objects.create_user(
+            username="other_student_delete_test",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.other_tutor = TutorProfile.objects.create(user=self.other_tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.other_student = StudentProfile.objects.create(user=self.other_student_user)
+        self.client.login(username="tutor_delete_test", password="test12345")
+
+    def _lesson(self, **overrides):
+        data = {
+            "tutor": self.tutor,
+            "student": self.student,
+            "date": date(2026, 5, 4),
+            "time": time(15, 0),
+            "duration_minutes": 60,
+            "ort": Lesson.Ort.ONLINE,
+            "fach": "mathe",
+            "status": Lesson.Status.PLANNED,
+        }
+        data.update(overrides)
+        return Lesson.objects.create(**data)
+
+    def test_lesson_edit_shows_delete_scope_options_for_tutor(self):
+        lesson = self._lesson()
+
+        response = self.client.get(reverse("lesson_edit", args=[lesson.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="delete_scope" value="single"')
+        self.assertContains(response, 'name="delete_scope" value="same_weekday_time"')
+        self.assertContains(response, 'name="delete_scope" value="future_student"')
+
+    def test_single_delete_only_deletes_selected_lesson(self):
+        selected = self._lesson()
+        other = self._lesson(date=date(2026, 5, 11))
+
+        response = self.client.post(
+            reverse("lesson_delete", args=[selected.id]),
+            {"delete_scope": "single"},
+        )
+
+        self.assertRedirects(response, reverse("lesson_list"))
+        self.assertFalse(Lesson.objects.filter(pk=selected.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=other.pk).exists())
+
+    def test_same_weekday_time_delete_only_deletes_matching_student_series(self):
+        selected = self._lesson(date=date(2026, 5, 4), time=time(15, 0))
+        same_weekday_time = self._lesson(date=date(2026, 5, 11), time=time(15, 0))
+        different_time = self._lesson(date=date(2026, 5, 18), time=time(16, 0))
+        different_weekday = self._lesson(date=date(2026, 5, 12), time=time(15, 0))
+        other_student_same_slot = self._lesson(
+            student=self.other_student,
+            date=date(2026, 5, 11),
+            time=time(15, 0),
+        )
+        other_tutor_same_slot = self._lesson(
+            tutor=self.other_tutor,
+            date=date(2026, 5, 11),
+            time=time(15, 0),
+        )
+
+        response = self.client.post(
+            reverse("lesson_delete", args=[selected.id]),
+            {"delete_scope": "same_weekday_time"},
+        )
+
+        self.assertRedirects(response, reverse("lesson_list"))
+        self.assertFalse(Lesson.objects.filter(pk=selected.pk).exists())
+        self.assertFalse(Lesson.objects.filter(pk=same_weekday_time.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=different_time.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=different_weekday.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=other_student_same_slot.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=other_tutor_same_slot.pk).exists())
+
+    def test_future_student_delete_deletes_selected_and_later_student_lessons(self):
+        earlier = self._lesson(date=date(2026, 5, 1), time=time(15, 0))
+        selected = self._lesson(date=date(2026, 5, 4), time=time(15, 0))
+        same_day_later = self._lesson(date=date(2026, 5, 4), time=time(17, 0))
+        future_different_day = self._lesson(date=date(2026, 5, 5), time=time(10, 0))
+        other_student_future = self._lesson(
+            student=self.other_student,
+            date=date(2026, 5, 5),
+            time=time(10, 0),
+        )
+
+        response = self.client.post(
+            reverse("lesson_delete", args=[selected.id]),
+            {"delete_scope": "future_student"},
+        )
+
+        self.assertRedirects(response, reverse("lesson_list"))
+        self.assertTrue(Lesson.objects.filter(pk=earlier.pk).exists())
+        self.assertFalse(Lesson.objects.filter(pk=selected.pk).exists())
+        self.assertFalse(Lesson.objects.filter(pk=same_day_later.pk).exists())
+        self.assertFalse(Lesson.objects.filter(pk=future_different_day.pk).exists())
+        self.assertTrue(Lesson.objects.filter(pk=other_student_future.pk).exists())
+
+
+class LessonListOrderTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_order_test",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="student_order_test",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.client.login(username="tutor_order_test", password="test12345")
+
+    def _lesson(self, lesson_date, lesson_time):
+        return Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=lesson_date,
+            time=lesson_time,
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.PLANNED,
+        )
+
+    def test_upcoming_lessons_are_listed_chronologically(self):
+        today = timezone.localdate()
+        later = self._lesson(today + timedelta(days=21), time(15, 0))
+        sooner_afternoon = self._lesson(today + timedelta(days=7), time(16, 0))
+        sooner_morning = self._lesson(today + timedelta(days=7), time(10, 0))
+
+        response = self.client.get(reverse("lesson_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(response.context["lessons"]),
+            [sooner_morning, sooner_afternoon, later],
+        )
+
+
 class InvoiceGenerationChargeableCancellationTests(TestCase):
     def setUp(self):
         self.tutor_user = CustomUser.objects.create_user(
