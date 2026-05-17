@@ -12,3 +12,45 @@
     </form>
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+    (function () {
+        var studentSelect = document.querySelector("[data-material-student-select]");
+        var taskSelect = document.querySelector("[data-related-task-select]");
+
+        if (!studentSelect || !taskSelect) {
+            return;
+        }
+
+        function filterTasksForStudent() {
+            var selectedStudentId = studentSelect.value;
+            var selectedTaskStillAvailable = false;
+
+            Array.prototype.forEach.call(taskSelect.options, function (option) {
+                if (!option.value) {
+                    option.hidden = false;
+                    option.disabled = false;
+                    return;
+                }
+
+                var matchesStudent = selectedStudentId && option.dataset.studentId === selectedStudentId;
+                option.hidden = !matchesStudent;
+                option.disabled = !matchesStudent;
+
+                if (matchesStudent && option.selected) {
+                    selectedTaskStillAvailable = true;
+                }
+            });
+
+            if (!selectedTaskStillAvailable) {
+                taskSelect.value = "";
+            }
+        }
+
+        studentSelect.addEventListener("change", filterTasksForStudent);
+        filterTasksForStudent();
+    })();
+</script>
+{% endblock %}

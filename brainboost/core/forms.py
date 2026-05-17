@@ -658,6 +658,22 @@ class ProgressEntryForm(forms.ModelForm):
         return cleaned
 
 
+class RelatedTaskSelect(forms.Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        if value:
+            task = getattr(value, "instance", None)
+            if task is not None:
+                option["attrs"]["data-student-id"] = str(task.student_id)
+                return option
+            try:
+                task = self.choices.field.queryset.get(pk=value)
+                option["attrs"]["data-student-id"] = str(task.student_id)
+            except (AttributeError, LearningMaterial.DoesNotExist, TypeError, ValueError):
+                pass
+        return option
+
+
 class LearningMaterialForm(forms.ModelForm):
     class Meta:
         model = LearningMaterial
@@ -673,9 +689,20 @@ class LearningMaterialForm(forms.ModelForm):
             tasks_qs = LearningMaterial.objects.filter(kind=LearningMaterial.Kind.TASK)
             if allowed_students is not None:
                 tasks_qs = tasks_qs.filter(student__in=allowed_students)
+            selected_student_id = (
+                self.data.get(self.add_prefix("student"))
+                or self.initial.get("student")
+            )
+            if selected_student_id:
+                tasks_qs = tasks_qs.filter(student_id=selected_student_id)
             self.fields["related_task"].queryset = tasks_qs.select_related("student__user").order_by("-uploaded_at")
             self.fields["related_task"].required = True
             self.fields["related_task"].label = "Zugehoerige Aufgabe"
+            self.fields["related_task"].widget = RelatedTaskSelect(
+                attrs={"data-related-task-select": "true"}
+            )
+            self.fields["related_task"].widget.choices = self.fields["related_task"].choices
+            self.fields["student"].widget.attrs["data-material-student-select"] = "true"
         else:
             self.fields.pop("related_task")
         self.fields["file"].help_text = "Erlaubt: pdf, png, jpg, jpeg, docx. Max 10 MB."

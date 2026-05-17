@@ -13,12 +13,18 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from .forms import BrainBoostFeedbackForm, InvoiceGenerateForm, TutorProfileForm
+from .forms import (
+    BrainBoostFeedbackForm,
+    InvoiceGenerateForm,
+    LearningMaterialForm,
+    TutorProfileForm,
+)
 from .models import (
     BrainBoostFeedback,
     CustomUser,
     FAQItem,
     Invoice,
+    LearningMaterial,
     Lesson,
     ParentProfile,
     ProgressEntry,
@@ -568,6 +574,74 @@ class AdminTaskManagerTests(TestCase):
             response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
             self.assertContains(response, task.image.url)
             self.assertContains(response, f'data-idea-image-preview="{task.image.url}"')
+
+
+class LearningMaterialFormTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor-material",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student_one_user = CustomUser.objects.create_user(
+            username="student-material-1",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Anna",
+            last_name="Eins",
+        )
+        self.student_two_user = CustomUser.objects.create_user(
+            username="student-material-2",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Ben",
+            last_name="Zwei",
+        )
+        self.student_one = StudentProfile.objects.create(user=self.student_one_user)
+        self.student_two = StudentProfile.objects.create(user=self.student_two_user)
+        self.student_one.assigned_tutors.add(self.tutor)
+        self.student_two.assigned_tutors.add(self.tutor)
+        self.task_one = LearningMaterial.objects.create(
+            student=self.student_one,
+            uploaded_by=self.tutor,
+            kind=LearningMaterial.Kind.TASK,
+            file="materials/student_1/task-one.pdf",
+        )
+        self.task_two = LearningMaterial.objects.create(
+            student=self.student_two,
+            uploaded_by=self.tutor,
+            kind=LearningMaterial.Kind.TASK,
+            file="materials/student_2/task-two.pdf",
+        )
+
+    def test_solution_related_task_queryset_is_filtered_by_selected_student(self):
+        form = LearningMaterialForm(
+            data={"student": str(self.student_one.id)},
+            allowed_students=StudentProfile.objects.filter(assigned_tutors=self.tutor),
+            kind=LearningMaterial.Kind.SOLUTION,
+            tutor_profile=self.tutor,
+        )
+
+        self.assertQuerySetEqual(
+            form.fields["related_task"].queryset,
+            [self.task_one],
+            transform=lambda item: item,
+        )
+
+    def test_solution_related_task_options_have_student_ids_for_client_filtering(self):
+        form = LearningMaterialForm(
+            allowed_students=StudentProfile.objects.filter(assigned_tutors=self.tutor),
+            kind=LearningMaterial.Kind.SOLUTION,
+            tutor_profile=self.tutor,
+        )
+
+        html = form.as_p()
+
+        self.assertIn('data-material-student-select="true"', html)
+        self.assertIn('data-related-task-select="true"', html)
+        self.assertIn(f'data-student-id="{self.student_one.id}"', html)
+        self.assertIn(f'data-student-id="{self.student_two.id}"', html)
 
 
 class InvoiceGenerateFormTests(TestCase):
