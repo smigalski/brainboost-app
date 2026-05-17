@@ -688,6 +688,11 @@
                     {% for item in todo_task_rows %}
                         <article class="idea-task-card">
                             <div class="idea-card__title">{{ item.task.title }}</div>
+                            {% if item.task.image %}
+                                <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ item.task.image.url }}" aria-label="Bildvorschau öffnen">
+                                    <img class="idea-card__image" src="{{ item.task.image.url }}" alt="">
+                                </button>
+                            {% endif %}
                             <div class="kanban-card__meta">
                                 <span>{{ item.task.importance }}</span>
                                 <span>{{ item.task.days }} Tage</span>
@@ -736,6 +741,11 @@
                         >
                             <td>
                                 <div class="task-title-display">{{ item.task.title }}</div>
+                                {% if item.task.image %}
+                                    <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ item.task.image.url }}" aria-label="Bildvorschau öffnen">
+                                        <img class="idea-card__image" src="{{ item.task.image.url }}" alt="">
+                                    </button>
+                                {% endif %}
                                 <input class="task-edit-field" data-task-title-input type="text" name="title" value="{{ item.task.title }}" form="update-task-{{ item.task.id }}" required>
                             </td>
                             <td>
@@ -881,6 +891,11 @@
                                 data-status-url="{% url 'admin_task_status_update' item.task.id %}"
                             >
                                 <div class="kanban-card__title">{{ item.task.title }}</div>
+                                {% if item.task.image %}
+                                    <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ item.task.image.url }}" aria-label="Bildvorschau öffnen">
+                                        <img class="idea-card__image" src="{{ item.task.image.url }}" alt="">
+                                    </button>
+                                {% endif %}
                                 <div class="kanban-card__meta">
                                     <span>{{ item.task.importance }}</span>
                                     <span>{{ item.task.days }} Tage</span>
@@ -1323,10 +1338,11 @@
                             openIdeaTaskModal(card);
                         });
                     }
-                    card.querySelectorAll("[data-idea-image-preview]").forEach(function (previewButton) {
-                        previewButton.addEventListener("click", function () {
-                            openImagePreview(previewButton.dataset.ideaImagePreview);
-                        });
+                });
+
+                document.querySelectorAll("[data-idea-image-preview]").forEach(function (previewButton) {
+                    previewButton.addEventListener("click", function () {
+                        openImagePreview(previewButton.dataset.ideaImagePreview);
                     });
                 });
 

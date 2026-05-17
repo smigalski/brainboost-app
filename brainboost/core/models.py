@@ -664,6 +664,7 @@ class AdminTask(models.Model):
         DONE = "done", "done"
 
     title = models.CharField(max_length=255)
+    image = models.ImageField(upload_to="admin_tasks/%Y/%m/", blank=True)
     importance = models.CharField(
         max_length=20,
         choices=Importance.choices,

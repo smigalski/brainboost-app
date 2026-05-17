@@ -1952,10 +1952,15 @@ def admin_tasks(request):
                 task = create_form.save(commit=False)
                 task.status = AdminTask.Status.TODO
                 task.created_by = request.user
-                task.save()
                 source_idea_id = request.POST.get("source_idea_id")
+                source_idea = None
                 if source_idea_id:
-                    AdminIdea.objects.filter(pk=source_idea_id).delete()
+                    source_idea = AdminIdea.objects.filter(pk=source_idea_id).first()
+                    if source_idea and source_idea.image:
+                        task.image = source_idea.image.name
+                task.save()
+                if source_idea:
+                    source_idea.delete()
                 messages.success(request, "Aufgabe wurde hinzugefügt.")
                 return_tab = request.POST.get("return_tab")
                 if return_tab not in {"ideas", "tasks", "kanban"}:

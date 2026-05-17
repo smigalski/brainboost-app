@@ -525,31 +525,49 @@ class AdminTaskManagerTests(TestCase):
             self.assertContains(response, "data-idea-image-preview-modal")
 
     def test_idea_task_modal_submission_creates_todo_task_and_removes_idea(self):
-        idea = AdminIdea.objects.create(
-            title="WhatsApp Follow-up Vorlage",
-            category=AdminIdea.Category.IMPROVEMENT,
-            created_by=self.staff_user,
+        image = SimpleUploadedFile(
+            "idea.gif",
+            (
+                b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00"
+                b"\xff\xff\xff,\x00\x00\x00\x00\x01\x00\x01\x00"
+                b"\x00\x02\x02D\x01\x00;"
+            ),
+            content_type="image/gif",
         )
         self.client.force_login(self.staff_user)
 
-        response = self.client.post(
-            reverse("admin_tasks"),
-            {
-                "action": "create",
-                "return_tab": "ideas",
-                "source_idea_id": idea.id,
-                "title": idea.title,
-                "importance": AdminTask.Importance.IDEA,
-                "days": 14,
-                "owner": self.staff_user.id,
-            },
-        )
+        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            idea = AdminIdea.objects.create(
+                title="WhatsApp Follow-up Vorlage",
+                category=AdminIdea.Category.IMPROVEMENT,
+                created_by=self.staff_user,
+                image=image,
+            )
+            idea_image_name = idea.image.name
 
-        task = AdminTask.objects.get(title=idea.title)
-        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#task-{task.id}")
-        self.assertEqual(task.status, AdminTask.Status.TODO)
-        self.assertEqual(task.importance, AdminTask.Importance.IDEA)
-        self.assertFalse(AdminIdea.objects.filter(pk=idea.pk).exists())
+            response = self.client.post(
+                reverse("admin_tasks"),
+                {
+                    "action": "create",
+                    "return_tab": "ideas",
+                    "source_idea_id": idea.id,
+                    "title": idea.title,
+                    "importance": AdminTask.Importance.IDEA,
+                    "days": 14,
+                    "owner": self.staff_user.id,
+                },
+            )
+
+            task = AdminTask.objects.get(title=idea.title)
+            self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#task-{task.id}")
+            self.assertEqual(task.status, AdminTask.Status.TODO)
+            self.assertEqual(task.importance, AdminTask.Importance.IDEA)
+            self.assertEqual(task.image.name, idea_image_name)
+            self.assertFalse(AdminIdea.objects.filter(pk=idea.pk).exists())
+
+            response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
+            self.assertContains(response, task.image.url)
+            self.assertContains(response, f'data-idea-image-preview="{task.image.url}"')
 
 
 class InvoiceGenerateFormTests(TestCase):

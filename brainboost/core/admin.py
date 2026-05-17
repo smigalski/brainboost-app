@@ -112,7 +112,7 @@ class TutorTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(AdminTask)
 class AdminTaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "importance", "days", "status", "owner", "created_at")
+    list_display = ("title", "image", "importance", "days", "status", "owner", "created_at")
     list_filter = ("importance", "status", "owner")
     search_fields = ("title", "owner__username", "owner__first_name", "owner__last_name")
 
