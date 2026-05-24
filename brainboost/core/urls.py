@@ -18,6 +18,7 @@ urlpatterns = [
     path("preise/", views.pricing, name="pricing"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("admins/", views.admin_tasks, name="admin_tasks"),
+    path("karteikarten/", views.flashcards, name="flashcards"),
     path("admins/leads/", views.lead_dashboard, name="lead_dashboard"),
     path("admins/leads/export/", views.lead_export_csv, name="lead_export_csv"),
     path("admins/meta-ads/link-generator/", views.campaign_link_builder, name="campaign_link_builder"),

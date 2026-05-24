@@ -12,6 +12,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from openpyxl import Workbook
 
 from .forms import (
     BrainBoostFeedbackForm,
@@ -169,6 +170,80 @@ class IndependentStudentAccountTests(TestCase):
         self.assertEqual(invoice.payment_status, Invoice.PaymentStatus.ANNOUNCED)
         self.assertEqual(invoice.payment_method, Invoice.PaymentMethod.CASH)
         self.assertIsNone(invoice.payment_requested_by)
+
+
+class FlashcardAdminTests(TestCase):
+    def _xlsx_file(self, rows=12):
+        workbook = Workbook()
+        sheet = workbook.active
+        for index in range(1, rows + 1):
+            sheet.append([f"Deutsch {index}", f"Polnisch {index}"])
+        buffer = tempfile.SpooledTemporaryFile()
+        workbook.save(buffer)
+        buffer.seek(0)
+        return SimpleUploadedFile(
+            "karten.xlsx",
+            buffer.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_user(
+            username="admin",
+            password="pw",
+            role=CustomUser.Roles.TUTOR,
+            is_staff=True,
+        )
+        self.regular_user = CustomUser.objects.create_user(
+            username="regular",
+            password="pw",
+            role=CustomUser.Roles.STUDENT,
+        )
+
+    def test_flashcards_require_admin_access(self):
+        self.client.login(username="regular", password="pw")
+
+        response = self.client.get(reverse("flashcards"))
+
+        self.assertRedirects(response, reverse("dashboard"))
+
+    def test_admin_page_links_to_flashcards(self):
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.get(reverse("admin_tasks"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("flashcards"))
+        self.assertContains(response, "Karteikarten öffnen")
+
+    def test_admin_can_upload_xlsx_flashcards(self):
+        self.client.login(username="admin", password="pw")
+
+        response = self.client.post(
+            reverse("flashcards"),
+            data={"action": "upload", "file": self._xlsx_file(rows=12)},
+        )
+
+        self.assertRedirects(response, reverse("flashcards"))
+        deck = self.client.session["admin_flashcard_deck"]
+        self.assertEqual(len(deck), 12)
+        self.assertEqual(deck[0], {"de": "Deutsch 1", "pl": "Polnisch 1"})
+
+    def test_admin_can_start_random_session_after_upload(self):
+        self.client.login(username="admin", password="pw")
+        self.client.post(
+            reverse("flashcards"),
+            data={"action": "upload", "file": self._xlsx_file(rows=20)},
+        )
+
+        response = self.client.post(
+            reverse("flashcards"),
+            data={"action": "start", "card_count": "10"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "flashcard-study-cards")
+        self.assertContains(response, "1 / 10")
 
 
 @override_settings(

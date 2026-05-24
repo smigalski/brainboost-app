@@ -2,6 +2,7 @@ import base64
 import csv
 import io
 import json
+import random
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from pathlib import Path
@@ -29,8 +30,10 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from openpyxl import load_workbook
 
 from .forms import (
+    FlashcardUploadForm,
     LessonForm,
     ProgressEntryForm,
     LearningMaterialForm,
@@ -95,6 +98,8 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+FLASHCARD_DECK_SESSION_KEY = "admin_flashcard_deck"
+FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -1305,6 +1310,38 @@ def _build_campaign_url(base_url: str, params: dict[str, str]) -> str:
     )
 
 
+def _parse_flashcard_workbook(uploaded_file) -> list[dict]:
+    try:
+        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+    except Exception as exc:
+        raise ValueError("Die XLSX-Datei konnte nicht gelesen werden.") from exc
+
+    sheet = workbook.active
+    cards: list[dict] = []
+    for row in sheet.iter_rows(min_row=1, max_col=2, values_only=True):
+        german = str(row[0]).strip() if row and row[0] is not None else ""
+        polish = str(row[1]).strip() if len(row) > 1 and row[1] is not None else ""
+        if not german and not polish:
+            continue
+        if not german or not polish:
+            continue
+        cards.append({"de": german, "pl": polish})
+
+    if not cards:
+        raise ValueError("Die Datei enthält keine vollständigen Karteikarten in Spalte A und B.")
+    return cards
+
+
+def _flashcard_count_options(deck_size: int) -> list[dict]:
+    return [
+        {
+            "value": count,
+            "disabled": count > deck_size,
+        }
+        for count in FLASHCARD_COUNTS
+    ]
+
+
 def _admin_users_queryset():
     return CustomUser.objects.filter(is_active=True).filter(
         Q(is_staff=True) | Q(is_superuser=True)
@@ -2109,6 +2146,67 @@ def admin_tasks(request):
             "importance_choices": AdminTask.Importance.choices,
             "days_by_importance": _admin_task_days_by_importance(),
             "status_choices": AdminTask.Status.choices,
+        },
+    )
+
+
+@login_required
+def flashcards(request):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return redirect("dashboard")
+
+    deck = request.session.get(FLASHCARD_DECK_SESSION_KEY, [])
+    study_cards = []
+    selected_count = None
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        if action == "upload":
+            form = FlashcardUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    deck = _parse_flashcard_workbook(form.cleaned_data["file"])
+                except ValueError as exc:
+                    messages.error(request, str(exc))
+                else:
+                    request.session[FLASHCARD_DECK_SESSION_KEY] = deck
+                    request.session.modified = True
+                    messages.success(request, f"{len(deck)} Karteikarten wurden importiert.")
+                    return redirect("flashcards")
+        elif action == "start":
+            form = FlashcardUploadForm()
+            if not deck:
+                messages.error(request, "Bitte lade zuerst eine XLSX-Datei hoch.")
+            else:
+                try:
+                    selected_count = int(request.POST.get("card_count", ""))
+                except (TypeError, ValueError):
+                    selected_count = 0
+                if selected_count not in FLASHCARD_COUNTS:
+                    messages.error(request, "Bitte wähle eine gültige Anzahl Karteikarten aus.")
+                elif selected_count > len(deck):
+                    messages.error(
+                        request,
+                        f"Für diese Auswahl brauchst du mindestens {selected_count} Karteikarten.",
+                    )
+                else:
+                    study_cards = random.sample(deck, selected_count)
+        else:
+            form = FlashcardUploadForm()
+    else:
+        form = FlashcardUploadForm()
+
+    deck_size = len(deck)
+    return render(
+        request,
+        "flashcards.html",
+        {
+            "form": form,
+            "deck_size": deck_size,
+            "count_options": _flashcard_count_options(deck_size),
+            "study_cards": study_cards,
+            "selected_count": selected_count,
         },
     )
 

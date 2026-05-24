@@ -1,0 +1,310 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-24 13:06+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: core/admin.py:30
+msgid "Personal info"
+msgstr ""
+
+#: core/admin.py:31
+msgid "Role"
+msgstr ""
+
+#: core/admin.py:33
+msgid "Permissions"
+msgstr ""
+
+#: core/admin.py:44
+msgid "Important dates"
+msgstr ""
+
+#: core/templates/landing.html:3
+msgid "BrainBoost | Startseite"
+msgstr ""
+
+#: core/templates/landing.html:339
+msgid "Jetzt kostenlos Probestunde buchen!"
+msgstr ""
+
+#: core/templates/landing.html:344
+msgid "Willkommen bei"
+msgstr ""
+
+#: core/templates/landing.html:349
+msgid "Stark im Kopf - Stark im Lernen"
+msgstr ""
+
+#: core/templates/landing.html:353
+msgid "Einloggen"
+msgstr ""
+
+#: core/templates/landing.html:358
+msgid "Wichtiger Hinweis"
+msgstr ""
+
+#: core/templates/landing.html:359
+msgid ""
+"Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn."
+msgstr ""
+
+#: core/templates/landing.html:364
+msgid "Sei schnell! Melde Dich jetzt!"
+msgstr ""
+
+#: core/templates/landing.html:371
+msgid "Über BrainBoost"
+msgstr ""
+
+#: core/templates/landing.html:372
+msgid ""
+"<strong>BrainBoost</strong> wurde 2025 von Kiara Puppe gegründet und stellt "
+"eine professionelle <strong>Nachhilfeplattform</strong> mit digitaler "
+"Infrastruktur dar. BrainBoost verbindet die anschreitende Digitalisierung "
+"mit traditionellen Lernmethoden, denn <strong>KI</strong> und andere "
+"<strong>intelligente Tools</strong> können das Lernen sinnvoll ergänzen - "
+"wenn sie richtig eingesetzt werden! Deshalb hilft BrainBoost dabei, einen KI-"
+"gerechten Umgang mit eigenständigem und traditionellem Lernen zu verbinden, "
+"damit alle bei BrainBoost davon profitieren können und das <strong>Beste</"
+"strong> aus sich herausholen können!"
+msgstr ""
+
+#: core/templates/landing.html:377
+msgid "Preis & Qualität"
+msgstr ""
+
+#: core/templates/landing.html:378
+msgid ""
+"Wir verbinden günstige und faire Preise mit professioneller digitalisierter "
+"Nachhilfe!"
+msgstr ""
+
+#: core/templates/landing.html:380
+msgid "Zu den Preisen"
+msgstr ""
+
+#: core/templates/landing.html:381
+msgid ""
+"Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest "
+"alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose "
+"Probestunde oder kontaktiere mich!"
+msgstr ""
+
+#: core/templates/landing.html:383
+msgid "Jetzt anfragen"
+msgstr ""
+
+#: core/templates/landing.html:394
+msgid "Unser Angebot"
+msgstr ""
+
+#: core/templates/landing.html:396
+msgid "Digitale Lernorte"
+msgstr ""
+
+#: core/templates/landing.html:397
+msgid "Digitale Lernräume"
+msgstr ""
+
+#: core/templates/landing.html:437
+msgid "Grundschule"
+msgstr ""
+
+#: core/templates/landing.html:438
+msgid "Alle Fächer"
+msgstr ""
+
+#: core/templates/landing.html:441
+msgid "Weiterführende Schule"
+msgstr ""
+
+#: core/templates/landing.html:442
+msgid ""
+"Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, "
+"Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, "
+"Englisch, Französisch, Politik, Mathematik, Physik und Chemie. <strong>BBS-"
+"Fächer:</strong> z. B. Wirtschaft, Rechnungswesen, Pädagogik, Gesundheit und "
+"Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, "
+"Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse"
+msgstr ""
+
+#: core/templates/landing.html:445
+msgid "Erweitertes Lernangebot"
+msgstr ""
+
+#: core/templates/landing.html:446
+msgid ""
+"Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf "
+"Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten"
+msgstr ""
+
+#: core/templates/landing.html:449
+msgid "Für Studierende"
+msgstr ""
+
+#: core/templates/landing.html:450
+msgid ""
+"Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und "
+"Masterarbeiten - von der Struktur bis zur finalen Überarbeitung"
+msgstr ""
+
+#: core/templates/landing.html:461
+msgid "Preise"
+msgstr ""
+
+#: core/templates/landing.html:462
+msgid "Kurz & transparent"
+msgstr ""
+
+#: core/templates/landing.html:465
+msgid ""
+"Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und "
+"Lernfortschritt."
+msgstr ""
+
+#: core/templates/landing.html:466
+msgid "Preisübersicht"
+msgstr ""
+
+#: core/templates/landing.html:468
+msgid "45 Minuten"
+msgstr ""
+
+#: core/templates/landing.html:472
+msgid "60 Minuten"
+msgstr ""
+
+#: core/templates/landing.html:476
+msgid "90 Minuten"
+msgstr ""
+
+#: core/templates/landing.html:481
+msgid "inkl. kostenloser WebApp"
+msgstr ""
+
+#: core/templates/landing.html:482
+msgid "inkl. Lernfortschrittreports"
+msgstr ""
+
+#: core/templates/landing.html:483
+msgid "inkl. Online-Terminplanung"
+msgstr ""
+
+#: core/templates/landing.html:484
+msgid "inkl. individuellen Lernmaterialien"
+msgstr ""
+
+#: core/templates/landing.html:486
+msgid "Zu den weiteren Vorteilen!"
+msgstr ""
+
+#: core/templates/landing.html:496
+msgid "Lernorte"
+msgstr ""
+
+#: core/templates/landing.html:500
+msgid "Google Maps öffnen (externer Link)"
+msgstr ""
+
+#: core/templates/landing.html:504
+msgid "Interaktive Karte mit BrainBoost Lernorten"
+msgstr ""
+
+#: core/templates/landing.html:508
+msgid "Ganz bequem lernen"
+msgstr ""
+
+#: core/templates/landing.html:509
+msgid "Nachhilfe vor Ort bei dir!*"
+msgstr ""
+
+#: core/templates/landing.html:510
+msgid ""
+"Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir "
+"nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem "
+"gewohnten Umfeld."
+msgstr ""
+
+#: core/templates/landing.html:511
+msgid "Vor-Ort-Nachhilfe anfragen"
+msgstr ""
+
+#: core/templates/landing.html:512
+msgid ""
+"* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab "
+"transparent abgestimmt."
+msgstr ""
+
+#: core/templates/landing.html:520
+msgid "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!"
+msgstr ""
+
+#: core/templates/landing.html:521
+msgid "Jetzt bewerben und keine Chance verpassen!"
+msgstr ""
+
+#: core/templates/landing.html:526
+msgid "BrainBoost Feedback"
+msgstr ""
+
+#: core/templates/landing.html:527
+msgid ""
+"BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist "
+"dafür nötig?"
+msgstr ""
+
+#: core/templates/landing.html:528
+msgid "Anonymes Feedback geben"
+msgstr ""
+
+#: core/templates/landing.html:532
+msgid "Google-Bewertung"
+msgstr ""
+
+#: core/templates/landing.html:533
+msgid ""
+"Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze "
+"Bewertung bei Google."
+msgstr ""
+
+#: core/templates/landing.html:535
+msgid "Jetzt bei Google bewerten"
+msgstr ""
+
+#: core/templates/landing.html:540
+msgid "FAQ"
+msgstr ""
+
+#: core/templates/landing.html:548
+msgid "Noch keine FAQ für die Startseite vorhanden."
+msgstr ""
+
+#: core/templates/landing.html:558
+msgid "BrainBoost Lernort"
+msgstr ""
+
+#: core/templates/landing.html:559
+msgid "Karl-Schmidt-Straße 20, 38114 Braunschweig"
+msgstr ""
+
+#: core/templates/landing.html:560
+msgid "Stadtbibliothek Braunschweig"
+msgstr ""
+
+#: core/templates/landing.html:561
+msgid "Zentraler Treffpunkt in der Innenstadt"
+msgstr ""

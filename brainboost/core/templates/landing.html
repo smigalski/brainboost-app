@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}BrainBoost | Startseite{% endblock %}
+{% load static i18n %}
+{% block title %}{% trans "BrainBoost | Startseite" %}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -336,51 +336,51 @@
 <div style="display:flex;justify-content:center;margin:8px 0 18px;">
     <a href="{% url 'contact' %}?role=parent" data-cta="probestunde-kontakt" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;text-decoration:none;">
         <span style="position:absolute;inset:-35%;background:radial-gradient(circle, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.2s infinite ease-in-out;pointer-events:none;"></span>
-        <span style="position:relative;z-index:1;">Jetzt kostenlos Probestunde buchen!</span>
+        <span style="position:relative;z-index:1;">{% trans "Jetzt kostenlos Probestunde buchen!" %}</span>
     </a>
 </div>
 <div class="card">
     <h1>
-        Willkommen bei
+        {% trans "Willkommen bei" %}
         <span class="brainboost-wordmark" aria-label="BrainBoost">
             <span class="brainboost-wordmark__initial">B</span>rain<span class="brainboost-wordmark__initial">B</span>oost
         </span>
     </h1>
-    <p class="muted"><strong>Stark im Kopf - Stark im Lernen</strong></p>
+    <p class="muted"><strong>{% trans "Stark im Kopf - Stark im Lernen" %}</strong></p>
     <form method="post" action="{% url 'login' %}">
         {% csrf_token %}
         {{ form.as_p }}
-        <button class="button" type="submit">Einloggen</button>
+        <button class="button" type="submit">{% trans "Einloggen" %}</button>
     </form>
     <div style="margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,183,0,0.55);background:linear-gradient(120deg, rgba(255,215,97,0.25), rgba(255,255,255,0.92));box-shadow:0 12px 24px rgba(0,0,0,0.08);display:flex;align-items:flex-start;gap:12px;">
         <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,183,0,0.22);color:var(--accent, #d88700);font-weight:800;font-size:1rem;">!</span>
         <div>
-            <div style="font-weight:800;color:var(--accent, #d88700);text-transform:uppercase;font-size:0.82rem;letter-spacing:0.05em;">Wichtiger Hinweis</div>
-            <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn.</p>
+            <div style="font-weight:800;color:var(--accent, #d88700);text-transform:uppercase;font-size:0.82rem;letter-spacing:0.05em;">{% trans "Wichtiger Hinweis" %}</div>
+            <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">{% blocktrans trimmed %}Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn.{% endblocktrans %}</p>
         </div>
     </div>
     <a href="{% url 'contact' %}?role=parent" data-cta="kontakt-schnell-melden" style="margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg, #ff6a00, #ffdd00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 12px 28px rgba(255,106,0,0.35), 0 6px 16px rgba(0,0,0,0.18);text-decoration:none;position:relative;overflow:hidden;">
         <span style="position:absolute;inset:-30%;background:radial-gradient(circle, rgba(255,255,255,0.35) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.4s infinite ease-in-out;pointer-events:none;"></span>
-        <span style="position:relative;z-index:1;">Sei schnell! Melde Dich jetzt!</span>
+        <span style="position:relative;z-index:1;">{% trans "Sei schnell! Melde Dich jetzt!" %}</span>
     </a>
 </div>
 
 <div class="card info-card">
     
     <div class="info-tile">
-        <h3>Über BrainBoost</h3>
-        <p class="tile-placeholder"><strong>BrainBoost</strong> wurde 2025 von Kiara Puppe gegründet und stellt eine professionelle <strong>Nachhilfeplattform</strong> mit digitaler Infrastruktur dar. 
+        <h3>{% trans "Über BrainBoost" %}</h3>
+        <p class="tile-placeholder">{% blocktrans trimmed %}<strong>BrainBoost</strong> wurde 2025 von Kiara Puppe gegründet und stellt eine professionelle <strong>Nachhilfeplattform</strong> mit digitaler Infrastruktur dar.
             BrainBoost verbindet die anschreitende Digitalisierung mit traditionellen Lernmethoden, denn <strong>KI</strong> und andere <strong>intelligente Tools</strong> können das Lernen sinnvoll ergänzen - wenn sie richtig eingesetzt werden! 
-            Deshalb hilft BrainBoost dabei, einen KI-gerechten Umgang mit eigenständigem und traditionellem Lernen zu verbinden, damit alle bei BrainBoost davon profitieren können und das <strong>Beste</strong> aus sich herausholen können!</p>
+            Deshalb hilft BrainBoost dabei, einen KI-gerechten Umgang mit eigenständigem und traditionellem Lernen zu verbinden, damit alle bei BrainBoost davon profitieren können und das <strong>Beste</strong> aus sich herausholen können!{% endblocktrans %}</p>
 
         <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg, rgba(44,138,138,0.12), rgba(255,201,40,0.22));box-shadow:0 10px 30px rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.04);">
-            <span class="badge info">Preis &amp; Qualität</span>
-            <p style="margin:0;font-weight:800;color:var(--accent);line-height:1.4;">Wir verbinden günstige und faire Preise mit professioneller digitalisierter Nachhilfe!</p>
+            <span class="badge info">{% trans "Preis & Qualität" %}</span>
+            <p style="margin:0;font-weight:800;color:var(--accent);line-height:1.4;">{% trans "Wir verbinden günstige und faire Preise mit professioneller digitalisierter Nachhilfe!" %}</p>
         </div>
-        <a class="button" href="{% url 'pricing' %}" data-cta="preise-link" style="margin-top:10px;display:inline-flex;">Zu den Preisen</a>
-        <p class="tile-placeholder">Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose Probestunde oder kontaktiere mich!</p>
+        <a class="button" href="{% url 'pricing' %}" data-cta="preise-link" style="margin-top:10px;display:inline-flex;">{% trans "Zu den Preisen" %}</a>
+        <p class="tile-placeholder">{% blocktrans trimmed %}Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose Probestunde oder kontaktiere mich!{% endblocktrans %}</p>
         <div style="margin-top:8px;">
-            <a class="button" href="{% url 'contact' %}?role=parent" data-cta="landing-jetzt-anfragen" style="display:inline-flex;background:linear-gradient(135deg,#ffc928,#ffb300);color:#1f2a30;font-weight:800;box-shadow:0 8px 20px rgba(255,201,40,0.35);">Jetzt anfragen</a>
+            <a class="button" href="{% url 'contact' %}?role=parent" data-cta="landing-jetzt-anfragen" style="display:inline-flex;background:linear-gradient(135deg,#ffc928,#ffb300);color:#1f2a30;font-weight:800;box-shadow:0 8px 20px rgba(255,201,40,0.35);">{% trans "Jetzt anfragen" %}</a>
         </div>
     </div>
 </div>
@@ -391,10 +391,10 @@
     <div class="info-tile">
         <div class="tile-header angebot-header">
             <div>
-                <h3>Unser Angebot</h3>
+                <h3>{% trans "Unser Angebot" %}</h3>
             </div>
-            <div class="angebot-tools-box" aria-label="Digitale Lernorte">
-                <p class="angebot-tools-title">Digitale Lernräume</p>
+            <div class="angebot-tools-box" aria-label="{% trans 'Digitale Lernorte' %}">
+                <p class="angebot-tools-title">{% trans "Digitale Lernräume" %}</p>
                 <div class="angebot-tools-actions">
                     <a class="angebot-tool-button" href="https://bigbluebutton.org/" target="_blank" rel="noopener noreferrer" data-cta="landing-bigbluebutton">
                         <img class="angebot-tool-logo" src="{% static 'design/bigbluebuttonlogo.png' %}" alt="" aria-hidden="true">
@@ -434,20 +434,20 @@
         <table class="angebot-table" style="width:100%;border-collapse:collapse;margin:8px 0;font-size:0.95rem;table-layout:fixed;">
             <tbody>
                 <tr>
-                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);font-weight:600;">Grundschule</td>
-                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">Alle Fächer</td>
+                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);font-weight:600;">{% trans "Grundschule" %}</td>
+                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">{% trans "Alle Fächer" %}</td>
                 </tr>
                 <tr>
-                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);font-weight:600;">Weiterführende Schule</td>
-                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, Englisch, Französisch, Politik, Mathematik, Physik und Chemie. <strong>BBS-Fächer:</strong> z. B. Wirtschaft, Rechnungswesen, Pädagogik, Gesundheit und Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse</td>
+                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);font-weight:600;">{% trans "Weiterführende Schule" %}</td>
+                    <td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,0.05);word-break:break-word;">{% blocktrans trimmed %}Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, Englisch, Französisch, Politik, Mathematik, Physik und Chemie. <strong>BBS-Fächer:</strong> z. B. Wirtschaft, Rechnungswesen, Pädagogik, Gesundheit und Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse{% endblocktrans %}</td>
                 </tr>
                 <tr>
-                    <td style="padding:10px 12px;font-weight:600;">Erweitertes Lernangebot</td>
-                    <td style="padding:10px 12px;word-break:break-word;">Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten</td>
+                    <td style="padding:10px 12px;font-weight:600;">{% trans "Erweitertes Lernangebot" %}</td>
+                    <td style="padding:10px 12px;word-break:break-word;">{% trans "Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten" %}</td>
                 </tr>
                 <tr>
-                    <td style="padding:10px 12px;font-weight:600;">Für Studierende</td>
-                    <td style="padding:10px 12px;word-break:break-word;">Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und Masterarbeiten - von der Struktur bis zur finalen Überarbeitung</td>
+                    <td style="padding:10px 12px;font-weight:600;">{% trans "Für Studierende" %}</td>
+                    <td style="padding:10px 12px;word-break:break-word;">{% trans "Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und Masterarbeiten - von der Struktur bis zur finalen Überarbeitung" %}</td>
                 </tr>
             </tbody>
         </table>
@@ -458,32 +458,32 @@
 <div class="card">
     <div class="info-tile">
         <div class="tile-header">
-            <h3>Preise</h3>
-            <span class="tagline">Kurz &amp; transparent</span>
+            <h3>{% trans "Preise" %}</h3>
+            <span class="tagline">{% trans "Kurz & transparent" %}</span>
         </div>
         <div class="landing-pricing-summary">
-            <p class="tile-placeholder" style="margin:0;">Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und Lernfortschritt.</p>
-            <div class="landing-pricing-grid" aria-label="Preisübersicht">
+            <p class="tile-placeholder" style="margin:0;">{% trans "Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und Lernfortschritt." %}</p>
+            <div class="landing-pricing-grid" aria-label="{% trans 'Preisübersicht' %}">
                 <div class="landing-pricing-tier">
-                    <div class="landing-pricing-duration">45 Minuten</div>
+                    <div class="landing-pricing-duration">{% trans "45 Minuten" %}</div>
                     <div class="landing-pricing-price">19 €</div>
                 </div>
                 <div class="landing-pricing-tier">
-                    <div class="landing-pricing-duration">60 Minuten</div>
+                    <div class="landing-pricing-duration">{% trans "60 Minuten" %}</div>
                     <div class="landing-pricing-price">25 €</div>
                 </div>
                 <div class="landing-pricing-tier">
-                    <div class="landing-pricing-duration">90 Minuten</div>
+                    <div class="landing-pricing-duration">{% trans "90 Minuten" %}</div>
                     <div class="landing-pricing-price">36 €</div>
                 </div>
             </div>
             <div class="landing-pricing-benefits">
-                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>inkl. kostenloser WebApp</span></div>
-                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>inkl. Lernfortschrittreports</span></div>
-                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>inkl. Online-Terminplanung</span></div>
-                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>inkl. individuellen Lernmaterialien</span></div>
+                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>{% trans "inkl. kostenloser WebApp" %}</span></div>
+                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>{% trans "inkl. Lernfortschrittreports" %}</span></div>
+                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>{% trans "inkl. Online-Terminplanung" %}</span></div>
+                <div class="landing-pricing-benefit"><span class="landing-pricing-check">&#10003;</span><span>{% trans "inkl. individuellen Lernmaterialien" %}</span></div>
             </div>
-            <a class="button" href="{% url 'pricing' %}" data-cta="landing-preise-details" style="width:fit-content;"> Zu den weiteren Vorteilen!</a>
+            <a class="button" href="{% url 'pricing' %}" data-cta="landing-preise-details" style="width:fit-content;">{% trans "Zu den weiteren Vorteilen!" %}</a>
         </div>
     </div>
 </div>
@@ -493,23 +493,23 @@
 <div class="card">
     <div class="info-tile">
         <div class="tile-header">
-            <h3>Lernorte</h3>
+            <h3>{% trans "Lernorte" %}</h3>
         </div>
             <div class="learning-location-grid">
                 <div class="brainboost-map-card">
-                    <a class="brainboost-map-link" href="https://maps.app.goo.gl/oJqDhaqh4QXWDcu57" target="_blank" rel="noreferrer noopener" aria-label="Google Maps öffnen (externer Link)" title="Google Maps öffnen (externer Link)">
+                    <a class="brainboost-map-link" href="https://maps.app.goo.gl/oJqDhaqh4QXWDcu57" target="_blank" rel="noreferrer noopener" aria-label="{% trans 'Google Maps öffnen (externer Link)' %}" title="{% trans 'Google Maps öffnen (externer Link)' %}">
                         <span>Google Maps</span>
                         <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4c57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"></path><path d="M9 7h8v8"></path></svg>
                     </a>
-                    <div id="brainboost-map" class="brainboost-map" aria-label="Interaktive Karte mit BrainBoost Lernorten"></div>
+                    <div id="brainboost-map" class="brainboost-map" aria-label="{% trans 'Interaktive Karte mit BrainBoost Lernorten' %}"></div>
                 </div>
                 <aside class="home-tutoring-card" aria-labelledby="home-tutoring-title">
                     <img class="home-tutoring-image" src="{% static 'design/house.png' %}" alt="" aria-hidden="true">
-                    <span class="home-tutoring-eyebrow">Ganz bequem lernen</span>
-                    <h4 id="home-tutoring-title" class="home-tutoring-title">Nachhilfe vor Ort bei dir!*</h4>
-                    <p class="home-tutoring-text">Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem gewohnten Umfeld.</p>
-                    <a class="button" href="{% url 'contact' %}?role=parent" data-cta="landing-vor-ort-nachhilfe">Vor-Ort-Nachhilfe anfragen</a>
-                    <p class="home-tutoring-note">* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab transparent abgestimmt.</p>
+                    <span class="home-tutoring-eyebrow">{% trans "Ganz bequem lernen" %}</span>
+                    <h4 id="home-tutoring-title" class="home-tutoring-title">{% trans "Nachhilfe vor Ort bei dir!*" %}</h4>
+                    <p class="home-tutoring-text">{% trans "Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem gewohnten Umfeld." %}</p>
+                    <a class="button" href="{% url 'contact' %}?role=parent" data-cta="landing-vor-ort-nachhilfe">{% trans "Vor-Ort-Nachhilfe anfragen" %}</a>
+                    <p class="home-tutoring-note">{% trans "* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab transparent abgestimmt." %}</p>
                 </aside>
             </div>
         </div>
@@ -517,27 +517,27 @@
 
 <div class="card">
     <div class="info-tile">
-        <h3>TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!</h3>
-        <a class="button tutor-apply-button" href="{% url 'tutorin_werden' %}">Jetzt bewerben und keine Chance verpassen!</a>
+        <h3>{% trans "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!" %}</h3>
+        <a class="button tutor-apply-button" href="{% url 'tutorin_werden' %}">{% trans "Jetzt bewerben und keine Chance verpassen!" %}</a>
     </div>
 </div>
 
 <div class="card">
-    <h3>BrainBoost Feedback</h3>
-    <p class="muted" style="margin-bottom:12px;">BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?</p>
-    <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'brainboost_feedback' %}?source=landing" data-cta="feedback-link">Anonymes Feedback geben</a>
+    <h3>{% trans "BrainBoost Feedback" %}</h3>
+    <p class="muted" style="margin-bottom:12px;">{% trans "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist dafür nötig?" %}</p>
+    <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'brainboost_feedback' %}?source=landing" data-cta="feedback-link">{% trans "Anonymes Feedback geben" %}</a>
 </div>
 
 <div class="card">
-    <h3>Google-Bewertung</h3>
-    <p class="muted" style="margin-bottom:10px;">Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google.</p>
+    <h3>{% trans "Google-Bewertung" %}</h3>
+    <p class="muted" style="margin-bottom:10px;">{% trans "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google." %}</p>
     <a href="https://g.page/r/CQre9mQfg_gGEAE/review" target="_blank" rel="noreferrer noopener" class="button" data-cta="google-bewertung">
-        Jetzt bei Google bewerten
+        {% trans "Jetzt bei Google bewerten" %}
     </a>
 </div>
 
 <div class="card">
-    <h3>FAQ</h3>
+    <h3>{% trans "FAQ" %}</h3>
     <div data-faq-accordion style="display:flex; flex-direction:column; gap:10px;">
         {% for item in faq_items %}
             <details style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
@@ -545,7 +545,7 @@
                 <div class="muted" style="margin-top:10px;">{{ item.answer|linebreaksbr }}</div>
             </details>
         {% empty %}
-            <div class="muted">Noch keine FAQ für die Startseite vorhanden.</div>
+            <div class="muted">{% trans "Noch keine FAQ für die Startseite vorhanden." %}</div>
         {% endfor %}
     </div>
 </div>
@@ -555,6 +555,10 @@
 {% block scripts %}
 {{ block.super }}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% trans "BrainBoost Lernort" as brainboost_location_title %}
+{% trans "Karl-Schmidt-Straße 20, 38114 Braunschweig" as brainboost_location_text %}
+{% trans "Stadtbibliothek Braunschweig" as library_location_title %}
+{% trans "Zentraler Treffpunkt in der Innenstadt" as library_location_text %}
 <script>
     (function() {
         var mapEl = document.getElementById('brainboost-map');
@@ -587,14 +591,14 @@
 
         var locations = [
             {
-                title: 'BrainBoost Lernort',
+                title: '{{ brainboost_location_title|escapejs }}',
                 coords: [52.2798, 10.5201],
-                text: 'Karl-Schmidt-Straße 20, 38114 Braunschweig'
+                text: '{{ brainboost_location_text|escapejs }}'
             },
             {
-                title: 'Stadtbibliothek Braunschweig',
+                title: '{{ library_location_title|escapejs }}',
                 coords: [52.26297, 10.52711],
-                text: 'Zentraler Treffpunkt in der Innenstadt'
+                text: '{{ library_location_text|escapejs }}'
             }
         ];
 

@@ -39,6 +39,20 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
         self.fields["username"].label = "E-Mail oder Benutzername"
 
 
+class FlashcardUploadForm(forms.Form):
+    file = forms.FileField(
+        label="XLSX-Datei",
+        help_text="Spalte A: Deutsch, Spalte B: Polnisch. Eine Zeile ergibt eine Karteikarte.",
+    )
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data["file"]
+        filename = uploaded_file.name.lower()
+        if not filename.endswith(".xlsx"):
+            raise ValidationError("Bitte lade eine .xlsx-Datei hoch.")
+        return uploaded_file
+
+
 def _normalize_iban(raw_iban: str) -> str:
     value = (raw_iban or "").strip().upper()
     value = re.sub(r"[^A-Z0-9]", "", value)
