@@ -10,7 +10,7 @@
     {% with response=item.response form=item.form %}
     <div class="card">
         <h3 style="margin-bottom:6px;">{{ response.survey.question }}</h3>
-        <div class="muted" style="margin-bottom:8px;">Kind: {{ response.student.user.get_full_name }} · TutorIn: {{ response.survey.tutor.user.get_full_name }}</div>
+        <div class="muted" style="margin-bottom:8px;">{% if is_independent_student %}StudentIn{% else %}Kind{% endif %}: {{ response.student.user.get_full_name }} · TutorIn: {{ response.survey.tutor.user.get_full_name }}</div>
         <div class="muted" style="margin-bottom:14px;">Erstellt am {{ response.survey.created_at|date:"d.m.Y H:i" }}</div>
         {% if response.answer %}
             <div class="muted">Deine Antwort: <strong>{{ response.get_answer_display }}</strong>{% if response.answered_at %} am {{ response.answered_at|date:"d.m.Y H:i" }}{% endif %}</div>
@@ -26,7 +26,7 @@
     {% endwith %}
 {% empty %}
     <div class="card">
-        <p class="muted">Aktuell liegen keine Umfragen für deine Kinder vor.</p>
+        <p class="muted">Aktuell liegen keine Umfragen {% if is_independent_student %}für dich{% else %}für deine Kinder{% endif %} vor.</p>
     </div>
 {% endfor %}
 

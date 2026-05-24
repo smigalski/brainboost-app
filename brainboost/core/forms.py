@@ -1118,6 +1118,10 @@ class ParentCreateForm(BaseUserCreateForm):
 
 class StudentCreateForm(BaseUserCreateForm):
     email = forms.EmailField(required=False, label="E-Mail")
+    create_without_parents = forms.BooleanField(
+        required=False,
+        widget=forms.HiddenInput,
+    )
     role_display = forms.CharField(
         initial=CustomUser.Roles.STUDENT.label,
         required=False,
@@ -1166,13 +1170,28 @@ class StudentCreateForm(BaseUserCreateForm):
                 "address",
                 "zoom_link",
                 "zumpad_link",
+                "create_without_parents",
                 "parents",
             ]
         )
 
+    def clean(self):
+        cleaned = super().clean()
+        create_without_parents = cleaned.get("create_without_parents")
+        parents = cleaned.get("parents")
+        if "parents" in self.fields and not create_without_parents and not parents:
+            self.add_error("parents", "Bitte wähle mindestens ein Elternteil aus oder nutze „ohne Eltern anlegen“.")
+        return cleaned
+
     def save(self) -> CustomUser:
         with transaction.atomic():
-            user = self._build_user(CustomUser.Roles.STUDENT)
+            create_without_parents = self.cleaned_data.get("create_without_parents")
+            role = (
+                CustomUser.Roles.INDEPENDENT_STUDENT
+                if create_without_parents
+                else CustomUser.Roles.STUDENT
+            )
+            user = self._build_user(role)
             if self.cleaned_data.get("password1"):
                 user.set_password(self.cleaned_data["password1"])
             else:
@@ -1186,8 +1205,76 @@ class StudentCreateForm(BaseUserCreateForm):
                 zumpad_link=self.cleaned_data.get("zumpad_link", ""),
             )
             parents = self.cleaned_data.get("parents")
-            if parents:
+            if parents and not create_without_parents:
                 profile.parents.set(parents)
+        return user
+
+
+class IndependentStudentCreateForm(StudentCreateForm):
+    role_display = forms.CharField(
+        initial=CustomUser.Roles.INDEPENDENT_STUDENT.label,
+        required=False,
+        disabled=True,
+        label="Rolle",
+    )
+    degree_program = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Studiengang",
+    )
+    affected_courses = forms.CharField(
+        required=False,
+        label="Betroffene Veranstaltungen/Kurse",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    tutoring_goal = forms.CharField(
+        required=False,
+        label="Ziel der Nachhilfe/des Privatunterrichts",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("parents", None)
+        self.fields.pop("create_without_parents", None)
+        self.order_fields(
+            [
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "phone_number",
+                "password1",
+                "password2",
+                "is_active",
+                "role_display",
+                "address",
+                "degree_program",
+                "affected_courses",
+                "tutoring_goal",
+                "zoom_link",
+                "zumpad_link",
+            ]
+        )
+
+    def save(self) -> CustomUser:
+        with transaction.atomic():
+            user = self._build_user(CustomUser.Roles.INDEPENDENT_STUDENT)
+            if self.cleaned_data.get("password1"):
+                user.set_password(self.cleaned_data["password1"])
+            else:
+                user.set_unusable_password()
+            user.save()
+            StudentProfile.objects.create(
+                user=user,
+                address=self.cleaned_data.get("address", ""),
+                phone_number=self.cleaned_data.get("phone_number", ""),
+                degree_program=self.cleaned_data.get("degree_program", ""),
+                affected_courses=self.cleaned_data.get("affected_courses", ""),
+                tutoring_goal=self.cleaned_data.get("tutoring_goal", ""),
+                zoom_link=self.cleaned_data.get("zoom_link", ""),
+                zumpad_link=self.cleaned_data.get("zumpad_link", ""),
+            )
         return user
 
 
@@ -1448,11 +1535,30 @@ class StudentProfileForm(BaseProfileUpdateForm):
             }
         ),
     )
+    degree_program = forms.CharField(max_length=255, required=False, label="Studiengang")
+    affected_courses = forms.CharField(
+        required=False,
+        label="Betroffene Veranstaltungen/Kurse",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+    tutoring_goal = forms.CharField(
+        required=False,
+        label="Ziel der Nachhilfe/des Privatunterrichts",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
         profile = user.student_profile
         self.fields["phone_number"].initial = profile.phone_number
         self.fields["address"].initial = profile.address
+        self.fields["degree_program"].initial = profile.degree_program
+        self.fields["affected_courses"].initial = profile.affected_courses
+        self.fields["tutoring_goal"].initial = profile.tutoring_goal
+        if user.role != CustomUser.Roles.INDEPENDENT_STUDENT:
+            self.fields.pop("degree_program")
+            self.fields.pop("affected_courses")
+            self.fields.pop("tutoring_goal")
         self.order_fields(
             [
                 "avatar_icon",
@@ -1464,6 +1570,9 @@ class StudentProfileForm(BaseProfileUpdateForm):
                 "email",
                 "phone_number",
                 "address",
+                "degree_program",
+                "affected_courses",
+                "tutoring_goal",
             ]
         )
 
@@ -1472,6 +1581,10 @@ class StudentProfileForm(BaseProfileUpdateForm):
         profile = user.student_profile
         profile.phone_number = self.cleaned_data.get("phone_number", "")
         profile.address = self.cleaned_data.get("address", "")
+        if user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
+            profile.degree_program = self.cleaned_data.get("degree_program", "")
+            profile.affected_courses = self.cleaned_data.get("affected_courses", "")
+            profile.tutoring_goal = self.cleaned_data.get("tutoring_goal", "")
         profile.save()
         return user
 

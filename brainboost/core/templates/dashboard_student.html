@@ -111,6 +111,16 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:16px;">
+            {% if is_independent_student %}
+                <div style="padding:18px; border-radius:18px; background:rgba(143,211,107,0.14); border:1px solid rgba(86,148,53,0.18);">
+                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:12px;">Organisation</div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'invoice_list' %}">Rechnungen{% if open_invoice_count %} ({{ open_invoice_count }}){% endif %}</a>
+                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'holiday_surveys' %}">Umfragen{% if open_holiday_survey_count %} ({{ open_holiday_survey_count }}){% endif %}</a>
+                    </div>
+                </div>
+            {% endif %}
+
             <div style="padding:18px; border-radius:18px; background:rgba(95,181,255,0.16); border:1px solid rgba(74,128,255,0.18);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:12px;">Online</div>
                 <div style="display:flex; flex-direction:column; gap:10px;">

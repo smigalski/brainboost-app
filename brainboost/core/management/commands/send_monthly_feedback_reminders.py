@@ -34,12 +34,15 @@ class Command(BaseCommand):
             raise CommandError("Keine APP_BASE_URL vorhanden. Bitte --base-url setzen oder APP_BASE_URL konfigurieren.")
 
         role_map = {
-            BrainBoostFeedback.Audience.STUDENT: CustomUser.Roles.STUDENT,
-            BrainBoostFeedback.Audience.PARENT: CustomUser.Roles.PARENT,
-            BrainBoostFeedback.Audience.TUTOR: CustomUser.Roles.TUTOR,
+            BrainBoostFeedback.Audience.STUDENT: [
+                CustomUser.Roles.STUDENT,
+                CustomUser.Roles.INDEPENDENT_STUDENT,
+            ],
+            BrainBoostFeedback.Audience.PARENT: [CustomUser.Roles.PARENT],
+            BrainBoostFeedback.Audience.TUTOR: [CustomUser.Roles.TUTOR],
         }
 
-        for audience, user_role in role_map.items():
+        for audience, user_roles in role_map.items():
             if not force and MonthlyFeedbackReminderLog.objects.filter(
                 audience=audience,
                 month=month_start,
@@ -52,7 +55,7 @@ class Command(BaseCommand):
                 continue
 
             recipients = list(
-                CustomUser.objects.filter(role=user_role, is_active=True)
+                CustomUser.objects.filter(role__in=user_roles, is_active=True)
                 .exclude(email="")
                 .values_list("email", flat=True)
             )

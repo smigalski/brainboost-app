@@ -42,6 +42,7 @@ from .forms import (
     FAQSubmissionForm,
     ParentCreateForm,
     StudentCreateForm,
+    IndependentStudentCreateForm,
     TutorTemplateForm,
     TutorCreateForm,
     ParentProfileForm,
@@ -65,6 +66,7 @@ from .notifications import (
     notify_invoice_payment_received_tutor,
     notify_invoice_payment_selected,
     notify_invoice_pending_approval,
+    notify_invoice_uploaded,
     notify_lesson_cancelled,
     notify_lesson_changed,
     notify_lesson_created,
@@ -97,7 +99,10 @@ logger = logging.getLogger(__name__)
 
 def _ensure_profile_for_user(user: CustomUser):
     """Create missing profile objects on-the-fly to keep views simple."""
-    if user.role == CustomUser.Roles.STUDENT and not hasattr(user, "student_profile"):
+    if user.role in {
+        CustomUser.Roles.STUDENT,
+        CustomUser.Roles.INDEPENDENT_STUDENT,
+    } and not hasattr(user, "student_profile"):
         StudentProfile.objects.create(user=user)
     elif user.role == CustomUser.Roles.PARENT and not hasattr(user, "parent_profile"):
         ParentProfile.objects.create(user=user)
@@ -160,9 +165,22 @@ def _actor_label(user: CustomUser) -> str:
         return f"TutorIn {user.username}"
     if user.role == CustomUser.Roles.PARENT:
         return f"Elternteil {user.username}"
+    if user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
+        return f"StudentIn {user.username}"
     if user.role == CustomUser.Roles.STUDENT:
         return f"SchülerIn {user.username}"
     return user.username
+
+
+def _is_learning_profile_user(user: CustomUser) -> bool:
+    return user.role in {
+        CustomUser.Roles.STUDENT,
+        CustomUser.Roles.INDEPENDENT_STUDENT,
+    }
+
+
+def _is_independent_student_user(user: CustomUser) -> bool:
+    return user.role == CustomUser.Roles.INDEPENDENT_STUDENT
 
 
 def _display_name(user: CustomUser) -> str:
@@ -411,7 +429,7 @@ def _finalize_invoice_number_and_filename(invoice: Invoice) -> None:
 def _mark_invoice_payment_selected(
     request,
     invoice: Invoice,
-    parent_profile: ParentProfile,
+    parent_profile: Optional[ParentProfile],
     method: str,
     notify_tutor: bool = True,
 ) -> None:
@@ -429,6 +447,17 @@ def _mark_invoice_payment_selected(
     )
     if notify_tutor:
         notify_invoice_payment_selected(request, invoice, parent_profile)
+
+
+def _notify_independent_student_invoice_uploaded(request, invoice: Invoice) -> None:
+    if invoice.student.user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
+        notify_invoice_uploaded(request, invoice)
+
+
+def _invoice_release_message(invoice: Invoice, verb: str) -> str:
+    if invoice.student.user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
+        return f"Rechnung wurde {verb} und die StudentIn wurde per Mail benachrichtigt, falls eine E-Mail hinterlegt ist."
+    return f"Rechnung wurde {verb}. Versand an Eltern erst über den Eltern-Button."
 
 
 INVOICE_RATE_BY_DURATION = {
@@ -1327,7 +1356,12 @@ def _broadcast_recipient_emails(audience: str) -> list[str]:
     elif audience == BroadcastEmailForm.AUDIENCE_PARENTS:
         users = users.filter(role=CustomUser.Roles.PARENT)
     elif audience == BroadcastEmailForm.AUDIENCE_STUDENTS:
-        users = users.filter(role=CustomUser.Roles.STUDENT)
+        users = users.filter(
+            role__in=[
+                CustomUser.Roles.STUDENT,
+                CustomUser.Roles.INDEPENDENT_STUDENT,
+            ]
+        )
     elif audience == BroadcastEmailForm.AUDIENCE_TUTORS:
         users = users.filter(role=CustomUser.Roles.TUTOR)
 
@@ -1390,7 +1424,7 @@ def _can_access_material(user: CustomUser, material: LearningMaterial) -> bool:
             return True
         return material.student.assigned_tutors.filter(pk=tutor_profile.pk).exists()
 
-    if user.role == CustomUser.Roles.STUDENT and hasattr(user, "student_profile"):
+    if _is_learning_profile_user(user) and hasattr(user, "student_profile"):
         return material.student_id == user.student_profile.id
 
     if user.role == CustomUser.Roles.PARENT and hasattr(user, "parent_profile"):
@@ -1549,7 +1583,7 @@ def _build_progress_chart_data(entries, include_student_name: bool = False) -> d
 def dashboard(request):
     _ensure_profile_for_user(request.user)
     context = {"show_faq_target_filters": _has_faq_admin_access(request.user)}
-    if request.user.role == CustomUser.Roles.STUDENT:
+    if _is_learning_profile_user(request.user):
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
             student_profile = request.user.student_profile
@@ -1590,6 +1624,16 @@ def dashboard(request):
             )
             context["student_online_bbb_link"] = student_profile.zoom_link
             context["student_online_zumpad_link"] = student_profile.zumpad_link
+            context["is_independent_student"] = _is_independent_student_user(request.user)
+            if _is_independent_student_user(request.user):
+                context["open_invoice_count"] = Invoice.objects.filter(
+                    student=student_profile,
+                    approved_at__isnull=False,
+                ).exclude(payment_status=Invoice.PaymentStatus.PAID).count()
+                context["open_holiday_survey_count"] = HolidaySurveyResponse.objects.filter(
+                    student=student_profile,
+                    answer="",
+                ).count()
     elif request.user.role == CustomUser.Roles.PARENT:
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
@@ -1844,7 +1888,11 @@ def tutor_student_assignment(request):
 @login_required
 def faq_submit(request):
     _ensure_profile_for_user(request.user)
-    if request.user.role not in (CustomUser.Roles.PARENT, CustomUser.Roles.STUDENT):
+    if request.user.role not in (
+        CustomUser.Roles.PARENT,
+        CustomUser.Roles.STUDENT,
+        CustomUser.Roles.INDEPENDENT_STUDENT,
+    ):
         return redirect("dashboard")
     if request.method != "POST":
         return redirect("dashboard")
@@ -2290,6 +2338,45 @@ def holiday_surveys(request):
             },
         )
 
+    if _is_independent_student_user(request.user) and hasattr(request.user, "student_profile"):
+        student_profile = request.user.student_profile
+        responses = HolidaySurveyResponse.objects.filter(
+            student=student_profile,
+        ).select_related(
+            "student__user",
+            "survey__tutor__user",
+            "parent__user",
+        ).order_by("-survey__created_at")
+
+        if request.method == "POST":
+            response = get_object_or_404(
+                responses,
+                pk=request.POST.get("response_id"),
+            )
+            form = HolidaySurveyAnswerForm(request.POST, instance=response)
+            if form.is_valid():
+                updated = form.save(commit=False)
+                updated.parent = None
+                updated.answered_at = timezone.now()
+                updated.save()
+                messages.success(request, "Deine Antwort wurde gespeichert.")
+                return redirect("holiday_surveys")
+        response_items = [
+            {
+                "response": response,
+                "form": HolidaySurveyAnswerForm(instance=response),
+            }
+            for response in responses
+        ]
+        return render(
+            request,
+            "holiday_surveys_parent.html",
+            {
+                "response_items": response_items,
+                "is_independent_student": True,
+            },
+        )
+
     return redirect("dashboard")
 
 
@@ -2300,13 +2387,14 @@ def profile_view(request):
     form_class = {
         CustomUser.Roles.PARENT: ParentProfileForm,
         CustomUser.Roles.STUDENT: StudentProfileForm,
+        CustomUser.Roles.INDEPENDENT_STUDENT: StudentProfileForm,
         CustomUser.Roles.TUTOR: TutorProfileForm,
     }.get(request.user.role, ParentProfileForm)
 
-    uses_address_autocomplete = request.user.role in {
-        CustomUser.Roles.STUDENT,
-        CustomUser.Roles.TUTOR,
-    }
+    uses_address_autocomplete = (
+        _is_learning_profile_user(request.user)
+        or request.user.role == CustomUser.Roles.TUTOR
+    )
 
     if request.method == "POST":
         form = form_class(request.POST, request.FILES, user=request.user)
@@ -2507,43 +2595,92 @@ def tutor_create(request):
 
 @login_required
 def student_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR:
-        return redirect("dashboard")
-    if not ParentProfile.objects.exists():
-        messages.error(
-            request,
-            "Lege zuerst ein Elternteil an, bevor du eine SchülerIn anlegst.",
-        )
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
         return redirect("dashboard")
     if request.method == "POST":
         form = StudentCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
+            account_label = (
+                "StudentIn"
+                if user.role == CustomUser.Roles.INDEPENDENT_STUDENT
+                else "SchülerIn"
+            )
             if not user.email:
                 messages.success(
                     request,
-                    "SchülerIn wurde als Platzhalter ohne WebApp-Zugang angelegt.",
+                    f"{account_label} wurde als Platzhalter ohne WebApp-Zugang angelegt.",
                 )
             else:
                 try:
                     _send_set_password_email(request, user)
                 except Exception as exc:
-                    logger.exception("E-Mail Versand fehlgeschlagen (Schüler)")
+                    logger.exception("E-Mail Versand fehlgeschlagen (%s)", account_label)
                     messages.error(
                         request,
-                        "SchülerIn wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                        f"{account_label} wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
                         f"Fehler: {exc.__class__.__name__} ({exc})",
                     )
                 else:
                     messages.success(
                         request,
-                        "SchülerIn wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                        f"{account_label} wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
                     )
             return redirect("dashboard")
     else:
         form = StudentCreateForm()
     return render(request, "student_create.html", {"form": form})
+
+
+@login_required
+def independent_student_create(request):
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
+        return redirect("dashboard")
+    if request.method == "POST":
+        form = IndependentStudentCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            user.student_profile.assigned_tutors.add(request.user.tutor_profile)
+            if not user.email:
+                messages.success(
+                    request,
+                    "StudentIn wurde als Platzhalter ohne WebApp-Zugang angelegt.",
+                )
+            else:
+                try:
+                    _send_set_password_email(request, user)
+                except Exception as exc:
+                    logger.exception("E-Mail Versand fehlgeschlagen (StudentIn)")
+                    messages.error(
+                        request,
+                        "StudentIn wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
+                        f"Fehler: {exc.__class__.__name__} ({exc})",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "StudentIn wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
+                    )
+            return redirect("dashboard")
+    else:
+        form = IndependentStudentCreateForm()
+    return render(
+        request,
+        "student_create.html",
+        {
+            "form": form,
+            "heading": "StudentIn anlegen",
+            "description": (
+                "Lege eine selbständige StudentIn ohne Elternkonto an. "
+                "E-Mail und Passwort koennen fuer Platzhalter leer bleiben."
+            ),
+        },
+    )
 
 
 @login_required
@@ -2556,9 +2693,7 @@ def lesson_list(request):
     except (TypeError, ValueError):
         week_offset = 0
 
-    if request.user.role == CustomUser.Roles.STUDENT and hasattr(
-        request.user, "student_profile"
-    ):
+    if _is_learning_profile_user(request.user) and hasattr(request.user, "student_profile"):
         base_qs = Lesson.objects.filter(student=request.user.student_profile)
     elif request.user.role == CustomUser.Roles.PARENT and hasattr(
         request.user, "parent_profile"
@@ -3302,9 +3437,10 @@ def invoice_upload(request):
                             invoice.approved_by = tutor_profile
                             invoice.approved_at = timezone.now()
                             invoice.save(update_fields=["approved_by", "approved_at"])
+                            _notify_independent_student_invoice_uploaded(request, invoice)
                             messages.success(
                                 request,
-                                "Rechnung wurde generiert und direkt freigegeben. Versand an Eltern erst über den Eltern-Button.",
+                                _invoice_release_message(invoice, "generiert und direkt freigegeben"),
                             )
                         else:
                             notify_invoice_pending_approval(request, invoice)
@@ -3328,7 +3464,11 @@ def invoice_upload(request):
                     invoice.approved_by = tutor_profile
                     invoice.approved_at = timezone.now()
                     invoice.save(update_fields=["approved_by", "approved_at"])
-                    messages.success(request, "Rechnung wurde hochgeladen und direkt freigegeben. Versand an Eltern erst über den Eltern-Button.")
+                    _notify_independent_student_invoice_uploaded(request, invoice)
+                    messages.success(
+                        request,
+                        _invoice_release_message(invoice, "hochgeladen und direkt freigegeben"),
+                    )
                 else:
                     notify_invoice_pending_approval(request, invoice)
                     messages.success(request, "Rechnung wurde hochgeladen und wartet auf Freigabe.")
@@ -3396,7 +3536,8 @@ def invoice_approve(request, invoice_id):
     invoice.approved_by = tutor_profile
     invoice.approved_at = timezone.now()
     invoice.save(update_fields=["approved_by", "approved_at"])
-    messages.success(request, "Rechnung wurde freigegeben. Versand an Eltern erst über den Eltern-Button.")
+    _notify_independent_student_invoice_uploaded(request, invoice)
+    messages.success(request, _invoice_release_message(invoice, "freigegeben"))
     return redirect("invoice_upload")
 
 
@@ -3466,9 +3607,13 @@ def invoice_delete(request, invoice_id):
 @login_required
 def invoice_select_payment(request, invoice_id, method):
     _ensure_profile_for_user(request.user)
-    if request.user.role != CustomUser.Roles.PARENT or not hasattr(
+    is_parent = request.user.role == CustomUser.Roles.PARENT and hasattr(
         request.user, "parent_profile"
-    ):
+    )
+    is_independent_student = _is_independent_student_user(request.user) and hasattr(
+        request.user, "student_profile"
+    )
+    if not (is_parent or is_independent_student):
         return redirect("invoice_list")
     if request.method != "POST":
         return redirect("invoice_list")
@@ -3477,13 +3622,16 @@ def invoice_select_payment(request, invoice_id, method):
         messages.error(request, "Diese Zahlungsart ist nicht verfügbar.")
         return redirect("invoice_list")
 
-    parent_profile = request.user.parent_profile
-    invoice = get_object_or_404(
-        Invoice.objects.select_related("student__user", "uploaded_by__user"),
+    parent_profile = request.user.parent_profile if is_parent else None
+    invoice_qs = Invoice.objects.select_related("student__user", "uploaded_by__user").filter(
         pk=invoice_id,
-        student__parents=parent_profile,
         approved_at__isnull=False,
     )
+    if is_parent:
+        invoice_qs = invoice_qs.filter(student__parents=parent_profile)
+    else:
+        invoice_qs = invoice_qs.filter(student=request.user.student_profile)
+    invoice = get_object_or_404(invoice_qs)
     if invoice.payment_status == Invoice.PaymentStatus.PAID:
         messages.info(request, "Diese Rechnung ist bereits als bezahlt markiert.")
         return redirect("invoice_list")
@@ -3499,20 +3647,27 @@ def invoice_select_payment(request, invoice_id, method):
 @login_required
 def invoice_checkout(request, invoice_id):
     _ensure_profile_for_user(request.user)
-    if request.user.role != CustomUser.Roles.PARENT or not hasattr(
+    is_parent = request.user.role == CustomUser.Roles.PARENT and hasattr(
         request.user, "parent_profile"
-    ):
+    )
+    is_independent_student = _is_independent_student_user(request.user) and hasattr(
+        request.user, "student_profile"
+    )
+    if not (is_parent or is_independent_student):
         return redirect("invoice_list")
     if request.method != "POST":
         return redirect("invoice_list")
 
-    parent_profile = request.user.parent_profile
-    invoice = get_object_or_404(
-        Invoice.objects.select_related("student__user", "uploaded_by__user"),
+    parent_profile = request.user.parent_profile if is_parent else None
+    invoice_qs = Invoice.objects.select_related("student__user", "uploaded_by__user").filter(
         pk=invoice_id,
-        student__parents=parent_profile,
         approved_at__isnull=False,
     )
+    if is_parent:
+        invoice_qs = invoice_qs.filter(student__parents=parent_profile)
+    else:
+        invoice_qs = invoice_qs.filter(student=request.user.student_profile)
+    invoice = get_object_or_404(invoice_qs)
     if not invoice.can_pay_online:
         messages.error(request, "Für diese Rechnung ist aktuell keine Online-Zahlung verfügbar.")
         return redirect("invoice_list")
@@ -3534,7 +3689,8 @@ def invoice_checkout(request, invoice_id):
         cancel_url=cancel_url,
         metadata={
             "invoice_id": str(invoice.id),
-            "parent_id": str(parent_profile.id),
+            "parent_id": str(parent_profile.id) if parent_profile else "",
+            "student_id": str(invoice.student_id),
         },
         line_items=[
             {
@@ -3553,7 +3709,14 @@ def invoice_checkout(request, invoice_id):
     if (
         invoice.payment_status == Invoice.PaymentStatus.OPEN
         or invoice.payment_method != Invoice.PaymentMethod.ONLINE
-        or invoice.payment_requested_by_id != parent_profile.id
+        or (
+            is_parent
+            and invoice.payment_requested_by_id != parent_profile.id
+        )
+        or (
+            is_independent_student
+            and invoice.payment_requested_by_id is not None
+        )
     ):
         _mark_invoice_payment_selected(
             request,
@@ -3607,12 +3770,11 @@ def stripe_webhook(request):
                         "stripe_payment_intent_id",
                     ]
                 )
-                if invoice.payment_requested_by:
-                    notify_invoice_payment_received_tutor(
-                        request,
-                        invoice,
-                        invoice.payment_requested_by,
-                    )
+                notify_invoice_payment_received_tutor(
+                    request,
+                    invoice,
+                    invoice.payment_requested_by,
+                )
 
     return HttpResponse(status=200)
 
@@ -3651,8 +3813,7 @@ def invoice_confirm_payment(request, invoice_id):
     invoice.paid_at = timezone.now()
     invoice.save(update_fields=["payment_status", "paid_at"])
 
-    if invoice.payment_requested_by:
-        notify_invoice_payment_confirmed(request, invoice, invoice.payment_requested_by)
+    notify_invoice_payment_confirmed(request, invoice, invoice.payment_requested_by)
 
     messages.success(
         request,
@@ -3795,9 +3956,7 @@ def progress_view(request, student_id=None):
     duration = request.GET.get("duration", "").strip()
     ort = request.GET.get("ort", "").strip()
 
-    if request.user.role == CustomUser.Roles.STUDENT and hasattr(
-        request.user, "student_profile"
-    ):
+    if _is_learning_profile_user(request.user) and hasattr(request.user, "student_profile"):
         viewed_student = request.user.student_profile
         entries = ProgressEntry.objects.filter(
             lesson__student=request.user.student_profile
@@ -3853,6 +4012,7 @@ def progress_view(request, student_id=None):
 
     show_progress_chart = request.user.role in {
         CustomUser.Roles.STUDENT,
+        CustomUser.Roles.INDEPENDENT_STUDENT,
         CustomUser.Roles.PARENT,
         CustomUser.Roles.TUTOR,
     }
@@ -3941,14 +4101,24 @@ def progress_view(request, student_id=None):
 @login_required
 def invoice_list(request):
     _ensure_profile_for_user(request.user)
-    if request.user.role != CustomUser.Roles.PARENT or not hasattr(request.user, "parent_profile"):
+    is_parent = request.user.role == CustomUser.Roles.PARENT and hasattr(
+        request.user, "parent_profile"
+    )
+    is_independent_student = _is_independent_student_user(request.user) and hasattr(
+        request.user, "student_profile"
+    )
+    if not (is_parent or is_independent_student):
         return redirect("dashboard")
     payment_status = request.GET.get("payment")
     if payment_status == "success":
         messages.success(request, "Die Online-Zahlung wurde erfolgreich abgeschlossen. Die Rechnung wurde aktualisiert.")
     elif payment_status == "cancelled":
         messages.info(request, "Die Online-Zahlung wurde abgebrochen.")
-    students = request.user.parent_profile.students.all()
+    students = (
+        request.user.parent_profile.students.all()
+        if is_parent
+        else StudentProfile.objects.filter(pk=request.user.student_profile.pk)
+    )
     invoices = Invoice.objects.filter(
         student__in=students,
         approved_at__isnull=False,
@@ -3959,5 +4129,6 @@ def invoice_list(request):
         {
             "invoices": invoices,
             "payment_status_paid": Invoice.PaymentStatus.PAID,
+            "is_independent_student": is_independent_student,
         },
     )

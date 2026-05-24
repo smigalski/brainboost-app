@@ -3,7 +3,13 @@
 {% block content %}
 <div class="card">
     <h1>Rechnungen</h1>
-    <p class="muted">Hier findest du alle Rechnungen deiner Kinder. Zahlungsmethoden: bar, Überweisung oder online.</p>
+    <p class="muted">
+        {% if is_independent_student %}
+            Hier findest du deine Rechnungen. Zahlungsmethoden: bar, Überweisung oder online.
+        {% else %}
+            Hier findest du alle Rechnungen deiner Kinder. Zahlungsmethoden: bar, Überweisung oder online.
+        {% endif %}
+    </p>
     <ul class="list">
         {% for invoice in invoices %}
             <li>

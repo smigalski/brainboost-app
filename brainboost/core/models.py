@@ -17,7 +17,8 @@ from django.utils import timezone
 
 class CustomUser(AbstractUser):
     class Roles(models.TextChoices):
-        STUDENT = "student", "SchülerIn/StudentIn"
+        STUDENT = "student", "SchülerIn"
+        INDEPENDENT_STUDENT = "independent_student", "StudentIn"
         PARENT = "parent", "Parent"
         TUTOR = "tutor", "TutorIn"
 
@@ -77,6 +78,9 @@ class ParentProfile(models.Model):
 class StudentProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
+    degree_program = models.CharField(max_length=255, blank=True)
+    affected_courses = models.TextField(blank=True)
+    tutoring_goal = models.TextField(blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     zoom_link = models.URLField(blank=True)

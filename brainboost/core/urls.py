@@ -43,6 +43,7 @@ urlpatterns = [
     path("eltern/neu/", views.parent_create, name="parent_create"),
     path("tutoren/neu/", views.tutor_create, name="tutor_create"),
     path("schueler/neu/", views.student_create, name="student_create"),
+    path("studenten/neu/", views.independent_student_create, name="independent_student_create"),
     path("schueler/zugewiesen/", views.assigned_student_list, name="assigned_student_list"),
     path("tutoren/zugewiesen/", views.assigned_tutor_list, name="assigned_tutor_list"),
     path("termine/", views.lesson_list, name="lesson_list"),

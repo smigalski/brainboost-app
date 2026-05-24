@@ -48,6 +48,131 @@ from .views import (
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MEDIA_ROOT=tempfile.mkdtemp(),
+)
+class IndependentStudentAccountTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor",
+            password="pw",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor_profile = TutorProfile.objects.create(user=self.tutor_user)
+
+    def test_tutor_can_create_independent_student_without_parent(self):
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.post(
+            reverse("independent_student_create"),
+            data={
+                "username": "studentin",
+                "first_name": "Sina",
+                "last_name": "Studiert",
+                "email": "",
+                "phone_number": "0176 123",
+                "is_active": "on",
+                "address": "Campus 1",
+                "degree_program": "Informatik",
+                "affected_courses": "Analysis I\nAlgorithmen",
+                "tutoring_goal": "Klausurvorbereitung",
+                "zoom_link": "",
+                "zumpad_link": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard"))
+        user = CustomUser.objects.get(username="studentin")
+        self.assertEqual(user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
+        self.assertEqual(user.student_profile.parents.count(), 0)
+        self.assertEqual(user.student_profile.degree_program, "Informatik")
+        self.assertEqual(user.student_profile.affected_courses, "Analysis I\nAlgorithmen")
+        self.assertEqual(user.student_profile.tutoring_goal, "Klausurvorbereitung")
+        self.assertTrue(user.student_profile.assigned_tutors.filter(pk=self.tutor_profile.pk).exists())
+
+    def test_regular_student_creation_requires_parent_without_toggle(self):
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.post(
+            reverse("student_create"),
+            data={
+                "username": "schuelerin",
+                "first_name": "Sina",
+                "last_name": "Schule",
+                "email": "",
+                "phone_number": "",
+                "is_active": "on",
+                "address": "",
+                "zoom_link": "",
+                "zumpad_link": "",
+                "create_without_parents": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ohne Eltern anlegen")
+        self.assertContains(response, "Bitte wähle mindestens ein Elternteil aus")
+        self.assertEqual(StudentProfile.objects.count(), 0)
+
+    def test_student_create_toggle_creates_independent_student(self):
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.post(
+            reverse("student_create"),
+            data={
+                "username": "ohneeltern",
+                "first_name": "Sina",
+                "last_name": "Solo",
+                "email": "",
+                "phone_number": "",
+                "is_active": "on",
+                "address": "",
+                "zoom_link": "",
+                "zumpad_link": "",
+                "create_without_parents": "on",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard"))
+        user = CustomUser.objects.get(username="ohneeltern")
+        self.assertEqual(user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
+        self.assertEqual(user.student_profile.parents.count(), 0)
+        self.assertTrue(user.student_profile.assigned_tutors.filter(pk=self.tutor_profile.pk).exists())
+
+    def test_independent_student_can_access_and_announce_own_invoice(self):
+        student_user = CustomUser.objects.create_user(
+            username="studentin",
+            password="pw",
+            role=CustomUser.Roles.INDEPENDENT_STUDENT,
+            email="studentin@example.com",
+        )
+        student_profile = StudentProfile.objects.create(user=student_user)
+        invoice = Invoice.objects.create(
+            student=student_profile,
+            uploaded_by=self.tutor_profile,
+            approved_by=self.tutor_profile,
+            approved_at=timezone.now(),
+            file=SimpleUploadedFile("rechnung.pdf", b"%PDF-1.4", content_type="application/pdf"),
+            amount_total=Decimal("25.00"),
+        )
+        self.client.login(username="studentin", password="pw")
+
+        list_response = self.client.get(reverse("invoice_list"))
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "Hier findest du deine Rechnungen")
+
+        response = self.client.post(
+            reverse("invoice_select_payment", args=[invoice.id, Invoice.PaymentMethod.CASH])
+        )
+
+        self.assertRedirects(response, reverse("invoice_list"))
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.payment_status, Invoice.PaymentStatus.ANNOUNCED)
+        self.assertEqual(invoice.payment_method, Invoice.PaymentMethod.CASH)
+        self.assertIsNone(invoice.payment_requested_by)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     LEAD_NOTIFICATION_EMAIL="operator@example.com",
 )
 class LeadFormFlowTests(TestCase):

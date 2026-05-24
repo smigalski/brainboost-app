@@ -15,6 +15,7 @@ from .models import (
     TutorProfile,
     HolidaySurveyResponse,
     Lead,
+    CustomUser,
 )
 
 
@@ -54,6 +55,8 @@ def _student_recipients(student: StudentProfile) -> list[str]:
 
 def _parent_recipients(student: StudentProfile) -> list[str]:
     emails = []
+    if student.user.role == CustomUser.Roles.INDEPENDENT_STUDENT and student.user.email:
+        emails.append(student.user.email)
     for parent in student.parents.select_related("user"):
         if parent.user.email:
             emails.append(parent.user.email)
@@ -312,7 +315,7 @@ def notify_invoice_pending_approval(request, invoice: Invoice) -> None:
 def notify_invoice_payment_selected(
     request,
     invoice: Invoice,
-    parent: ParentProfile,
+    parent: Optional[ParentProfile],
 ) -> None:
     if not _notifications_enabled("invoice_payment_selected"):
         return
@@ -322,12 +325,19 @@ def notify_invoice_payment_selected(
     tutor_user = getattr(invoice.uploaded_by, "user", None)
     if not tutor_user or not tutor_user.email:
         return
+    payer_label = (
+        parent.user.get_full_name() or parent.user.username
+        if parent
+        else invoice.student.user.get_full_name() or invoice.student.user.username
+    )
     context = {
         "heading": "Zahlungsart gewählt",
         "invoice": invoice,
         "student": invoice.student,
         "tutor": invoice.uploaded_by,
         "parent": parent,
+        "payer_label": payer_label,
+        "payer_type_label": "Elternteil" if parent else "StudentIn",
         "payment_method_label": invoice.get_payment_method_display(),
         **_build_urls(request),
     }
@@ -342,7 +352,7 @@ def notify_invoice_payment_selected(
 def notify_invoice_payment_received_tutor(
     request,
     invoice: Invoice,
-    parent: ParentProfile,
+    parent: Optional[ParentProfile],
 ) -> None:
     if not _notifications_enabled("invoice_payment_received_tutor"):
         return
@@ -352,12 +362,19 @@ def notify_invoice_payment_received_tutor(
     subject = (
         f"Zahlung eingegangen: {invoice.student.user.get_full_name() or invoice.student.user.username}"
     )
+    payer_label = (
+        parent.user.get_full_name() or parent.user.username
+        if parent
+        else invoice.student.user.get_full_name() or invoice.student.user.username
+    )
     context = {
         "heading": "Zahlung eingegangen",
         "invoice": invoice,
         "student": invoice.student,
         "tutor": invoice.uploaded_by,
         "parent": parent,
+        "payer_label": payer_label,
+        "payer_type_label": "Elternteil" if parent else "StudentIn",
         "payment_method_label": invoice.get_payment_method_display(),
         **_build_urls(request),
     }
@@ -372,12 +389,12 @@ def notify_invoice_payment_received_tutor(
 def notify_invoice_payment_confirmed(
     request,
     invoice: Invoice,
-    parent: ParentProfile,
+    parent: Optional[ParentProfile],
 ) -> None:
     if not _notifications_enabled("invoice_payment_confirmed"):
         return
-    parent_user = getattr(parent, "user", None)
-    if not parent_user or not parent_user.email:
+    recipient_user = getattr(parent, "user", None) if parent else invoice.student.user
+    if not recipient_user or not recipient_user.email:
         return
     subject = (
         f"Zahlung bestätigt: {invoice.student.user.get_full_name() or invoice.student.user.username}"
@@ -396,7 +413,7 @@ def notify_invoice_payment_confirmed(
         subject,
         "invoice_payment_confirmed",
         context,
-        [parent_user.email],
+        [recipient_user.email],
     )
 
 

@@ -1,13 +1,38 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}SchülerIn anlegen{% endblock %}
+{% block title %}{{ heading|default:"SchülerIn anlegen" }}{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>SchülerIn anlegen</h1>
-    <p class="muted">Lege einen neuen SchülerInnen-Eintrag an. E-Mail und Passwort koennen fuer Platzhalter leer bleiben.</p>
-    <form method="post">
+    <h1>{{ heading|default:"SchülerIn anlegen" }}</h1>
+    <p class="muted">{{ description|default:"Lege einen neuen SchülerInnen-Eintrag an. E-Mail und Passwort koennen fuer Platzhalter leer bleiben." }}</p>
+    <form method="post" data-student-create-form>
         {% csrf_token %}
-        {{ form.as_p }}
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+        {% for field in form.visible_fields %}
+            {% if field.name == "parents" %}
+                <div style="margin:14px 0 8px;">
+                    <button class="button" type="button" data-without-parents-toggle style="background:#6fa94b; color:#10210a;">ohne Eltern anlegen</button>
+                    <div class="muted" data-without-parents-hint style="display:none; margin-top:8px;">Die Elternauswahl ist deaktiviert. Beim Speichern wird eine unabhängige StudentIn mit eigenen Rechnungs- und Umfragefunktionen angelegt.</div>
+                </div>
+            {% endif %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <span class="helptext">{{ field.help_text }}</span>
+                {% endif %}
+                {% for error in field.errors %}
+                    <span class="error" style="display:block; color:#b3261e; font-weight:600;">{{ error }}</span>
+                {% endfor %}
+            </p>
+        {% endfor %}
+        {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+                <p class="error" style="color:#b3261e; font-weight:600;">{{ error }}</p>
+            {% endfor %}
+        {% endif %}
         <button class="button" type="submit">Speichern</button>
         <a class="button" style="background: var(--teal);" href="{% url 'dashboard' %}">Abbrechen</a>
     </form>
@@ -21,4 +46,36 @@
             src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async&libraries=places&callback=initAddressAutocomplete"
         ></script>
     {% endif %}
+    <script>
+        (function() {
+            const form = document.querySelector("[data-student-create-form]");
+            if (!form) return;
+
+            const toggle = form.querySelector("[data-without-parents-toggle]");
+            const hint = form.querySelector("[data-without-parents-hint]");
+            const hidden = form.querySelector("input[name='create_without_parents']");
+            const parents = form.querySelector("select[name='parents']");
+            if (!toggle || !hidden || !parents) return;
+
+            function setWithoutParents(enabled) {
+                hidden.value = enabled ? "on" : "";
+                parents.disabled = enabled;
+                if (enabled) {
+                    Array.from(parents.options).forEach((option) => {
+                        option.selected = false;
+                    });
+                }
+                toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
+                toggle.textContent = enabled ? "mit Eltern anlegen" : "ohne Eltern anlegen";
+                if (hint) {
+                    hint.style.display = enabled ? "block" : "none";
+                }
+            }
+
+            toggle.addEventListener("click", function() {
+                setWithoutParents(hidden.value !== "on");
+            });
+            setWithoutParents(hidden.value === "on");
+        })();
+    </script>
 {% endblock %}
