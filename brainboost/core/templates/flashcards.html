@@ -7,12 +7,27 @@
         grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
         gap: 18px;
         align-items: start;
+        width: 100%;
+        min-width: 0;
     }
     .flashcard-panel {
+        min-width: 0;
         padding: 16px;
         border-radius: 14px;
         border: 1px solid rgba(31, 102, 102, 0.14);
         background: rgba(255, 255, 255, 0.78);
+    }
+    .flashcard-form-grid p {
+        margin: 0;
+    }
+    .flashcard-form-grid input,
+    .flashcard-form-grid select,
+    .flashcard-form-grid textarea {
+        max-width: 100%;
+    }
+    .flashcard-form-grid input[type="file"] {
+        width: 100%;
+        min-width: 0;
     }
     .flashcard-form-grid {
         display: grid;
@@ -29,6 +44,7 @@
         justify-content: center;
         gap: 6px;
         min-height: 44px;
+        min-width: 0;
         border: 1px solid rgba(31, 102, 102, 0.18);
         border-radius: 10px;
         background: #fff;
@@ -46,6 +62,7 @@
     .flashcard-progress {
         display: flex;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 12px;
         color: #334155;
         font-weight: 800;
@@ -54,6 +71,7 @@
         position: relative;
         display: grid;
         place-items: center;
+        width: 100%;
         min-height: 300px;
         padding: 28px;
         border: 2px solid rgba(31, 102, 102, 0.18);
@@ -96,6 +114,7 @@
     .flashcard-actions .button {
         min-height: 54px;
         font-size: 1rem;
+        white-space: normal;
     }
     .flashcard-actions .button[disabled] {
         background: #cbd5e1 !important;
@@ -133,6 +152,49 @@
         }
         .flashcard-counts {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 520px) {
+        .flashcard-panel {
+            padding: 14px;
+            border-radius: 10px;
+        }
+        .flashcard-layout,
+        .flashcard-study {
+            gap: 12px;
+        }
+        .flashcard-progress {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+        .flashcard-counts {
+            grid-template-columns: 1fr;
+        }
+        .flashcard-counts label {
+            min-height: 42px;
+        }
+        .flashcard-card {
+            min-height: 230px;
+            padding: 48px 18px 22px;
+            border-radius: 14px;
+        }
+        .flashcard-card__label {
+            top: 14px;
+            left: 16px;
+        }
+        .flashcard-card__text {
+            font-size: clamp(1.55rem, 9vw, 2.5rem);
+        }
+        .flashcard-actions .button {
+            width: 100%;
+            min-height: 50px;
+        }
+        .flashcard-summary div {
+            padding: 10px;
+        }
+        .flashcard-summary strong {
+            font-size: 1.55rem;
         }
     }
 </style>
