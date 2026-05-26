@@ -139,13 +139,23 @@
         }
 
         .idea-form input,
+        .idea-form textarea,
         .idea-task-modal input,
+        .idea-task-modal textarea,
         .idea-task-modal select {
             width: 100%;
             padding: 9px 10px;
             border-radius: 8px;
             border: 1px solid rgba(0, 0, 0, 0.15);
             background: #fff;
+        }
+
+        .idea-form textarea,
+        .idea-task-modal textarea {
+            min-height: 44px;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.4;
         }
 
         .idea-list {
@@ -164,6 +174,10 @@
             gap: 8px;
         }
 
+        .idea-card__title-source {
+            display: none;
+        }
+
         .idea-card.dragging {
             opacity: 0.5;
             cursor: grabbing;
@@ -173,6 +187,13 @@
             font-weight: 800;
             color: #1f2a30;
             line-height: 1.35;
+        }
+
+        .idea-card__actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .idea-card__image {
@@ -746,7 +767,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="create_idea">
                         <input type="hidden" name="category" value="improvement">
-                        <input type="text" name="title" placeholder="Verbesserung hinzufügen" value="{{ improvement_create_form.title.value|default:'' }}" required>
+                        <textarea name="title" placeholder="Verbesserung hinzufügen" rows="2" data-auto-resize-textarea required>{{ improvement_create_form.title.value|default:'' }}</textarea>
                         <input type="file" name="image" accept="image/*">
                         <button class="button" type="submit">Idee hinzufügen</button>
                     </form>
@@ -758,15 +779,18 @@
                                 draggable="true"
                                 data-idea-card
                                 data-idea-id="{{ idea.id }}"
-                                data-idea-title="{{ idea.title }}"
                             >
-                                <div class="idea-card__title">{{ idea.title }}</div>
+                                <textarea class="idea-card__title-source" data-idea-title-source>{{ idea.title }}</textarea>
+                                <div class="idea-card__title" data-idea-title-display>{{ idea.title|linebreaksbr }}</div>
                                 {% if idea.image %}
                                     <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ idea.image.url }}" aria-label="Bildvorschau öffnen">
                                         <img class="idea-card__image" src="{{ idea.image.url }}" alt="">
                                     </button>
                                 {% endif %}
-                                <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                                <div class="idea-card__actions">
+                                    <button class="button" type="button" data-idea-edit-button>Bearbeiten</button>
+                                    <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                                </div>
                             </article>
                         {% empty %}
                             <p class="kanban-empty">Noch keine kleinen Ideen.</p>
@@ -787,7 +811,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="create_idea">
                         <input type="hidden" name="category" value="vision">
-                        <input type="text" name="title" placeholder="Vision hinzufügen" value="{{ vision_create_form.title.value|default:'' }}" required>
+                        <textarea name="title" placeholder="Vision hinzufügen" rows="2" data-auto-resize-textarea required>{{ vision_create_form.title.value|default:'' }}</textarea>
                         <button class="button" type="submit">Idee hinzufügen</button>
                     </form>
                     <div class="idea-list">
@@ -798,10 +822,13 @@
                                 draggable="true"
                                 data-idea-card
                                 data-idea-id="{{ idea.id }}"
-                                data-idea-title="{{ idea.title }}"
                             >
-                                <div class="idea-card__title">{{ idea.title }}</div>
-                                <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                                <textarea class="idea-card__title-source" data-idea-title-source>{{ idea.title }}</textarea>
+                                <div class="idea-card__title" data-idea-title-display>{{ idea.title|linebreaksbr }}</div>
+                                <div class="idea-card__actions">
+                                    <button class="button" type="button" data-idea-edit-button>Bearbeiten</button>
+                                    <button class="button" type="button" data-idea-task-button>Als Aufgabe planen</button>
+                                </div>
                             </article>
                         {% empty %}
                             <p class="kanban-empty">Noch keine großen Ideen.</p>
@@ -1091,7 +1118,7 @@
             <input type="hidden" name="source_idea_id" data-idea-modal-source-id>
             <label>
                 Aufgabe
-                <input type="text" name="title" data-idea-modal-title required>
+                <textarea name="title" rows="2" data-idea-modal-title data-auto-resize-textarea required></textarea>
             </label>
             <label>
                 Wichtigkeit
@@ -1128,6 +1155,25 @@
             <div class="idea-modal-actions">
                 <button class="button" type="submit">Aufgabe hinzufügen</button>
                 <button class="button button-danger" type="button" data-idea-modal-close>Abbrechen</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="idea-modal-backdrop" data-idea-edit-modal hidden>
+    <div class="idea-task-modal" role="dialog" aria-modal="true" aria-labelledby="idea-edit-modal-title">
+        <h3 id="idea-edit-modal-title">Idee bearbeiten</h3>
+        <form method="post" class="idea-task-modal__grid">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_idea">
+            <input type="hidden" name="idea_id" data-idea-edit-id>
+            <label>
+                Idee
+                <textarea name="title" rows="4" data-idea-edit-title data-auto-resize-textarea required></textarea>
+            </label>
+            <div class="idea-modal-actions">
+                <button class="button" type="submit">Speichern</button>
+                <button class="button button-danger" type="button" data-idea-edit-close>Abbrechen</button>
             </div>
         </form>
     </div>
@@ -1269,6 +1315,15 @@
                 }
                 textarea.style.height = "auto";
                 textarea.style.height = textarea.scrollHeight + "px";
+            }
+
+            function initAutoResizeTextareas() {
+                document.querySelectorAll("[data-auto-resize-textarea]").forEach(function (textarea) {
+                    fitTextareaToContent(textarea);
+                    textarea.addEventListener("input", function () {
+                        fitTextareaToContent(textarea);
+                    });
+                });
             }
 
             function submitForm(form) {
@@ -1423,21 +1478,46 @@
                 var modalTitleInput = document.querySelector("[data-idea-modal-title]");
                 var modalSourceInput = document.querySelector("[data-idea-modal-source-id]");
                 var modalClose = document.querySelector("[data-idea-modal-close]");
+                var editModal = document.querySelector("[data-idea-edit-modal]");
+                var editIdInput = document.querySelector("[data-idea-edit-id]");
+                var editTitleInput = document.querySelector("[data-idea-edit-title]");
+                var editClose = document.querySelector("[data-idea-edit-close]");
                 var imagePreviewModal = document.querySelector("[data-idea-image-preview-modal]");
                 var imagePreviewImg = document.querySelector("[data-idea-image-preview-img]");
                 var imagePreviewClose = document.querySelector("[data-idea-image-preview-close]");
+
+                function getIdeaTitle(ideaCard) {
+                    var titleSource = ideaCard ? ideaCard.querySelector("[data-idea-title-source]") : null;
+                    return titleSource ? titleSource.value : "";
+                }
 
                 function openIdeaTaskModal(ideaCard) {
                     if (!modal || !modalTitleInput || !modalSourceInput || !ideaCard) {
                         return;
                     }
-                    modalTitleInput.value = ideaCard.dataset.ideaTitle || "";
+                    modalTitleInput.value = getIdeaTitle(ideaCard);
                     modalSourceInput.value = ideaCard.dataset.ideaId || "";
                     modal.hidden = false;
+                    fitTextareaToContent(modalTitleInput);
                     modalTitleInput.focus();
                     if (typeof modalTitleInput.setSelectionRange === "function") {
                         var length = modalTitleInput.value.length;
                         modalTitleInput.setSelectionRange(length, length);
+                    }
+                }
+
+                function openIdeaEditModal(ideaCard) {
+                    if (!editModal || !editIdInput || !editTitleInput || !ideaCard) {
+                        return;
+                    }
+                    editIdInput.value = ideaCard.dataset.ideaId || "";
+                    editTitleInput.value = getIdeaTitle(ideaCard);
+                    editModal.hidden = false;
+                    fitTextareaToContent(editTitleInput);
+                    editTitleInput.focus();
+                    if (typeof editTitleInput.setSelectionRange === "function") {
+                        var length = editTitleInput.value.length;
+                        editTitleInput.setSelectionRange(length, length);
                     }
                 }
 
@@ -1447,6 +1527,18 @@
                     }
                     if (modalSourceInput) {
                         modalSourceInput.value = "";
+                    }
+                }
+
+                function closeIdeaEditModal() {
+                    if (editModal) {
+                        editModal.hidden = true;
+                    }
+                    if (editIdInput) {
+                        editIdInput.value = "";
+                    }
+                    if (editTitleInput) {
+                        editTitleInput.value = "";
                     }
                 }
 
@@ -1485,6 +1577,12 @@
                     if (taskButton) {
                         taskButton.addEventListener("click", function () {
                             openIdeaTaskModal(card);
+                        });
+                    }
+                    var editButton = card.querySelector("[data-idea-edit-button]");
+                    if (editButton) {
+                        editButton.addEventListener("click", function () {
+                            openIdeaEditModal(card);
                         });
                     }
                 });
@@ -1527,6 +1625,16 @@
                         }
                     });
                 }
+                if (editClose) {
+                    editClose.addEventListener("click", closeIdeaEditModal);
+                }
+                if (editModal) {
+                    editModal.addEventListener("click", function (event) {
+                        if (event.target === editModal) {
+                            closeIdeaEditModal();
+                        }
+                    });
+                }
                 if (imagePreviewClose) {
                     imagePreviewClose.addEventListener("click", closeImagePreview);
                 }
@@ -1541,6 +1649,9 @@
                     if (event.key === "Escape" && modal && !modal.hidden) {
                         closeIdeaTaskModal();
                     }
+                    if (event.key === "Escape" && editModal && !editModal.hidden) {
+                        closeIdeaEditModal();
+                    }
                     if (event.key === "Escape" && imagePreviewModal && !imagePreviewModal.hidden) {
                         closeImagePreview();
                     }
@@ -1554,6 +1665,7 @@
             });
 
             initDaySelectors();
+            initAutoResizeTextareas();
             initTaskRowEditing();
             initKanban();
             initIdeas();

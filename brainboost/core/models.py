@@ -631,7 +631,7 @@ class AdminIdea(models.Model):
         VISION = "vision", "große Ideen/Vision"
         IMPROVEMENT = "improvement", "kleine Ideen, Verbesserungen"
 
-    title = models.CharField(max_length=255)
+    title = models.TextField()
     image = models.ImageField(upload_to="admin_ideas/%Y/%m/", blank=True)
     category = models.CharField(
         max_length=30,

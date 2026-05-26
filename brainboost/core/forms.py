@@ -345,6 +345,9 @@ class AdminIdeaCreateForm(forms.ModelForm):
     class Meta:
         model = AdminIdea
         fields = ["title", "category", "image"]
+        widgets = {
+            "title": forms.Textarea(attrs={"rows": 2}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -352,6 +355,19 @@ class AdminIdeaCreateForm(forms.ModelForm):
         self.fields["category"].label = "Kategorie"
         self.fields["image"].label = "Bild"
         self.fields["image"].required = False
+
+
+class AdminIdeaUpdateForm(forms.ModelForm):
+    class Meta:
+        model = AdminIdea
+        fields = ["title"]
+        widgets = {
+            "title": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["title"].label = "Idee"
 
 
 class TutorStudentAssignmentForm(forms.Form):

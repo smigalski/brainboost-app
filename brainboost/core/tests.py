@@ -679,6 +679,9 @@ class AdminTaskManagerTests(TestCase):
         self.assertContains(response, "Kleine Ideen, Verbesserungen")
         self.assertContains(response, idea.title)
         self.assertContains(response, task.title)
+        self.assertContains(response, "Bearbeiten")
+        self.assertContains(response, "data-idea-edit-modal")
+        self.assertContains(response, "data-auto-resize-textarea")
 
     def test_admin_idea_can_be_created(self):
         self.client.force_login(self.staff_user)
@@ -696,6 +699,33 @@ class AdminTaskManagerTests(TestCase):
         self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
         self.assertEqual(idea.category, AdminIdea.Category.VISION)
         self.assertEqual(idea.created_by, self.staff_user)
+        self.assertEqual(idea.title, "BrainBoost Lernanalyse")
+
+    def test_admin_idea_can_be_updated_with_paragraphs(self):
+        idea = AdminIdea.objects.create(
+            title="Alte Idee",
+            category=AdminIdea.Category.VISION,
+            created_by=self.staff_user,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("admin_tasks"),
+            {
+                "action": "update_idea",
+                "idea_id": idea.id,
+                "title": "Erster Absatz\n\nZweiter Absatz",
+            },
+        )
+
+        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
+        idea.refresh_from_db()
+        self.assertEqual(idea.title, "Erster Absatz\n\nZweiter Absatz")
+
+        response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
+        self.assertContains(response, "Erster Absatz")
+        self.assertContains(response, "<br>", html=False)
+        self.assertContains(response, "Zweiter Absatz")
 
     def test_improvement_idea_can_be_created_with_image(self):
         image = SimpleUploadedFile(

@@ -58,6 +58,7 @@ from .forms import (
     AdminTaskCreateForm,
     AdminTaskUpdateForm,
     AdminIdeaCreateForm,
+    AdminIdeaUpdateForm,
     CampaignLinkBuilderForm,
     LeadForm,
 )
@@ -2090,6 +2091,15 @@ def admin_tasks(request):
                 vision_create_form = idea_create_form
             else:
                 improvement_create_form = idea_create_form
+        elif action == "update_idea":
+            idea = get_object_or_404(AdminIdea, pk=request.POST.get("idea_id"))
+            idea_update_form = AdminIdeaUpdateForm(request.POST, instance=idea)
+            if idea_update_form.is_valid():
+                idea_update_form.save()
+                messages.success(request, "Idee wurde aktualisiert.")
+            else:
+                messages.error(request, "Idee konnte nicht aktualisiert werden.")
+            return redirect(f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
 
     tasks = list(
         AdminTask.objects.select_related("owner")
