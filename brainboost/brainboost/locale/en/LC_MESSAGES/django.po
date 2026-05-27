@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-27 13:37+0200\n"
+"POT-Creation-Date: 2026-05-27 14:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -57,70 +57,71 @@ msgstr "Profile"
 msgid "Profilbild"
 msgstr "Profile picture"
 
-#: brainboost/core/templates/base.html:57
+#: brainboost/core/templates/base.html:65
 msgid "Sprache wechseln"
 msgstr "switch the language"
 
-#: brainboost/core/templates/base.html:74
+#: brainboost/core/templates/base.html:89
 msgid "Menü ausrollen"
 msgstr "Expand menu"
 
-#: brainboost/core/templates/base.html:92
+#: brainboost/core/templates/base.html:107
 msgid "Menü einklappen"
 msgstr "Collapse menu"
 
-#: brainboost/core/templates/base.html:101
+#: brainboost/core/templates/base.html:116
 msgid "TutorIn werden"
 msgstr "Become a Tutor"
 
-#: brainboost/core/templates/base.html:103
+#: brainboost/core/templates/base.html:118
 msgid "Dashboard"
 msgstr "Dashboard"
 
-#: brainboost/core/templates/base.html:105
+#: brainboost/core/templates/base.html:120
 msgid "Admins"
 msgstr "Admins"
 
-#: brainboost/core/templates/base.html:107
+#: brainboost/core/templates/base.html:122
 msgid "Termine"
 msgstr "Dates"
 
-#: brainboost/core/templates/base.html:108
+#: brainboost/core/templates/base.html:123
 msgid "Lernfortschritt"
 msgstr "Learning progress"
 
-#: brainboost/core/templates/base.html:111
+#: brainboost/core/templates/base.html:126
 #: brainboost/core/templates/landing.html:461
 msgid "Preise"
 msgstr "Prices"
 
-#: brainboost/core/templates/base.html:114
-#: brainboost/core/templates/base.html:140
+#: brainboost/core/templates/base.html:129
+#: brainboost/core/templates/base.html:155
 msgid "Kontakt"
 msgstr "Contact"
 
-#: brainboost/core/templates/base.html:118
+#: brainboost/core/templates/base.html:133
 msgid "Ausloggen"
 msgstr "Log out"
 
-#: brainboost/core/templates/base.html:120
+#: brainboost/core/templates/base.html:135
 #: brainboost/core/templates/landing.html:353
 msgid "Einloggen"
 msgstr "Log in"
 
-#: brainboost/core/templates/base.html:141
+#: brainboost/core/templates/base.html:156
 msgid "Impressum"
 msgstr "Legal Notice"
 
-#: brainboost/core/templates/base.html:142
+#: brainboost/core/templates/base.html:157
+#: brainboost/core/templates/partials/cookie_notice.html:7
 msgid "Datenschutz"
 msgstr "Privacy Policy"
 
-#: brainboost/core/templates/base.html:143
+#: brainboost/core/templates/base.html:158
 msgid "AGB"
 msgstr "Terms and Conditions"
 
-#: brainboost/core/templates/base.html:144
+#: brainboost/core/templates/base.html:159
 msgid "Cookies"
 msgstr "Cookies"
 
@@ -422,3 +423,41 @@ msgstr "Braunschweig City Library"
 #: brainboost/core/templates/landing.html:561
 msgid "Zentraler Treffpunkt in der Innenstadt"
 msgstr "A central meeting place in the city center"
+
+#: brainboost/core/templates/partials/cookie_notice.html:1
+#: brainboost/core/templates/partials/cookie_notice.html:4
+msgid "Hinweis zu technisch notwendigen Cookies"
+msgstr "Note on technically necessary cookies"
+
+#: brainboost/core/templates/partials/cookie_notice.html:6
+msgid ""
+"Wir verwenden ausschließlich technisch notwendige Cookies (z.&nbsp;B. CSRF-"
+"Schutz), um die Sicherheit und grundlegenden Funktionen der Webapp zu "
+"gewährleisten. Weitere Informationen:"
+msgstr "We use only technically necessary cookies (e.g., CSRF protection, as described &nbsp;) to ensure the security and basic functionality of the web app. For more information:"
+
+#: brainboost/core/templates/partials/cookie_notice.html:11
+msgid "Verstanden"
+msgstr "Got it"
+
+#: brainboost/core/templates/partials/price_banner.html:1
+#, fuzzy
+#| msgid "Preise"
+msgid "Preishinweis"
+msgstr "Prices"
+
+#: brainboost/core/templates/partials/price_banner.html:4
+msgid ""
+"Einzelunterricht ab 19€ / 45 Min – inkl. Lernfortschrittreport + kostenloser "
+"5h-Online-Stornierung!"
+msgstr "Private lessons starting at €19 / 45 min – includes a progress report + free 5-hour online cancellation!"
+
+#: brainboost/core/templates/partials/price_banner.html:5
+#, fuzzy
+#| msgid "Preise"
+msgid "Preise ansehen"
+msgstr "Prices"
+
+#: brainboost/core/templates/partials/price_banner.html:7
+msgid "Preishinweis schließen"
+msgstr "Close price information"

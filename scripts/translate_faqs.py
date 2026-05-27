@@ -39,7 +39,7 @@ from core.models import FAQItem  # noqa: E402
 
 
 LOGGER = logging.getLogger("translate_faqs")
-DEFAULT_LOCALES = ("en", "pl")
+DEFAULT_LOCALES = ("en", "pl", "tr", "ru", "ar")
 
 
 @dataclass(frozen=True)

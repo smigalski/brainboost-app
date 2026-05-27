@@ -16,40 +16,36 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && "
-"(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
-"n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: brainboost/core/admin.py:30
 msgid "Personal info"
-msgstr "Osobiste informacje"
+msgstr "Kişisel bilgiler"
 
 #: brainboost/core/admin.py:31
 msgid "Role"
-msgstr "rola"
+msgstr "Rol"
 
 #: brainboost/core/admin.py:33
 msgid "Permissions"
-msgstr "uprawnienia"
+msgstr "İzinler"
 
 #: brainboost/core/admin.py:44
 msgid "Important dates"
-msgstr "ważne daty"
+msgstr "Önemli tarihler"
 
 #: brainboost/core/templates/base.html:40
 msgid "icon"
-msgstr "ikona"
+msgstr "simge"
 
 #: brainboost/core/templates/base.html:43
-#, fuzzy
-#| msgid "BrainBoost | Startseite"
 msgid "BrainBoost Nachhilfe"
-msgstr "BrainBoost | strona główna"
+msgstr "BrainBoost Özel Ders"
 
 #: brainboost/core/templates/base.html:44
 #: brainboost/core/templates/landing.html:349
 msgid "Stark im Kopf - Stark im Lernen"
-msgstr "Mocna głowa - mocna nauka"
+msgstr "Zihinsel olarak güçlü - Öğrenmede güçlü"
 
 #: brainboost/core/templates/base.html:49
 msgid "Profil"
@@ -57,104 +53,104 @@ msgstr "Profil"
 
 #: brainboost/core/templates/base.html:51
 msgid "Profilbild"
-msgstr "Zdjęcie profilowe"
+msgstr "Profil resmi"
 
 #: brainboost/core/templates/base.html:65
 msgid "Sprache wechseln"
-msgstr "Zmień język"
+msgstr "Dili değiştir"
 
 #: brainboost/core/templates/base.html:89
 msgid "Menü ausrollen"
-msgstr "Rozwiń menu"
+msgstr "Menüyü aç"
 
 #: brainboost/core/templates/base.html:107
 msgid "Menü einklappen"
-msgstr "Zwiń menu"
+msgstr "Menüyü kapat"
 
 #: brainboost/core/templates/base.html:116
 msgid "TutorIn werden"
-msgstr "Zostań tutorem"
+msgstr "Eğitmen Olmak"
 
 #: brainboost/core/templates/base.html:118
 msgid "Dashboard"
-msgstr "Pulpit nawigacyjny"
+msgstr "Kontrol Paneli"
 
 #: brainboost/core/templates/base.html:120
 msgid "Admins"
-msgstr "Administratorzy"
+msgstr "Yöneticiler"
 
 #: brainboost/core/templates/base.html:122
 msgid "Termine"
-msgstr "Terminy"
+msgstr "Tarihler"
 
 #: brainboost/core/templates/base.html:123
 msgid "Lernfortschritt"
-msgstr "Postępy w nauce"
+msgstr "Öğrenme süreci"
 
 #: brainboost/core/templates/base.html:126
 #: brainboost/core/templates/landing.html:461
 msgid "Preise"
-msgstr "Ceny"
+msgstr "Fiyatlar"
 
 #: brainboost/core/templates/base.html:129
 #: brainboost/core/templates/base.html:155
 msgid "Kontakt"
-msgstr "Kontakt"
+msgstr "İletişim"
 
 #: brainboost/core/templates/base.html:133
 msgid "Ausloggen"
-msgstr "Wyloguj się"
+msgstr "Çıkış"
 
 #: brainboost/core/templates/base.html:135
 #: brainboost/core/templates/landing.html:353
 msgid "Einloggen"
-msgstr "Zaloguj się"
+msgstr "Giriş yap"
 
 #: brainboost/core/templates/base.html:156
 msgid "Impressum"
-msgstr "Informacje prawne"
+msgstr "Yasal Uyarı"
 
 #: brainboost/core/templates/base.html:157
 #: brainboost/core/templates/partials/cookie_notice.html:7
 msgid "Datenschutz"
-msgstr "Ochrona danych"
+msgstr "Gizlilik"
 
 #: brainboost/core/templates/base.html:158
 msgid "AGB"
-msgstr "Warunki handlowe"
+msgstr "Genel Şartlar ve Koşullar"
 
 #: brainboost/core/templates/base.html:159
 msgid "Cookies"
-msgstr "Pliki cookie"
+msgstr "Çerezler"
 
 #: brainboost/core/templates/landing.html:3
 msgid "BrainBoost | Startseite"
-msgstr "BrainBoost | strona główna"
+msgstr "BrainBoost | Ana Sayfa"
 
 #: brainboost/core/templates/landing.html:339
 msgid "Jetzt kostenlos Probestunde buchen!"
-msgstr "Zapisz się teraz na bezpłatną lekcję!"
+msgstr "Hemen ücretsiz deneme dersine kaydolun!"
 
 #: brainboost/core/templates/landing.html:344
 msgid "Willkommen bei"
-msgstr "Witaj na"
+msgstr "Hoş geldiniz"
 
 #: brainboost/core/templates/landing.html:358
 msgid "Wichtiger Hinweis"
-msgstr "Ważna informacja"
+msgstr "Önemli uyarı"
 
 #: brainboost/core/templates/landing.html:359
 msgid ""
 "Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn."
-msgstr "<strong>Rejestracja nastąpi razem z twoim nauczycielem."
+msgstr "<strong>Kayıt</strong> işlemi, danışmanınızla birlikte yapılır."
 
 #: brainboost/core/templates/landing.html:364
 msgid "Sei schnell! Melde Dich jetzt!"
-msgstr "Bądz szybki albo szybka! Daj znać teraz!"
+msgstr "Acele et! Hemen kaydol!"
 
 #: brainboost/core/templates/landing.html:371
 msgid "Über BrainBoost"
-msgstr "O BrainBoost"
+msgstr "BrainBoost Hakkında"
 
 #: brainboost/core/templates/landing.html:372
 msgid ""
@@ -168,29 +164,31 @@ msgid ""
 "damit alle bei BrainBoost davon profitieren können und das <strong>Beste</"
 "strong> aus sich herausholen können!"
 msgstr ""
-"<strong>BrainBoost</strong> zostało założone w 2025 roku przez Kiarę Puppe i "
-"oferuje infrastrukturę. BrainBoost łączy postępującą cyfryzację z "
-"tradycyjnymi metodami nauczania, ponieważ <strong>sztuczna inteligencja</"
-"strong> i inne <strong>inteligentne narzędzia</strong> mogą stanowić "
-"sensowne uzupełnienie nauki – jeśli są właściwie wykorzystywane! Dlatego "
-"BrainBoost pomaga połączyć podejście oparte na sztucznej inteligencji z "
-"samodzielną i tradycyjną nauką, aby wszyscy w BrainBoost mogli z tego "
-"skorzystać i wydobyć z siebie <strong>to, co najlepsze</strong>!"
+"<strong>BrainBoost,</strong> 2025 yılında Kiara Puppe tarafından kuruldu ve "
+"dijital altyapıya sahip profesyonel bir <strong>özel ders</strong> "
+"platformudur. BrainBoost, ilerleyen dijitalleşmeyi geleneksel öğrenme "
+"yöntemleriyle birleştirir, çünkü <strong>yapay zeka</strong> ve diğer "
+"<strong>akıllı araçlar</strong>, doğru kullanıldıklarında öğrenmeyi anlamlı "
+"bir şekilde tamamlayabilir! Bu nedenle BrainBoost, yapay zekaya uygun bir "
+"yaklaşımı bağımsız ve geleneksel öğrenmeyle birleştirmeye yardımcı olur, "
+"böylece BrainBoost&#x27;taki herkes bundan faydalanabilir ve kendinden en "
+"<strong>iyi</strong> şekilde yararlanabilir!"
 
 #: brainboost/core/templates/landing.html:377
 msgid "Preis & Qualität"
-msgstr "Cena & Jakość"
+msgstr "Fiyat ve Kalite"
 
 #: brainboost/core/templates/landing.html:378
 msgid ""
 "Wir verbinden günstige und faire Preise mit professioneller digitalisierter "
 "Nachhilfe!"
 msgstr ""
-"Łączymy przystępne i uczciwe ceny z profesjonalnymi, cyfrowymi korepetycjami!"
+"Uygun ve adil fiyatları profesyonel dijital özel ders hizmetiyle "
+"birleştiriyoruz!"
 
 #: brainboost/core/templates/landing.html:380
 msgid "Zu den Preisen"
-msgstr "Ceny"
+msgstr "Fiyatlar"
 
 #: brainboost/core/templates/landing.html:381
 msgid ""
@@ -198,37 +196,37 @@ msgid ""
 "alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose "
 "Probestunde oder kontaktiere mich!"
 msgstr ""
-"Jesteś <strong>rodzicem, uczniem lub studentem</strong> i chcesz poznać "
-"wszystkie szczegóły dotyczące umowy o naukę? Umów się na bezpłatną lekcję "
-"próbną lub skontaktuj się ze mną!"
+"<strong>Ebeveyn, öğrenci ya da üniversite öğrencisi</strong> misiniz ve "
+"öğrenim sözleşmesiyle ilgili tüm ayrıntıları öğrenmek mi istiyorsunuz? O "
+"halde ücretsiz deneme dersi için randevu alın ya da benimle iletişime geçin!"
 
 #: brainboost/core/templates/landing.html:383
 msgid "Jetzt anfragen"
-msgstr "Zapytaj teraz"
+msgstr "Hemen teklif isteyin"
 
 #: brainboost/core/templates/landing.html:394
 msgid "Unser Angebot"
-msgstr "Nasza oferta"
+msgstr "Hizmetlerimiz"
 
 #: brainboost/core/templates/landing.html:396
 msgid "Digitale Lernorte"
-msgstr "Cyfrowe miejsca nauki"
+msgstr "Dijital öğrenme ortamları"
 
 #: brainboost/core/templates/landing.html:397
 msgid "Digitale Lernräume"
-msgstr "Cyfrowe przestrzenie edukacyjne"
+msgstr "Dijital öğrenme ortamları"
 
 #: brainboost/core/templates/landing.html:437
 msgid "Grundschule"
-msgstr "Szkoła podstawowa"
+msgstr "İlkokul"
 
 #: brainboost/core/templates/landing.html:438
 msgid "Alle Fächer"
-msgstr "Wszystkie przedmioty"
+msgstr "Tüm dersler"
 
 #: brainboost/core/templates/landing.html:441
 msgid "Weiterführende Schule"
-msgstr "Szkoła ponadpodstawowa"
+msgstr "Ortaöğretim okulu"
 
 #: brainboost/core/templates/landing.html:442
 msgid ""
@@ -239,108 +237,104 @@ msgid ""
 "Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, "
 "Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse"
 msgstr ""
-"język niemiecki, matematyka, język angielski, język francuski, wiedza o "
-"społeczeństwie, fizyka, biologia, chemia, geografia i muzyka. "
-"<strong>Przedmioty rozszerzone w ramach matury:</strong> język niemiecki, "
-"język angielski, język francuski, wiedza o społeczeństwie, matematyka, "
-"fizyka i chemia. <strong>Przedmioty w BBS:</strong> np. ekonomia, "
-"rachunkowość, pedagogika, zdrowie i wiedza o społeczeństwie. "
-"<strong>Przedmioty w IGS:</strong> np. wiedza o społeczeństwie, nauki "
-"przyrodnicze, praca-gospodarka-technika oraz przedmioty obowiązkowe do wyboru"
+"Almanca, Matematik, İngilizce, Fransızca, Siyaset, Fizik, Biyoloji, Kimya, "
+"Coğrafya ve Müzik. <strong>Abitur seçmeli dersleri:</strong> Almanca, "
+"İngilizce, Fransızca, Siyaset, Matematik, Fizik ve Kimya. <strong>BBS "
+"dersleri:</strong> örn. Ekonomi, Muhasebe, Pedagoji, Sağlık ve Sosyal "
+"Bilgiler. <strong>IGS dersleri:</strong> örn. Toplum Bilgisi, Doğa "
+"Bilimleri, Çalışma-Ekonomi-Teknik ve Seçmeli dersler"
 
 #: brainboost/core/templates/landing.html:445
 msgid "Erweitertes Lernangebot"
-msgstr "Rozszerzona oferta edukacyjna"
+msgstr "Genişletilmiş eğitim seçenekleri"
 
 #: brainboost/core/templates/landing.html:446
 msgid ""
 "Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf "
 "Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten"
 msgstr ""
-"Certyfikowane zajęcia z języka niemieckiego jako języka obcego (DaF) oraz "
-"języka niemieckiego jako języka drugiego (DaZ), a także ukierunkowane "
-"przygotowanie do sprawdzianów, egzaminów, egzaminów końcowych i prac "
-"seminaryjnych"
+"Sertifikalı Almanca Öğretimi (DaF/DaZ) ve sınıf içi sınavlar, dönem sonu "
+"sınavları, bitirme sınavları ile seminer ödevlerine yönelik özel hazırlık"
 
 #: brainboost/core/templates/landing.html:449
 msgid "Für Studierende"
-msgstr "Dla studentów"
+msgstr "Öğrenciler için"
 
 #: brainboost/core/templates/landing.html:450
 msgid ""
 "Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und "
 "Masterarbeiten - von der Struktur bis zur finalen Überarbeitung"
 msgstr ""
-"Profesjonalne wsparcie przy seminariach, projektach, pracach semestralnych, "
-"pracach licencjackich i magisterskich – od struktury po ostateczną redakcję"
+"Seminer, proje, araştırma, lisans ve yüksek lisans tezlerinde profesyonel "
+"destek – yapının oluşturulmasından son düzeltmelere kadar"
 
 #: brainboost/core/templates/landing.html:462
 msgid "Kurz & transparent"
-msgstr "Krótko i przejrzyście"
+msgstr "Kısa ve şeffaf"
 
 #: brainboost/core/templates/landing.html:465
 msgid ""
 "Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und "
 "Lernfortschritt."
 msgstr ""
-"Przejrzyste ceny korepetycji za każdą sesję, obejmujące wsparcie cyfrowe i "
-"monitorowanie postępów w nauce."
+"Her ders için şeffaf özel ders ücretleri; dijital destek ve öğrenme "
+"sürecinin takibi dahildir."
 
 #: brainboost/core/templates/landing.html:466
 msgid "Preisübersicht"
-msgstr "Przegląd cen"
+msgstr "Fiyat Tablosu"
 
 #: brainboost/core/templates/landing.html:468
 msgid "45 Minuten"
-msgstr "45 minut"
+msgstr "45 dakika"
 
 #: brainboost/core/templates/landing.html:472
 msgid "60 Minuten"
-msgstr "60 minut"
+msgstr "60 dakika"
 
 #: brainboost/core/templates/landing.html:476
 msgid "90 Minuten"
-msgstr "90 minut"
+msgstr "90 dakika"
 
 #: brainboost/core/templates/landing.html:481
 msgid "inkl. kostenloser WebApp"
-msgstr "wraz z bezpłatną aplikacją internetową"
+msgstr "ücretsiz WebApp dahil"
 
 #: brainboost/core/templates/landing.html:482
 msgid "inkl. Lernfortschrittreports"
-msgstr "wraz z raportami z postępów w nauce"
+msgstr "öğrenme ilerleme raporları dahil"
 
 #: brainboost/core/templates/landing.html:483
 msgid "inkl. Online-Terminplanung"
-msgstr "wraz z planowaniem wizyt online"
+msgstr "Çevrimiçi randevu planlaması dahil"
 
 #: brainboost/core/templates/landing.html:484
 msgid "inkl. individuellen Lernmaterialien"
-msgstr "wraz z indywidualnymi materiałami dydaktycznymi"
+msgstr "kişisel öğrenme materyalleri dahil"
 
 #: brainboost/core/templates/landing.html:486
 msgid "Zu den weiteren Vorteilen!"
-msgstr "Pozostałe zalety!"
+msgstr "Diğer avantajlara göz atın!"
 
 #: brainboost/core/templates/landing.html:496
 msgid "Lernorte"
-msgstr "Miejsca nauki"
+msgstr "Öğrenim mekanları"
 
 #: brainboost/core/templates/landing.html:500
 msgid "Google Maps öffnen (externer Link)"
-msgstr "Otwórz Mapy Google (link zewnętrzny)"
+msgstr "Google Haritalar&#x27;ı aç (harici bağlantı)"
 
 #: brainboost/core/templates/landing.html:504
 msgid "Interaktive Karte mit BrainBoost Lernorten"
-msgstr "Interaktywna mapa z lokalizacjami BrainBoost"
+msgstr "BrainBoost öğrenim merkezlerinin yer aldığı etkileşimli harita"
 
 #: brainboost/core/templates/landing.html:508
 msgid "Ganz bequem lernen"
-msgstr "Nauka w pełnym komforcie"
+msgstr "Rahatça öğrenin"
 
 #: brainboost/core/templates/landing.html:509
 msgid "Nachhilfe vor Ort bei dir!*"
-msgstr "Korepetycje u Ciebie w domu!*"
+msgstr "Evinde özel ders!*"
 
 #: brainboost/core/templates/landing.html:510
 msgid ""
@@ -348,167 +342,121 @@ msgid ""
 "nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem "
 "gewohnten Umfeld."
 msgstr ""
-"Jeśli organizacyjnie się to da, Twój korepetytor przyjedzie do Ciebie do "
-"domu. Dzięki temu nauka będzie przebiegać w miłej atmosferze, w sposób "
-"indywidualny i bezpośrednio w Twoim znanym otoczeniu."
+"Organizasyonel olarak uygunsa, özel öğretmeniniz evinize gelir. Böylece "
+"öğrenme süreci rahat, kişisel ve alıştığınız ortamda gerçekleşir."
 
 #: brainboost/core/templates/landing.html:511
 msgid "Vor-Ort-Nachhilfe anfragen"
-msgstr "Zgłoś zapotrzebowanie na korepetycje w domu"
+msgstr "Yerinde özel ders talebinde bulun"
 
 #: brainboost/core/templates/landing.html:512
 msgid ""
 "* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab "
 "transparent abgestimmt."
 msgstr ""
-"* W zależności od odległości mogą zostać naliczone koszty dojazdu. Szczegóły "
-"zostaną wcześniej uzgodnione w sposób przejrzysty."
+"* Mesafeye bağlı olarak ulaşım masrafları ortaya çıkabilir. Ayrıntılar "
+"önceden şeffaf bir şekilde kararlaştırılır."
 
 #: brainboost/core/templates/landing.html:520
 msgid "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!"
-msgstr "Zostań korepetytorem i zarabiaj nawet 1000 € miesięcznie, studiując!"
+msgstr ""
+"Özel ders öğretmeni olun ve öğreniminizin yanı sıra ayda 1000 €&#x27;ya "
+"kadar kazanın!"
 
 #: brainboost/core/templates/landing.html:521
 msgid "Jetzt bewerben und keine Chance verpassen!"
-msgstr "Zgłoś się już teraz i nie przegap tej okazji!"
+msgstr "Hemen başvurun ve hiçbir fırsatı kaçırmayın!"
 
 #: brainboost/core/templates/landing.html:526
 msgid "BrainBoost Feedback"
-msgstr "Opinie o BrainBoost"
+msgstr "BrainBoost Geri Bildirimi"
 
 #: brainboost/core/templates/landing.html:527
 msgid ""
 "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist "
 "dafür nötig?"
 msgstr ""
-"BrainBoost chce stać się najlepszą platformą korepetycji w Niemczech! Co "
-"jest do tego potrzebne?"
+"BrainBoost, Almanya&#x27;nın en iyi özel ders platformu olmak istiyor! Bunun "
+"için ne gerekiyor?"
 
 #: brainboost/core/templates/landing.html:528
 msgid "Anonymes Feedback geben"
-msgstr "Przekaż anonimową opinię"
+msgstr "Anonim geri bildirimde bulunmak"
 
 #: brainboost/core/templates/landing.html:532
 msgid "Google-Bewertung"
-msgstr "Ocena w Google"
+msgstr "Google Yorumları"
 
 #: brainboost/core/templates/landing.html:533
 msgid ""
 "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze "
 "Bewertung bei Google."
 msgstr ""
-"Jeśli jesteś zadowolony z BrainBoost, będę bardzo wdzięczny za krótką "
-"recenzję w Google."
+"BrainBoost&#x27;tan memnun kaldıysan, Google&#x27;da kısa bir yorum yazarsan "
+"çok sevinirim."
 
 #: brainboost/core/templates/landing.html:535
 msgid "Jetzt bei Google bewerten"
-msgstr "Oceń teraz w Google"
+msgstr "Şimdi Google&#x27;da değerlendirin"
 
 #: brainboost/core/templates/landing.html:540
 msgid "FAQ"
-msgstr "Często zadawane pytania"
+msgstr "SSS"
 
 #: brainboost/core/templates/landing.html:548
 msgid "Noch keine FAQ für die Startseite vorhanden."
-msgstr "Na stronie głównej nie ma jeszcze sekcji FAQ."
+msgstr "Ana sayfa için henüz bir SSS bölümü bulunmamaktadır."
 
 #: brainboost/core/templates/landing.html:558
 msgid "BrainBoost Lernort"
-msgstr "Centrum edukacyjne BrainBoost"
+msgstr "BrainBoost Öğrenme Merkezi"
 
 #: brainboost/core/templates/landing.html:559
 msgid "Karl-Schmidt-Straße 20, 38114 Braunschweig"
-msgstr "ul. Karla Schmidta 20, 38114 Brunszwik"
+msgstr "Karl-Schmidt-Straße 20, 38114 Braunschweig"
 
 #: brainboost/core/templates/landing.html:560
 msgid "Stadtbibliothek Braunschweig"
-msgstr "Biblioteka Miejska w Brunszwiku"
+msgstr "Braunschweig Şehir Kütüphanesi"
 
 #: brainboost/core/templates/landing.html:561
 msgid "Zentraler Treffpunkt in der Innenstadt"
-msgstr "Główne miejsce spotkań w centrum miasta"
+msgstr "Şehir merkezindeki merkezi buluşma noktası"
 
 #: brainboost/core/templates/partials/cookie_notice.html:1
 #: brainboost/core/templates/partials/cookie_notice.html:4
 msgid "Hinweis zu technisch notwendigen Cookies"
-msgstr "Informacja dotycząca plików cookie niezbędnych z technicznego punktu widzenia"
+msgstr "Teknik açıdan gerekli çerezler hakkında bilgi"
 
 #: brainboost/core/templates/partials/cookie_notice.html:6
 msgid ""
 "Wir verwenden ausschließlich technisch notwendige Cookies (z.&nbsp;B. CSRF-"
 "Schutz), um die Sicherheit und grundlegenden Funktionen der Webapp zu "
 "gewährleisten. Weitere Informationen:"
-msgstr "Używamy wyłącznie plików cookie niezbędnych z technicznego punktu widzenia (np&nbsp;. ochrona przed atakami CSRF), aby zapewnić bezpieczeństwo i podstawowe funkcje aplikacji internetowej. Więcej informacji:"
+msgstr "Web uygulamasının güvenliğini ve temel işlevlerini sağlamak için yalnızca teknik açıdan gerekli çerezleri (örn&nbsp;. CSRF koruması) kullanıyoruz. Daha fazla bilgi:"
 
 #: brainboost/core/templates/partials/cookie_notice.html:11
 msgid "Verstanden"
-msgstr "Rozumiem"
+msgstr "Anlaşıldı"
 
 #: brainboost/core/templates/partials/price_banner.html:1
 #, fuzzy
 #| msgid "Preise"
 msgid "Preishinweis"
-msgstr "Ceny"
+msgstr "Fiyatlar"
 
 #: brainboost/core/templates/partials/price_banner.html:4
 msgid ""
 "Einzelunterricht ab 19€ / 45 Min – inkl. Lernfortschrittreport + kostenloser "
 "5h-Online-Stornierung!"
-msgstr "Zajęcia indywidualne od 19 € za 45 minut – w cenie raport z postępów w nauce + bezpłatna 5-godzinna rezerwacja online!"
+msgstr "Bire bir dersler 19 €&#x27;dan başlayan fiyatlarla / 45 dakika – öğrenme ilerleme raporu dahil + 5 saatlik ücretsiz çevrimiçi iptal hakkı!"
 
 #: brainboost/core/templates/partials/price_banner.html:5
 #, fuzzy
 #| msgid "Preise"
 msgid "Preise ansehen"
-msgstr "Ceny"
+msgstr "Fiyatlar"
 
 #: brainboost/core/templates/partials/price_banner.html:7
 msgid "Preishinweis schließen"
-msgstr "Zamknij informację o cenie"
-
-#, fuzzy
-#~| msgid "Wichtiger Hinweis"
-#~ msgid "Wichtigkeit"
-#~ msgstr "Ważna informacja"
-
-#, fuzzy
-#~| msgid "Über BrainBoost"
-#~ msgid "BrainBoost Logo"
-#~ msgstr "O BrainBoost"
-
-#, fuzzy
-#~| msgid "Über BrainBoost"
-#~ msgid "Dein BrainBoost-Team"
-#~ msgstr "O BrainBoost"
-
-#, fuzzy
-#~| msgid "BrainBoost | Startseite"
-#~ msgid "Zur Startseite"
-#~ msgstr "BrainBoost | strona główna"
-
-#, fuzzy
-#~| msgid ""
-#~| "Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r "
-#~| "TutorIn."
-#~ msgid "Die Registrierung erfolgt direkt gemeinsam mit deinem/r TutorIn."
-#~ msgstr "<strong>Rejestracja nastąpi razem z twoim nauczycielem."
-
-#, fuzzy
-#~| msgid "BrainBoost | Startseite"
-#~ msgid "Startseite"
-#~ msgstr "BrainBoost | strona główna"
-
-#, fuzzy
-#~| msgid "BrainBoost | Startseite"
-#~ msgid "BrainBoost Lernbegleitung"
-#~ msgstr "BrainBoost | strona główna"
-
-#, fuzzy
-#~| msgid "Über BrainBoost"
-#~ msgid "So unterstützt BrainBoost"
-#~ msgstr "O BrainBoost"
-
-#, fuzzy
-#~| msgid "Über BrainBoost"
-#~ msgid "TutorInnen bei BrainBoost"
-#~ msgstr "O BrainBoost"
+msgstr "Fiyat bilgisini kapat"

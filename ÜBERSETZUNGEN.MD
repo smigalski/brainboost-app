@@ -45,6 +45,9 @@ Nach Template-Änderungen die Übersetzungsdateien neu erzeugen/aktualisieren:
 ```bash
 .venv/bin/python brainboost/manage.py makemessages -l en
 .venv/bin/python brainboost/manage.py makemessages -l pl
+.venv/bin/python brainboost/manage.py makemessages -l tr
+.venv/bin/python brainboost/manage.py makemessages -l ru
+.venv/bin/python brainboost/manage.py makemessages -l ar
 ```
 
 Die Dateien liegen danach hier:
@@ -52,6 +55,9 @@ Die Dateien liegen danach hier:
 ```text
 brainboost/brainboost/locale/en/LC_MESSAGES/django.po
 brainboost/brainboost/locale/pl/LC_MESSAGES/django.po
+brainboost/brainboost/locale/tr/LC_MESSAGES/django.po
+brainboost/brainboost/locale/ru/LC_MESSAGES/django.po
+brainboost/brainboost/locale/ar/LC_MESSAGES/django.po
 ```
 
 ## 3. Übersetzungen automatisch mit DeepL füllen
@@ -89,31 +95,31 @@ FAQ-Datenbankinhalte werden separat übersetzt. Vor dem ersten FAQ-Übersetzungs
 FAQ-Übersetzungen prüfen:
 
 ```bash
-.venv/bin/python scripts/translate_faqs.py --dry-run --locales en pl
+.venv/bin/python scripts/translate_faqs.py --dry-run --locales en pl tr ru ar
 ```
 
 FAQ-Übersetzungen schreiben:
 
 ```bash
-.venv/bin/python scripts/translate_faqs.py --provider deepl --locales en pl
+.venv/bin/python scripts/translate_faqs.py --provider deepl --locales en pl tr ru ar
 ```
 
 Vorab prüfen, wie viele leere Einträge übersetzt würden:
 
 ```bash
-python3 scripts/translate_po.py --dry-run --locales en pl
+python3 scripts/translate_po.py --dry-run --locales en pl tr ru ar
 ```
 
 Leere `msgstr`-Einträge automatisch übersetzen:
 
 ```bash
-python3 scripts/translate_po.py --provider deepl --locales en pl
+python3 scripts/translate_po.py --provider deepl --locales en pl tr ru ar
 ```
 
 Das Script überschreibt bestehende Übersetzungen standardmäßig nicht. Für Tests ohne DeepL-Aufruf gibt es den Mock-Provider:
 
 ```bash
-python3 scripts/translate_po.py --provider mock --locales en pl
+python3 scripts/translate_po.py --provider mock --locales en pl tr ru ar
 ```
 
 Die komplette Pipeline für Template-Markierung, `makemessages`, DeepL-Übersetzung und `compilemessages`:
@@ -211,7 +217,7 @@ location.reload();
 1. Template ändern.
 2. `mark_template_i18n.py` im Check-Modus laufen lassen.
 3. Falls nötig mit `--write` Marker ergänzen.
-4. `makemessages` für `en` und `pl` ausführen.
+4. `makemessages` für `en`, `pl`, `tr`, `ru` und `ar` ausführen.
 5. `translate_po.py` ausführen.
 6. `.po`-Dateien manuell prüfen oder leere Einträge nachpflegen.
 7. `compilemessages` ausführen.

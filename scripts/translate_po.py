@@ -36,6 +36,9 @@ ENV_OVERRIDES = {
 DEEPL_TARGETS = {
     "en": "EN-US",
     "pl": "PL",
+    "tr": "TR",
+    "ru": "RU",
+    "ar": "AR",
 }
 
 KEYWORD_RE = re.compile(r"^(msgid|msgid_plural|msgstr)\s+(.*)$")

@@ -3,7 +3,7 @@ set -euo pipefail
 
 PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
 PROVIDER="${PROVIDER:-deepl}"
-LOCALES=(${LOCALES:-en pl})
+LOCALES=(${LOCALES:-en pl tr ru ar})
 TEMPLATE_PATHS=("$@")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -14,6 +14,8 @@ if [ "${#TEMPLATE_PATHS[@]}" -eq 0 ]; then
   TEMPLATE_PATHS=(
     "brainboost/core/templates/landing.html"
     "brainboost/core/templates/base.html"
+    "brainboost/core/templates/partials/price_banner.html"
+    "brainboost/core/templates/partials/cookie_notice.html"
   )
 fi
 

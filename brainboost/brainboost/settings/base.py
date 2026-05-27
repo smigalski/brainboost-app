@@ -115,6 +115,9 @@ LANGUAGES = [
     ('de', 'Deutsch'),
     ('en', 'English'),
     ('pl', 'Polski'),
+    ('tr', 'Türkçe'),
+    ('ru', 'Русский'),
+    ('ar', 'العربية'),
 ]
 LOCALE_PATHS = [
     BASE_DIR / 'locale',
