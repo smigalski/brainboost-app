@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 TAG_RE = re.compile(r"(<[^>]+>)", re.DOTALL)
 TAG_NAME_RE = re.compile(r"^</?\s*([a-zA-Z0-9:-]+)")
 ATTR_RE_TEMPLATE = r'({attr}\s*=\s*)"([^"]*)"'
@@ -33,6 +34,10 @@ SKIP_CLASS_RE = re.compile(r'class\s*=\s*"[^"]*\bbrainboost-wordmark\b[^"]*"')
 
 def django_quote(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
+
+
+def django_attr_quote(value: str) -> str:
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 
 def is_template_tag(value: str) -> bool:
@@ -88,7 +93,7 @@ def mark_attrs(tag: str, attrs: tuple[str, ...]) -> str:
             stripped = value.strip()
             if not should_translate_text(stripped):
                 return match.group(0)
-            return f'{prefix}"{{% trans {django_quote(stripped)} %}}"'
+            return f'{prefix}"{{% trans {django_attr_quote(stripped)} %}}"'
 
         updated = pattern.sub(replace, updated)
     return updated
@@ -148,6 +153,15 @@ def process_path(path: Path, write: bool, attrs: tuple[str, ...]) -> bool:
     return changed
 
 
+def resolve_input_path(path: Path) -> Path:
+    if path.exists():
+        return path
+    project_path = PROJECT_ROOT / path
+    if project_path.exists():
+        return project_path
+    return path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Add Django i18n markers to simple static text in templates."
@@ -168,6 +182,7 @@ def main() -> int:
 
     changed_paths: list[Path] = []
     for path in args.paths:
+        path = resolve_input_path(path)
         if path.is_dir():
             candidates = sorted(path.rglob("*.html"))
         else:

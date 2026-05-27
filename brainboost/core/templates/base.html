@@ -1,12 +1,13 @@
-{% load static %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="de">
+<html lang="{{ LANGUAGE_CODE|default:'de' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1011">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1012">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
@@ -36,27 +37,56 @@
         <div class="topbar-main">
             <a class="brand brand-link" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">
                 <div class="brand-icon">
-                    <img src="/static/design/LogoPNG.png" alt="icon">
+                    <img src="/static/design/LogoPNG.png" alt="{% trans 'icon' %}">
                 </div>
                 <div class="brand-text">
-                    <span class="brand-title">BrainBoost Nachhilfe</span>
-                    <span class="brand-sub">Stark im Kopf - Stark im Lernen</span>
+                    <span class="brand-title">{% trans "BrainBoost Nachhilfe" %}</span>
+                    <span class="brand-sub">{% trans "Stark im Kopf - Stark im Lernen" %}</span>
                 </div>
             </a>
             <div class="topbar-actions">
                 {% if request.user.is_authenticated %}
-                    <a class="profile-link" href="{% url 'profile' %}" aria-label="Profil">
+                    <a class="profile-link" href="{% url 'profile' %}" aria-label="{% trans 'Profil' %}">
                         {% if request.user.profile_image %}
-                            <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
+                            <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="{% trans 'Profilbild' %}">
                         {% else %}
                             <span class="profile-link__avatar{% if not request.user.avatar_icon %} profile-link__avatar--empty{% endif %}">{{ request.user.avatar_symbol }}</span>
                         {% endif %}
                     </a>
                 {% endif %}
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                <div class="language-switch" data-language-switch>
+                    {% for language in languages %}
+                        {% if language.code == LANGUAGE_CODE %}
+                            <button
+                                class="language-switch__toggle"
+                                type="button"
+                                aria-label="{% trans 'Sprache wechseln' %}"
+                                aria-expanded="false"
+                                data-language-switch-toggle
+                            >
+                                {{ language.name_local|lower }}
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="language-switch__menu" data-language-switch-menu hidden>
+                        {% for language in languages %}
+                            {% if language.code != LANGUAGE_CODE %}
+                                <form class="language-switch__form" action="{% url 'set_language' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="language" value="{{ language.code }}">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button class="language-switch__option" type="submit">{{ language.name_local|lower }}</button>
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
                 <button
                     class="menu-toggle"
                     type="button"
-                    aria-label="Menü ausrollen"
+                    aria-label="{% trans 'Menü ausrollen' %}"
                     aria-expanded="false"
                     aria-controls="site-navigation"
                     data-menu-toggle
@@ -74,7 +104,7 @@
                 <button
                     class="menu-collapse"
                     type="button"
-                    aria-label="Menü einklappen"
+                    aria-label="{% trans 'Menü einklappen' %}"
                     data-menu-close
                 >
                     <svg class="menu-collapse__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -83,26 +113,26 @@
                 </button>
                 <nav id="site-navigation" class="nav-links nav-links--wrap">
                     {% with request.resolver_match.url_name as current %}
-                        <a href="{% url 'tutor_werden' %}" class="{% if current == 'tutor_werden' or current == 'tutorin_werden' %}active{% endif %}">TutorIn werden</a>
+                        <a href="{% url 'tutor_werden' %}" class="{% if current == 'tutor_werden' or current == 'tutorin_werden' %}active{% endif %}">{% trans "TutorIn werden" %}</a>
                         {% if request.user.is_authenticated %}
-                            <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">Dashboard</a>
+                            <a href="{% url 'dashboard' %}" class="{% if current == 'dashboard' %}active{% endif %}">{% trans "Dashboard" %}</a>
                             {% if request.user.is_staff or request.user.is_superuser %}
-                                <a href="{% url 'admin_tasks' %}" class="nav-links__admins{% if current == 'admin_tasks' %} active{% endif %}">Admins</a>
+                                <a href="{% url 'admin_tasks' %}" class="nav-links__admins{% if current == 'admin_tasks' %} active{% endif %}">{% trans "Admins" %}</a>
                             {% endif %}
-                            <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">Termine</a>
-                            <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">Lernfortschritt</a>
+                            <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">{% trans "Termine" %}</a>
+                            <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">{% trans "Lernfortschritt" %}</a>
                         {% endif %}
                         {% if not request.user.is_authenticated or request.user.role == 'parent' %}
-                            <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">Preise</a>
+                            <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">{% trans "Preise" %}</a>
                         {% endif %}
                         {% if not request.user.is_authenticated %}
-                            <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">Kontakt</a>
+                            <a href="{% url 'contact' %}" class="{% if current == 'contact' %}active{% endif %}">{% trans "Kontakt" %}</a>
                         {% endif %}
                     {% endwith %}
                     {% if request.user.is_authenticated %}
-                        <a class="pill{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}" href="{% url 'logout' %}">Ausloggen</a>
+                        <a class="pill{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}" href="{% url 'logout' %}">{% trans "Ausloggen" %}</a>
                     {% else %}
-                        <a class="pill" href="{% url 'login' %}">Einloggen</a>
+                        <a class="pill" href="{% url 'login' %}">{% trans "Einloggen" %}</a>
                     {% endif %}
                 </nav>
             </div>
@@ -122,11 +152,11 @@
     <div class="footer-content">
         <div class="footer-brand">© {% now "Y" %} BrainBoost Nachhilfe</div>
         <div class="footer-links">
-            <a href="{% url 'contact' %}">Kontakt</a>
-            <a href="{% url 'impressum' %}">Impressum</a>
-            <a href="{% url 'impressum' %}">Datenschutz</a>
-            <a href="{% url 'agbs' %}">AGB</a>
-            <a href="{% url 'impressum' %}">Cookies</a>
+            <a href="{% url 'contact' %}">{% trans "Kontakt" %}</a>
+            <a href="{% url 'impressum' %}">{% trans "Impressum" %}</a>
+            <a href="{% url 'impressum' %}">{% trans "Datenschutz" %}</a>
+            <a href="{% url 'agbs' %}">{% trans "AGB" %}</a>
+            <a href="{% url 'impressum' %}">{% trans "Cookies" %}</a>
         </div>
     </div>
 </footer>
@@ -162,9 +192,21 @@
         var menuToggle = document.querySelector("[data-menu-toggle]");
         var menuClose = document.querySelector("[data-menu-close]");
         var menuPanel = document.querySelector("[data-menu-panel]");
+        var languageSwitch = document.querySelector("[data-language-switch]");
+        var languageSwitchToggle = document.querySelector("[data-language-switch-toggle]");
+        var languageSwitchMenu = document.querySelector("[data-language-switch-menu]");
         var menuIsOpen = false;
         var menuIsAnimating = false;
         var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function setLanguageSwitchState(isOpen) {
+            if (!languageSwitch || !languageSwitchToggle || !languageSwitchMenu) {
+                return;
+            }
+            languageSwitch.classList.toggle("is-open", isOpen);
+            languageSwitchToggle.setAttribute("aria-expanded", String(isOpen));
+            languageSwitchMenu.hidden = !isOpen;
+        }
 
         function setMenuState(isOpen) {
             menuIsOpen = isOpen;
@@ -241,6 +283,27 @@
                     return;
                 }
                 toggleMenu(false);
+            });
+        }
+
+        if (languageSwitch && languageSwitchToggle) {
+            languageSwitchToggle.addEventListener("click", function (event) {
+                event.stopPropagation();
+                setLanguageSwitchState(!languageSwitch.classList.contains("is-open"));
+            });
+            document.addEventListener("click", function (event) {
+                if (!languageSwitch.classList.contains("is-open")) {
+                    return;
+                }
+                if (languageSwitch.contains(event.target)) {
+                    return;
+                }
+                setLanguageSwitchState(false);
+            });
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    setLanguageSwitchState(false);
+                }
             });
         }
 

@@ -13,6 +13,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator, FileExt
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import get_language
 
 
 class CustomUser(AbstractUser):
@@ -602,6 +603,10 @@ class HolidaySurveyResponse(models.Model):
 class FAQItem(models.Model):
     question = models.CharField(max_length=255)
     answer = models.TextField(blank=True)
+    question_en = models.CharField(max_length=255, blank=True)
+    answer_en = models.TextField(blank=True)
+    question_pl = models.CharField(max_length=255, blank=True)
+    answer_pl = models.TextField(blank=True)
     show_for_parents = models.BooleanField(default=False)
     show_for_students = models.BooleanField(default=False)
     show_for_tutors = models.BooleanField(default=False)
@@ -624,6 +629,22 @@ class FAQItem(models.Model):
 
     def __str__(self) -> str:
         return self.question
+
+    def _localized_field(self, field_name: str) -> str:
+        language = (get_language() or "de").split("-")[0]
+        if language in {"en", "pl"}:
+            translated = getattr(self, f"{field_name}_{language}", "")
+            if translated:
+                return translated
+        return getattr(self, field_name)
+
+    @property
+    def localized_question(self) -> str:
+        return self._localized_field("question")
+
+    @property
+    def localized_answer(self) -> str:
+        return self._localized_field("answer")
 
 
 class AdminIdea(models.Model):

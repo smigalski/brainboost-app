@@ -54,7 +54,88 @@ brainboost/brainboost/locale/en/LC_MESSAGES/django.po
 brainboost/brainboost/locale/pl/LC_MESSAGES/django.po
 ```
 
-## 3. Übersetzungen eintragen
+## 3. Übersetzungen automatisch mit DeepL füllen
+
+Für DeepL API Free den API-Key als Umgebungsvariable setzen:
+
+```bash
+export DEEPL_AUTH_KEY="dein-api-key"
+```
+
+Wenn dein DeepL-Plan nicht den alten API-Free-Endpoint nutzt, zusätzlich den API-Endpoint setzen:
+
+```bash
+export DEEPL_API_URL="https://api.deepl.com/v2/translate"
+```
+
+Bei altem API Free bleibt der Standard:
+
+```text
+https://api-free.deepl.com/v2/translate
+```
+
+Hinweis: DeepL-API-Free-Keys enden typischerweise auf `:fx`. Solche Keys müssen den `api-free.deepl.com`-Endpoint verwenden.
+
+Lokale Werte aus `.env` für `DEEPL_AUTH_KEY` und `DEEPL_API_URL` überschreiben exportierte Terminal-Werte, damit ein alter Shell-Export nicht versehentlich den falschen Endpoint verwendet.
+
+Das Script sendet den Key als `Authorization: DeepL-Auth-Key ...` Header. Das ist wichtig, weil DeepL die alte `auth_key`-Übergabe im Request-Body nicht mehr zuverlässig akzeptiert.
+
+FAQ-Datenbankinhalte werden separat übersetzt. Vor dem ersten FAQ-Übersetzungslauf die Migration ausführen:
+
+```bash
+.venv/bin/python brainboost/manage.py migrate
+```
+
+FAQ-Übersetzungen prüfen:
+
+```bash
+.venv/bin/python scripts/translate_faqs.py --dry-run --locales en pl
+```
+
+FAQ-Übersetzungen schreiben:
+
+```bash
+.venv/bin/python scripts/translate_faqs.py --provider deepl --locales en pl
+```
+
+Vorab prüfen, wie viele leere Einträge übersetzt würden:
+
+```bash
+python3 scripts/translate_po.py --dry-run --locales en pl
+```
+
+Leere `msgstr`-Einträge automatisch übersetzen:
+
+```bash
+python3 scripts/translate_po.py --provider deepl --locales en pl
+```
+
+Das Script überschreibt bestehende Übersetzungen standardmäßig nicht. Für Tests ohne DeepL-Aufruf gibt es den Mock-Provider:
+
+```bash
+python3 scripts/translate_po.py --provider mock --locales en pl
+```
+
+Die komplette Pipeline für Template-Markierung, `makemessages`, DeepL-Übersetzung und `compilemessages`:
+
+```bash
+scripts/update_translations.sh
+```
+
+Ohne Argumente verarbeitet der Wrapper die Startseite und die globale Navigation:
+
+```text
+brainboost/core/templates/landing.html
+brainboost/core/templates/base.html
+```
+
+Optional andere Templates gezielt markieren:
+
+```bash
+scripts/update_translations.sh brainboost/core/templates/landing.html
+```
+
+## 4. Übersetzungen manuell prüfen
 
 In den `.po`-Dateien alle leeren `msgstr ""` füllen.
 
@@ -74,7 +155,7 @@ msgstr "Zarezerwuj teraz bezpłatną lekcję próbną!"
 
 Wichtig: HTML-Tags aus `msgid` müssen im `msgstr` erhalten bleiben, z. B. `<strong>...</strong>`.
 
-## 4. Übersetzungen kompilieren
+## 5. Übersetzungen kompilieren
 
 Nach dem Bearbeiten der `.po`-Dateien:
 
@@ -84,7 +165,13 @@ Nach dem Bearbeiten der `.po`-Dateien:
 
 Dadurch werden die `.mo`-Dateien erstellt, die Django zur Laufzeit verwendet.
 
-## 5. Lokal testen
+Wenn du vom Projekt-Root kompilierst, ignoriere die virtuelle Umgebung, damit Django nicht alle `.po`-Dateien aus `.venv` scannt:
+
+```bash
+.venv/bin/python brainboost/manage.py compilemessages --ignore ".venv/*" --ignore "venv/*" --ignore "env/*"
+```
+
+## 6. Lokal testen
 
 Server starten:
 
@@ -125,9 +212,10 @@ location.reload();
 2. `mark_template_i18n.py` im Check-Modus laufen lassen.
 3. Falls nötig mit `--write` Marker ergänzen.
 4. `makemessages` für `en` und `pl` ausführen.
-5. `.po`-Dateien übersetzen oder leere Einträge nachpflegen.
-6. `compilemessages` ausführen.
-7. Seite lokal mit Sprach-Cookie testen.
+5. `translate_po.py` ausführen.
+6. `.po`-Dateien manuell prüfen oder leere Einträge nachpflegen.
+7. `compilemessages` ausführen.
+8. Seite lokal mit Sprach-Cookie testen.
 
 ## Hinweise
 

@@ -541,8 +541,8 @@
     <div data-faq-accordion style="display:flex; flex-direction:column; gap:10px;">
         {% for item in faq_items %}
             <details style="padding:12px 14px; border-radius:14px; background:#fff; border:1px solid rgba(0,0,0,0.05);">
-                <summary style="font-weight:800; cursor:pointer;">{{ item.question }}</summary>
-                <div class="muted" style="margin-top:10px;">{{ item.answer|linebreaksbr }}</div>
+                <summary style="font-weight:800; cursor:pointer;">{{ item.localized_question }}</summary>
+                <div class="muted" style="margin-top:10px;">{{ item.localized_answer|linebreaksbr }}</div>
             </details>
         {% empty %}
             <div class="muted">{% trans "Noch keine FAQ für die Startseite vorhanden." %}</div>
