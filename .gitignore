@@ -18,3 +18,11 @@ Stundenkartei.xlsx
 # User uploads / personal data
 brainboost/media/
 brainboost/brainboost/media/
+
+# Markdown docs except README
+*.md
+*.MD
+!README.md
+!README.MD
+!readme.md
+!readme.MD
