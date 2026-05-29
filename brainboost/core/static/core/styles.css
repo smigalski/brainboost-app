@@ -971,6 +971,20 @@ input[type="file"] {
     margin-top: 8px;
 }
 
+.lead-hero__actions,
+.lead-final-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.lead-secondary-cta {
+    background: #fff;
+    color: var(--teal-dark);
+    border: 1px solid rgba(31,102,102,0.22);
+}
+
 .lead-hero__visual {
     display: grid;
     align-content: center;
@@ -1025,6 +1039,81 @@ input[type="file"] {
 
 .lead-card-grid--wide {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lead-seo-intro p {
+    max-width: 940px;
+}
+
+.lead-audience-section {
+    display: grid;
+    gap: 18px;
+}
+
+.lead-section-kicker {
+    margin-bottom: 0;
+}
+
+.lead-audience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.lead-audience-card {
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 12px;
+    min-width: 0;
+    padding: 20px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(31,102,102,0.14);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+
+.lead-audience-card--parents {
+    border-top: 5px solid var(--teal-dark);
+}
+
+.lead-audience-card--students {
+    border-top: 5px solid var(--yellow);
+}
+
+.lead-audience-card--tutors {
+    border-top: 5px solid var(--red);
+}
+
+.lead-audience-card__label {
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(44,138,138,0.1);
+    color: var(--teal-dark);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.lead-audience-card h2 {
+    margin-bottom: 0;
+    font-size: 24px;
+}
+
+.lead-audience-card p {
+    margin: 0;
+    line-height: 1.58;
+}
+
+.lead-card-actions {
+    display: grid;
+    gap: 10px;
+    align-self: end;
+    margin-top: 4px;
+}
+
+.lead-card-actions .button {
+    width: 100%;
+    text-align: center;
 }
 
 .lead-info-card {
@@ -1170,6 +1259,7 @@ input[type="file"] {
     .lead-hero,
     .lead-split,
     .lead-card-grid,
+    .lead-audience-grid,
     .lead-card-grid--wide,
     .lead-step-list--horizontal {
         grid-template-columns: 1fr;
@@ -1211,10 +1301,17 @@ input[type="file"] {
     }
 
     .lead-cta,
-    .lead-final-cta .lead-cta {
+    .lead-final-cta .lead-cta,
+    .lead-hero__actions .button,
+    .lead-final-cta__actions .button {
         justify-self: stretch;
         width: 100%;
         text-align: center;
+    }
+
+    .lead-hero__actions,
+    .lead-final-cta__actions {
+        width: 100%;
     }
 }
 

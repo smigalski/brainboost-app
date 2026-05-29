@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Nachhilfe in Braunschweig & online | BrainBoost{% endblock %}
+{% block title %}{% trans "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost" %}{% endblock %}
 {% block meta_description %}
-    <meta name="description" content="Individuelle Nachhilfe für SchülerInnen in Braunschweig und online. Anfrage stellen und passende Lernbegleitung finden.">
+    <meta name="description" content="{% trans 'Individuelle Nachhilfe in Braunschweig und online: Mathe, Deutsch, Englisch und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos anfragen.' %}">
 {% endblock %}
 
 {% block extra_tracking %}
@@ -19,80 +19,119 @@
 <div class="lead-landing lead-landing--parent">
     <section class="lead-hero">
         <div class="lead-hero__content">
-            <span class="lead-eyebrow">BrainBoost Nachhilfe</span>
-            <h1>Nachhilfe in Braunschweig &amp; online – passend zum Lernstand</h1>
-            <p>BrainBoost hilft SchülerInnen mit individueller Nachhilfe, klarer Struktur und passender Lernbegleitung.</p>
-            <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="nachhilfe-anfrage-hero">Kostenlose Anfrage stellen</a>
+            <span class="lead-eyebrow">{% trans "BrainBoost Nachhilfe" %}</span>
+            <h1>{% trans "Nachhilfe in Braunschweig und online" %}</h1>
+            <p>{% blocktrans trimmed %}BrainBoost verbindet individuelle Nachhilfe mit klarer Organisation: Online Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und weitere Fächer.{% endblocktrans %}</p>
+            <div class="lead-hero__actions">
+                <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="nachhilfe-braunschweig-hero">{% trans "Kostenlose Anfrage stellen" %}</a>
+                <a class="button ghost lead-secondary-cta" href="{% url 'landing_page' %}" data-cta="nachhilfe-braunschweig-home">{% trans "Mehr über BrainBoost erfahren" %}</a>
+            </div>
         </div>
-        <div class="lead-hero__visual" aria-label="BrainBoost Lernbegleitung">
-            <img src="{% static 'design/LogoPNG.png' %}" alt="BrainBoost Logo">
+        <div class="lead-hero__visual" aria-label="{% trans 'BrainBoost Lernbegleitung' %}">
+            <img src="{% static 'design/LogoPNG.png' %}" alt="{% trans 'BrainBoost Logo' %}">
             <div>
-                <strong>Online und vor Ort möglich</strong>
-                <span>Klare Anfrage, persönliche Abstimmung, passende Lernbegleitung.</span>
+                <strong>{% trans "Nachhilfe Braunschweig" %}</strong>
+                <span>{% trans "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder vor Ort möglich." %}</span>
             </div>
         </div>
     </section>
 
-    <section class="lead-section-block">
-        <h2>Warum gezielte Nachhilfe wichtig ist</h2>
-        <p>Viele SchülerInnen lernen viel, aber nicht gezielt. Oft fehlen Grundlagen, ein klarer Plan oder die passende Erklärung.</p>
+    <section class="lead-section-block lead-seo-intro">
+        <h2>{% trans "Individuelle Nachhilfe für Braunschweig" %}</h2>
+        <p>{% blocktrans trimmed %}Ob Mathe Nachhilfe Braunschweig, Englisch Nachhilfe Braunschweig oder Deutsch Nachhilfe Braunschweig: Entscheidend ist, dass Unterstützung zum Lernstand, Fach und Ziel passt. BrainBoost strukturiert die Anfrage und hilft dabei, passende Nachhilfe online oder in Braunschweig zu organisieren.{% endblocktrans %}</p>
     </section>
 
-    <section class="lead-section-block">
-        <h2>So unterstützt BrainBoost</h2>
-        <div class="lead-card-grid">
-            <article class="lead-info-card">
-                <h3>Passende TutorInnen</h3>
-                <p>Die Anfrage hilft dabei, Fach, Lernstand und Ziel einzuordnen und eine geeignete Begleitung zu finden.</p>
+    <section class="lead-section-block lead-audience-section" aria-labelledby="target-groups">
+        <h2 id="target-groups" class="lead-section-kicker">{% trans "Nachhilfe passend zu deiner Rolle" %}</h2>
+        <div class="lead-audience-grid">
+            <article class="lead-audience-card lead-audience-card--parents">
+                <span class="lead-audience-card__label">{% trans "Eltern" %}</span>
+                <h2>{% trans "Für Eltern" %}</h2>
+                <p>{% blocktrans trimmed %}Eltern suchen zuverlässige, individuelle Unterstützung für ihr Kind. BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende TutorInnen in Braunschweig oder online zu finden.{% endblocktrans %}</p>
+                <ul class="lead-check-list">
+                    <li>{% trans "passende TutorInnen" %}</li>
+                    <li>{% trans "individuelle Förderung" %}</li>
+                    <li>{% trans "transparente Kommunikation" %}</li>
+                    <li>{% trans "online oder in Braunschweig" %}</li>
+                </ul>
+                <div class="lead-card-actions">
+                    <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="nachhilfe-braunschweig-parent">{% trans "Kostenlose Anfrage stellen" %}</a>
+                    <a class="button ghost lead-secondary-cta" href="{% url 'landing_page' %}" data-cta="nachhilfe-braunschweig-parent-home">{% trans "Mehr über BrainBoost erfahren" %}</a>
+                </div>
             </article>
-            <article class="lead-info-card">
-                <h3>Strukturierter Lernfortschritt</h3>
-                <p>Der Unterricht wird an konkreten Zielen ausgerichtet, damit Fortschritt nachvollziehbar bleibt.</p>
+
+            <article class="lead-audience-card lead-audience-card--students">
+                <span class="lead-audience-card__label">{% trans "SchülerInnen" %}</span>
+                <h2>{% trans "Für SchülerInnen" %}</h2>
+                <p>{% blocktrans trimmed %}SchülerInnen erhalten verständliche Unterstützung bei Hausaufgaben, Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und auf den eigenen Lernstand abgestimmt.{% endblocktrans %}</p>
+                <ul class="lead-check-list">
+                    <li>{% trans "verständliche Erklärungen" %}</li>
+                    <li>{% trans "flexible Termine" %}</li>
+                    <li>{% trans "Mathe, Deutsch, Englisch und weitere Fächer" %}</li>
+                    <li>{% trans "online oder in Braunschweig" %}</li>
+                </ul>
+                <div class="lead-card-actions">
+                    <a class="button lead-cta" href="{% url 'contact' %}?role=student" data-cta="nachhilfe-braunschweig-student">{% trans "Kostenlose Anfrage stellen" %}</a>
+                    <a class="button ghost lead-secondary-cta" href="{% url 'landing_page' %}" data-cta="nachhilfe-braunschweig-student-home">{% trans "Mehr über BrainBoost erfahren" %}</a>
+                </div>
             </article>
-            <article class="lead-info-card">
-                <h3>Einfache Kommunikation</h3>
-                <p>Absprachen zu Fach, Ort, Zeiten und Zielen laufen klar und ohne unnötige Umwege.</p>
+
+            <article class="lead-audience-card lead-audience-card--tutors">
+                <span class="lead-audience-card__label">{% trans "TutorInnen" %}</span>
+                <h2>{% trans "Für TutorInnen" %}</h2>
+                <p>{% blocktrans trimmed %}TutorInnen können über BrainBoost Nachhilfe anbieten und SchülerInnen unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf flexible Nachhilfe online oder vor Ort ausgelegt.{% endblocktrans %}</p>
+                <ul class="lead-check-list">
+                    <li>{% trans "strukturierter Vermittlungsprozess" %}</li>
+                    <li>{% trans "professionelle Außendarstellung" %}</li>
+                    <li>{% trans "digitale Unterstützung über die WebApp" %}</li>
+                    <li>{% trans "flexible Nachhilfe online oder vor Ort" %}</li>
+                </ul>
+                <div class="lead-card-actions">
+                    <a class="button lead-cta" href="{% url 'contact' %}?role=tutor" data-cta="nachhilfe-braunschweig-tutor">{% trans "Kostenlose Anfrage stellen" %}</a>
+                    <a class="button ghost lead-secondary-cta" href="{% url 'landing_page' %}" data-cta="nachhilfe-braunschweig-tutor-home">{% trans "Mehr über BrainBoost erfahren" %}</a>
+                </div>
             </article>
         </div>
     </section>
 
     <section class="lead-split">
         <div class="lead-section-block">
-            <h2>Für wen geeignet?</h2>
+            <h2>{% trans "Fächer und Ziele" %}</h2>
             <ul class="lead-check-list">
-                <li>SchülerInnen mit Notenproblemen</li>
-                <li>Prüfungsvorbereitung</li>
-                <li>Grundlagen aufholen</li>
-                <li>regelmäßige Lernbegleitung</li>
-                <li>Mathe, Deutsch, Englisch und weitere Fächer</li>
+                <li>{% trans "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und Prüfungsvorbereitung" %}</li>
+                <li>{% trans "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere Ausdrucksweise" %}</li>
+                <li>{% trans "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche Sicherheit" %}</li>
+                <li>{% trans "weitere Fächer je nach Bedarf und Verfügbarkeit" %}</li>
             </ul>
         </div>
         <div class="lead-section-block">
-            <h2>Ablauf</h2>
+            <h2>{% trans "Ablauf" %}</h2>
             <ol class="lead-step-list">
-                <li>Anfrage ausfüllen</li>
-                <li>kurzes Erstgespräch</li>
-                <li>passenden Tutor finden</li>
-                <li>Nachhilfe starten</li>
-                <li>Fortschritt verfolgen</li>
+                <li>{% trans "Anfrage ausfüllen" %}</li>
+                <li>{% trans "Lernziel und passende Unterrichtsform abstimmen" %}</li>
+                <li>{% trans "geeignete TutorInnen in Braunschweig oder online finden" %}</li>
+                <li>{% trans "individuelle Nachhilfe starten" %}</li>
             </ol>
         </div>
     </section>
 
     <section class="lead-section-block lead-trust">
-        <h2>Vertrauenswürdig organisiert</h2>
-        <p>BrainBoost ist eine moderne Nachhilfeplattform mit Fokus auf strukturierter Lernbegleitung, klarer Kommunikation und individueller Förderung.</p>
+        <h2>{% trans "Online Nachhilfe und Nachhilfe vor Ort" %}</h2>
+        <p>{% blocktrans trimmed %}BrainBoost eignet sich für regelmäßige Lernbegleitung, gezielte Prüfungsvorbereitung und kurzfristige Unterstützung. Die Nachhilfe kann flexibel online stattfinden oder mit TutorInnen in Braunschweig abgestimmt werden.{% endblocktrans %}</p>
         <ul class="lead-pill-list">
-            <li>persönliche Betreuung</li>
-            <li>klare Organisation</li>
-            <li>online und vor Ort möglich</li>
-            <li>transparente Kommunikation</li>
+            <li>{% trans "Nachhilfe Braunschweig" %}</li>
+            <li>{% trans "Online Nachhilfe" %}</li>
+            <li>{% trans "Mathe, Deutsch, Englisch" %}</li>
+            <li>{% trans "transparente Kommunikation" %}</li>
         </ul>
     </section>
 
     <section class="lead-final-cta">
-        <h2>Jetzt kostenlose Nachhilfe-Anfrage stellen</h2>
-        <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="nachhilfe-anfrage-bottom">Kostenlose Anfrage stellen</a>
+        <h2>{% trans "Jetzt passende Nachhilfe in Braunschweig oder online anfragen" %}</h2>
+        <div class="lead-final-cta__actions">
+            <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="nachhilfe-braunschweig-bottom-parent">{% trans "Kostenlose Anfrage stellen" %}</a>
+            <a class="button ghost lead-secondary-cta" href="{% url 'landing_page' %}" data-cta="nachhilfe-braunschweig-bottom-home">{% trans "Mehr über BrainBoost erfahren" %}</a>
+        </div>
     </section>
 </div>
 {% endblock %}

@@ -13,6 +13,8 @@ cd "$PROJECT_ROOT"
 if [ "${#TEMPLATE_PATHS[@]}" -eq 0 ]; then
   TEMPLATE_PATHS=(
     "brainboost/core/templates/landing.html"
+    "brainboost/core/templates/nachhilfe_anfrage.html"
+    "brainboost/core/templates/contact.html"
     "brainboost/core/templates/base.html"
     "brainboost/core/templates/partials/price_banner.html"
     "brainboost/core/templates/partials/cookie_notice.html"
