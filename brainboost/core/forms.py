@@ -122,7 +122,7 @@ class CampaignLinkBuilderForm(forms.Form):
 
     base_url = forms.CharField(
         label="Basis-URL",
-        initial="/nachhilfe-anfrage/",
+        initial="/nachhilfe-braunschweig/",
         max_length=500,
     )
     utm_source = forms.CharField(label="utm_source", initial="meta", max_length=120)

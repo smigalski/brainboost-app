@@ -554,7 +554,7 @@ class LeadAdminToolsTests(TestCase):
 
     def test_campaign_link_builder_creates_valid_url(self):
         generated_url = _build_campaign_url(
-            "https://www.nachhilfe-brainboost.de/nachhilfe-anfrage/?existing=1",
+            "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/?existing=1",
             {
                 "utm_source": "meta",
                 "utm_medium": "paid_social",
@@ -569,7 +569,7 @@ class LeadAdminToolsTests(TestCase):
         query = parse_qs(parsed.query)
         self.assertEqual(parsed.scheme, "https")
         self.assertEqual(parsed.netloc, "www.nachhilfe-brainboost.de")
-        self.assertEqual(parsed.path, "/nachhilfe-anfrage/")
+        self.assertEqual(parsed.path, "/nachhilfe-braunschweig/")
         self.assertEqual(query["existing"], ["1"])
         self.assertEqual(query["utm_source"], ["meta"])
         self.assertEqual(query["utm_medium"], ["paid_social"])
@@ -584,7 +584,7 @@ class LeadAdminToolsTests(TestCase):
         response = self.client.get(
             reverse("campaign_link_builder"),
             {
-                "base_url": "https://www.nachhilfe-brainboost.de/nachhilfe-anfrage/",
+                "base_url": "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/",
                 "utm_source": "meta",
                 "utm_medium": "paid_social",
                 "utm_campaign": "eltern_mathe_braunschweig",
