@@ -12,10 +12,12 @@ import re
 import unicodedata
 from typing import Optional
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from urllib.request import Request, urlopen
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
@@ -102,6 +104,8 @@ from .models import (
 logger = logging.getLogger(__name__)
 FLASHCARD_DECK_SESSION_KEY = "admin_flashcard_deck"
 FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
+GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
+GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -131,6 +135,93 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     return round(r * c, 2)
 
 
+def _rating_stars(rating) -> list[str]:
+    try:
+        rounded = int(round(float(rating)))
+    except (TypeError, ValueError):
+        rounded = 0
+    rounded = max(0, min(5, rounded))
+    return ["filled"] * rounded + ["empty"] * (5 - rounded)
+
+
+def _google_review_text(review: dict) -> str:
+    text = review.get("text") or review.get("originalText") or {}
+    if isinstance(text, dict):
+        return (text.get("text") or "").strip()
+    return str(text).strip()
+
+
+def _normalize_google_reviews_payload(payload: dict) -> dict:
+    rating = payload.get("rating")
+    review_count = payload.get("userRatingCount")
+    maps_url = payload.get("googleMapsUri") or settings.GOOGLE_REVIEW_URL
+    reviews = []
+    for review in payload.get("reviews", [])[:5]:
+        author = review.get("authorAttribution") or {}
+        review_rating = review.get("rating")
+        reviews.append(
+            {
+                "author": author.get("displayName") or "Google-NutzerIn",
+                "author_url": author.get("uri") or "",
+                "rating": review_rating,
+                "stars": _rating_stars(review_rating),
+                "text": _google_review_text(review),
+                "relative_time": review.get("relativePublishTimeDescription") or "",
+                "review_url": review.get("googleMapsUri") or maps_url,
+            }
+        )
+    return {
+        "rating": rating,
+        "rating_display": str(rating).replace(".", ",") if rating is not None else "",
+        "review_count": review_count,
+        "maps_url": maps_url,
+        "review_url": settings.GOOGLE_REVIEW_URL,
+        "reviews": [review for review in reviews if review["text"]],
+    }
+
+
+def _google_reviews_fallback() -> dict:
+    return {
+        "rating": None,
+        "rating_display": "",
+        "review_count": None,
+        "maps_url": settings.GOOGLE_REVIEW_URL,
+        "review_url": settings.GOOGLE_REVIEW_URL,
+        "reviews": [],
+    }
+
+
+def _get_google_reviews_summary() -> dict:
+    api_key = settings.GOOGLE_PLACES_API_KEY
+    place_id = settings.GOOGLE_PLACE_ID
+    if not api_key or not place_id:
+        return _google_reviews_fallback()
+
+    cached = cache.get(GOOGLE_REVIEWS_CACHE_KEY)
+    if cached:
+        return cached
+
+    url = f"https://places.googleapis.com/v1/places/{place_id}?languageCode=de"
+    fields = "displayName,rating,userRatingCount,googleMapsUri,reviews"
+    request = Request(
+        url,
+        headers={
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": fields,
+        },
+    )
+    try:
+        with urlopen(request, timeout=4) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        logger.exception("Google Places Bewertungen konnten nicht geladen werden.")
+        return _google_reviews_fallback()
+
+    summary = _normalize_google_reviews_payload(payload)
+    cache.set(GOOGLE_REVIEWS_CACHE_KEY, summary, GOOGLE_REVIEWS_CACHE_SECONDS)
+    return summary
+
+
 def landing_page(request):
     form = EmailOrUsernameAuthenticationForm(request)
     return render(
@@ -139,6 +230,7 @@ def landing_page(request):
         {
             "form": form,
             "faq_items": _faq_items_for_target("landing"),
+            "google_reviews": _get_google_reviews_summary(),
         },
     )
 

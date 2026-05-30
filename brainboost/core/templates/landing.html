@@ -312,12 +312,121 @@
         max-height: 38px;
         object-fit: contain;
     }
+    .google-reviews-card {
+        display: grid;
+        gap: 18px;
+    }
+    .google-reviews-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+    }
+    .google-reviews-score {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .google-reviews-rating {
+        color: #12343b;
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .google-reviews-stars,
+    .google-review-stars {
+        color: #f59e0b;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .google-reviews-meta {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.92rem;
+    }
+    .google-reviews-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .google-reviews-carousel {
+        position: relative;
+    }
+    .google-reviews-track {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(240px, 1fr);
+        gap: 12px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+        padding: 2px 2px 12px;
+    }
+    .google-review-card {
+        min-height: 210px;
+        padding: 16px;
+        border: 1px solid rgba(44, 138, 138, 0.14);
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 12px 24px rgba(29, 76, 87, 0.1);
+        scroll-snap-align: start;
+    }
+    .google-review-author {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 8px;
+        color: #12343b;
+        font-weight: 900;
+    }
+    .google-review-time {
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .google-review-text {
+        margin: 10px 0 0;
+        color: #334155;
+        line-height: 1.45;
+    }
+    .google-reviews-nav {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    .google-reviews-arrow {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        box-shadow: 0 10px 20px rgba(29, 76, 87, 0.12);
+    }
+    .google-reviews-fallback {
+        padding: 16px;
+        border: 1px solid rgba(44, 138, 138, 0.14);
+        border-radius: 16px;
+        background: #fff;
+    }
     @media (max-width: 700px) {
         .landing-pricing-grid,
         .landing-pricing-benefits,
         .learning-location-grid,
         .angebot-tools-actions {
             grid-template-columns: 1fr;
+        }
+        .google-reviews-header {
+            flex-direction: column;
+        }
+        .google-reviews-actions {
+            justify-content: flex-start;
+        }
+        .google-reviews-track {
+            grid-auto-columns: minmax(78%, 1fr);
         }
         .angebot-tools-box {
             width: 100%;
@@ -521,12 +630,63 @@
     <a class="button" style="background:#5fb5ff; color:#0b1b2a;" href="{% url 'brainboost_feedback' %}?source=landing" data-cta="feedback-link">{% trans "Anonymes Feedback geben" %}</a>
 </div>
 
-<div class="card">
-    <h3>{% trans "Google-Bewertung" %}</h3>
-    <p class="muted" style="margin-bottom:10px;">{% trans "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google." %}</p>
-    <a href="https://g.page/r/CQre9mQfg_gGEAE/review" target="_blank" rel="noreferrer noopener" class="button" data-cta="google-bewertung">
-        {% trans "Jetzt bei Google bewerten" %}
-    </a>
+<div class="card google-reviews-card">
+    <div class="google-reviews-header">
+        <div>
+            <h3>{% trans "Google-Bewertungen" %}</h3>
+            {% if google_reviews.rating %}
+                <div class="google-reviews-score" aria-label="{% blocktrans with rating=google_reviews.rating_display %}Google-Bewertung {{ rating }} von 5{% endblocktrans %}">
+                    <span class="google-reviews-rating">{{ google_reviews.rating_display }}</span>
+                    <span class="google-reviews-stars" aria-hidden="true">★★★★★</span>
+                </div>
+                <p class="google-reviews-meta">
+                    {% blocktrans count count=google_reviews.review_count %}Basierend auf {{ count }} Google-Bewertung{% plural %}Basierend auf {{ count }} Google-Bewertungen{% endblocktrans %}
+                </p>
+            {% else %}
+                <p class="muted">{% trans "Aktuelle Google-Bewertungen werden hier angezeigt, sobald die Google Places API eingerichtet ist." %}</p>
+            {% endif %}
+        </div>
+        <div class="google-reviews-actions">
+            <a class="button" style="padding:9px 12px;background:#fff;color:#12343b;border:1px solid rgba(44,138,138,0.18);box-shadow:none;" href="{{ google_reviews.maps_url }}" target="_blank" rel="noreferrer noopener" data-cta="google-bewertungen-ansehen">{% trans "Alle ansehen" %}</a>
+            <a class="button" style="padding:9px 12px;" href="{{ google_reviews.review_url }}" target="_blank" rel="noreferrer noopener" data-cta="google-bewertung">{% trans "Jetzt bewerten" %}</a>
+        </div>
+    </div>
+
+    {% if google_reviews.reviews %}
+        <div class="google-reviews-carousel" data-google-reviews-carousel>
+            <div class="google-reviews-track" data-google-reviews-track>
+                {% for review in google_reviews.reviews %}
+                    <article class="google-review-card">
+                        <div class="google-review-author">
+                            {% if review.author_url %}
+                                <a href="{{ review.author_url }}" target="_blank" rel="noreferrer noopener" style="color:inherit;text-decoration:none;">{{ review.author }}</a>
+                            {% else %}
+                                <span>{{ review.author }}</span>
+                            {% endif %}
+                            {% if review.relative_time %}
+                                <span class="google-review-time">{{ review.relative_time }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="google-review-stars" aria-label="{% blocktrans with rating=review.rating %}{{ rating }} von 5 Sternen{% endblocktrans %}">
+                            {% for star in review.stars %}{% if star == "filled" %}★{% else %}☆{% endif %}{% endfor %}
+                        </div>
+                        <p class="google-review-text">{{ review.text|truncatechars:230 }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+            <div class="google-reviews-nav" aria-label="{% trans 'Google-Bewertungen bewegen' %}">
+                <button class="button google-reviews-arrow" type="button" data-google-reviews-prev aria-label="{% trans 'Vorherige Bewertung' %}">‹</button>
+                <button class="button google-reviews-arrow" type="button" data-google-reviews-next aria-label="{% trans 'Nächste Bewertung' %}">›</button>
+            </div>
+        </div>
+    {% else %}
+        <div class="google-reviews-fallback">
+            <p class="muted" style="margin-bottom:10px;">{% trans "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google." %}</p>
+            <a href="{{ google_reviews.review_url }}" target="_blank" rel="noreferrer noopener" class="button" data-cta="google-bewertung-fallback">
+                {% trans "Jetzt bei Google bewerten" %}
+            </a>
+        </div>
+    {% endif %}
 </div>
 
 <div class="card">
@@ -606,6 +766,36 @@
         })), {
             padding: [44, 44],
             maxZoom: 13
+        });
+    })();
+</script>
+<script>
+    (function() {
+        var carousel = document.querySelector('[data-google-reviews-carousel]');
+        if (!carousel) {
+            return;
+        }
+        var track = carousel.querySelector('[data-google-reviews-track]');
+        var prev = carousel.querySelector('[data-google-reviews-prev]');
+        var next = carousel.querySelector('[data-google-reviews-next]');
+        if (!track || !prev || !next) {
+            return;
+        }
+
+        function scrollByCard(direction) {
+            var firstCard = track.querySelector('.google-review-card');
+            var distance = firstCard ? firstCard.getBoundingClientRect().width + 12 : track.clientWidth * 0.8;
+            track.scrollBy({
+                left: direction * distance,
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+            });
+        }
+
+        prev.addEventListener('click', function() {
+            scrollByCard(-1);
+        });
+        next.addEventListener('click', function() {
+            scrollByCard(1);
         });
     })();
 </script>
