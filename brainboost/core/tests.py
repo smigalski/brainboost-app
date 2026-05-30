@@ -128,6 +128,30 @@ class SeoEndpointTests(SimpleTestCase):
         self.assertNotIn("abc123456789xyz", output.getvalue())
         self.assertIn("Status 200", output.getvalue())
 
+    @override_settings(
+        DEBUG=False,
+        INDEXNOW_KEY="abc123456789xyz",
+        CANONICAL_DOMAIN="www.nachhilfe-brainboost.de",
+    )
+    @patch("core.management.commands.submit_indexnow.urlopen")
+    def test_submit_indexnow_accepts_202_response(self, mocked_urlopen):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def getcode(self):
+                return 202
+
+        mocked_urlopen.return_value = Response()
+        output = StringIO()
+
+        call_command("submit_indexnow", stdout=output)
+
+        self.assertIn("Status 202", output.getvalue())
+
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",

@@ -57,11 +57,11 @@ class Command(BaseCommand):
             logger.error("IndexNow Netzwerkfehler: %s", exc.reason)
             raise CommandError(f"IndexNow Netzwerkfehler: {exc.reason}") from exc
 
-        if status == 200:
-            logger.info("IndexNow erfolgreich mit Status 200.")
+        if status in (200, 202):
+            logger.info("IndexNow erfolgreich mit Status %s.", status)
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"IndexNow erfolgreich: Status 200, {len(payload['urlList'])} URLs, Key {_mask_key(key)}"
+                    f"IndexNow erfolgreich: Status {status}, {len(payload['urlList'])} URLs, Key {_mask_key(key)}"
                 )
             )
             return
