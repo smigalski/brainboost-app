@@ -572,6 +572,66 @@
 </div> 
 
 
+<div class="card google-reviews-card">
+    <div class="google-reviews-header">
+        <div>
+            <h3>{% trans "Google-Bewertungen" %}</h3>
+            {% if google_reviews.rating %}
+                <div class="google-reviews-score" aria-label="{% blocktrans with rating=google_reviews.rating_display %}Google-Bewertung {{ rating }} von 5{% endblocktrans %}">
+                    <span class="google-reviews-rating">{{ google_reviews.rating_display }}</span>
+                    <span class="google-reviews-stars" aria-hidden="true">★★★★★</span>
+                </div>
+                <p class="google-reviews-meta">
+                    {% blocktrans count count=google_reviews.review_count %}Basierend auf {{ count }} Google-Bewertung{% plural %}Basierend auf {{ count }} Google-Bewertungen{% endblocktrans %}
+                </p>
+            {% else %}
+                <p class="muted">{% trans "Aktuelle Google-Bewertungen werden hier angezeigt, sobald die Google Places API eingerichtet ist." %}</p>
+            {% endif %}
+        </div>
+        <div class="google-reviews-actions">
+            <a class="button" style="padding:9px 12px;background:#fff;color:#12343b;border:1px solid rgba(44,138,138,0.18);box-shadow:none;" href="{{ google_reviews.maps_url }}" target="_blank" rel="noreferrer noopener" data-cta="google-bewertungen-ansehen">{% trans "Alle ansehen" %}</a>
+            <a class="button" style="padding:9px 12px;" href="{{ google_reviews.review_url }}" target="_blank" rel="noreferrer noopener" data-cta="google-bewertung">{% trans "Jetzt bewerten" %}</a>
+        </div>
+    </div>
+
+    {% if google_reviews.reviews %}
+        <div class="google-reviews-carousel" data-google-reviews-carousel>
+            <div class="google-reviews-track" data-google-reviews-track>
+                {% for review in google_reviews.reviews %}
+                    <article class="google-review-card">
+                        <div class="google-review-author">
+                            {% if review.author_url %}
+                                <a href="{{ review.author_url }}" target="_blank" rel="noreferrer noopener" style="color:inherit;text-decoration:none;">{{ review.author }}</a>
+                            {% else %}
+                                <span>{{ review.author }}</span>
+                            {% endif %}
+                            {% if review.relative_time %}
+                                <span class="google-review-time">{{ review.relative_time }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="google-review-stars" aria-label="{% blocktrans with rating=review.rating %}{{ rating }} von 5 Sternen{% endblocktrans %}">
+                            {% for star in review.stars %}{% if star == "filled" %}★{% else %}☆{% endif %}{% endfor %}
+                        </div>
+                        <p class="google-review-text">{{ review.text|truncatechars:230 }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+            <div class="google-reviews-nav" aria-label="{% trans 'Google-Bewertungen bewegen' %}">
+                <button class="button google-reviews-arrow" type="button" data-google-reviews-prev aria-label="{% trans 'Vorherige Bewertung' %}">‹</button>
+                <button class="button google-reviews-arrow" type="button" data-google-reviews-next aria-label="{% trans 'Nächste Bewertung' %}">›</button>
+            </div>
+        </div>
+    {% else %}
+        <div class="google-reviews-fallback">
+            <p class="muted" style="margin-bottom:10px;">{% trans "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze Bewertung bei Google." %}</p>
+            <a href="{{ google_reviews.review_url }}" target="_blank" rel="noreferrer noopener" class="button" data-cta="google-bewertung-fallback">
+                {% trans "Jetzt bei Google bewerten" %}
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+
 <div class="card">
     <div class="info-tile">
         <div class="tile-header">
