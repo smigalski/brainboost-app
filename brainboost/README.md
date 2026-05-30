@@ -29,7 +29,7 @@ GRANT ALL PRIVILEGES ON DATABASE brainboost_local_test TO brainboost_user;
 ## Deployment-Hinweis
 - Environment-Variablen für Secret Key und Datenbank setzen.
 - Optional für IndexNow: `INDEXNOW_KEY` setzen.
-- Optional für Google-Bewertungen auf der Landingpage: `GOOGLE_PLACES_API_KEY` und `GOOGLE_PLACE_ID` setzen.
+- Optional für Google-Bewertungen auf der Landingpage: `GOOGLE_PLACES_API_KEY` und `GOOGLE_PLACE_ID` setzen. Die Reviews werden pro aktiver Sprache von Google Places geladen und gecached.
 - Statische Dateien sammeln: `python manage.py collectstatic --noinput`
 - Nach dem Deployment öffentliche Seiten an IndexNow senden: `python manage.py submit_indexnow`
 

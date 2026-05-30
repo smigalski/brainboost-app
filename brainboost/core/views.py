@@ -27,6 +27,7 @@ from django.db.models.functions import TruncDate
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
 from django.utils import timezone
+from django.utils.translation import get_language
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
@@ -106,6 +107,7 @@ FLASHCARD_DECK_SESSION_KEY = "admin_flashcard_deck"
 FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
 GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
+GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "pl", "tr", "ru", "ar"}
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -191,17 +193,24 @@ def _google_reviews_fallback() -> dict:
     }
 
 
+def _google_reviews_language_code() -> str:
+    language_code = (get_language() or settings.LANGUAGE_CODE or "de").split("-")[0].lower()
+    return language_code if language_code in GOOGLE_REVIEWS_SUPPORTED_LANGUAGES else "de"
+
+
 def _get_google_reviews_summary() -> dict:
     api_key = settings.GOOGLE_PLACES_API_KEY
     place_id = settings.GOOGLE_PLACE_ID
     if not api_key or not place_id:
         return _google_reviews_fallback()
 
-    cached = cache.get(GOOGLE_REVIEWS_CACHE_KEY)
+    language_code = _google_reviews_language_code()
+    cache_key = f"{GOOGLE_REVIEWS_CACHE_KEY}:{language_code}"
+    cached = cache.get(cache_key)
     if cached:
         return cached
 
-    url = f"https://places.googleapis.com/v1/places/{place_id}?languageCode=de"
+    url = f"https://places.googleapis.com/v1/places/{place_id}?languageCode={language_code}"
     fields = "displayName,rating,userRatingCount,googleMapsUri,reviews"
     request = Request(
         url,
@@ -218,7 +227,7 @@ def _get_google_reviews_summary() -> dict:
         return _google_reviews_fallback()
 
     summary = _normalize_google_reviews_payload(payload)
-    cache.set(GOOGLE_REVIEWS_CACHE_KEY, summary, GOOGLE_REVIEWS_CACHE_SECONDS)
+    cache.set(cache_key, summary, GOOGLE_REVIEWS_CACHE_SECONDS)
     return summary
 
 
