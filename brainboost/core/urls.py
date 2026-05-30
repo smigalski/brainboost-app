@@ -71,6 +71,7 @@ urlpatterns = [
     path("rechnungen/neu/", views.invoice_upload, name="invoice_upload"),
     path("rechnungen/<int:invoice_id>/genehmigen/", views.invoice_approve, name="invoice_approve"),
     path("rechnungen/<int:invoice_id>/eltern/<int:parent_id>/benachrichtigen/", views.invoice_notify_parent, name="invoice_notify_parent"),
+    path("rechnungen/<int:invoice_id>/schueler-benachrichtigen/", views.invoice_notify_student, name="invoice_notify_student"),
     path("rechnungen/<int:invoice_id>/loeschen/", views.invoice_delete, name="invoice_delete"),
     path("rechnungen/<int:invoice_id>/zahlungsart/<str:method>/", views.invoice_select_payment, name="invoice_select_payment"),
     path("rechnungen/<int:invoice_id>/checkout/", views.invoice_checkout, name="invoice_checkout"),

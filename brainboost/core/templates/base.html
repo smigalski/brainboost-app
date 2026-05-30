@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1014">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1015">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <link rel="icon" type="image/png" href="{% static 'design/LogoPNG.png' %}">
@@ -148,6 +148,22 @@
     {% endif %}
     {% block content %}{% endblock %}
 </main>
+<div class="floating-card-nav" data-card-nav hidden>
+    <button
+        class="floating-card-nav__toggle"
+        type="button"
+        aria-label="{% trans 'Abschnitte anzeigen' %}"
+        aria-expanded="false"
+        data-card-nav-toggle
+    >
+        <svg class="floating-card-nav__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <line x1="5" y1="7" x2="19" y2="7"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <line x1="5" y1="17" x2="19" y2="17"></line>
+        </svg>
+    </button>
+    <div class="floating-card-nav__menu" data-card-nav-menu hidden></div>
+</div>
 <footer class="site-footer">
     <div class="footer-content">
         <div class="footer-brand">© {% now "Y" %} BrainBoost Nachhilfe</div>
@@ -195,6 +211,9 @@
         var languageSwitch = document.querySelector("[data-language-switch]");
         var languageSwitchToggle = document.querySelector("[data-language-switch-toggle]");
         var languageSwitchMenu = document.querySelector("[data-language-switch-menu]");
+        var cardNav = document.querySelector("[data-card-nav]");
+        var cardNavToggle = document.querySelector("[data-card-nav-toggle]");
+        var cardNavMenu = document.querySelector("[data-card-nav-menu]");
         var menuIsOpen = false;
         var menuIsAnimating = false;
         var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -206,6 +225,15 @@
             languageSwitch.classList.toggle("is-open", isOpen);
             languageSwitchToggle.setAttribute("aria-expanded", String(isOpen));
             languageSwitchMenu.hidden = !isOpen;
+        }
+
+        function setCardNavState(isOpen) {
+            if (!cardNav || !cardNavToggle || !cardNavMenu) {
+                return;
+            }
+            cardNav.classList.toggle("is-open", isOpen);
+            cardNavToggle.setAttribute("aria-expanded", String(isOpen));
+            cardNavMenu.hidden = !isOpen;
         }
 
         function setMenuState(isOpen) {
@@ -307,6 +335,69 @@
             });
         }
 
+        function initCardNavigation() {
+            if (!cardNav || !cardNavToggle || !cardNavMenu) {
+                return;
+            }
+
+            var sections = [];
+            document.querySelectorAll(".page > .card").forEach(function (card) {
+                var heading = card.querySelector("h1, h2, h3, h4");
+                if (!heading) {
+                    return;
+                }
+
+                var title = heading.textContent.replace(/\s+/g, " ").trim();
+                if (!title) {
+                    return;
+                }
+
+                sections.push({
+                    title: title,
+                    target: card
+                });
+            });
+
+            if (!sections.length) {
+                cardNav.hidden = true;
+                return;
+            }
+
+            cardNav.hidden = false;
+            cardNavMenu.innerHTML = "";
+            sections.forEach(function (section) {
+                var button = document.createElement("button");
+                button.className = "floating-card-nav__item";
+                button.type = "button";
+                button.textContent = section.title;
+                button.addEventListener("click", function () {
+                    section.target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+                    setCardNavState(false);
+                });
+                cardNavMenu.appendChild(button);
+            });
+
+            setCardNavState(false);
+            cardNavToggle.addEventListener("click", function (event) {
+                event.stopPropagation();
+                setCardNavState(!cardNav.classList.contains("is-open"));
+            });
+            document.addEventListener("click", function (event) {
+                if (!cardNav.classList.contains("is-open")) {
+                    return;
+                }
+                if (cardNav.contains(event.target)) {
+                    return;
+                }
+                setCardNavState(false);
+            });
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    setCardNavState(false);
+                }
+            });
+        }
+
         function animateFaqItem(details, shouldOpen) {
             if (!details || details.open === shouldOpen || details.dataset.faqAnimating === "true") {
                 return;
@@ -398,6 +489,7 @@
         }
 
         initFaqAccordions();
+        initCardNavigation();
     })();
 </script>
 {% block scripts %}{% endblock %}

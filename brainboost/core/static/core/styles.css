@@ -146,6 +146,99 @@ strong.logo { color: var(--logo-turquoise); }
     text-align: left;
 }
 
+.floating-card-nav {
+    position: fixed;
+    right: 18px;
+    bottom: 24px;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.floating-card-nav[hidden] {
+    display: none;
+}
+
+.floating-card-nav__toggle {
+    border: none;
+    cursor: pointer;
+    border-radius: 14px;
+    background: var(--teal-dark);
+    color: var(--cream);
+    width: 54px;
+    height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.floating-card-nav__toggle:hover {
+    background: var(--teal);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 44px rgba(0,0,0,0.26);
+}
+
+.floating-card-nav__icon {
+    width: 25px;
+    height: 25px;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.floating-card-nav__menu {
+    width: min(320px, calc(100vw - 36px));
+    max-height: min(420px, calc(100vh - 120px));
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid rgba(44,138,138,0.18);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 18px 42px rgba(0,0,0,0.16);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.floating-card-nav__menu[hidden] {
+    display: none;
+}
+
+.floating-card-nav.is-open .floating-card-nav__menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.floating-card-nav__item {
+    width: 100%;
+    min-height: 38px;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    text-align: left;
+    font-weight: 800;
+    line-height: 1.2;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.floating-card-nav__item:hover {
+    background: rgba(44,138,138,0.12);
+    color: var(--teal-dark);
+    transform: translateY(-1px);
+}
+
 .brand {
     display: flex;
     align-items: center;
@@ -344,6 +437,7 @@ strong.logo { color: var(--logo-turquoise); }
     padding: 28px;
     box-shadow: var(--shadow);
     margin-bottom: 24px;
+    scroll-margin-top: 96px;
 }
 
 h1, h2, h3 {

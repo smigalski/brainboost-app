@@ -27,6 +27,21 @@
         gap: 10px;
         align-items: end;
     }
+    .invoice-filter-form {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
+        gap: 10px;
+        align-items: end;
+        margin: 12px 0 16px;
+    }
+    .invoice-filter-form label {
+        margin: 0;
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+    .invoice-filter-form select {
+        width: 100%;
+    }
     @media (max-width: 760px) {
         .invoice-list-item {
             flex-direction: column;
@@ -46,6 +61,9 @@
             align-items: stretch;
         }
         .invoice-discount-row {
+            grid-template-columns: 1fr;
+        }
+        .invoice-filter-form {
             grid-template-columns: 1fr;
         }
     }
@@ -109,6 +127,36 @@
 
 <div class="card">
     <h3>Meine Rechnungen</h3>
+    <form class="invoice-filter-form" method="get">
+        <div>
+            <label for="invoice-filter-student">SchülerInnen/StudentInnen</label>
+            <select id="invoice-filter-student" name="student">
+                <option value="">Alle</option>
+                {% for option in invoice_student_options %}
+                    <option value="{{ option.id }}" {% if option.id == invoice_filters.student %}selected{% endif %}>{{ option.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="invoice-filter-month">Monat</label>
+            <select id="invoice-filter-month" name="month">
+                <option value="">Alle</option>
+                {% for option in invoice_month_options %}
+                    <option value="{{ option.value }}" {% if option.value == invoice_filters.month %}selected{% endif %}>{{ option.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="invoice-filter-year">Jahr</label>
+            <select id="invoice-filter-year" name="year">
+                <option value="">Alle</option>
+                {% for year in invoice_year_options %}
+                    <option value="{{ year }}" {% if year == invoice_filters.year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="button" type="submit" style="padding:8px 12px;">Filtern</button>
+    </form>
     {% if tutor_invoices %}
         <ul class="list">
             {% for invoice in tutor_invoices %}
@@ -148,9 +196,9 @@
                                 <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Eingang bestätigen</button>
                             </form>
                         {% endif %}
-                        {% if invoice.parent_notification_links %}
+                        {% if invoice.notification_links %}
                             <div class="invoice-parent-links">
-                                {% for link in invoice.parent_notification_links %}
+                                {% for link in invoice.notification_links %}
                                     <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
                                 {% endfor %}
                             </div>
@@ -168,6 +216,39 @@
 {% if has_subordinate_tutors %}
     <div class="card">
         <h3>Rechnungen zugewiesener TutorInnen</h3>
+        <form class="invoice-filter-form" method="get">
+            <input type="hidden" name="student" value="{{ invoice_filters.student }}">
+            <input type="hidden" name="month" value="{{ invoice_filters.month }}">
+            <input type="hidden" name="year" value="{{ invoice_filters.year }}">
+            <div>
+                <label for="subordinate-invoice-filter-tutor">TutorInnen</label>
+                <select id="subordinate-invoice-filter-tutor" name="subordinate_tutor">
+                    <option value="">Alle</option>
+                    {% for option in subordinate_invoice_tutor_options %}
+                        <option value="{{ option.id }}" {% if option.id == subordinate_invoice_filters.tutor %}selected{% endif %}>{{ option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="subordinate-invoice-filter-month">Monat</label>
+                <select id="subordinate-invoice-filter-month" name="subordinate_month">
+                    <option value="">Alle</option>
+                    {% for option in subordinate_invoice_month_options %}
+                        <option value="{{ option.value }}" {% if option.value == subordinate_invoice_filters.month %}selected{% endif %}>{{ option.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="subordinate-invoice-filter-year">Jahr</label>
+                <select id="subordinate-invoice-filter-year" name="subordinate_year">
+                    <option value="">Alle</option>
+                    {% for year in subordinate_invoice_year_options %}
+                        <option value="{{ year }}" {% if year == subordinate_invoice_filters.year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="button" type="submit" style="padding:8px 12px;">Filtern</button>
+        </form>
         {% if subordinate_invoices %}
             <ul class="list">
                 {% for invoice in subordinate_invoices %}
@@ -213,9 +294,9 @@
                                     {% csrf_token %}
                                     <button class="button" type="submit" style="padding:6px 10px; background:#6fa94b; color:#10210a;">Eingang bestätigen</button>
                                 </form>
-                            {% elif invoice.parent_notification_links %}
+                            {% elif invoice.notification_links %}
                                 <div class="invoice-parent-links">
-                                    {% for link in invoice.parent_notification_links %}
+                                    {% for link in invoice.notification_links %}
                                         <a class="button" style="padding:6px 10px; background:#25d366; color:#10210a;" href="{{ link.url }}">News/Mail/WhatsApp an {{ link.name }}</a>
                                     {% endfor %}
                                 </div>

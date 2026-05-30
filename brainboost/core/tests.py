@@ -1762,6 +1762,134 @@ class InvoiceGenerationChargeableCancellationTests(TestCase):
         self.assertNotIn(early_cancelled.id, selected_ids)
 
 
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MEDIA_ROOT=tempfile.mkdtemp(),
+)
+class InvoiceUploadListFilterTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="tutor_invoice_filters",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student_user = CustomUser.objects.create_user(
+            username="student_invoice_filters",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Sina",
+            last_name="Filter",
+            email="sina@example.com",
+        )
+        self.student = StudentProfile.objects.create(
+            user=self.student_user,
+            phone_number="0176 12345678",
+        )
+        self.other_student_user = CustomUser.objects.create_user(
+            username="other_invoice_filters",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Oskar",
+            last_name="Andere",
+        )
+        self.other_student = StudentProfile.objects.create(user=self.other_student_user)
+        self.student.assigned_tutors.add(self.tutor)
+        self.other_student.assigned_tutors.add(self.tutor)
+        self.client.login(username="tutor_invoice_filters", password="test12345")
+
+    def _invoice(self, student, filename, year, month, tutor=None):
+        tutor = tutor or self.tutor
+        return Invoice.objects.create(
+            student=student,
+            uploaded_by=tutor,
+            approved_by=tutor,
+            approved_at=timezone.now(),
+            billing_year=year,
+            billing_month=month,
+            file=SimpleUploadedFile(filename, b"%PDF-1.4", content_type="application/pdf"),
+            amount_total=Decimal("25.00"),
+        )
+
+    def test_my_invoices_can_be_filtered_by_student_month_and_year(self):
+        matching = self._invoice(self.student, "matching.pdf", 2026, 3)
+        other_student = self._invoice(self.other_student, "other-student.pdf", 2026, 3)
+        other_month = self._invoice(self.student, "other-month.pdf", 2026, 4)
+        other_year = self._invoice(self.student, "other-year.pdf", 2025, 3)
+
+        response = self.client.get(
+            reverse("invoice_upload"),
+            {"student": str(self.student.id), "month": "3", "year": "2026"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context["tutor_invoices"]), [matching])
+        self.assertContains(response, "matching.pdf")
+        self.assertNotContains(response, "other-student.pdf")
+        self.assertNotContains(response, "other-month.pdf")
+        self.assertNotContains(response, "other-year.pdf")
+        self.assertIn(other_student.student_id, [option["id"] for option in response.context["invoice_student_options"]])
+
+    def test_student_without_parents_has_direct_notification_button_and_route(self):
+        invoice = self._invoice(self.student, "direct-student.pdf", 2026, 3)
+
+        response = self.client.get(reverse("invoice_upload"))
+
+        notify_url = reverse("invoice_notify_student", args=[invoice.id])
+        self.assertContains(response, notify_url)
+        self.assertContains(response, "News/Mail/WhatsApp an Sina Filter")
+
+        response = self.client.get(notify_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith("https://wa.me/4917612345678"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Neue Rechnung", mail.outbox[0].subject)
+
+    def test_subordinate_invoices_can_be_filtered_by_tutor_month_and_year(self):
+        subordinate_user = CustomUser.objects.create_user(
+            username="subordinate_invoice_filters",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutorin",
+        )
+        subordinate = TutorProfile.objects.create(user=subordinate_user)
+        other_subordinate_user = CustomUser.objects.create_user(
+            username="other_subordinate_invoice_filters",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tom",
+            last_name="Tutor",
+        )
+        other_subordinate = TutorProfile.objects.create(user=other_subordinate_user)
+        self.tutor.assigned_tutors.add(subordinate, other_subordinate)
+        matching = self._invoice(self.student, "subordinate-matching.pdf", 2026, 3, tutor=subordinate)
+        self._invoice(self.student, "subordinate-other-tutor.pdf", 2026, 3, tutor=other_subordinate)
+        self._invoice(self.student, "subordinate-other-month.pdf", 2026, 4, tutor=subordinate)
+        self._invoice(self.student, "subordinate-other-year.pdf", 2025, 3, tutor=subordinate)
+
+        response = self.client.get(
+            reverse("invoice_upload"),
+            {
+                "subordinate_tutor": str(subordinate.id),
+                "subordinate_month": "3",
+                "subordinate_year": "2026",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context["subordinate_invoices"]), [matching])
+        self.assertContains(response, "subordinate-matching.pdf")
+        self.assertNotContains(response, "subordinate-other-tutor.pdf")
+        self.assertNotContains(response, "subordinate-other-month.pdf")
+        self.assertNotContains(response, "subordinate-other-year.pdf")
+        self.assertIn(
+            other_subordinate.id,
+            [option["id"] for option in response.context["subordinate_invoice_tutor_options"]],
+        )
+
+
 class LessonStatusAutoCompleteTests(TestCase):
     def setUp(self):
         self.tutor_user = CustomUser.objects.create_user(

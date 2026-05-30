@@ -70,6 +70,7 @@ from .notifications import (
     notify_invoice_payment_received_tutor,
     notify_invoice_payment_selected,
     notify_invoice_pending_approval,
+    notify_invoice_student,
     notify_invoice_uploaded,
     notify_lesson_cancelled,
     notify_lesson_changed,
@@ -239,6 +240,21 @@ def _invoice_whatsapp_message(request, invoice: Invoice, parent: ParentProfile) 
     )
 
 
+def _invoice_student_whatsapp_message(request, invoice: Invoice) -> str:
+    invoice_url = request.build_absolute_uri(invoice.file.url)
+    portal_url = request.build_absolute_uri(reverse("invoice_list"))
+    student_name = _display_name(invoice.student.user)
+    tutor_name = _display_name(invoice.uploaded_by.user)
+    return (
+        f"Hallo {student_name},\n"
+        "eine neue Rechnung ist verfuegbar.\n"
+        f"TutorIn: {tutor_name}\n"
+        f"Faellig bis: {invoice.due_date.strftime('%d.%m.%Y')}\n"
+        f"PDF: {invoice_url}\n"
+        f"Portal: {portal_url}"
+    )
+
+
 def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
     links = []
     for parent in invoice.student.parents.select_related("user"):
@@ -253,6 +269,27 @@ def _invoice_parent_notification_links(request, invoice: Invoice) -> list[dict]:
             }
         )
     return links
+
+
+def _invoice_student_pays_directly(invoice: Invoice) -> bool:
+    return (
+        invoice.student.user.role == CustomUser.Roles.INDEPENDENT_STUDENT
+        or not invoice.student.parents.exists()
+    )
+
+
+def _invoice_student_notification_links(invoice: Invoice) -> list[dict]:
+    if not _invoice_student_pays_directly(invoice):
+        return []
+    student = invoice.student
+    if not student.user.email and not _normalize_whatsapp_number(student.phone_number):
+        return []
+    return [
+        {
+            "name": _display_name(student.user),
+            "url": reverse("invoice_notify_student", args=[invoice.id]),
+        }
+    ]
 
 
 def _lesson_calendar_title_for_user(user: CustomUser, lesson: Lesson) -> str:
@@ -385,6 +422,89 @@ def _invoice_period_parts(invoice: Invoice) -> tuple[int, int]:
         return invoice.billing_year, invoice.billing_month
     reference = timezone.localtime(invoice.uploaded_at) if invoice.uploaded_at else timezone.now()
     return reference.year, reference.month
+
+
+INVOICE_MONTH_NAMES = {
+    1: "Januar",
+    2: "Februar",
+    3: "März",
+    4: "April",
+    5: "Mai",
+    6: "Juni",
+    7: "Juli",
+    8: "August",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Dezember",
+}
+
+
+def _selected_positive_int(value: str) -> Optional[int]:
+    if not value:
+        return None
+    try:
+        selected = int(value)
+    except (TypeError, ValueError):
+        return None
+    return selected if selected > 0 else None
+
+
+def _invoice_filter_context(
+    invoices: list[Invoice],
+    request,
+    *,
+    person_field: str = "student",
+    query_prefix: str = "",
+):
+    person_param = f"{query_prefix}{person_field}"
+    month_param = f"{query_prefix}month"
+    year_param = f"{query_prefix}year"
+    selected_person = _selected_positive_int(request.GET.get(person_param))
+    selected_month = _selected_positive_int(request.GET.get(month_param))
+    selected_year = _selected_positive_int(request.GET.get(year_param))
+
+    person_options = {}
+    month_numbers = set()
+    years = set()
+    for invoice in invoices:
+        if person_field == "tutor":
+            person_options[invoice.uploaded_by_id] = _display_name(invoice.uploaded_by.user)
+        else:
+            person_options[invoice.student_id] = _display_name(invoice.student.user)
+        year, month = _invoice_period_parts(invoice)
+        years.add(year)
+        month_numbers.add(month)
+
+    filtered = []
+    for invoice in invoices:
+        year, month = _invoice_period_parts(invoice)
+        person_id = invoice.uploaded_by_id if person_field == "tutor" else invoice.student_id
+        if selected_person and person_id != selected_person:
+            continue
+        if selected_month and month != selected_month:
+            continue
+        if selected_year and year != selected_year:
+            continue
+        filtered.append(invoice)
+
+    return {
+        "invoices": filtered,
+        "filters": {
+            person_field: selected_person or "",
+            "month": selected_month or "",
+            "year": selected_year or "",
+        },
+        "person_options": [
+            {"id": person_id, "name": name}
+            for person_id, name in sorted(person_options.items(), key=lambda item: item[1].lower())
+        ],
+        "month_options": [
+            {"value": month, "label": INVOICE_MONTH_NAMES[month]}
+            for month in sorted(month_numbers)
+        ],
+        "year_options": sorted(years, reverse=True),
+    }
 
 
 def _next_invoice_number() -> int:
@@ -3595,22 +3715,41 @@ def invoice_upload(request):
 
     own_invoices = (
         Invoice.objects.filter(uploaded_by=tutor_profile)
-        .select_related("student__user", "approved_by__user")
+        .select_related("student__user", "uploaded_by__user", "approved_by__user")
+        .prefetch_related("student__parents__user")
         .order_by("-uploaded_at")
     )
     subordinate_invoices = (
         Invoice.objects.filter(uploaded_by__in=subordinate_tutors)
         .select_related("student__user", "uploaded_by__user", "approved_by__user")
+        .prefetch_related("student__parents__user")
         .order_by("-uploaded_at")
     )
+    own_invoice_context = _invoice_filter_context(list(own_invoices), request)
+    own_invoices = own_invoice_context["invoices"]
+    subordinate_invoice_context = _invoice_filter_context(
+        list(subordinate_invoices),
+        request,
+        person_field="tutor",
+        query_prefix="subordinate_",
+    )
+    subordinate_invoices = subordinate_invoice_context["invoices"]
     for invoice in own_invoices:
         invoice.parent_notification_links = (
             _invoice_parent_notification_links(request, invoice) if invoice.is_approved else []
         )
+        invoice.student_notification_links = (
+            _invoice_student_notification_links(invoice) if invoice.is_approved else []
+        )
+        invoice.notification_links = invoice.parent_notification_links + invoice.student_notification_links
     for invoice in subordinate_invoices:
         invoice.parent_notification_links = (
             _invoice_parent_notification_links(request, invoice) if invoice.is_approved else []
         )
+        invoice.student_notification_links = (
+            _invoice_student_notification_links(invoice) if invoice.is_approved else []
+        )
+        invoice.notification_links = invoice.parent_notification_links + invoice.student_notification_links
 
     return render(
         request,
@@ -3620,7 +3759,15 @@ def invoice_upload(request):
             "generate_form": generate_form,
             "heading": "Rechnungen",
             "tutor_invoices": own_invoices,
+            "invoice_filters": own_invoice_context["filters"],
+            "invoice_student_options": own_invoice_context["person_options"],
+            "invoice_month_options": own_invoice_context["month_options"],
+            "invoice_year_options": own_invoice_context["year_options"],
             "subordinate_invoices": subordinate_invoices,
+            "subordinate_invoice_filters": subordinate_invoice_context["filters"],
+            "subordinate_invoice_tutor_options": subordinate_invoice_context["person_options"],
+            "subordinate_invoice_month_options": subordinate_invoice_context["month_options"],
+            "subordinate_invoice_year_options": subordinate_invoice_context["year_options"],
             "has_subordinate_tutors": subordinate_tutors.exists(),
         },
     )
@@ -3689,6 +3836,44 @@ def invoice_notify_parent(request, invoice_id, parent_id):
         return redirect("invoice_upload")
 
     message = _invoice_whatsapp_message(request, invoice, parent)
+    return redirect(f"https://wa.me/{number}?text={quote(message)}")
+
+
+@login_required
+def invoice_notify_student(request, invoice_id):
+    _ensure_profile_for_user(request.user)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return redirect("dashboard")
+
+    tutor_profile = request.user.tutor_profile
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("student__user", "uploaded_by__user", "approved_by__user")
+        .prefetch_related("student__parents__user"),
+        pk=invoice_id,
+    )
+    can_manage = (
+        invoice.uploaded_by_id == tutor_profile.id
+        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
+    )
+    if not can_manage:
+        messages.error(request, "Du darfst diese Rechnung nicht an SchülerInnen/StudentInnen versenden.")
+        return redirect("invoice_upload")
+    if not invoice.is_approved:
+        messages.error(request, "Die Rechnung muss erst freigegeben werden.")
+        return redirect("invoice_upload")
+    if not _invoice_student_pays_directly(invoice):
+        messages.error(request, "Diese Rechnung wird über Eltern verwaltet.")
+        return redirect("invoice_upload")
+
+    _finalize_invoice_number_and_filename(invoice)
+    notify_invoice_student(request, invoice)
+
+    number = _normalize_whatsapp_number(invoice.student.phone_number)
+    if not number:
+        messages.info(request, "Für diese SchülerIn/StudentIn ist keine WhatsApp-Nummer hinterlegt. Die Mail wurde versendet, falls eine E-Mail-Adresse vorhanden ist.")
+        return redirect("invoice_upload")
+
+    message = _invoice_student_whatsapp_message(request, invoice)
     return redirect(f"https://wa.me/{number}?text={quote(message)}")
 
 

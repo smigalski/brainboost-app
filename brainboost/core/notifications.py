@@ -289,6 +289,29 @@ def notify_invoice_parent(request, invoice: Invoice, parent: ParentProfile) -> N
     )
 
 
+def notify_invoice_student(request, invoice: Invoice) -> None:
+    if not _notifications_enabled("invoice_uploaded"):
+        return
+    student_user = getattr(invoice.student, "user", None)
+    if not student_user or not student_user.email:
+        return
+    subject = f"Neue Rechnung für {student_user.username}"
+    context = {
+        "heading": "Neue Rechnung",
+        "invoice": invoice,
+        "student": invoice.student,
+        "tutor": invoice.uploaded_by,
+        "invoice_file_url": request.build_absolute_uri(invoice.file.url),
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "invoice_uploaded",
+        context,
+        [student_user.email],
+    )
+
+
 def notify_invoice_pending_approval(request, invoice: Invoice) -> None:
     if not _notifications_enabled("invoice_pending_approval"):
         return
