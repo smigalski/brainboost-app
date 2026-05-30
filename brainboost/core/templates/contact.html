@@ -250,7 +250,6 @@
             <section class="lead-section">
                 <h2 class="lead-section__title">{% trans "Nachricht" %}</h2>
                 <div class="lead-field">
-                    <label class="lead-label" for="{{ form.message.id_for_label }}">{{ form.message.label }}</label>
                     {{ form.message }}
                     {% if form.message.errors %}<p class="lead-error">{{ form.message.errors|join:", " }}</p>{% endif %}
                 </div>

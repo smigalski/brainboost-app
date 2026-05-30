@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Nachhilfe für Eltern in Braunschweig & online | BrainBoost" %}{% endblock %}
+{% block meta_description %}
+    <meta name="description" content="{% trans 'BrainBoost erklärt Eltern, wie individuelle Nachhilfe in Braunschweig und online organisiert wird: passende TutorInnen, klare Kommunikation und gezielte Förderung.' %}">
+{% endblock %}
+
+{% block extra_tracking %}
+<script type="text/plain" data-cookieconsent="marketing">
+    fbq("track", "ViewContent", {
+        content_name: "Eltern Nachhilfe Landingpage",
+        content_category: "parents"
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="lead-landing lead-landing--parent">
+    <section class="lead-hero">
+        <div class="lead-hero__content">
+            <span class="lead-eyebrow">{% trans "Für Eltern erklärt" %}</span>
+            <h1>{% trans "Nachhilfe für Eltern in Braunschweig und online" %}</h1>
+            <p>{% blocktrans trimmed %}Wenn dein Kind Unterstützung in Mathe, Deutsch, Englisch oder einem anderen Fach braucht, hilft BrainBoost dabei, den Bedarf klar einzuordnen und passende TutorInnen zu finden.{% endblocktrans %}</p>
+            <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="landing-eltern-hero">{% trans "Kostenlose Anfrage stellen" %}</a>
+        </div>
+        <div class="lead-hero__visual" aria-label="{% trans 'BrainBoost Eltern-Nachhilfe' %}">
+            <img src="{% static 'design/LogoPNG.png' %}" alt="{% trans 'BrainBoost Logo' %}">
+            <div>
+                <strong>{% trans "Klare Unterstützung für dein Kind" %}</strong>
+                <span>{% trans "Online oder vor Ort in Braunschweig, mit transparenter Abstimmung." %}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>{% trans "Was Eltern wichtig ist" %}</h2>
+        <div class="lead-card-grid">
+            <article class="lead-info-card">
+                <h3>{% trans "Passende TutorInnen" %}</h3>
+                <p>{% trans "Fach, Klassenstufe, Lernziel und Unterrichtsform werden vorab eingeordnet." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Individuelle Förderung" %}</h3>
+                <p>{% trans "Die Nachhilfe orientiert sich am konkreten Lernstand deines Kindes." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Transparente Kommunikation" %}</h3>
+                <p>{% trans "Absprachen zu Zeiten, Ort, Zielen und nächstem Schritt bleiben klar." %}</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lead-split">
+        <div class="lead-section-block">
+            <h2>{% trans "Typische Anliegen" %}</h2>
+            <ul class="lead-check-list">
+                <li>{% trans "Noten verbessern" %}</li>
+                <li>{% trans "Grundlagen aufholen" %}</li>
+                <li>{% trans "Klassenarbeiten vorbereiten" %}</li>
+                <li>{% trans "regelmäßige Lernbegleitung aufbauen" %}</li>
+            </ul>
+        </div>
+        <div class="lead-section-block">
+            <h2>{% trans "So läuft die Anfrage ab" %}</h2>
+            <ol class="lead-step-list">
+                <li>{% trans "Rolle Eltern auswählen und Anfrage senden" %}</li>
+                <li>{% trans "Fach, Ziel und Unterrichtsform abstimmen" %}</li>
+                <li>{% trans "passende Nachhilfe starten" %}</li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="lead-final-cta">
+        <h2>{% trans "Jetzt passende Nachhilfe für dein Kind anfragen" %}</h2>
+        <a class="button lead-cta" href="{% url 'contact' %}?role=parent" data-cta="landing-eltern-bottom">{% trans "Kostenlose Anfrage stellen" %}</a>
+        <a class="button ghost" href="{% url 'nachhilfe_anfrage' %}" data-cta="landing-eltern-overview">{% trans "Zur Übersicht" %}</a>
+    </section>
+</div>
+{% endblock %}

@@ -412,14 +412,41 @@ class LeadFormFlowTests(TestCase):
         self.assertContains(response, reverse("contact") + "?role=parent")
         self.assertContains(response, reverse("contact") + "?role=student")
         self.assertContains(response, reverse("contact") + "?role=tutor")
+        self.assertContains(response, reverse("landing_eltern"))
+        self.assertContains(response, reverse("landing_schuelerinnen"))
+        self.assertContains(response, reverse("tutor_werden"))
         self.assertContains(response, "Mehr über BrainBoost erfahren", count=5)
+        self.assertContains(response, "Für Eltern erklärt")
+        self.assertContains(response, "Für SchülerInnen erklärt")
+        self.assertContains(response, "Für Tutoren erklärt")
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-hero"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-parent"')
+        self.assertContains(response, 'data-cta="nachhilfe-braunschweig-parent-explained"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-parent-home"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-student"')
+        self.assertContains(response, 'data-cta="nachhilfe-braunschweig-student-explained"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-student-home"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-tutor"')
+        self.assertContains(response, 'data-cta="nachhilfe-braunschweig-tutor-explained"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-tutor-home"')
+
+    def test_role_landing_pages_link_to_prefilled_contact_form(self):
+        parent_response = self.client.get(reverse("landing_eltern"))
+        student_response = self.client.get(reverse("landing_schuelerinnen"))
+
+        self.assertEqual(parent_response.status_code, 200)
+        self.assertContains(parent_response, "Nachhilfe für Eltern in Braunschweig und online")
+        self.assertContains(parent_response, reverse("contact") + "?role=parent")
+        self.assertContains(parent_response, reverse("nachhilfe_anfrage"))
+        self.assertContains(parent_response, 'data-cta="landing-eltern-hero"')
+        self.assertContains(parent_response, 'data-cta="landing-eltern-bottom"')
+
+        self.assertEqual(student_response.status_code, 200)
+        self.assertContains(student_response, "Nachhilfe für SchülerInnen in Braunschweig und online")
+        self.assertContains(student_response, reverse("contact") + "?role=student")
+        self.assertContains(student_response, reverse("nachhilfe_anfrage"))
+        self.assertContains(student_response, 'data-cta="landing-schuelerinnen-hero"')
+        self.assertContains(student_response, 'data-cta="landing-schuelerinnen-bottom"')
 
     def test_contact_role_query_prefills_selected_role(self):
         for role in [Lead.Role.PARENT, Lead.Role.STUDENT, Lead.Role.TUTOR]:

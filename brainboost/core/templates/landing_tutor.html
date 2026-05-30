@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}Tutor werden: bis zu 1000 € monatlich | BrainBoost{% endblock %}
+{% block meta_description %}
+    <meta name="description" content="Werde TutorIn bei BrainBoost und gib flexibel Nachhilfe online oder vor Ort. Jetzt bewerben.">
+{% endblock %}
+
+{% block extra_tracking %}
+<script type="text/plain" data-cookieconsent="marketing">
+    fbq("track", "ViewContent", {
+        content_name: "Tutor Bewerbung Landingpage",
+        content_category: "tutors"
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="lead-landing lead-landing--tutor">
+    <section class="lead-hero">
+        <div class="lead-hero__content">
+            <span class="lead-eyebrow">{% trans "TutorInnen bei BrainBoost" %}</span>
+            <h1>{% trans "Werde TutorIn bei BrainBoost" %}</h1>
+            <p>{% trans "Gib flexible Nachhilfe, unterstütze SchülerInnen und arbeite mit einer modernen Plattform." %}</p>
+            <a class="button lead-cta" href="{% url 'contact' %}?role=tutor" data-cta="tutor-bewerbung-hero">{% trans "Als TutorIn bewerben" %}</a>
+        </div>
+        <div class="lead-hero__visual" aria-label="{% trans 'BrainBoost TutorInnen-Bewerbung' %}">
+            <img src="{% static 'design/LogoPNG.png' %}" alt="{% trans 'BrainBoost Logo' %}">
+            <div>
+                <strong>{% trans "Flexible Nachhilfe geben" %}</strong>
+                <span>{% trans "Fächer, Verfügbarkeit und passende SchülerInnen werden gemeinsam abgestimmt." %}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>{% trans "Vorteile" %}</h2>
+        <div class="lead-card-grid lead-card-grid--wide">
+            <article class="lead-info-card">
+                <h3>{% trans "Flexible Zeiten" %}</h3>
+                <p>{% trans "Stimme deine Verfügbarkeit passend zu Studium, Schule oder Beruf ab." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Online oder vor Ort" %}</h3>
+                <p>{% trans "Nachhilfe kann je nach Bedarf digital oder in Braunschweig vor Ort stattfinden." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Unterstützung durch BrainBoost" %}</h3>
+                <p>{% trans "Du arbeitest nicht allein, sondern mit einer klar organisierten Plattform im Hintergrund." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Klare Organisation" %}</h3>
+                <p>{% trans "Fächer, Zeiten und Kommunikation werden strukturiert abgestimmt." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Sinnvolle Tätigkeit mit Wirkung" %}</h3>
+                <p>{% trans "Du unterstützt SchülerInnen dabei, Inhalte besser zu verstehen und Lernziele anzugehen." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Ideal für Studierende" %}</h3>
+                <p>{% trans "Die Tätigkeit lässt sich gut mit einem flexiblen Wochenplan verbinden." %}</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lead-split">
+        <div class="lead-section-block">
+            <h2>{% trans "Für wen geeignet?" %}</h2>
+            <ul class="lead-check-list">
+                <li>{% trans "Studierende" %}</li>
+                <li>{% trans "OberstufenschülerInnen mit sehr guten Leistungen" %}</li>
+                <li>{% trans "Lehrkräfte" %}</li>
+                <li>{% trans "Personen mit Fachkompetenz und Freude am Erklären" %}</li>
+            </ul>
+        </div>
+        <div class="lead-section-block">
+            <h2>{% trans "Anforderungen" %}</h2>
+            <ul class="lead-check-list">
+                <li>{% trans "zuverlässig" %}</li>
+                <li>{% trans "fachlich sicher" %}</li>
+                <li>{% trans "freundlich und geduldig" %}</li>
+                <li>{% trans "klare Kommunikation" %}</li>
+                <li>{% trans "verantwortungsvoller Umgang mit SchülerInnen" %}</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>{% trans "Ablauf" %}</h2>
+        <ol class="lead-step-list lead-step-list--horizontal">
+            <li>{% trans "Kurze Bewerbung senden" %}</li>
+            <li>{% trans "Kennenlern" %}<wbr>{% trans "gespräch" %}</li>
+            <li>{% trans "Fächer und Verfügbarkeit klären" %}</li>
+            <li>{% trans "Aufnahme als TutorIn" %}</li>
+            <li>{% trans "passende SchülerInnen erhalten" %}</li>
+        </ol>
+    </section>
+
+    <section class="lead-final-cta">
+        <h2>{% trans "Jetzt als TutorIn bewerben" %}</h2>
+        <a class="button lead-cta" href="{% url 'contact' %}?role=tutor" data-cta="tutor-bewerbung-bottom">{% trans "Als TutorIn bewerben" %}</a>
+    </section>
+</div>
+{% endblock %}

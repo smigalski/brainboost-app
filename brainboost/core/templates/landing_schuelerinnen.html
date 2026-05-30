@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Nachhilfe für SchülerInnen in Braunschweig & online | BrainBoost" %}{% endblock %}
+{% block meta_description %}
+    <meta name="description" content="{% trans 'BrainBoost erklärt SchülerInnen, wie verständliche Nachhilfe in Braunschweig und online bei Hausaufgaben, Prüfungen und schwierigen Themen unterstützt.' %}">
+{% endblock %}
+
+{% block extra_tracking %}
+<script type="text/plain" data-cookieconsent="marketing">
+    fbq("track", "ViewContent", {
+        content_name: "SchuelerInnen Nachhilfe Landingpage",
+        content_category: "students"
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="lead-landing lead-landing--student">
+    <section class="lead-hero">
+        <div class="lead-hero__content">
+            <span class="lead-eyebrow">{% trans "Für SchülerInnen erklärt" %}</span>
+            <h1>{% trans "Nachhilfe für SchülerInnen in Braunschweig und online" %}</h1>
+            <p>{% blocktrans trimmed %}BrainBoost hilft dir, schwierige Themen verständlicher zu machen, Hausaufgaben besser zu bewältigen und dich gezielt auf Prüfungen vorzubereiten.{% endblocktrans %}</p>
+            <a class="button lead-cta" href="{% url 'contact' %}?role=student" data-cta="landing-schuelerinnen-hero">{% trans "Kostenlose Anfrage stellen" %}</a>
+        </div>
+        <div class="lead-hero__visual" aria-label="{% trans 'BrainBoost SchülerInnen-Nachhilfe' %}">
+            <img src="{% static 'design/LogoPNG.png' %}" alt="{% trans 'BrainBoost Logo' %}">
+            <div>
+                <strong>{% trans "Verständlich lernen" %}</strong>
+                <span>{% trans "Mathe, Deutsch, Englisch und weitere Fächer online oder in Braunschweig." %}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="lead-section-block">
+        <h2>{% trans "Wobei BrainBoost unterstützt" %}</h2>
+        <div class="lead-card-grid">
+            <article class="lead-info-card">
+                <h3>{% trans "Verständliche Erklärungen" %}</h3>
+                <p>{% trans "Themen werden so erklärt, dass du sie wirklich nachvollziehen kannst." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Flexible Termine" %}</h3>
+                <p>{% trans "Nachhilfe kann passend zu Schule, Freizeit und Prüfungsphasen abgestimmt werden." %}</p>
+            </article>
+            <article class="lead-info-card">
+                <h3>{% trans "Konkrete Ziele" %}</h3>
+                <p>{% trans "Du kannst gezielt an Hausaufgaben, Klassenarbeiten, Grundlagen oder Prüfungen arbeiten." %}</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="lead-split">
+        <div class="lead-section-block">
+            <h2>{% trans "Geeignet für" %}</h2>
+            <ul class="lead-check-list">
+                <li>{% trans "Mathe Nachhilfe" %}</li>
+                <li>{% trans "Deutsch Nachhilfe" %}</li>
+                <li>{% trans "Englisch Nachhilfe" %}</li>
+                <li>{% trans "weitere Fächer nach Bedarf" %}</li>
+            </ul>
+        </div>
+        <div class="lead-section-block">
+            <h2>{% trans "So funktioniert es" %}</h2>
+            <ol class="lead-step-list">
+                <li>{% trans "Rolle SchülerIn auswählen" %}</li>
+                <li>{% trans "Fach und Ziel angeben" %}</li>
+                <li>{% trans "passende Unterstützung bekommen" %}</li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="lead-final-cta">
+        <h2>{% trans "Jetzt Nachhilfe anfragen" %}</h2>
+        <a class="button lead-cta" href="{% url 'contact' %}?role=student" data-cta="landing-schuelerinnen-bottom">{% trans "Kostenlose Anfrage stellen" %}</a>
+        <a class="button ghost" href="{% url 'nachhilfe_anfrage' %}" data-cta="landing-schuelerinnen-overview">{% trans "Zur Übersicht" %}</a>
+    </section>
+</div>
+{% endblock %}

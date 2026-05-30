@@ -1088,11 +1088,19 @@ def lead_thanks_tutor(request):
 
 
 def nachhilfe_anfrage(request):
-    return render(request, "nachhilfe_anfrage.html")
+    return render(request, "landing_alle.html")
+
+
+def landing_eltern(request):
+    return render(request, "landing_eltern.html")
+
+
+def landing_schuelerinnen(request):
+    return render(request, "landing_schuelerinnen.html")
 
 
 def tutor_werden(request):
-    return render(request, "tutor_werden.html")
+    return render(request, "landing_tutor.html")
 
 
 def tutorin_werden(request):
