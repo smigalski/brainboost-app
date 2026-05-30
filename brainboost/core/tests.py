@@ -1,14 +1,17 @@
 from datetime import date, time, timedelta
 from decimal import Decimal
+from io import StringIO
 import json
 import tempfile
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
+from xml.etree import ElementTree
 
 from django.contrib.auth import authenticate
 from django.core import mail
+from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -45,6 +48,85 @@ from .views import (
     _lead_campaign_stats,
     _sync_temporary_tutor_assignments,
 )
+
+
+@override_settings(SESSION_ENGINE="django.contrib.sessions.backends.signed_cookies")
+class SeoEndpointTests(SimpleTestCase):
+    sitemap_urls = {
+        "https://www.nachhilfe-brainboost.de/",
+        "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/",
+        "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/eltern/",
+        "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/schuelerinnen/",
+        "https://www.nachhilfe-brainboost.de/tutor-werden/",
+    }
+
+    def test_robots_txt_references_sitemap(self):
+        response = self.client.get("/robots.txt")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/plain")
+        self.assertEqual(
+            response.content.decode(),
+            "User-agent: *\n"
+            "Allow: /\n\n"
+            "Sitemap: https://www.nachhilfe-brainboost.de/sitemap.xml\n",
+        )
+
+    def test_sitemap_xml_contains_public_landing_pages(self):
+        response = self.client.get("/sitemap.xml")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        root = ElementTree.fromstring(response.content)
+        namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+        locations = {
+            element.text for element in root.findall("sitemap:url/sitemap:loc", namespace)
+        }
+
+        self.assertEqual(locations, self.sitemap_urls)
+
+    @override_settings(DEBUG=False, INDEXNOW_KEY="abc123456789xyz")
+    def test_indexnow_key_file_returns_configured_key_in_production(self):
+        response = self.client.get("/abc123456789xyz.txt")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/plain")
+        self.assertEqual(response.content.decode(), "abc123456789xyz")
+
+    @override_settings(
+        DEBUG=False,
+        INDEXNOW_KEY="abc123456789xyz",
+        CANONICAL_DOMAIN="www.nachhilfe-brainboost.de",
+    )
+    @patch("core.management.commands.submit_indexnow.urlopen")
+    def test_submit_indexnow_posts_sitemap_urls(self, mocked_urlopen):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def getcode(self):
+                return 200
+
+        mocked_urlopen.return_value = Response()
+        output = StringIO()
+
+        call_command("submit_indexnow", stdout=output)
+
+        request = mocked_urlopen.call_args.args[0]
+        payload = json.loads(request.data.decode("utf-8"))
+        self.assertEqual(request.full_url, "https://api.indexnow.org/IndexNow")
+        self.assertEqual(payload["host"], "www.nachhilfe-brainboost.de")
+        self.assertEqual(payload["key"], "abc123456789xyz")
+        self.assertEqual(
+            payload["keyLocation"],
+            "https://www.nachhilfe-brainboost.de/abc123456789xyz.txt",
+        )
+        self.assertEqual(set(payload["urlList"]), self.sitemap_urls)
+        self.assertNotIn("abc123456789xyz", output.getvalue())
+        self.assertIn("Status 200", output.getvalue())
 
 
 @override_settings(

@@ -28,7 +28,9 @@ GRANT ALL PRIVILEGES ON DATABASE brainboost_local_test TO brainboost_user;
 
 ## Deployment-Hinweis
 - Environment-Variablen für Secret Key und Datenbank setzen.
+- Optional für IndexNow: `INDEXNOW_KEY` setzen.
 - Statische Dateien sammeln: `python manage.py collectstatic --noinput`
+- Nach dem Deployment öffentliche Seiten an IndexNow senden: `python manage.py submit_indexnow`
 
 
 MINI-Änderung

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
 
     'core',
 ]
@@ -148,6 +149,8 @@ STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY", "")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
+CANONICAL_DOMAIN = os.getenv("CANONICAL_DOMAIN", "www.nachhilfe-brainboost.de")
+INDEXNOW_KEY = os.getenv("INDEXNOW_KEY", "").strip()
 
 
 # Optional per-event toggles for notifications.
