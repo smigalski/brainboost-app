@@ -429,6 +429,65 @@ class LeadFormFlowTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.context["form"].initial["role"], role)
 
+    def test_contact_form_field_labels_are_translated(self):
+        expectations = {
+            "en": [
+                "Phone number",
+                "Preferred contact method",
+                "Current status",
+                "Grade levels",
+                "Please select",
+                "First and last name",
+            ],
+            "pl": [
+                "Numer telefonu",
+                "Preferowana forma kontaktu",
+                "Aktualny status",
+                "Poziomy klas",
+                "Proszę wybrać",
+                "Imię i nazwisko",
+            ],
+            "tr": [
+                "Telefon numarası",
+                "Tercih edilen iletişim yöntemi",
+                "Mevcut durum",
+                "Sınıf seviyeleri",
+                "Lütfen seçin",
+                "Ad ve soyad",
+            ],
+            "ru": [
+                "Номер телефона",
+                "Предпочтительный способ связи",
+                "Текущий статус",
+                "Классы",
+                "Пожалуйста, выберите",
+                "Имя и фамилия",
+            ],
+            "ar": [
+                "رقم الهاتف",
+                "طريقة التواصل المفضلة",
+                "الحالة الحالية",
+                "المراحل الدراسية",
+                "يرجى الاختيار",
+                "الاسم واللقب",
+            ],
+        }
+
+        for language, texts in expectations.items():
+            with self.subTest(language=language):
+                response = self.client.get(
+                    reverse("contact") + "?role=tutor",
+                    HTTP_ACCEPT_LANGUAGE=language,
+                )
+
+                self.assertEqual(response.status_code, 200)
+                for text in texts:
+                    self.assertContains(response, text)
+                self.assertNotContains(response, "Telefonnummer")
+                self.assertNotContains(response, "Bevorzugte Kontaktart")
+                self.assertNotContains(response, "Aktueller Status")
+                self.assertNotContains(response, "Klassenstufen")
+
     def test_tutor_landing_links_to_prefilled_contact_form(self):
         response = self.client.get(reverse("tutor_werden"))
 

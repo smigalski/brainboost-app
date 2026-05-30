@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-29 15:50+0200\n"
+"POT-Creation-Date: 2026-05-29 16:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,12 +34,207 @@ msgstr "İzinler"
 msgid "Important dates"
 msgstr "Önemli tarihler"
 
+#: brainboost/core/forms.py:145
+msgid ""
+"Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage gespeichert "
+"und verarbeitet werden."
+msgstr "Talebimin işlenmesi için bilgilerimin kaydedilmesini ve işlenmesini kabul ediyorum."
+
+#: brainboost/core/forms.py:149
+msgid "Bitte stimme der Verarbeitung deiner Angaben zu."
+msgstr "Lütfen bilgilerinizin işlenmesini kabul edin."
+
+#: brainboost/core/forms.py:195
+msgid "Ich frage an als"
+msgstr "Başvuru yapan kişi"
+
+#: brainboost/core/forms.py:196
+msgid "Name"
+msgstr "Ad"
+
+#: brainboost/core/forms.py:197 brainboost/core/forms.py:230
+msgid "E-Mail"
+msgstr "E-posta"
+
+#: brainboost/core/forms.py:198
+msgid "Telefonnummer"
+msgstr "Telefon numarası"
+
+#: brainboost/core/forms.py:199
+msgid "Bevorzugte Kontaktart"
+msgstr "Tercih edilen iletişim yöntemi"
+
+#: brainboost/core/forms.py:200
+msgid "Fach/Fächer"
+msgstr "Ders(ler)"
+
+#: brainboost/core/forms.py:201
+msgid "Klassenstufe"
+msgstr "Sınıf seviyesi"
+
+#: brainboost/core/forms.py:202
+msgid "Unterrichtsform"
+msgstr "Ders formatı"
+
+#: brainboost/core/forms.py:203
+msgid "Ziel der Nachhilfe"
+msgstr "Özel ders hedefi"
+
+#: brainboost/core/forms.py:204
+msgid "Dringlichkeit"
+msgstr "Aciliyet"
+
+#: brainboost/core/forms.py:205 brainboost/core/templates/contact.html:251
+msgid "Nachricht"
+msgstr "Mesaj"
+
+#: brainboost/core/forms.py:206
+msgid "Aktueller Status"
+msgstr "Mevcut durum"
+
+#: brainboost/core/forms.py:207
+msgid "Fächer"
+msgstr "Dersler"
+
+#: brainboost/core/forms.py:208
+msgid "Klassenstufen"
+msgstr "Sınıf seviyeleri"
+
+#: brainboost/core/forms.py:209
+msgid "Verfügbarkeit pro Woche"
+msgstr "Haftalık uygunluk"
+
+#: brainboost/core/forms.py:210
+msgid "Erfahrung"
+msgstr "Deneyim"
+
+#: brainboost/core/forms.py:211
+msgid "Motivation"
+msgstr "Motivasyon"
+
+#: brainboost/core/forms.py:214 brainboost/core/forms.py:215
+msgid "E-Mail oder Telefonnummer reicht aus."
+msgstr "E-posta veya telefon numarası yeterlidir."
+
+#: brainboost/core/forms.py:221 brainboost/core/templates/contact.html:147
+msgid "Elternteil"
+msgstr "Ebeveyn"
+
+#: brainboost/core/forms.py:222 brainboost/core/templates/contact.html:148
+msgid "SchülerIn"
+msgstr "Öğrenci"
+
+#: brainboost/core/forms.py:223 brainboost/core/templates/contact.html:149
+msgid "TutorIn"
+msgstr "Eğitmen"
+
+#: brainboost/core/forms.py:227 brainboost/core/forms.py:233
+#: brainboost/core/forms.py:239 brainboost/core/forms.py:247
+msgid "Bitte auswählen"
+msgstr "Lütfen seçin"
+
+#: brainboost/core/forms.py:228
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: brainboost/core/forms.py:229
+msgid "Telefon"
+msgstr "Telefon"
+
+#: brainboost/core/forms.py:234
+msgid "Online"
+msgstr "Çevrimiçi"
+
+#: brainboost/core/forms.py:235
+msgid "Vor Ort"
+msgstr "Yüz yüze"
+
+#: brainboost/core/forms.py:236
+msgid "Beides"
+msgstr "İkisi de"
+
+#: brainboost/core/forms.py:240
+msgid "SchülerIn Oberstufe"
+msgstr "Lise öğrencisi"
+
+#: brainboost/core/forms.py:241
+msgid "StudentIn"
+msgstr "Üniversite öğrencisi"
+
+#: brainboost/core/forms.py:242
+msgid "Lehrkraft"
+msgstr "Öğretmen"
+
+#: brainboost/core/forms.py:243
+msgid "Berufstätig"
+msgstr "Çalışan"
+
+#: brainboost/core/forms.py:244
+msgid "Sonstiges"
+msgstr "Diğer"
+
+#: brainboost/core/forms.py:248
+msgid "Noch keine Erfahrung"
+msgstr "Henüz deneyim yok"
+
+#: brainboost/core/forms.py:249
+msgid "Etwas Erfahrung"
+msgstr "Biraz deneyim"
+
+#: brainboost/core/forms.py:250
+msgid "Regelmäßig Nachhilfe gegeben"
+msgstr "Düzenli özel ders deneyimi"
+
+#: brainboost/core/forms.py:251
+msgid "Professionelle Unterrichtserfahrung"
+msgstr "Profesyonel öğretim deneyimi"
+
+#: brainboost/core/forms.py:255
+msgid "Vor- und Nachname"
+msgstr "Ad ve soyad"
+
+#: brainboost/core/forms.py:258
+msgid "z. B. Mathe, Englisch"
+msgstr "örn. matematik, İngilizce"
+
+#: brainboost/core/forms.py:259
+msgid "z. B. 8. Klasse"
+msgstr "örn. 8. sınıf"
+
+#: brainboost/core/forms.py:260
+msgid "z. B. Noten verbessern, Prüfung vorbereiten"
+msgstr "örn. notları iyileştirmek, sınava hazırlanmak"
+
+#: brainboost/core/forms.py:261
+msgid "z. B. möglichst bald, innerhalb der nächsten Wochen"
+msgstr "örn. mümkün olan en kısa sürede, önümüzdeki haftalarda"
+
+#: brainboost/core/forms.py:262
+msgid "z. B. Mathe, Physik, Englisch"
+msgstr "örn. matematik, fizik, İngilizce"
+
+#: brainboost/core/forms.py:263
+msgid "z. B. Klasse 5-10, Oberstufe"
+msgstr "örn. 5-10. sınıflar, lise"
+
+#: brainboost/core/forms.py:264
+msgid "z. B. 4-6 Stunden, Mo/Di abends"
+msgstr "örn. 4-6 saat, Pzt/Sal akşamları"
+
+#: brainboost/core/forms.py:303
+msgid "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
+msgstr "Lütfen en az bir e-posta adresi veya telefon numarası girin."
+
+#: brainboost/core/forms.py:310 brainboost/core/forms.py:320
+msgid "Dieses Feld ist erforderlich."
+msgstr "Bu alan zorunludur."
+
 #: brainboost/core/templates/base.html:40
 msgid "icon"
 msgstr "simge"
 
 #: brainboost/core/templates/base.html:43
-#: brainboost/core/templates/nachhilfe_anfrage.html:22
+#: brainboost/core/templates/nachhilfe_anfrage.html:132
 msgid "BrainBoost Nachhilfe"
 msgstr "BrainBoost Özel Ders"
 
@@ -142,20 +337,6 @@ msgstr "Sen ..."
 msgid "Du bist"
 msgstr "Sen"
 
-#: brainboost/core/templates/contact.html:147
-msgid "Elternteil"
-msgstr "Ebeveyn"
-
-#: brainboost/core/templates/contact.html:148
-msgid "SchülerIn"
-msgstr "Öğrenci"
-
-#: brainboost/core/templates/contact.html:149
-#, fuzzy
-#| msgid "TutorIn werden"
-msgid "TutorIn"
-msgstr "Eğitmen Olmak"
-
 #: brainboost/core/templates/contact.html:184
 #, fuzzy
 #| msgid "BrainBoost Nachhilfe"
@@ -167,10 +348,6 @@ msgstr "BrainBoost Özel Ders"
 #| msgid "Profil"
 msgid "TutorIn-Profil"
 msgstr "Profil"
-
-#: brainboost/core/templates/contact.html:251
-msgid "Nachricht"
-msgstr "Mesaj"
 
 #: brainboost/core/templates/contact.html:265
 msgid "Anfrage senden"
@@ -522,20 +699,25 @@ msgstr "Şehir merkezindeki merkezi buluşma noktası"
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:4
 msgid "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
-msgstr "Braunschweig ve çevrimiçi özel ders | Matematik, İngilizce, Almanca | BrainBoost"
+msgstr ""
+"Braunschweig ve çevrimiçi özel ders | Matematik, İngilizce, Almanca | "
+"BrainBoost"
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:6
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online: Mathe, Deutsch, Englisch "
 "und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos "
 "anfragen."
-msgstr "Braunschweig’da ve çevrimiçi kişiye özel ders: matematik, Almanca, İngilizce ve diğer dersler. Ebeveynler, öğrenciler ve eğitmenler için. Şimdi ücretsiz talep gönderin."
+msgstr ""
+"Braunschweig’da ve çevrimiçi kişiye özel ders: matematik, Almanca, İngilizce "
+"ve diğer dersler. Ebeveynler, öğrenciler ve eğitmenler için. Şimdi ücretsiz "
+"talep gönderin."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:23
+#: brainboost/core/templates/nachhilfe_anfrage.html:133
 msgid "Nachhilfe in Braunschweig und online"
 msgstr "Braunschweig&#x27;da ve çevrimiçi özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:24
+#: brainboost/core/templates/nachhilfe_anfrage.html:134
 msgid ""
 "BrainBoost verbindet individuelle Nachhilfe mit klarer Organisation: Online "
 "Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und "
@@ -545,36 +727,36 @@ msgstr ""
 "Braunschweig&#x27;da matematik, Almanca, İngilizce ve diğer dersler için "
 "çevrimiçi özel dersler ve öğretmenler."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:26
-#: brainboost/core/templates/nachhilfe_anfrage.html:58
-#: brainboost/core/templates/nachhilfe_anfrage.html:74
-#: brainboost/core/templates/nachhilfe_anfrage.html:90
-#: brainboost/core/templates/nachhilfe_anfrage.html:132
+#: brainboost/core/templates/nachhilfe_anfrage.html:136
+#: brainboost/core/templates/nachhilfe_anfrage.html:168
+#: brainboost/core/templates/nachhilfe_anfrage.html:184
+#: brainboost/core/templates/nachhilfe_anfrage.html:200
+#: brainboost/core/templates/nachhilfe_anfrage.html:242
 msgid "Kostenlose Anfrage stellen"
 msgstr "Ücretsiz teklif isteyin"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:27
-#: brainboost/core/templates/nachhilfe_anfrage.html:59
-#: brainboost/core/templates/nachhilfe_anfrage.html:75
-#: brainboost/core/templates/nachhilfe_anfrage.html:91
-#: brainboost/core/templates/nachhilfe_anfrage.html:133
+#: brainboost/core/templates/nachhilfe_anfrage.html:137
+#: brainboost/core/templates/nachhilfe_anfrage.html:169
+#: brainboost/core/templates/nachhilfe_anfrage.html:185
+#: brainboost/core/templates/nachhilfe_anfrage.html:201
+#: brainboost/core/templates/nachhilfe_anfrage.html:243
 msgid "Mehr über BrainBoost erfahren"
 msgstr "BrainBoost hakkında daha fazla bilgi edinin"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:30
+#: brainboost/core/templates/nachhilfe_anfrage.html:140
 msgid "BrainBoost Lernbegleitung"
 msgstr "BrainBoost öğrenme desteği"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:31
+#: brainboost/core/templates/nachhilfe_anfrage.html:141
 msgid "BrainBoost Logo"
 msgstr "BrainBoost logosu"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:33
-#: brainboost/core/templates/nachhilfe_anfrage.html:122
+#: brainboost/core/templates/nachhilfe_anfrage.html:143
+#: brainboost/core/templates/nachhilfe_anfrage.html:232
 msgid "Nachhilfe Braunschweig"
 msgstr "Braunschweig özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:34
+#: brainboost/core/templates/nachhilfe_anfrage.html:144
 msgid ""
 "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder "
 "vor Ort möglich."
@@ -582,11 +764,11 @@ msgstr ""
 "Ebeveynler, öğrenciler ve özel öğretmenler için uygun öğrenim desteği. "
 "Çevrimiçi veya yüz yüze olarak sunulabilir."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:40
+#: brainboost/core/templates/nachhilfe_anfrage.html:150
 msgid "Individuelle Nachhilfe für Braunschweig"
 msgstr "Braunschweig&#x27;da Kişiye Özel Özel Ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:41
+#: brainboost/core/templates/nachhilfe_anfrage.html:151
 msgid ""
 "Ob Mathe Nachhilfe Braunschweig, Englisch Nachhilfe Braunschweig oder "
 "Deutsch Nachhilfe Braunschweig: Entscheidend ist, dass Unterstützung zum "
@@ -599,19 +781,19 @@ msgstr ""
 "Braunschweig&#x27;da veya çevrimiçi olarak uygun özel dersin ayarlanmasına "
 "yardımcı olur."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:45
+#: brainboost/core/templates/nachhilfe_anfrage.html:155
 msgid "Nachhilfe passend zu deiner Rolle"
 msgstr "Rolüne uygun özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:48
+#: brainboost/core/templates/nachhilfe_anfrage.html:158
 msgid "Eltern"
 msgstr "Ebeveynler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:49
+#: brainboost/core/templates/nachhilfe_anfrage.html:159
 msgid "Für Eltern"
 msgstr "Ebeveynler için"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:50
+#: brainboost/core/templates/nachhilfe_anfrage.html:160
 msgid ""
 "Eltern suchen zuverlässige, individuelle Unterstützung für ihr Kind. "
 "BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende "
@@ -622,33 +804,33 @@ msgstr ""
 "yardımcı olur ve Braunschweig’da veya çevrimiçi olarak uygun özel "
 "öğretmenler bulmanızı sağlar."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:52
+#: brainboost/core/templates/nachhilfe_anfrage.html:162
 msgid "passende TutorInnen"
 msgstr "uygun eğitmenler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:53
+#: brainboost/core/templates/nachhilfe_anfrage.html:163
 msgid "individuelle Förderung"
 msgstr "kişiye özel destek"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:54
-#: brainboost/core/templates/nachhilfe_anfrage.html:125
+#: brainboost/core/templates/nachhilfe_anfrage.html:164
+#: brainboost/core/templates/nachhilfe_anfrage.html:235
 msgid "transparente Kommunikation"
 msgstr "şeffaf iletişim"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:55
-#: brainboost/core/templates/nachhilfe_anfrage.html:71
+#: brainboost/core/templates/nachhilfe_anfrage.html:165
+#: brainboost/core/templates/nachhilfe_anfrage.html:181
 msgid "online oder in Braunschweig"
 msgstr "çevrimiçi veya Braunschweig’da"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:64
+#: brainboost/core/templates/nachhilfe_anfrage.html:174
 msgid "SchülerInnen"
 msgstr "Öğrenciler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:65
+#: brainboost/core/templates/nachhilfe_anfrage.html:175
 msgid "Für SchülerInnen"
 msgstr "Öğrenciler için"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:66
+#: brainboost/core/templates/nachhilfe_anfrage.html:176
 msgid ""
 "SchülerInnen erhalten verständliche Unterstützung bei Hausaufgaben, "
 "Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und "
@@ -658,27 +840,27 @@ msgstr ""
 "anlaşılır bir destek alırlar. Özel dersler somut, esnek ve öğrencinin kendi "
 "öğrenme düzeyine uygun olarak düzenlenir."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:68
+#: brainboost/core/templates/nachhilfe_anfrage.html:178
 msgid "verständliche Erklärungen"
 msgstr "anlaşılır açıklamalar"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:69
+#: brainboost/core/templates/nachhilfe_anfrage.html:179
 msgid "flexible Termine"
 msgstr "esnek randevular"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:70
+#: brainboost/core/templates/nachhilfe_anfrage.html:180
 msgid "Mathe, Deutsch, Englisch und weitere Fächer"
 msgstr "Matematik, Almanca, İngilizce ve diğer dersler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:80
+#: brainboost/core/templates/nachhilfe_anfrage.html:190
 msgid "TutorInnen"
 msgstr "Eğitmenler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:81
+#: brainboost/core/templates/nachhilfe_anfrage.html:191
 msgid "Für TutorInnen"
 msgstr "Eğitmenler için"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:82
+#: brainboost/core/templates/nachhilfe_anfrage.html:192
 msgid ""
 "TutorInnen können über BrainBoost Nachhilfe anbieten und SchülerInnen "
 "unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf "
@@ -689,27 +871,27 @@ msgstr ""
 "olup, esnek bir şekilde çevrimiçi veya yüz yüze özel derslere uygun olarak "
 "tasarlanmıştır."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:84
+#: brainboost/core/templates/nachhilfe_anfrage.html:194
 msgid "strukturierter Vermittlungsprozess"
 msgstr "yapılandırılmış arabuluculuk süreci"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:85
+#: brainboost/core/templates/nachhilfe_anfrage.html:195
 msgid "professionelle Außendarstellung"
 msgstr "profesyonel imaj"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:86
+#: brainboost/core/templates/nachhilfe_anfrage.html:196
 msgid "digitale Unterstützung über die WebApp"
 msgstr "Web uygulaması üzerinden dijital destek"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:87
+#: brainboost/core/templates/nachhilfe_anfrage.html:197
 msgid "flexible Nachhilfe online oder vor Ort"
 msgstr "Esnek özel ders: çevrimiçi veya yerinde"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:99
+#: brainboost/core/templates/nachhilfe_anfrage.html:209
 msgid "Fächer und Ziele"
 msgstr "Dersler ve Hedefler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:101
+#: brainboost/core/templates/nachhilfe_anfrage.html:211
 msgid ""
 "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und "
 "Prüfungsvorbereitung"
@@ -717,7 +899,7 @@ msgstr ""
 "Braunschweig&#x27;da temel konular, dönem ödevleri ve sınav hazırlığı için "
 "matematik dersleri"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:102
+#: brainboost/core/templates/nachhilfe_anfrage.html:212
 msgid ""
 "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere "
 "Ausdrucksweise"
@@ -725,7 +907,7 @@ msgstr ""
 "Braunschweig&#x27;da gramer, metinler ve kendinden emin ifade becerileri "
 "üzerine Almanca özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:103
+#: brainboost/core/templates/nachhilfe_anfrage.html:213
 msgid ""
 "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche "
 "Sicherheit"
@@ -733,36 +915,36 @@ msgstr ""
 "Braunschweig&#x27;da kelime, gramer ve konuşma becerilerini geliştirmeye "
 "yönelik İngilizce özel dersleri"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:104
+#: brainboost/core/templates/nachhilfe_anfrage.html:214
 msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
 msgstr "İhtiyaca ve uygunluğa göre diğer dersler"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:108
+#: brainboost/core/templates/nachhilfe_anfrage.html:218
 msgid "Ablauf"
 msgstr "Akış"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:110
+#: brainboost/core/templates/nachhilfe_anfrage.html:220
 msgid "Anfrage ausfüllen"
 msgstr "Formu doldurun"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:111
+#: brainboost/core/templates/nachhilfe_anfrage.html:221
 msgid "Lernziel und passende Unterrichtsform abstimmen"
 msgstr ""
 "Öğrenim hedefini ve uygun öğretim yöntemini birbiriyle uyumlu hale getirmek"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:112
+#: brainboost/core/templates/nachhilfe_anfrage.html:222
 msgid "geeignete TutorInnen in Braunschweig oder online finden"
 msgstr "Braunschweig&#x27;da veya çevrimiçi olarak uygun öğretmenler bulmak"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:113
+#: brainboost/core/templates/nachhilfe_anfrage.html:223
 msgid "individuelle Nachhilfe starten"
 msgstr "Kişiye özel derslere başlamak"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:119
+#: brainboost/core/templates/nachhilfe_anfrage.html:229
 msgid "Online Nachhilfe und Nachhilfe vor Ort"
 msgstr "Çevrimiçi özel ders ve yerinde özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:120
+#: brainboost/core/templates/nachhilfe_anfrage.html:230
 msgid ""
 "BrainBoost eignet sich für regelmäßige Lernbegleitung, gezielte "
 "Prüfungsvorbereitung und kurzfristige Unterstützung. Die Nachhilfe kann "
@@ -774,15 +956,15 @@ msgstr ""
 "verilebilir veya Braunschweig&#x27;daki öğretmenlerle koordineli olarak "
 "düzenlenebilir."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:123
+#: brainboost/core/templates/nachhilfe_anfrage.html:233
 msgid "Online Nachhilfe"
 msgstr "Çevrimiçi özel ders"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:124
+#: brainboost/core/templates/nachhilfe_anfrage.html:234
 msgid "Mathe, Deutsch, Englisch"
 msgstr "Matematik, Almanca, İngilizce"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:130
+#: brainboost/core/templates/nachhilfe_anfrage.html:240
 msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
 msgstr ""
 "Braunschweig&#x27;da veya çevrimiçi olarak size uygun özel ders için şimdi "

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-29 15:50+0200\n"
+"POT-Creation-Date: 2026-05-29 16:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,12 +35,207 @@ msgstr "الأذونات"
 msgid "Important dates"
 msgstr "تواريخ مهمة"
 
+#: brainboost/core/forms.py:145
+msgid ""
+"Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage gespeichert "
+"und verarbeitet werden."
+msgstr "أوافق على حفظ بياناتي ومعالجتها للتعامل مع طلبي."
+
+#: brainboost/core/forms.py:149
+msgid "Bitte stimme der Verarbeitung deiner Angaben zu."
+msgstr "يرجى الموافقة على معالجة بياناتك."
+
+#: brainboost/core/forms.py:195
+msgid "Ich frage an als"
+msgstr "أتقدم بطلبي بصفتي"
+
+#: brainboost/core/forms.py:196
+msgid "Name"
+msgstr "الاسم"
+
+#: brainboost/core/forms.py:197 brainboost/core/forms.py:230
+msgid "E-Mail"
+msgstr "البريد الإلكتروني"
+
+#: brainboost/core/forms.py:198
+msgid "Telefonnummer"
+msgstr "رقم الهاتف"
+
+#: brainboost/core/forms.py:199
+msgid "Bevorzugte Kontaktart"
+msgstr "طريقة التواصل المفضلة"
+
+#: brainboost/core/forms.py:200
+msgid "Fach/Fächer"
+msgstr "المادة/المواد"
+
+#: brainboost/core/forms.py:201
+msgid "Klassenstufe"
+msgstr "الصف الدراسي"
+
+#: brainboost/core/forms.py:202
+msgid "Unterrichtsform"
+msgstr "شكل الدرس"
+
+#: brainboost/core/forms.py:203
+msgid "Ziel der Nachhilfe"
+msgstr "هدف الدروس الخصوصية"
+
+#: brainboost/core/forms.py:204
+msgid "Dringlichkeit"
+msgstr "درجة الاستعجال"
+
+#: brainboost/core/forms.py:205 brainboost/core/templates/contact.html:251
+msgid "Nachricht"
+msgstr "رسالة"
+
+#: brainboost/core/forms.py:206
+msgid "Aktueller Status"
+msgstr "الحالة الحالية"
+
+#: brainboost/core/forms.py:207
+msgid "Fächer"
+msgstr "المواد"
+
+#: brainboost/core/forms.py:208
+msgid "Klassenstufen"
+msgstr "المراحل الدراسية"
+
+#: brainboost/core/forms.py:209
+msgid "Verfügbarkeit pro Woche"
+msgstr "التوفر الأسبوعي"
+
+#: brainboost/core/forms.py:210
+msgid "Erfahrung"
+msgstr "الخبرة"
+
+#: brainboost/core/forms.py:211
+msgid "Motivation"
+msgstr "الدافع"
+
+#: brainboost/core/forms.py:214 brainboost/core/forms.py:215
+msgid "E-Mail oder Telefonnummer reicht aus."
+msgstr "يكفي إدخال البريد الإلكتروني أو رقم الهاتف."
+
+#: brainboost/core/forms.py:221 brainboost/core/templates/contact.html:147
+msgid "Elternteil"
+msgstr "ولي أمر"
+
+#: brainboost/core/forms.py:222 brainboost/core/templates/contact.html:148
+msgid "SchülerIn"
+msgstr "طالب/طالبة"
+
+#: brainboost/core/forms.py:223 brainboost/core/templates/contact.html:149
+msgid "TutorIn"
+msgstr "معلم/معلمة خصوصي"
+
+#: brainboost/core/forms.py:227 brainboost/core/forms.py:233
+#: brainboost/core/forms.py:239 brainboost/core/forms.py:247
+msgid "Bitte auswählen"
+msgstr "يرجى الاختيار"
+
+#: brainboost/core/forms.py:228
+msgid "WhatsApp"
+msgstr "واتساب"
+
+#: brainboost/core/forms.py:229
+msgid "Telefon"
+msgstr "الهاتف"
+
+#: brainboost/core/forms.py:234
+msgid "Online"
+msgstr "عبر الإنترنت"
+
+#: brainboost/core/forms.py:235
+msgid "Vor Ort"
+msgstr "حضوريًا"
+
+#: brainboost/core/forms.py:236
+msgid "Beides"
+msgstr "كلاهما"
+
+#: brainboost/core/forms.py:240
+msgid "SchülerIn Oberstufe"
+msgstr "طالب/طالبة في المرحلة العليا"
+
+#: brainboost/core/forms.py:241
+msgid "StudentIn"
+msgstr "طالب/طالبة جامعي"
+
+#: brainboost/core/forms.py:242
+msgid "Lehrkraft"
+msgstr "معلم/معلمة"
+
+#: brainboost/core/forms.py:243
+msgid "Berufstätig"
+msgstr "موظف/موظفة"
+
+#: brainboost/core/forms.py:244
+msgid "Sonstiges"
+msgstr "غير ذلك"
+
+#: brainboost/core/forms.py:248
+msgid "Noch keine Erfahrung"
+msgstr "لا توجد خبرة بعد"
+
+#: brainboost/core/forms.py:249
+msgid "Etwas Erfahrung"
+msgstr "بعض الخبرة"
+
+#: brainboost/core/forms.py:250
+msgid "Regelmäßig Nachhilfe gegeben"
+msgstr "خبرة منتظمة في تقديم الدروس الخصوصية"
+
+#: brainboost/core/forms.py:251
+msgid "Professionelle Unterrichtserfahrung"
+msgstr "خبرة تدريس مهنية"
+
+#: brainboost/core/forms.py:255
+msgid "Vor- und Nachname"
+msgstr "الاسم واللقب"
+
+#: brainboost/core/forms.py:258
+msgid "z. B. Mathe, Englisch"
+msgstr "مثلاً الرياضيات، الإنجليزية"
+
+#: brainboost/core/forms.py:259
+msgid "z. B. 8. Klasse"
+msgstr "مثلاً الصف الثامن"
+
+#: brainboost/core/forms.py:260
+msgid "z. B. Noten verbessern, Prüfung vorbereiten"
+msgstr "مثلاً تحسين الدرجات، التحضير للامتحان"
+
+#: brainboost/core/forms.py:261
+msgid "z. B. möglichst bald, innerhalb der nächsten Wochen"
+msgstr "مثلاً في أقرب وقت ممكن، خلال الأسابيع القادمة"
+
+#: brainboost/core/forms.py:262
+msgid "z. B. Mathe, Physik, Englisch"
+msgstr "مثلاً الرياضيات، الفيزياء، الإنجليزية"
+
+#: brainboost/core/forms.py:263
+msgid "z. B. Klasse 5-10, Oberstufe"
+msgstr "مثلاً الصفوف 5-10، المرحلة العليا"
+
+#: brainboost/core/forms.py:264
+msgid "z. B. 4-6 Stunden, Mo/Di abends"
+msgstr "مثلاً 4-6 ساعات، مساء الاثنين/الثلاثاء"
+
+#: brainboost/core/forms.py:303
+msgid "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
+msgstr "يرجى إدخال بريد إلكتروني أو رقم هاتف واحد على الأقل."
+
+#: brainboost/core/forms.py:310 brainboost/core/forms.py:320
+msgid "Dieses Feld ist erforderlich."
+msgstr "هذا الحقل مطلوب."
+
 #: brainboost/core/templates/base.html:40
 msgid "icon"
 msgstr "رمز"
 
 #: brainboost/core/templates/base.html:43
-#: brainboost/core/templates/nachhilfe_anfrage.html:22
+#: brainboost/core/templates/nachhilfe_anfrage.html:132
 msgid "BrainBoost Nachhilfe"
 msgstr "دروس خصوصية BrainBoost"
 
@@ -143,20 +338,6 @@ msgstr "أنت..."
 msgid "Du bist"
 msgstr "أنت"
 
-#: brainboost/core/templates/contact.html:147
-msgid "Elternteil"
-msgstr "أحد الوالدين"
-
-#: brainboost/core/templates/contact.html:148
-msgid "SchülerIn"
-msgstr "طالب/طالبة"
-
-#: brainboost/core/templates/contact.html:149
-#, fuzzy
-#| msgid "TutorIn werden"
-msgid "TutorIn"
-msgstr "انضم إلى فريق المدربين"
-
 #: brainboost/core/templates/contact.html:184
 #, fuzzy
 #| msgid "BrainBoost Nachhilfe"
@@ -168,10 +349,6 @@ msgstr "دروس خصوصية BrainBoost"
 #| msgid "Profil"
 msgid "TutorIn-Profil"
 msgstr "الملف الشخصي"
-
-#: brainboost/core/templates/contact.html:251
-msgid "Nachricht"
-msgstr "رسالة"
 
 #: brainboost/core/templates/contact.html:265
 msgid "Anfrage senden"
@@ -521,20 +698,25 @@ msgstr "نقطة التقاء رئيسية في وسط المدينة"
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:4
 msgid "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
-msgstr "دروس خصوصية في براونشفايغ وعبر الإنترنت | رياضيات، إنجليزية، ألمانية | BrainBoost"
+msgstr ""
+"دروس خصوصية في براونشفايغ وعبر الإنترنت | رياضيات، إنجليزية، ألمانية | "
+"BrainBoost"
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:6
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online: Mathe, Deutsch, Englisch "
 "und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos "
 "anfragen."
-msgstr "دروس خصوصية فردية في براونشفايغ وعبر الإنترنت: الرياضيات، الألمانية، الإنجليزية ومواد أخرى. للآباء والطلاب والمعلمين الخصوصيين. قدّم طلبًا مجانيًا الآن."
+msgstr ""
+"دروس خصوصية فردية في براونشفايغ وعبر الإنترنت: الرياضيات، الألمانية، "
+"الإنجليزية ومواد أخرى. للآباء والطلاب والمعلمين الخصوصيين. قدّم طلبًا مجانيًا "
+"الآن."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:23
+#: brainboost/core/templates/nachhilfe_anfrage.html:133
 msgid "Nachhilfe in Braunschweig und online"
 msgstr "دروس خصوصية في براونشفايغ وعبر الإنترنت"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:24
+#: brainboost/core/templates/nachhilfe_anfrage.html:134
 msgid ""
 "BrainBoost verbindet individuelle Nachhilfe mit klarer Organisation: Online "
 "Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und "
@@ -544,36 +726,36 @@ msgstr ""
 "الإنترنت ومدرسون في براونشفايغ لمواد الرياضيات والألمانية والإنجليزية وغيرها "
 "من المواد الدراسية."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:26
-#: brainboost/core/templates/nachhilfe_anfrage.html:58
-#: brainboost/core/templates/nachhilfe_anfrage.html:74
-#: brainboost/core/templates/nachhilfe_anfrage.html:90
-#: brainboost/core/templates/nachhilfe_anfrage.html:132
+#: brainboost/core/templates/nachhilfe_anfrage.html:136
+#: brainboost/core/templates/nachhilfe_anfrage.html:168
+#: brainboost/core/templates/nachhilfe_anfrage.html:184
+#: brainboost/core/templates/nachhilfe_anfrage.html:200
+#: brainboost/core/templates/nachhilfe_anfrage.html:242
 msgid "Kostenlose Anfrage stellen"
 msgstr "تقديم طلب مجاني"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:27
-#: brainboost/core/templates/nachhilfe_anfrage.html:59
-#: brainboost/core/templates/nachhilfe_anfrage.html:75
-#: brainboost/core/templates/nachhilfe_anfrage.html:91
-#: brainboost/core/templates/nachhilfe_anfrage.html:133
+#: brainboost/core/templates/nachhilfe_anfrage.html:137
+#: brainboost/core/templates/nachhilfe_anfrage.html:169
+#: brainboost/core/templates/nachhilfe_anfrage.html:185
+#: brainboost/core/templates/nachhilfe_anfrage.html:201
+#: brainboost/core/templates/nachhilfe_anfrage.html:243
 msgid "Mehr über BrainBoost erfahren"
 msgstr "تعرّف أكثر على BrainBoost"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:30
+#: brainboost/core/templates/nachhilfe_anfrage.html:140
 msgid "BrainBoost Lernbegleitung"
 msgstr "دعم BrainBoost التعليمي"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:31
+#: brainboost/core/templates/nachhilfe_anfrage.html:141
 msgid "BrainBoost Logo"
 msgstr "شعار BrainBoost"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:33
-#: brainboost/core/templates/nachhilfe_anfrage.html:122
+#: brainboost/core/templates/nachhilfe_anfrage.html:143
+#: brainboost/core/templates/nachhilfe_anfrage.html:232
 msgid "Nachhilfe Braunschweig"
 msgstr "دروس خصوصية في براونشفايغ"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:34
+#: brainboost/core/templates/nachhilfe_anfrage.html:144
 msgid ""
 "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder "
 "vor Ort möglich."
@@ -581,11 +763,11 @@ msgstr ""
 "دعم تعليمي ملائم للآباء والأمهات والطلاب والمعلمين. متاح عبر الإنترنت أو في "
 "الموقع."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:40
+#: brainboost/core/templates/nachhilfe_anfrage.html:150
 msgid "Individuelle Nachhilfe für Braunschweig"
 msgstr "دروس خصوصية فردية في براونشفايغ"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:41
+#: brainboost/core/templates/nachhilfe_anfrage.html:151
 msgid ""
 "Ob Mathe Nachhilfe Braunschweig, Englisch Nachhilfe Braunschweig oder "
 "Deutsch Nachhilfe Braunschweig: Entscheidend ist, dass Unterstützung zum "
@@ -598,19 +780,19 @@ msgstr ""
 "وأهدافه. تقوم BrainBoost بتنظيم الطلب وتساعد في ترتيب الدروس الخصوصية "
 "المناسبة عبر الإنترنت أو في براونشفايغ."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:45
+#: brainboost/core/templates/nachhilfe_anfrage.html:155
 msgid "Nachhilfe passend zu deiner Rolle"
 msgstr "دروس خصوصية تتناسب مع دورك"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:48
+#: brainboost/core/templates/nachhilfe_anfrage.html:158
 msgid "Eltern"
 msgstr "الآباء"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:49
+#: brainboost/core/templates/nachhilfe_anfrage.html:159
 msgid "Für Eltern"
 msgstr "للآباء"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:50
+#: brainboost/core/templates/nachhilfe_anfrage.html:160
 msgid ""
 "Eltern suchen zuverlässige, individuelle Unterstützung für ihr Kind. "
 "BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende "
@@ -620,33 +802,33 @@ msgstr ""
 "الاحتياجات التعليمية والمواد الدراسية والأهداف، والعثور على مدرسين مناسبين "
 "في براونشفايغ أو عبر الإنترنت."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:52
+#: brainboost/core/templates/nachhilfe_anfrage.html:162
 msgid "passende TutorInnen"
 msgstr "المعلمون المناسبون"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:53
+#: brainboost/core/templates/nachhilfe_anfrage.html:163
 msgid "individuelle Förderung"
 msgstr "الدعم الفردي"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:54
-#: brainboost/core/templates/nachhilfe_anfrage.html:125
+#: brainboost/core/templates/nachhilfe_anfrage.html:164
+#: brainboost/core/templates/nachhilfe_anfrage.html:235
 msgid "transparente Kommunikation"
 msgstr "التواصل الشفاف"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:55
-#: brainboost/core/templates/nachhilfe_anfrage.html:71
+#: brainboost/core/templates/nachhilfe_anfrage.html:165
+#: brainboost/core/templates/nachhilfe_anfrage.html:181
 msgid "online oder in Braunschweig"
 msgstr "عبر الإنترنت أو في براونشفايغ"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:64
+#: brainboost/core/templates/nachhilfe_anfrage.html:174
 msgid "SchülerInnen"
 msgstr "الطلاب والطالبات"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:65
+#: brainboost/core/templates/nachhilfe_anfrage.html:175
 msgid "Für SchülerInnen"
 msgstr "للطلاب والطالبات"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:66
+#: brainboost/core/templates/nachhilfe_anfrage.html:176
 msgid ""
 "SchülerInnen erhalten verständliche Unterstützung bei Hausaufgaben, "
 "Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und "
@@ -656,27 +838,27 @@ msgstr ""
 "للامتحانات، وفهم الموضوعات الصعبة. وتتميز الدروس الخصوصية بأنها ملموسة ومرنة "
 "ومتوافقة مع مستوى كل طالب."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:68
+#: brainboost/core/templates/nachhilfe_anfrage.html:178
 msgid "verständliche Erklärungen"
 msgstr "تفسيرات واضحة"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:69
+#: brainboost/core/templates/nachhilfe_anfrage.html:179
 msgid "flexible Termine"
 msgstr "مواعيد مرنة"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:70
+#: brainboost/core/templates/nachhilfe_anfrage.html:180
 msgid "Mathe, Deutsch, Englisch und weitere Fächer"
 msgstr "الرياضيات والألمانية والإنجليزية ومواد أخرى"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:80
+#: brainboost/core/templates/nachhilfe_anfrage.html:190
 msgid "TutorInnen"
 msgstr "المعلمون الخصوصيون"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:81
+#: brainboost/core/templates/nachhilfe_anfrage.html:191
 msgid "Für TutorInnen"
 msgstr "للمعلمين الخصوصيين"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:82
+#: brainboost/core/templates/nachhilfe_anfrage.html:192
 msgid ""
 "TutorInnen können über BrainBoost Nachhilfe anbieten und SchülerInnen "
 "unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf "
@@ -686,27 +868,27 @@ msgstr ""
 "العملية بتنظيمها وشفافيتها المهنية، كما أنها مصممة لتوفير دروس خصوصية مرنة "
 "سواء عبر الإنترنت أو في الموقع."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:84
+#: brainboost/core/templates/nachhilfe_anfrage.html:194
 msgid "strukturierter Vermittlungsprozess"
 msgstr "عملية وساطة منظمة"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:85
+#: brainboost/core/templates/nachhilfe_anfrage.html:195
 msgid "professionelle Außendarstellung"
 msgstr "صورة خارجية احترافية"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:86
+#: brainboost/core/templates/nachhilfe_anfrage.html:196
 msgid "digitale Unterstützung über die WebApp"
 msgstr "الدعم الرقمي عبر تطبيق الويب"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:87
+#: brainboost/core/templates/nachhilfe_anfrage.html:197
 msgid "flexible Nachhilfe online oder vor Ort"
 msgstr "دروس خصوصية مرنة عبر الإنترنت أو في الموقع"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:99
+#: brainboost/core/templates/nachhilfe_anfrage.html:209
 msgid "Fächer und Ziele"
 msgstr "المواد الدراسية والأهداف"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:101
+#: brainboost/core/templates/nachhilfe_anfrage.html:211
 msgid ""
 "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und "
 "Prüfungsvorbereitung"
@@ -714,7 +896,7 @@ msgstr ""
 "دروس خصوصية في الرياضيات في براونشفايغ: الأساسيات والامتحانات الصفية "
 "والتحضير للامتحانات"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:102
+#: brainboost/core/templates/nachhilfe_anfrage.html:212
 msgid ""
 "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere "
 "Ausdrucksweise"
@@ -722,7 +904,7 @@ msgstr ""
 "دروس خصوصية في اللغة الألمانية في براونشفايغ في قواعد اللغة والنصوص والتعبير "
 "الفعال"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:103
+#: brainboost/core/templates/nachhilfe_anfrage.html:213
 msgid ""
 "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche "
 "Sicherheit"
@@ -730,35 +912,35 @@ msgstr ""
 "دروس خصوصية في اللغة الإنجليزية في براونشفايغ لتعلم المفردات والقواعد "
 "اللغوية واكتساب الثقة في التحدث"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:104
+#: brainboost/core/templates/nachhilfe_anfrage.html:214
 msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
 msgstr "مواد أخرى حسب الحاجة والتوافر"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:108
+#: brainboost/core/templates/nachhilfe_anfrage.html:218
 msgid "Ablauf"
 msgstr "الإجراءات"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:110
+#: brainboost/core/templates/nachhilfe_anfrage.html:220
 msgid "Anfrage ausfüllen"
 msgstr "املأ النموذج"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:111
+#: brainboost/core/templates/nachhilfe_anfrage.html:221
 msgid "Lernziel und passende Unterrichtsform abstimmen"
 msgstr "مواءمة الهدف التعليمي مع أسلوب التدريس المناسب"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:112
+#: brainboost/core/templates/nachhilfe_anfrage.html:222
 msgid "geeignete TutorInnen in Braunschweig oder online finden"
 msgstr "العثور على مدرسين مناسبين في براونشفايغ أو عبر الإنترنت"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:113
+#: brainboost/core/templates/nachhilfe_anfrage.html:223
 msgid "individuelle Nachhilfe starten"
 msgstr "بدء دروس خصوصية فردية"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:119
+#: brainboost/core/templates/nachhilfe_anfrage.html:229
 msgid "Online Nachhilfe und Nachhilfe vor Ort"
 msgstr "الدروس الخصوصية عبر الإنترنت والدروس الخصوصية في الموقع"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:120
+#: brainboost/core/templates/nachhilfe_anfrage.html:230
 msgid ""
 "BrainBoost eignet sich für regelmäßige Lernbegleitung, gezielte "
 "Prüfungsvorbereitung und kurzfristige Unterstützung. Die Nachhilfe kann "
@@ -769,15 +951,15 @@ msgstr ""
 "للامتحانات، والدعم السريع. ويمكن أن تتم الدروس الخصوصية بمرونة عبر الإنترنت "
 "أو بالتنسيق مع مدرسين في مدينة براونشفايغ."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:123
+#: brainboost/core/templates/nachhilfe_anfrage.html:233
 msgid "Online Nachhilfe"
 msgstr "دروس خصوصية عبر الإنترنت"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:124
+#: brainboost/core/templates/nachhilfe_anfrage.html:234
 msgid "Mathe, Deutsch, Englisch"
 msgstr "الرياضيات، الألمانية، الإنجليزية"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:130
+#: brainboost/core/templates/nachhilfe_anfrage.html:240
 msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
 msgstr "اطلب الآن دروسًا خصوصية مناسبة في براونشفايغ أو عبر الإنترنت"
 

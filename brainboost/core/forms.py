@@ -12,6 +12,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Lesson,
@@ -140,12 +141,12 @@ class CampaignLinkBuilderForm(forms.Form):
 
 class LeadForm(forms.ModelForm):
     privacy_consent = forms.BooleanField(
-        label=(
+        label=_(
             "Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage "
             "gespeichert und verarbeitet werden."
         ),
         required=True,
-        error_messages={"required": "Bitte stimme der Verarbeitung deiner Angaben zu."},
+        error_messages={"required": _("Bitte stimme der Verarbeitung deiner Angaben zu.")},
     )
 
     class Meta:
@@ -191,53 +192,76 @@ class LeadForm(forms.ModelForm):
             "utm_term": forms.HiddenInput,
         }
         labels = {
-            "role": "Ich frage an als",
-            "name": "Name",
-            "email": "E-Mail",
-            "phone": "Telefonnummer",
-            "preferred_contact": "Bevorzugte Kontaktart",
-            "subject": "Fach/Fächer",
-            "grade": "Klassenstufe",
-            "tutoring_type": "Unterrichtsform",
-            "goal": "Ziel der Nachhilfe",
-            "urgency": "Dringlichkeit",
-            "message": "Nachricht",
-            "education_status": "Aktueller Status",
-            "teaching_subjects": "Fächer",
-            "teaching_grades": "Klassenstufen",
-            "weekly_availability": "Verfügbarkeit pro Woche",
-            "experience_level": "Erfahrung",
-            "motivation": "Motivation",
+            "role": _("Ich frage an als"),
+            "name": _("Name"),
+            "email": _("E-Mail"),
+            "phone": _("Telefonnummer"),
+            "preferred_contact": _("Bevorzugte Kontaktart"),
+            "subject": _("Fach/Fächer"),
+            "grade": _("Klassenstufe"),
+            "tutoring_type": _("Unterrichtsform"),
+            "goal": _("Ziel der Nachhilfe"),
+            "urgency": _("Dringlichkeit"),
+            "message": _("Nachricht"),
+            "education_status": _("Aktueller Status"),
+            "teaching_subjects": _("Fächer"),
+            "teaching_grades": _("Klassenstufen"),
+            "weekly_availability": _("Verfügbarkeit pro Woche"),
+            "experience_level": _("Erfahrung"),
+            "motivation": _("Motivation"),
         }
         help_texts = {
-            "email": "E-Mail oder Telefonnummer reicht aus.",
-            "phone": "E-Mail oder Telefonnummer reicht aus.",
+            "email": _("E-Mail oder Telefonnummer reicht aus."),
+            "phone": _("E-Mail oder Telefonnummer reicht aus."),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["role"].choices = [
-            (Lead.Role.PARENT, "Elternteil"),
-            (Lead.Role.STUDENT, "SchülerIn"),
-            (Lead.Role.TUTOR, "TutorIn"),
+            (Lead.Role.PARENT, _("Elternteil")),
+            (Lead.Role.STUDENT, _("SchülerIn")),
+            (Lead.Role.TUTOR, _("TutorIn")),
         ]
         self.fields["role"].initial = self.initial.get("role") or Lead.Role.PARENT
-        self.fields["preferred_contact"].empty_label = "Bitte auswählen"
-        self.fields["tutoring_type"].empty_label = "Bitte auswählen"
-        self.fields["education_status"].empty_label = "Bitte auswählen"
-        self.fields["experience_level"].empty_label = "Bitte auswählen"
+        self.fields["preferred_contact"].choices = [
+            ("", _("Bitte auswählen")),
+            (Lead.PreferredContact.WHATSAPP, _("WhatsApp")),
+            (Lead.PreferredContact.PHONE, _("Telefon")),
+            (Lead.PreferredContact.EMAIL, _("E-Mail")),
+        ]
+        self.fields["tutoring_type"].choices = [
+            ("", _("Bitte auswählen")),
+            (Lead.TutoringType.ONLINE, _("Online")),
+            (Lead.TutoringType.IN_PERSON, _("Vor Ort")),
+            (Lead.TutoringType.BOTH, _("Beides")),
+        ]
+        self.fields["education_status"].choices = [
+            ("", _("Bitte auswählen")),
+            (Lead.EducationStatus.UPPER_SCHOOL, _("SchülerIn Oberstufe")),
+            (Lead.EducationStatus.STUDENT, _("StudentIn")),
+            (Lead.EducationStatus.TEACHER, _("Lehrkraft")),
+            (Lead.EducationStatus.PROFESSIONAL, _("Berufstätig")),
+            (Lead.EducationStatus.OTHER, _("Sonstiges")),
+        ]
+        self.fields["experience_level"].choices = [
+            ("", _("Bitte auswählen")),
+            (Lead.ExperienceLevel.NONE, _("Noch keine Erfahrung")),
+            (Lead.ExperienceLevel.SOME, _("Etwas Erfahrung")),
+            (Lead.ExperienceLevel.REGULAR, _("Regelmäßig Nachhilfe gegeben")),
+            (Lead.ExperienceLevel.PROFESSIONAL, _("Professionelle Unterrichtserfahrung")),
+        ]
 
         placeholders = {
-            "name": "Vor- und Nachname",
+            "name": _("Vor- und Nachname"),
             "email": "name@example.com",
             "phone": "+49 ...",
-            "subject": "z. B. Mathe, Englisch",
-            "grade": "z. B. 8. Klasse",
-            "goal": "z. B. Noten verbessern, Prüfung vorbereiten",
-            "urgency": "z. B. möglichst bald, innerhalb der nächsten Wochen",
-            "teaching_subjects": "z. B. Mathe, Physik, Englisch",
-            "teaching_grades": "z. B. Klasse 5-10, Oberstufe",
-            "weekly_availability": "z. B. 4-6 Stunden, Mo/Di abends",
+            "subject": _("z. B. Mathe, Englisch"),
+            "grade": _("z. B. 8. Klasse"),
+            "goal": _("z. B. Noten verbessern, Prüfung vorbereiten"),
+            "urgency": _("z. B. möglichst bald, innerhalb der nächsten Wochen"),
+            "teaching_subjects": _("z. B. Mathe, Physik, Englisch"),
+            "teaching_grades": _("z. B. Klasse 5-10, Oberstufe"),
+            "weekly_availability": _("z. B. 4-6 Stunden, Mo/Di abends"),
         }
         for field_name, placeholder in placeholders.items():
             self.fields[field_name].widget.attrs.setdefault("placeholder", placeholder)
@@ -276,14 +300,14 @@ class LeadForm(forms.ModelForm):
         email = (cleaned.get("email") or "").strip()
         phone = (cleaned.get("phone") or "").strip()
         if not email and not phone:
-            message = "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
+            message = _("Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an.")
             self.add_error("email", message)
             self.add_error("phone", message)
 
         if role in {Lead.Role.PARENT, Lead.Role.STUDENT}:
             for field_name in ["tutoring_type", "subject", "grade", "goal", "urgency"]:
                 if not (cleaned.get(field_name) or "").strip():
-                    self.add_error(field_name, "Dieses Feld ist erforderlich.")
+                    self.add_error(field_name, _("Dieses Feld ist erforderlich."))
         elif role == Lead.Role.TUTOR:
             required_tutor_fields = [
                 "teaching_subjects",
@@ -293,7 +317,7 @@ class LeadForm(forms.ModelForm):
             ]
             for field_name in required_tutor_fields:
                 if not (cleaned.get(field_name) or "").strip():
-                    self.add_error(field_name, "Dieses Feld ist erforderlich.")
+                    self.add_error(field_name, _("Dieses Feld ist erforderlich."))
             cleaned["subject"] = cleaned.get("teaching_subjects", "")
             cleaned["grade"] = cleaned.get("teaching_grades", "")
             cleaned["tutoring_type"] = ""

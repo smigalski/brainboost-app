@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-29 15:50+0200\n"
+"POT-Creation-Date: 2026-05-29 16:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -36,12 +36,207 @@ msgstr "Права доступа"
 msgid "Important dates"
 msgstr "Важные даты"
 
+#: brainboost/core/forms.py:145
+msgid ""
+"Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage gespeichert "
+"und verarbeitet werden."
+msgstr "Я согласен/согласна, что мои данные будут сохранены и обработаны для рассмотрения моего запроса."
+
+#: brainboost/core/forms.py:149
+msgid "Bitte stimme der Verarbeitung deiner Angaben zu."
+msgstr "Пожалуйста, согласитесь на обработку ваших данных."
+
+#: brainboost/core/forms.py:195
+msgid "Ich frage an als"
+msgstr "Я обращаюсь как"
+
+#: brainboost/core/forms.py:196
+msgid "Name"
+msgstr "Имя"
+
+#: brainboost/core/forms.py:197 brainboost/core/forms.py:230
+msgid "E-Mail"
+msgstr "Электронная почта"
+
+#: brainboost/core/forms.py:198
+msgid "Telefonnummer"
+msgstr "Номер телефона"
+
+#: brainboost/core/forms.py:199
+msgid "Bevorzugte Kontaktart"
+msgstr "Предпочтительный способ связи"
+
+#: brainboost/core/forms.py:200
+msgid "Fach/Fächer"
+msgstr "Предмет(ы)"
+
+#: brainboost/core/forms.py:201
+msgid "Klassenstufe"
+msgstr "Класс"
+
+#: brainboost/core/forms.py:202
+msgid "Unterrichtsform"
+msgstr "Формат занятий"
+
+#: brainboost/core/forms.py:203
+msgid "Ziel der Nachhilfe"
+msgstr "Цель занятий"
+
+#: brainboost/core/forms.py:204
+msgid "Dringlichkeit"
+msgstr "Срочность"
+
+#: brainboost/core/forms.py:205 brainboost/core/templates/contact.html:251
+msgid "Nachricht"
+msgstr "Сообщение"
+
+#: brainboost/core/forms.py:206
+msgid "Aktueller Status"
+msgstr "Текущий статус"
+
+#: brainboost/core/forms.py:207
+msgid "Fächer"
+msgstr "Предметы"
+
+#: brainboost/core/forms.py:208
+msgid "Klassenstufen"
+msgstr "Классы"
+
+#: brainboost/core/forms.py:209
+msgid "Verfügbarkeit pro Woche"
+msgstr "Доступность в неделю"
+
+#: brainboost/core/forms.py:210
+msgid "Erfahrung"
+msgstr "Опыт"
+
+#: brainboost/core/forms.py:211
+msgid "Motivation"
+msgstr "Мотивация"
+
+#: brainboost/core/forms.py:214 brainboost/core/forms.py:215
+msgid "E-Mail oder Telefonnummer reicht aus."
+msgstr "Достаточно электронной почты или номера телефона."
+
+#: brainboost/core/forms.py:221 brainboost/core/templates/contact.html:147
+msgid "Elternteil"
+msgstr "Родитель"
+
+#: brainboost/core/forms.py:222 brainboost/core/templates/contact.html:148
+msgid "SchülerIn"
+msgstr "Ученик/ученица"
+
+#: brainboost/core/forms.py:223 brainboost/core/templates/contact.html:149
+msgid "TutorIn"
+msgstr "Репетитор"
+
+#: brainboost/core/forms.py:227 brainboost/core/forms.py:233
+#: brainboost/core/forms.py:239 brainboost/core/forms.py:247
+msgid "Bitte auswählen"
+msgstr "Пожалуйста, выберите"
+
+#: brainboost/core/forms.py:228
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#: brainboost/core/forms.py:229
+msgid "Telefon"
+msgstr "Телефон"
+
+#: brainboost/core/forms.py:234
+msgid "Online"
+msgstr "Онлайн"
+
+#: brainboost/core/forms.py:235
+msgid "Vor Ort"
+msgstr "Очно"
+
+#: brainboost/core/forms.py:236
+msgid "Beides"
+msgstr "Оба варианта"
+
+#: brainboost/core/forms.py:240
+msgid "SchülerIn Oberstufe"
+msgstr "Ученик/ученица старших классов"
+
+#: brainboost/core/forms.py:241
+msgid "StudentIn"
+msgstr "Студент/студентка"
+
+#: brainboost/core/forms.py:242
+msgid "Lehrkraft"
+msgstr "Учитель"
+
+#: brainboost/core/forms.py:243
+msgid "Berufstätig"
+msgstr "Работающий специалист"
+
+#: brainboost/core/forms.py:244
+msgid "Sonstiges"
+msgstr "Другое"
+
+#: brainboost/core/forms.py:248
+msgid "Noch keine Erfahrung"
+msgstr "Пока нет опыта"
+
+#: brainboost/core/forms.py:249
+msgid "Etwas Erfahrung"
+msgstr "Небольшой опыт"
+
+#: brainboost/core/forms.py:250
+msgid "Regelmäßig Nachhilfe gegeben"
+msgstr "Регулярный опыт репетиторства"
+
+#: brainboost/core/forms.py:251
+msgid "Professionelle Unterrichtserfahrung"
+msgstr "Профессиональный опыт преподавания"
+
+#: brainboost/core/forms.py:255
+msgid "Vor- und Nachname"
+msgstr "Имя и фамилия"
+
+#: brainboost/core/forms.py:258
+msgid "z. B. Mathe, Englisch"
+msgstr "например, математика, английский"
+
+#: brainboost/core/forms.py:259
+msgid "z. B. 8. Klasse"
+msgstr "например, 8 класс"
+
+#: brainboost/core/forms.py:260
+msgid "z. B. Noten verbessern, Prüfung vorbereiten"
+msgstr "например, улучшить оценки, подготовиться к экзамену"
+
+#: brainboost/core/forms.py:261
+msgid "z. B. möglichst bald, innerhalb der nächsten Wochen"
+msgstr "например, как можно скорее, в ближайшие недели"
+
+#: brainboost/core/forms.py:262
+msgid "z. B. Mathe, Physik, Englisch"
+msgstr "например, математика, физика, английский"
+
+#: brainboost/core/forms.py:263
+msgid "z. B. Klasse 5-10, Oberstufe"
+msgstr "например, 5-10 классы, старшие классы"
+
+#: brainboost/core/forms.py:264
+msgid "z. B. 4-6 Stunden, Mo/Di abends"
+msgstr "например, 4-6 часов, пн/вт вечером"
+
+#: brainboost/core/forms.py:303
+msgid "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
+msgstr "Пожалуйста, укажите хотя бы электронную почту или номер телефона."
+
+#: brainboost/core/forms.py:310 brainboost/core/forms.py:320
+msgid "Dieses Feld ist erforderlich."
+msgstr "Это поле обязательно."
+
 #: brainboost/core/templates/base.html:40
 msgid "icon"
 msgstr "значок"
 
 #: brainboost/core/templates/base.html:43
-#: brainboost/core/templates/nachhilfe_anfrage.html:22
+#: brainboost/core/templates/nachhilfe_anfrage.html:132
 msgid "BrainBoost Nachhilfe"
 msgstr "Репетиторство BrainBoost"
 
@@ -144,20 +339,6 @@ msgstr "Ты..."
 msgid "Du bist"
 msgstr "Ты"
 
-#: brainboost/core/templates/contact.html:147
-msgid "Elternteil"
-msgstr "родитель"
-
-#: brainboost/core/templates/contact.html:148
-msgid "SchülerIn"
-msgstr "ученик/ученица"
-
-#: brainboost/core/templates/contact.html:149
-#, fuzzy
-#| msgid "TutorIn werden"
-msgid "TutorIn"
-msgstr "Стать наставником"
-
 #: brainboost/core/templates/contact.html:184
 #, fuzzy
 #| msgid "BrainBoost Nachhilfe"
@@ -169,10 +350,6 @@ msgstr "Репетиторство BrainBoost"
 #| msgid "Profil"
 msgid "TutorIn-Profil"
 msgstr "Профиль"
-
-#: brainboost/core/templates/contact.html:251
-msgid "Nachricht"
-msgstr "Сообщение"
 
 #: brainboost/core/templates/contact.html:265
 msgid "Anfrage senden"
@@ -531,20 +708,25 @@ msgstr "Центральное место встречи в центре гор�
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:4
 msgid "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
-msgstr "Репетиторство в Брауншвейге и онлайн | Математика, английский, немецкий | BrainBoost"
+msgstr ""
+"Репетиторство в Брауншвейге и онлайн | Математика, английский, немецкий | "
+"BrainBoost"
 
 #: brainboost/core/templates/nachhilfe_anfrage.html:6
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online: Mathe, Deutsch, Englisch "
 "und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos "
 "anfragen."
-msgstr "Индивидуальное репетиторство в Брауншвейге и онлайн: математика, немецкий, английский и другие предметы. Для родителей, учеников и репетиторов. Отправьте бесплатный запрос сейчас."
+msgstr ""
+"Индивидуальное репетиторство в Брауншвейге и онлайн: математика, немецкий, "
+"английский и другие предметы. Для родителей, учеников и репетиторов. "
+"Отправьте бесплатный запрос сейчас."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:23
+#: brainboost/core/templates/nachhilfe_anfrage.html:133
 msgid "Nachhilfe in Braunschweig und online"
 msgstr "Репетиторство в Брауншвейге и онлайн"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:24
+#: brainboost/core/templates/nachhilfe_anfrage.html:134
 msgid ""
 "BrainBoost verbindet individuelle Nachhilfe mit klarer Organisation: Online "
 "Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und "
@@ -554,36 +736,36 @@ msgstr ""
 "репетиторство и репетиторы в Брауншвейге по математике, немецкому, "
 "английскому и другим предметам."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:26
-#: brainboost/core/templates/nachhilfe_anfrage.html:58
-#: brainboost/core/templates/nachhilfe_anfrage.html:74
-#: brainboost/core/templates/nachhilfe_anfrage.html:90
-#: brainboost/core/templates/nachhilfe_anfrage.html:132
+#: brainboost/core/templates/nachhilfe_anfrage.html:136
+#: brainboost/core/templates/nachhilfe_anfrage.html:168
+#: brainboost/core/templates/nachhilfe_anfrage.html:184
+#: brainboost/core/templates/nachhilfe_anfrage.html:200
+#: brainboost/core/templates/nachhilfe_anfrage.html:242
 msgid "Kostenlose Anfrage stellen"
 msgstr "Отправить бесплатный запрос"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:27
-#: brainboost/core/templates/nachhilfe_anfrage.html:59
-#: brainboost/core/templates/nachhilfe_anfrage.html:75
-#: brainboost/core/templates/nachhilfe_anfrage.html:91
-#: brainboost/core/templates/nachhilfe_anfrage.html:133
+#: brainboost/core/templates/nachhilfe_anfrage.html:137
+#: brainboost/core/templates/nachhilfe_anfrage.html:169
+#: brainboost/core/templates/nachhilfe_anfrage.html:185
+#: brainboost/core/templates/nachhilfe_anfrage.html:201
+#: brainboost/core/templates/nachhilfe_anfrage.html:243
 msgid "Mehr über BrainBoost erfahren"
 msgstr "Узнать больше о BrainBoost"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:30
+#: brainboost/core/templates/nachhilfe_anfrage.html:140
 msgid "BrainBoost Lernbegleitung"
 msgstr "Учебная поддержка BrainBoost"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:31
+#: brainboost/core/templates/nachhilfe_anfrage.html:141
 msgid "BrainBoost Logo"
 msgstr "Логотип BrainBoost"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:33
-#: brainboost/core/templates/nachhilfe_anfrage.html:122
+#: brainboost/core/templates/nachhilfe_anfrage.html:143
+#: brainboost/core/templates/nachhilfe_anfrage.html:232
 msgid "Nachhilfe Braunschweig"
 msgstr "Репетиторство в Брауншвейге"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:34
+#: brainboost/core/templates/nachhilfe_anfrage.html:144
 msgid ""
 "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder "
 "vor Ort möglich."
@@ -591,11 +773,11 @@ msgstr ""
 "Подходящая поддержка в обучении для родителей, учеников и репетиторов. "
 "Возможны занятия онлайн или очно."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:40
+#: brainboost/core/templates/nachhilfe_anfrage.html:150
 msgid "Individuelle Nachhilfe für Braunschweig"
 msgstr "Индивидуальные занятия с репетитором в Брауншвейге"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:41
+#: brainboost/core/templates/nachhilfe_anfrage.html:151
 msgid ""
 "Ob Mathe Nachhilfe Braunschweig, Englisch Nachhilfe Braunschweig oder "
 "Deutsch Nachhilfe Braunschweig: Entscheidend ist, dass Unterstützung zum "
@@ -608,19 +790,19 @@ msgstr ""
 "поставленной цели. BrainBoost структурирует запрос и помогает организовать "
 "подходящее репетиторство онлайн или в Брауншвейге."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:45
+#: brainboost/core/templates/nachhilfe_anfrage.html:155
 msgid "Nachhilfe passend zu deiner Rolle"
 msgstr "Репетиторство с учетом твоей роли"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:48
+#: brainboost/core/templates/nachhilfe_anfrage.html:158
 msgid "Eltern"
 msgstr "Родители"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:49
+#: brainboost/core/templates/nachhilfe_anfrage.html:159
 msgid "Für Eltern"
 msgstr "Для родителей"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:50
+#: brainboost/core/templates/nachhilfe_anfrage.html:160
 msgid ""
 "Eltern suchen zuverlässige, individuelle Unterstützung für ihr Kind. "
 "BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende "
@@ -630,33 +812,33 @@ msgstr ""
 "BrainBoost помогает определить потребности в обучении, предмет и цель, а "
 "также найти подходящих репетиторов в Брауншвейге или онлайн."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:52
+#: brainboost/core/templates/nachhilfe_anfrage.html:162
 msgid "passende TutorInnen"
 msgstr "подходящие преподаватели"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:53
+#: brainboost/core/templates/nachhilfe_anfrage.html:163
 msgid "individuelle Förderung"
 msgstr "индивидуальная поддержка"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:54
-#: brainboost/core/templates/nachhilfe_anfrage.html:125
+#: brainboost/core/templates/nachhilfe_anfrage.html:164
+#: brainboost/core/templates/nachhilfe_anfrage.html:235
 msgid "transparente Kommunikation"
 msgstr "открытое общение"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:55
-#: brainboost/core/templates/nachhilfe_anfrage.html:71
+#: brainboost/core/templates/nachhilfe_anfrage.html:165
+#: brainboost/core/templates/nachhilfe_anfrage.html:181
 msgid "online oder in Braunschweig"
 msgstr "онлайн или в Брауншвейге"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:64
+#: brainboost/core/templates/nachhilfe_anfrage.html:174
 msgid "SchülerInnen"
 msgstr "учащиеся"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:65
+#: brainboost/core/templates/nachhilfe_anfrage.html:175
 msgid "Für SchülerInnen"
 msgstr "Для школьников"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:66
+#: brainboost/core/templates/nachhilfe_anfrage.html:176
 msgid ""
 "SchülerInnen erhalten verständliche Unterstützung bei Hausaufgaben, "
 "Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und "
@@ -666,27 +848,27 @@ msgstr ""
 "к экзаменам и освоении сложных тем. Репетиторство остается конкретным, "
 "гибким и адаптированным к индивидуальному уровню знаний."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:68
+#: brainboost/core/templates/nachhilfe_anfrage.html:178
 msgid "verständliche Erklärungen"
 msgstr "доступные объяснения"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:69
+#: brainboost/core/templates/nachhilfe_anfrage.html:179
 msgid "flexible Termine"
 msgstr "гибкое расписание"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:70
+#: brainboost/core/templates/nachhilfe_anfrage.html:180
 msgid "Mathe, Deutsch, Englisch und weitere Fächer"
 msgstr "Математика, немецкий язык, английский язык и другие предметы"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:80
+#: brainboost/core/templates/nachhilfe_anfrage.html:190
 msgid "TutorInnen"
 msgstr "Репетиторы"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:81
+#: brainboost/core/templates/nachhilfe_anfrage.html:191
 msgid "Für TutorInnen"
 msgstr "Для репетиторов"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:82
+#: brainboost/core/templates/nachhilfe_anfrage.html:192
 msgid ""
 "TutorInnen können über BrainBoost Nachhilfe anbieten und SchülerInnen "
 "unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf "
@@ -697,27 +879,27 @@ msgstr ""
 "профессиональную видимость и рассчитан на гибкое репетиторство — как онлайн, "
 "так и очно."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:84
+#: brainboost/core/templates/nachhilfe_anfrage.html:194
 msgid "strukturierter Vermittlungsprozess"
 msgstr "систематизированный процесс посредничества"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:85
+#: brainboost/core/templates/nachhilfe_anfrage.html:195
 msgid "professionelle Außendarstellung"
 msgstr "профессиональный имидж"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:86
+#: brainboost/core/templates/nachhilfe_anfrage.html:196
 msgid "digitale Unterstützung über die WebApp"
 msgstr "цифровая поддержка через веб-приложение"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:87
+#: brainboost/core/templates/nachhilfe_anfrage.html:197
 msgid "flexible Nachhilfe online oder vor Ort"
 msgstr "гибкие занятия с репетитором онлайн или на дому"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:99
+#: brainboost/core/templates/nachhilfe_anfrage.html:209
 msgid "Fächer und Ziele"
 msgstr "Предметы и цели"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:101
+#: brainboost/core/templates/nachhilfe_anfrage.html:211
 msgid ""
 "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und "
 "Prüfungsvorbereitung"
@@ -725,7 +907,7 @@ msgstr ""
 "Репетиторство по математике в Брауншвейге: освоение основ, подготовка к "
 "контрольным работам и экзаменам"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:102
+#: brainboost/core/templates/nachhilfe_anfrage.html:212
 msgid ""
 "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere "
 "Ausdrucksweise"
@@ -733,7 +915,7 @@ msgstr ""
 "Репетиторство по немецкому языку в Брауншвейге: грамматика, тексты и "
 "уверенная речь"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:103
+#: brainboost/core/templates/nachhilfe_anfrage.html:213
 msgid ""
 "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche "
 "Sicherheit"
@@ -741,35 +923,35 @@ msgstr ""
 "Репетиторство по английскому языку в Брауншвейге: лексика, грамматика и "
 "уверенность в устной речи"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:104
+#: brainboost/core/templates/nachhilfe_anfrage.html:214
 msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
 msgstr "дополнительные предметы в зависимости от потребностей и наличия"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:108
+#: brainboost/core/templates/nachhilfe_anfrage.html:218
 msgid "Ablauf"
 msgstr "Порядок действий"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:110
+#: brainboost/core/templates/nachhilfe_anfrage.html:220
 msgid "Anfrage ausfüllen"
 msgstr "Заполнить форму запроса"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:111
+#: brainboost/core/templates/nachhilfe_anfrage.html:221
 msgid "Lernziel und passende Unterrichtsform abstimmen"
 msgstr "Согласовать учебную цель и подходящую форму занятия"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:112
+#: brainboost/core/templates/nachhilfe_anfrage.html:222
 msgid "geeignete TutorInnen in Braunschweig oder online finden"
 msgstr "найти подходящих репетиторов в Брауншвейге или онлайн"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:113
+#: brainboost/core/templates/nachhilfe_anfrage.html:223
 msgid "individuelle Nachhilfe starten"
 msgstr "Начать индивидуальные занятия"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:119
+#: brainboost/core/templates/nachhilfe_anfrage.html:229
 msgid "Online Nachhilfe und Nachhilfe vor Ort"
 msgstr "Онлайн-репетиторство и репетиторство на дому"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:120
+#: brainboost/core/templates/nachhilfe_anfrage.html:230
 msgid ""
 "BrainBoost eignet sich für regelmäßige Lernbegleitung, gezielte "
 "Prüfungsvorbereitung und kurzfristige Unterstützung. Die Nachhilfe kann "
@@ -781,15 +963,15 @@ msgstr ""
 "могут проводиться в гибком режиме онлайн или по договоренности с "
 "репетиторами в Брауншвейге."
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:123
+#: brainboost/core/templates/nachhilfe_anfrage.html:233
 msgid "Online Nachhilfe"
 msgstr "Онлайн-репетиторство"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:124
+#: brainboost/core/templates/nachhilfe_anfrage.html:234
 msgid "Mathe, Deutsch, Englisch"
 msgstr "Математика, немецкий язык, английский язык"
 
-#: brainboost/core/templates/nachhilfe_anfrage.html:130
+#: brainboost/core/templates/nachhilfe_anfrage.html:240
 msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
 msgstr ""
 "Запросите подходящие репетиторские услуги в Брауншвейге или онлайн прямо "
