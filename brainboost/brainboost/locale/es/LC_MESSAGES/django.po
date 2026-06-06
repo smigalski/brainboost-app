@@ -3,458 +3,441 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: BrainBoost\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-06 19:27+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2026-06-06 19:43+0200\n"
+"PO-Revision-Date: 2026-06-06 19:43+0200\n"
+"Last-Translator: BrainBoost\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
-"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: brainboost/core/admin.py:30
 msgid "Personal info"
-msgstr "Личные данные"
+msgstr ""
 
 #: brainboost/core/admin.py:31
 msgid "Role"
-msgstr "Роль"
+msgstr ""
 
 #: brainboost/core/admin.py:33
 msgid "Permissions"
-msgstr "Права доступа"
+msgstr ""
 
 #: brainboost/core/admin.py:44
 msgid "Important dates"
-msgstr "Важные даты"
+msgstr ""
 
 #: brainboost/core/forms.py:169
 msgid ""
 "Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage gespeichert "
 "und verarbeitet werden."
 msgstr ""
-"Я согласен/согласна, что мои данные будут сохранены и обработаны для "
-"рассмотрения моего запроса."
 
 #: brainboost/core/forms.py:173
 msgid "Bitte stimme der Verarbeitung deiner Angaben zu."
-msgstr "Пожалуйста, согласитесь на обработку ваших данных."
+msgstr ""
 
 #: brainboost/core/forms.py:219
 msgid "Ich frage an als"
-msgstr "Я обращаюсь как"
+msgstr ""
 
 #: brainboost/core/forms.py:220
 msgid "Name"
-msgstr "Имя"
+msgstr ""
 
 #: brainboost/core/forms.py:221 brainboost/core/forms.py:254
 msgid "E-Mail"
-msgstr "Электронная почта"
+msgstr ""
 
 #: brainboost/core/forms.py:222
 msgid "Telefonnummer"
-msgstr "Номер телефона"
+msgstr ""
 
 #: brainboost/core/forms.py:223
 msgid "Bevorzugte Kontaktart"
-msgstr "Предпочтительный способ связи"
+msgstr ""
 
 #: brainboost/core/forms.py:224
 msgid "Fach/Fächer"
-msgstr "Предмет(ы)"
+msgstr ""
 
 #: brainboost/core/forms.py:225
 msgid "Klassenstufe"
-msgstr "Класс"
+msgstr ""
 
 #: brainboost/core/forms.py:226
 msgid "Unterrichtsform"
-msgstr "Формат занятий"
+msgstr ""
 
 #: brainboost/core/forms.py:227
 msgid "Ziel der Nachhilfe"
-msgstr "Цель занятий"
+msgstr ""
 
 #: brainboost/core/forms.py:228
 msgid "Dringlichkeit"
-msgstr "Срочность"
+msgstr ""
 
 #: brainboost/core/forms.py:229 brainboost/core/templates/contact.html:251
 msgid "Nachricht"
-msgstr "Сообщение"
+msgstr ""
 
 #: brainboost/core/forms.py:230
 msgid "Aktueller Status"
-msgstr "Текущий статус"
+msgstr ""
 
 #: brainboost/core/forms.py:231
 msgid "Fächer"
-msgstr "Предметы"
+msgstr ""
 
 #: brainboost/core/forms.py:232
 msgid "Klassenstufen"
-msgstr "Классы"
+msgstr ""
 
 #: brainboost/core/forms.py:233
 msgid "Verfügbarkeit pro Woche"
-msgstr "Доступность в неделю"
+msgstr ""
 
 #: brainboost/core/forms.py:234
 msgid "Erfahrung"
-msgstr "Опыт"
+msgstr ""
 
 #: brainboost/core/forms.py:235
 msgid "Motivation"
-msgstr "Мотивация"
+msgstr ""
 
 #: brainboost/core/forms.py:238 brainboost/core/forms.py:239
 msgid "E-Mail oder Telefonnummer reicht aus."
-msgstr "Достаточно электронной почты или номера телефона."
+msgstr ""
 
 #: brainboost/core/forms.py:245 brainboost/core/templates/contact.html:147
 msgid "Elternteil"
-msgstr "Родитель"
+msgstr ""
 
 #: brainboost/core/forms.py:246 brainboost/core/templates/contact.html:148
 msgid "SchülerIn"
-msgstr "Ученик/ученица"
+msgstr ""
 
 #: brainboost/core/forms.py:247 brainboost/core/templates/contact.html:149
 msgid "TutorIn"
-msgstr "Репетитор"
+msgstr ""
 
 #: brainboost/core/forms.py:251 brainboost/core/forms.py:257
 #: brainboost/core/forms.py:263 brainboost/core/forms.py:271
 msgid "Bitte auswählen"
-msgstr "Пожалуйста, выберите"
+msgstr ""
 
 #: brainboost/core/forms.py:252
 msgid "WhatsApp"
-msgstr "WhatsApp"
+msgstr ""
 
 #: brainboost/core/forms.py:253
 msgid "Telefon"
-msgstr "Телефон"
+msgstr ""
 
 #: brainboost/core/forms.py:258
 msgid "Online"
-msgstr "Онлайн"
+msgstr ""
 
 #: brainboost/core/forms.py:259
 msgid "Vor Ort"
-msgstr "Очно"
+msgstr ""
 
 #: brainboost/core/forms.py:260
 msgid "Beides"
-msgstr "Оба варианта"
+msgstr ""
 
 #: brainboost/core/forms.py:264
 msgid "SchülerIn Oberstufe"
-msgstr "Ученик/ученица старших классов"
+msgstr ""
 
 #: brainboost/core/forms.py:265
 msgid "StudentIn"
-msgstr "Студент/студентка"
+msgstr ""
 
 #: brainboost/core/forms.py:266
 msgid "Lehrkraft"
-msgstr "Учитель"
+msgstr ""
 
 #: brainboost/core/forms.py:267
 msgid "Berufstätig"
-msgstr "Работающий специалист"
+msgstr ""
 
 #: brainboost/core/forms.py:268
 msgid "Sonstiges"
-msgstr "Другое"
+msgstr ""
 
 #: brainboost/core/forms.py:272
 msgid "Noch keine Erfahrung"
-msgstr "Пока нет опыта"
+msgstr ""
 
 #: brainboost/core/forms.py:273
 msgid "Etwas Erfahrung"
-msgstr "Небольшой опыт"
+msgstr ""
 
 #: brainboost/core/forms.py:274
 msgid "Regelmäßig Nachhilfe gegeben"
-msgstr "Регулярный опыт репетиторства"
+msgstr ""
 
 #: brainboost/core/forms.py:275
 msgid "Professionelle Unterrichtserfahrung"
-msgstr "Профессиональный опыт преподавания"
+msgstr ""
 
 #: brainboost/core/forms.py:279
 msgid "Vor- und Nachname"
-msgstr "Имя и фамилия"
+msgstr ""
 
 #: brainboost/core/forms.py:282
 msgid "z. B. Mathe, Englisch"
-msgstr "например, математика, английский"
+msgstr ""
 
 #: brainboost/core/forms.py:283
 msgid "z. B. 8. Klasse"
-msgstr "например, 8 класс"
+msgstr ""
 
 #: brainboost/core/forms.py:284
 msgid "z. B. Noten verbessern, Prüfung vorbereiten"
-msgstr "например, улучшить оценки, подготовиться к экзамену"
+msgstr ""
 
 #: brainboost/core/forms.py:285
 msgid "z. B. möglichst bald, innerhalb der nächsten Wochen"
-msgstr "например, как можно скорее, в ближайшие недели"
+msgstr ""
 
 #: brainboost/core/forms.py:286
 msgid "z. B. Mathe, Physik, Englisch"
-msgstr "например, математика, физика, английский"
+msgstr ""
 
 #: brainboost/core/forms.py:287
 msgid "z. B. Klasse 5-10, Oberstufe"
-msgstr "например, 5-10 классы, старшие классы"
+msgstr ""
 
 #: brainboost/core/forms.py:288
 msgid "z. B. 4-6 Stunden, Mo/Di abends"
-msgstr "например, 4-6 часов, пн/вт вечером"
+msgstr ""
 
 #: brainboost/core/forms.py:327
 msgid "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
-msgstr "Пожалуйста, укажите хотя бы электронную почту или номер телефона."
+msgstr ""
 
 #: brainboost/core/forms.py:334 brainboost/core/forms.py:344
 msgid "Dieses Feld ist erforderlich."
-msgstr "Это поле обязательно."
+msgstr ""
 
 #: brainboost/core/templates/base.html:41
 msgid "icon"
-msgstr "значок"
+msgstr ""
 
 #: brainboost/core/templates/base.html:44
 #: brainboost/core/templates/landing_alle.html:134
 msgid "BrainBoost Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/base.html:45
 msgid "Stark im Kopf - Stark im Lernen"
-msgstr "Сильный духом — сильный в учебе"
+msgstr ""
 
 #: brainboost/core/templates/base.html:50
 msgid "Profil"
-msgstr "Профиль"
+msgstr ""
 
 #: brainboost/core/templates/base.html:52
 msgid "Profilbild"
-msgstr "Аватар"
+msgstr ""
 
 #: brainboost/core/templates/base.html:66
 msgid "Sprache wechseln"
-msgstr "Сменить язык"
+msgstr ""
 
 #: brainboost/core/templates/base.html:90
 msgid "Menü ausrollen"
-msgstr "Раскрыть меню"
+msgstr ""
 
 #: brainboost/core/templates/base.html:108
 msgid "Menü einklappen"
-msgstr "Свернуть меню"
+msgstr ""
 
 #: brainboost/core/templates/base.html:117
 msgid "TutorIn werden"
-msgstr "Стать наставником"
+msgstr ""
 
 #: brainboost/core/templates/base.html:119
 msgid "Dashboard"
-msgstr "Панель управления"
+msgstr ""
 
 #: brainboost/core/templates/base.html:121
 msgid "Admins"
-msgstr "Администраторы"
+msgstr ""
 
 #: brainboost/core/templates/base.html:123
 msgid "Termine"
-msgstr "Даты"
+msgstr ""
 
 #: brainboost/core/templates/base.html:124
 msgid "Lernfortschritt"
-msgstr "Успеваемость"
+msgstr ""
 
 #: brainboost/core/templates/base.html:127
 #: brainboost/core/templates/landing.html:778
 msgid "Preise"
-msgstr "Цены"
+msgstr ""
 
 #: brainboost/core/templates/base.html:130
 #: brainboost/core/templates/base.html:172
 #: brainboost/core/templates/contact.html:131
 #: brainboost/core/templates/contact.html:158
 msgid "Kontakt"
-msgstr "Контакты"
+msgstr ""
 
 #: brainboost/core/templates/base.html:134
 msgid "Ausloggen"
-msgstr "Выйти"
+msgstr ""
 
 #: brainboost/core/templates/base.html:136
 msgid "Einloggen"
-msgstr "Войти"
+msgstr ""
 
 #: brainboost/core/templates/base.html:156
 msgid "Abschnitte anzeigen"
-msgstr "Показать разделы"
+msgstr ""
 
 #: brainboost/core/templates/base.html:173
 msgid "Impressum"
-msgstr "Выходные данные"
+msgstr ""
 
 #: brainboost/core/templates/base.html:174
 #: brainboost/core/templates/partials/cookie_notice.html:8
 msgid "Datenschutz"
-msgstr "Конфиденциальность"
+msgstr ""
 
 #: brainboost/core/templates/base.html:175
 msgid "AGB"
-msgstr "Условия использования"
+msgstr ""
 
 #: brainboost/core/templates/base.html:176
 msgid "Cookies"
-msgstr "Файлы cookie"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:132
 msgid ""
 "Stelle deine Anfrage für Nachhilfe oder bewirb dich als TutorIn. Wir melden "
 "uns zeitnah über deinen bevorzugten Kontaktweg."
 msgstr ""
-"Отправь запрос на репетиторство или подай заявку на должность репетитора. Мы "
-"свяжемся с тобой в ближайшее время по указанному тобой способу связи."
 
 #: brainboost/core/templates/contact.html:145
 msgid "Du bist ..."
-msgstr "Ты..."
+msgstr ""
 
 #: brainboost/core/templates/contact.html:146
 msgid "Du bist"
-msgstr "Ты"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:184
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
 msgid "Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:215
-#, fuzzy
-#| msgid "Profil"
 msgid "TutorIn-Profil"
-msgstr "Профиль"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:264
 msgid "Anfrage senden"
-msgstr "Отправить запрос"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:265
 msgid "Wir nutzen deine Angaben nur zur Bearbeitung dieser Anfrage."
 msgstr ""
-"Мы используем предоставленные тобой данные исключительно для обработки "
-"данного запроса."
 
 #: brainboost/core/templates/contact.html:271
-#, fuzzy
-#| msgid "Kontakt"
 msgid "Direktkontakt"
-msgstr "Контакты"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:273
 msgid "Kiara Puppe"
-msgstr "Кукла Киара"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:276
 msgid "E-Mail:"
-msgstr "Электронная почта:"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:277
 msgid "Telefon:"
-msgstr "Телефон:"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:278
 msgid "WhatsApp:"
-msgstr "WhatsApp:"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:278
 msgid "Nachricht schreiben"
-msgstr "Написать сообщение"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:279
 msgid "Erreichbarkeit:"
-msgstr "Доступность:"
+msgstr ""
 
 #: brainboost/core/templates/contact.html:279
 msgid "Montag bis Freitag, 9:00 - 21:00 Uhr"
-msgstr "С понедельника по пятницу, с 9:00 до 21:00"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:3
-#, fuzzy
-#| msgid ""
-#| "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
 msgid "Nachhilfe Braunschweig – fair & persönlich | BrainBoost"
 msgstr ""
-"Репетиторство в Брауншвейге и онлайн | Математика, английский, немецкий | "
-"BrainBoost"
 
 #: brainboost/core/templates/landing.html:603
 #: brainboost/core/templates/landing_alle.html:135
 msgid "Nachhilfe in Braunschweig und online"
-msgstr "Репетиторство в Брауншвейге и онлайн"
+msgstr "Tutoría en Braunschweig y online"
 
 #: brainboost/core/templates/landing.html:605
 msgid "Willkommen bei"
-msgstr "Добро пожаловать на"
+msgstr "Bienvenido a"
 
 #: brainboost/core/templates/landing.html:610
 msgid "Stark im Kopf - stark im Lernen."
-msgstr "Сильный ум - сильное обучение."
+msgstr "Mente fuerte - aprendizaje fuerte."
 
 #: brainboost/core/templates/landing.html:611
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
 "und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
 "gemeinsam besser lernen."
-msgstr "Индивидуальные занятия с репетитором в Брауншвейге и онлайн. Для школьников, родителей и репетиторов — просто отправьте запрос, найдите подходящую помощь и учитесь лучше вместе."
+msgstr ""
+"Tutoría personalizada en Braunschweig y online. Para estudiantes, padres y "
+"tutores: solo envía una solicitud, encuentra el apoyo adecuado y aprende "
+"mejor en conjunto."
 
 #: brainboost/core/templates/landing.html:612
 msgid "Startaktionen"
-msgstr "Быстрые действия"
+msgstr "Acciones rápidas"
 
 #: brainboost/core/templates/landing.html:613
 msgid "Kostenlose Probestunde buchen"
-msgstr "Записаться на бесплатное пробное занятие"
+msgstr "Reservar una clase de prueba gratuita"
 
 #: brainboost/core/templates/landing.html:614
 msgid "Nachhilfe anfragen"
-msgstr "Запросить репетиторство"
+msgstr "Solicitar tutoría"
 
 #: brainboost/core/templates/landing.html:615
 msgid "Tutor:in werden"
-msgstr "Стать репетитором"
+msgstr "Convertirse en tutor"
 
 #: brainboost/core/templates/landing.html:616
 msgid "Zum Login / Registrieren"
-msgstr "Войти / Зарегистрироваться"
+msgstr "Iniciar sesión / Registrarse"
 
 #: brainboost/core/templates/landing.html:620
 msgid "Die Registrierung erfolgt gemeinsam mit deinem/deiner Tutor:in."
-msgstr "Регистрация выполняется вместе с вашим репетитором."
+msgstr "El registro se realiza junto con tu tutor o tutora."
 
 #: brainboost/core/templates/landing.html:628
 msgid "Über BrainBoost"
-msgstr "О BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:629
 msgid ""
@@ -468,31 +451,20 @@ msgid ""
 "damit alle bei BrainBoost davon profitieren können und das <strong>Beste</"
 "strong> aus sich herausholen können!"
 msgstr ""
-"<strong>BrainBoost</strong> была основана Киарой Пуппе в 2025 году и "
-"представляет собой профессиональную платформу <strong>для репетиторства</"
-"strong> с цифровой инфраструктурой. BrainBoost сочетает растущую "
-"цифровизацию с традиционными методами обучения, ведь <strong>ИИ</strong> и "
-"другие <strong>интеллектуальные инструменты</strong> могут стать полезным "
-"дополнением к процессу обучения — при условии их правильного использования! "
-"Именно поэтому BrainBoost помогает гармонично сочетать ИИ с самостоятельным "
-"и традиционным обучением, чтобы все пользователи BrainBoost могли извлечь из "
-"этого <strong>максимальную</strong> пользу и раскрыть свой потенциал!"
 
 #: brainboost/core/templates/landing.html:634
 msgid "Preis & Qualität"
-msgstr "Цена и качество"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:635
 msgid ""
 "Wir verbinden günstige und faire Preise mit professioneller digitalisierter "
 "Nachhilfe!"
 msgstr ""
-"Мы предлагаем доступные и справедливые цены в сочетании с профессиональными "
-"онлайн-занятиями!"
 
 #: brainboost/core/templates/landing.html:637
 msgid "Zu den Preisen"
-msgstr "О ценах"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:638
 msgid ""
@@ -500,37 +472,34 @@ msgid ""
 "alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose "
 "Probestunde oder kontaktiere mich!"
 msgstr ""
-"Вы <strong>родитель, школьник или студент</strong> и хотите узнать все "
-"подробности о договоре об обучении? Тогда запишитесь на бесплатное пробное "
-"занятие или свяжитесь со мной!"
 
 #: brainboost/core/templates/landing.html:640
 msgid "Jetzt anfragen"
-msgstr "Запросить сейчас"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:651
 msgid "Unser Angebot"
-msgstr "Наше предложение"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:653
 msgid "Digitale Lernorte"
-msgstr "Цифровые учебные площадки"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:654
 msgid "Digitale Lernräume"
-msgstr "Цифровые учебные пространства"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:694
 msgid "Grundschule"
-msgstr "Начальная школа"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:695
 msgid "Alle Fächer"
-msgstr "Все предметы"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:698
 msgid "Weiterführende Schule"
-msgstr "Средняя школа"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:699
 msgid ""
@@ -541,51 +510,35 @@ msgid ""
 "Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, "
 "Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse"
 msgstr ""
-"Немецкий язык, математика, английский язык, французский язык, "
-"обществознание, физика, биология, химия, география и музыка. "
-"<strong>Углубленные курсы для сдачи Абитура:</strong> немецкий, английский, "
-"французский, политика, математика, физика и химия. <strong>Предметы BBS:</"
-"strong> например, экономика, бухгалтерский учет, педагогика, здравоохранение "
-"и обществознание. <strong>Предметы IGS:</strong> например, обществознание, "
-"естественные науки, труд-экономика-техника и факультативные курсы"
 
 #: brainboost/core/templates/landing.html:702
 msgid "Erweitertes Lernangebot"
-msgstr "Расширенная программа обучения"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:703
 msgid ""
 "Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf "
 "Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten"
 msgstr ""
-"Сертифицированные курсы немецкого языка как иностранного (DaF) и немецкого "
-"языка как второго языка (DaZ), а также целенаправленная подготовка к "
-"контрольным работам, экзаменам, выпускным экзаменам и курсовым работам"
 
 #: brainboost/core/templates/landing.html:706
 msgid "Für Studierende"
-msgstr "Для студентов"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:707
 msgid ""
 "Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und "
 "Masterarbeiten - von der Struktur bis zur finalen Überarbeitung"
 msgstr ""
-"Профессиональная поддержка при написании рефератов, проектных работ, "
-"курсовых, бакалаврских и магистерских диссертаций — от разработки структуры "
-"до окончательной доработки"
 
 #: brainboost/core/templates/landing.html:718
-#, fuzzy
-#| msgid "Google-Bewertung"
 msgid "Google-Bewertungen"
-msgstr "Оценка в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:720
-#, fuzzy, python-format
-#| msgid "Google-Bewertung"
+#, python-format
 msgid "Google-Bewertung %(rating)s von 5"
-msgstr "Оценка в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:725
 #, python-format
@@ -593,123 +546,109 @@ msgid "Basierend auf %(count)s Google-Bewertung"
 msgid_plural "Basierend auf %(count)s Google-Bewertungen"
 msgstr[0] ""
 msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
 
 #: brainboost/core/templates/landing.html:728
 msgid ""
 "Aktuelle Google-Bewertungen werden hier angezeigt, sobald die Google Places "
 "API eingerichtet ist."
-msgstr "Текущие отзывы из Google будут отображаться здесь, как только будет настроено API Google Places."
+msgstr ""
 
 #: brainboost/core/templates/landing.html:732
-#, fuzzy
-#| msgid "Preise"
 msgid "Alle ansehen"
-msgstr "Цены"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:733
-#, fuzzy
-#| msgid "Jetzt bei Google bewerten"
 msgid "Jetzt bewerten"
-msgstr "Оцените сейчас в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:752
 #, python-format
 msgid "%(rating)s von 5 Sternen"
-msgstr "%(rating)s из 5 звезд"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:759
-#, fuzzy
-#| msgid "Google-Bewertung"
 msgid "Google-Bewertungen bewegen"
-msgstr "Оценка в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:760
-#, fuzzy
-#| msgid "Google-Bewertung"
 msgid "Vorherige Bewertung"
-msgstr "Оценка в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:761
 msgid "Nächste Bewertung"
-msgstr "Следующий отзыв"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:766
 msgid ""
 "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze "
 "Bewertung bei Google."
 msgstr ""
-"Если тебе понравился BrainBoost, я буду очень рад, если ты оставишь короткий "
-"отзыв в Google."
 
 #: brainboost/core/templates/landing.html:768
 msgid "Jetzt bei Google bewerten"
-msgstr "Оцените сейчас в Google"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:779
 msgid "Kurz & transparent"
-msgstr "Кратко и понятно"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:782
 msgid ""
 "Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und "
 "Lernfortschritt."
 msgstr ""
-"Прозрачные цены на репетиторские занятия за сеанс, включая цифровую "
-"поддержку и отслеживание успехов в обучении."
 
 #: brainboost/core/templates/landing.html:783
 msgid "Preisübersicht"
-msgstr "Прейскурант"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:785
 msgid "45 Minuten"
-msgstr "45 минут"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:789
 msgid "60 Minuten"
-msgstr "60 минут"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:793
 msgid "90 Minuten"
-msgstr "90 минут"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:798
 msgid "inkl. kostenloser WebApp"
-msgstr "включая бесплатное веб-приложение"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:799
 msgid "inkl. Lernfortschrittreports"
-msgstr "включая отчеты о прогрессе в обучении"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:800
 msgid "inkl. Online-Terminplanung"
-msgstr "включая онлайн-планирование встреч"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:801
 msgid "inkl. individuellen Lernmaterialien"
-msgstr "включая индивидуальные учебные материалы"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:803
 msgid "Zu den weiteren Vorteilen!"
-msgstr "О других преимуществах!"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:813
 msgid "Google Maps öffnen (externer Link)"
-msgstr "Открыть Google Maps (внешняя ссылка)"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:817
 msgid "Interaktive Karte mit BrainBoost Lernorten"
-msgstr "Интерактивная карта с учебными центрами BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:821
 msgid "Ganz bequem lernen"
-msgstr "Учиться с максимальным комфортом"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:822
 msgid "Nachhilfe vor Ort bei dir!*"
-msgstr "Репетиторство прямо у тебя дома!*"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:823
 msgid ""
@@ -717,77 +656,66 @@ msgid ""
 "nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem "
 "gewohnten Umfeld."
 msgstr ""
-"Если это удобно с организационной точки зрения, твой репетитор приедет к "
-"тебе домой. Так обучение пройдет в непринужденной и личной обстановке, прямо "
-"в твоей привычной среде."
 
 #: brainboost/core/templates/landing.html:824
 msgid "Vor-Ort-Nachhilfe anfragen"
-msgstr "Заказать репетиторство на дому"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:825
 msgid ""
 "* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab "
 "transparent abgestimmt."
 msgstr ""
-"* В зависимости от расстояния может взиматься плата за проезд. Все детали "
-"будут заранее согласованы в открытой форме."
 
 #: brainboost/core/templates/landing.html:832
 msgid "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!"
 msgstr ""
-"Станьте репетитором и зарабатывайте до 1000 евро в месяц, не отрываясь от "
-"учебы!"
 
 #: brainboost/core/templates/landing.html:833
 msgid "Jetzt bewerben und keine Chance verpassen!"
-msgstr "Подайте заявку прямо сейчас и не упустите свой шанс!"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:838
 msgid "BrainBoost Feedback"
-msgstr "Отзывы о BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:839
 msgid ""
 "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist "
 "dafür nötig?"
 msgstr ""
-"BrainBoost стремится стать лучшей платформой для репетиторства в Германии! "
-"Что для этого нужно?"
 
 #: brainboost/core/templates/landing.html:840
 msgid "Anonymes Feedback geben"
-msgstr "Оставить анонимный отзыв"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:844
 msgid "FAQ"
-msgstr "Часто задаваемые вопросы"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:852
 msgid "Noch keine FAQ für die Startseite vorhanden."
-msgstr "На главной странице пока нет раздела «Часто задаваемые вопросы»."
+msgstr ""
 
 #: brainboost/core/templates/landing.html:862
 msgid "BrainBoost Lernort"
-msgstr "Учебный центр BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:863
 msgid "Karl-Schmidt-Straße 20, 38114 Braunschweig"
-msgstr "Карл-Шмидт-штрассе, 20, 38114 Брауншвейг"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:864
 msgid "Stadtbibliothek Braunschweig"
-msgstr "Городская библиотека Брауншвейга"
+msgstr ""
 
 #: brainboost/core/templates/landing.html:865
 msgid "Zentraler Treffpunkt in der Innenstadt"
-msgstr "Центральное место встречи в центре города"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:4
 msgid "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
 msgstr ""
-"Репетиторство в Брауншвейге и онлайн | Математика, английский, немецкий | "
-"BrainBoost"
 
 #: brainboost/core/templates/landing_alle.html:6
 msgid ""
@@ -795,9 +723,6 @@ msgid ""
 "und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos "
 "anfragen."
 msgstr ""
-"Индивидуальное репетиторство в Брауншвейге и онлайн: математика, немецкий, "
-"английский и другие предметы. Для родителей, учеников и репетиторов. "
-"Отправьте бесплатный запрос сейчас."
 
 #: brainboost/core/templates/landing_alle.html:136
 msgid ""
@@ -805,9 +730,6 @@ msgid ""
 "Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und "
 "weitere Fächer."
 msgstr ""
-"BrainBoost сочетает индивидуальные занятия с четкой организацией: онлайн-"
-"репетиторство и репетиторы в Брауншвейге по математике, немецкому, "
-"английскому и другим предметам."
 
 #: brainboost/core/templates/landing_alle.html:138
 #: brainboost/core/templates/landing_alle.html:170
@@ -819,7 +741,7 @@ msgstr ""
 #: brainboost/core/templates/landing_schuelerinnen.html:27
 #: brainboost/core/templates/landing_schuelerinnen.html:78
 msgid "Kostenlose Anfrage stellen"
-msgstr "Отправить бесплатный запрос"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:139
 #: brainboost/core/templates/landing_alle.html:172
@@ -827,35 +749,33 @@ msgstr "Отправить бесплатный запрос"
 #: brainboost/core/templates/landing_alle.html:206
 #: brainboost/core/templates/landing_alle.html:248
 msgid "Mehr über BrainBoost erfahren"
-msgstr "Узнать больше о BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:142
 msgid "BrainBoost Lernbegleitung"
-msgstr "Учебная поддержка BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:143
 #: brainboost/core/templates/landing_eltern.html:28
 #: brainboost/core/templates/landing_schuelerinnen.html:30
 #: brainboost/core/templates/landing_tutor.html:30
 msgid "BrainBoost Logo"
-msgstr "Логотип BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:145
 #: brainboost/core/templates/landing_alle.html:237
 msgid "Nachhilfe Braunschweig"
-msgstr "Репетиторство в Брауншвейге"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:146
 msgid ""
 "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder "
 "vor Ort möglich."
 msgstr ""
-"Подходящая поддержка в обучении для родителей, учеников и репетиторов. "
-"Возможны занятия онлайн или очно."
 
 #: brainboost/core/templates/landing_alle.html:152
 msgid "Individuelle Nachhilfe für Braunschweig"
-msgstr "Индивидуальные занятия с репетитором в Брауншвейге"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:153
 msgid ""
@@ -864,23 +784,18 @@ msgid ""
 "Lernstand, Fach und Ziel passt. BrainBoost strukturiert die Anfrage und "
 "hilft dabei, passende Nachhilfe online oder in Braunschweig zu organisieren."
 msgstr ""
-"Будь то репетиторство по математике в Брауншвейге, репетиторство по "
-"английскому языку в Брауншвейге или репетиторство по немецкому языку в "
-"Брауншвейге: главное, чтобы помощь соответствовала уровню знаний, предмету и "
-"поставленной цели. BrainBoost структурирует запрос и помогает организовать "
-"подходящее репетиторство онлайн или в Брауншвейге."
 
 #: brainboost/core/templates/landing_alle.html:157
 msgid "Nachhilfe passend zu deiner Rolle"
-msgstr "Репетиторство с учетом твоей роли"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:160
 msgid "Eltern"
-msgstr "Родители"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:161
 msgid "Für Eltern"
-msgstr "Для родителей"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:162
 msgid ""
@@ -888,42 +803,37 @@ msgid ""
 "BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende "
 "TutorInnen in Braunschweig oder online zu finden."
 msgstr ""
-"Родители ищут надежную индивидуальную поддержку для своего ребенка. "
-"BrainBoost помогает определить потребности в обучении, предмет и цель, а "
-"также найти подходящих репетиторов в Брауншвейге или онлайн."
 
 #: brainboost/core/templates/landing_alle.html:164
 msgid "passende TutorInnen"
-msgstr "подходящие преподаватели"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:165
 msgid "individuelle Förderung"
-msgstr "индивидуальная поддержка"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:166
 #: brainboost/core/templates/landing_alle.html:240
 msgid "transparente Kommunikation"
-msgstr "открытое общение"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:167
 #: brainboost/core/templates/landing_alle.html:184
 msgid "online oder in Braunschweig"
-msgstr "онлайн или в Брауншвейге"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:171
 #: brainboost/core/templates/landing_eltern.html:22
-#, fuzzy
-#| msgid "Für Eltern"
 msgid "Für Eltern erklärt"
-msgstr "Для родителей"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:177
 msgid "SchülerInnen"
-msgstr "учащиеся"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:178
 msgid "Für SchülerInnen"
-msgstr "Для школьников"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:179
 msgid ""
@@ -931,36 +841,31 @@ msgid ""
 "Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und "
 "auf den eigenen Lernstand abgestimmt."
 msgstr ""
-"Учащиеся получают понятную помощь в выполнении домашних заданий, подготовке "
-"к экзаменам и освоении сложных тем. Репетиторство остается конкретным, "
-"гибким и адаптированным к индивидуальному уровню знаний."
 
 #: brainboost/core/templates/landing_alle.html:181
 msgid "verständliche Erklärungen"
-msgstr "доступные объяснения"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:182
 msgid "flexible Termine"
-msgstr "гибкое расписание"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:183
 msgid "Mathe, Deutsch, Englisch und weitere Fächer"
-msgstr "Математика, немецкий язык, английский язык и другие предметы"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:188
 #: brainboost/core/templates/landing_schuelerinnen.html:24
-#, fuzzy
-#| msgid "Für SchülerInnen"
 msgid "Für SchülerInnen erklärt"
-msgstr "Для школьников"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:194
 msgid "TutorInnen"
-msgstr "Репетиторы"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:195
 msgid "Für TutorInnen"
-msgstr "Для репетиторов"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:196
 msgid ""
@@ -968,89 +873,77 @@ msgid ""
 "unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf "
 "flexible Nachhilfe online oder vor Ort ausgelegt."
 msgstr ""
-"Преподаватели могут предлагать репетиторские услуги через BrainBoost и "
-"помогать ученикам. Этот процесс организован четко, обеспечивает "
-"профессиональную видимость и рассчитан на гибкое репетиторство — как онлайн, "
-"так и очно."
 
 #: brainboost/core/templates/landing_alle.html:198
 msgid "strukturierter Vermittlungsprozess"
-msgstr "систематизированный процесс посредничества"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:199
 msgid "professionelle Außendarstellung"
-msgstr "профессиональный имидж"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:200
 msgid "digitale Unterstützung über die WebApp"
-msgstr "цифровая поддержка через веб-приложение"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:201
 msgid "flexible Nachhilfe online oder vor Ort"
-msgstr "гибкие занятия с репетитором онлайн или на дому"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:205
-#, fuzzy
-#| msgid "Für TutorInnen"
 msgid "Für Tutoren erklärt"
-msgstr "Для репетиторов"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:214
 msgid "Fächer und Ziele"
-msgstr "Предметы и цели"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:216
 msgid ""
 "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und "
 "Prüfungsvorbereitung"
 msgstr ""
-"Репетиторство по математике в Брауншвейге: освоение основ, подготовка к "
-"контрольным работам и экзаменам"
 
 #: brainboost/core/templates/landing_alle.html:217
 msgid ""
 "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere "
 "Ausdrucksweise"
 msgstr ""
-"Репетиторство по немецкому языку в Брауншвейге: грамматика, тексты и "
-"уверенная речь"
 
 #: brainboost/core/templates/landing_alle.html:218
 msgid ""
 "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche "
 "Sicherheit"
 msgstr ""
-"Репетиторство по английскому языку в Брауншвейге: лексика, грамматика и "
-"уверенность в устной речи"
 
 #: brainboost/core/templates/landing_alle.html:219
 msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
-msgstr "дополнительные предметы в зависимости от потребностей и наличия"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:223
 #: brainboost/core/templates/landing_tutor.html:91
 msgid "Ablauf"
-msgstr "Порядок действий"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:225
 msgid "Anfrage ausfüllen"
-msgstr "Заполнить форму запроса"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:226
 msgid "Lernziel und passende Unterrichtsform abstimmen"
-msgstr "Согласовать учебную цель и подходящую форму занятия"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:227
 msgid "geeignete TutorInnen in Braunschweig oder online finden"
-msgstr "найти подходящих репетиторов в Брауншвейге или онлайн"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:228
 msgid "individuelle Nachhilfe starten"
-msgstr "Начать индивидуальные занятия"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:234
 msgid "Online Nachhilfe und Nachhilfe vor Ort"
-msgstr "Онлайн-репетиторство и репетиторство на дому"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:235
 msgid ""
@@ -1059,483 +952,399 @@ msgid ""
 "flexibel online stattfinden oder mit TutorInnen in Braunschweig abgestimmt "
 "werden."
 msgstr ""
-"BrainBoost подходит для регулярного сопровождения в процессе обучения, "
-"целенаправленной подготовки к экзаменам и краткосрочной поддержки. Занятия "
-"могут проводиться в гибком режиме онлайн или по договоренности с "
-"репетиторами в Брауншвейге."
 
 #: brainboost/core/templates/landing_alle.html:238
 msgid "Online Nachhilfe"
-msgstr "Онлайн-репетиторство"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:239
 msgid "Mathe, Deutsch, Englisch"
-msgstr "Математика, немецкий язык, английский язык"
+msgstr ""
 
 #: brainboost/core/templates/landing_alle.html:245
 msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
 msgstr ""
-"Запросите подходящие репетиторские услуги в Брауншвейге или онлайн прямо "
-"сейчас"
 
 #: brainboost/core/templates/landing_eltern.html:4
-#, fuzzy
-#| msgid "Nachhilfe in Braunschweig und online"
 msgid "Nachhilfe für Eltern in Braunschweig & online | BrainBoost"
-msgstr "Репетиторство в Брауншвейге и онлайн"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:6
 msgid ""
 "BrainBoost erklärt Eltern, wie individuelle Nachhilfe in Braunschweig und "
 "online organisiert wird: passende TutorInnen, klare Kommunikation und "
 "gezielte Förderung."
-msgstr "BrainBoost рассказывает родителям, как организованы индивидуальные занятия с репетитором в Брауншвейге и онлайн: подбор подходящих репетиторов, четкая коммуникация и целенаправленная помощь."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:23
-#, fuzzy
-#| msgid "Nachhilfe in Braunschweig und online"
 msgid "Nachhilfe für Eltern in Braunschweig und online"
-msgstr "Репетиторство в Брауншвейге и онлайн"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:24
 msgid ""
 "Wenn dein Kind Unterstützung in Mathe, Deutsch, Englisch oder einem anderen "
 "Fach braucht, hilft BrainBoost dabei, den Bedarf klar einzuordnen und "
 "passende TutorInnen zu finden."
-msgstr "Если вашему ребенку нужна помощь по математике, немецкому, английскому или какому-либо другому предмету, BrainBoost поможет точно определить его потребности и найти подходящих репетиторов."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:27
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
 msgid "BrainBoost Eltern-Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:30
-#, fuzzy
-#| msgid "digitale Unterstützung über die WebApp"
 msgid "Klare Unterstützung für dein Kind"
-msgstr "цифровая поддержка через веб-приложение"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:31
 msgid "Online oder vor Ort in Braunschweig, mit transparenter Abstimmung."
-msgstr "Онлайн или на месте в Брауншвейге, с прозрачным согласованием."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:37
 msgid "Was Eltern wichtig ist"
-msgstr "Что важно для родителей"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:40
-#, fuzzy
-#| msgid "passende TutorInnen"
 msgid "Passende TutorInnen"
-msgstr "подходящие преподаватели"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:41
 msgid ""
 "Fach, Klassenstufe, Lernziel und Unterrichtsform werden vorab eingeordnet."
-msgstr "Предмет, класс, цель обучения и форма занятия определяются заранее."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:44
-#, fuzzy
-#| msgid "individuelle Förderung"
 msgid "Individuelle Förderung"
-msgstr "индивидуальная поддержка"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:45
 msgid "Die Nachhilfe orientiert sich am konkreten Lernstand deines Kindes."
-msgstr "Занятия с репетитором ориентированы на конкретный уровень знаний твоего ребенка."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:48
-#, fuzzy
-#| msgid "transparente Kommunikation"
 msgid "Transparente Kommunikation"
-msgstr "открытое общение"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:49
 msgid "Absprachen zu Zeiten, Ort, Zielen und nächstem Schritt bleiben klar."
-msgstr "Договоренности относительно времени, места, целей и следующих шагов остаются четкими."
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:56
 msgid "Typische Anliegen"
-msgstr "Типичные вопросы"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:58
 msgid "Noten verbessern"
-msgstr "Повысить оценки"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:59
 msgid "Grundlagen aufholen"
-msgstr "Наверстать упущенное"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:60
 msgid "Klassenarbeiten vorbereiten"
-msgstr "Подготовка к контрольным работам"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:61
 msgid "regelmäßige Lernbegleitung aufbauen"
-msgstr "наладить регулярное сопровождение учебного процесса"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:65
 msgid "So läuft die Anfrage ab"
-msgstr "Вот как проходит запрос"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:67
 msgid "Rolle Eltern auswählen und Anfrage senden"
-msgstr "Выберите роль «Родители» и отправьте запрос"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:68
-#, fuzzy
-#| msgid "Lernziel und passende Unterrichtsform abstimmen"
 msgid "Fach, Ziel und Unterrichtsform abstimmen"
-msgstr "Согласовать учебную цель и подходящую форму занятия"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:69
-#, fuzzy
-#| msgid "individuelle Nachhilfe starten"
 msgid "passende Nachhilfe starten"
-msgstr "Начать индивидуальные занятия"
+msgstr ""
 
 #: brainboost/core/templates/landing_eltern.html:75
-#, fuzzy
-#| msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
 msgid "Jetzt passende Nachhilfe für dein Kind anfragen"
 msgstr ""
-"Запросите подходящие репетиторские услуги в Брауншвейге или онлайн прямо "
-"сейчас"
 
 #: brainboost/core/templates/landing_eltern.html:77
 #: brainboost/core/templates/landing_schuelerinnen.html:79
-#, fuzzy
-#| msgid "Preisübersicht"
 msgid "Zur Übersicht"
-msgstr "Прейскурант"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:4
-#, fuzzy
-#| msgid "Nachhilfe in Braunschweig und online"
 msgid "Nachhilfe für SchülerInnen in Braunschweig & online | BrainBoost"
-msgstr "Репетиторство в Брауншвейге и онлайн"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:6
 msgid ""
 "BrainBoost erklärt SchülerInnen, wie verständliche Nachhilfe in Braunschweig "
 "und online bei Hausaufgaben, Prüfungen und schwierigen Themen unterstützt."
-msgstr "BrainBoost рассказывает школьникам, как доступные репетиторские услуги в Брауншвейге и онлайн помогут им с домашними заданиями, экзаменами и сложными темами."
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:25
-#, fuzzy
-#| msgid "Nachhilfe in Braunschweig und online"
 msgid "Nachhilfe für SchülerInnen in Braunschweig und online"
-msgstr "Репетиторство в Брауншвейге и онлайн"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:26
 msgid ""
 "BrainBoost hilft dir, schwierige Themen verständlicher zu machen, "
 "Hausaufgaben besser zu bewältigen und dich gezielt auf Prüfungen "
 "vorzubereiten."
-msgstr "BrainBoost поможет тебе лучше понять сложные темы, легче справляться с домашними заданиями и целенаправленно готовиться к экзаменам."
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:29
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
 msgid "BrainBoost SchülerInnen-Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:32
-#, fuzzy
-#| msgid "verständliche Erklärungen"
 msgid "Verständlich lernen"
-msgstr "доступные объяснения"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:33
-#, fuzzy
-#| msgid "Mathe, Deutsch, Englisch und weitere Fächer"
 msgid ""
 "Mathe, Deutsch, Englisch und weitere Fächer online oder in Braunschweig."
-msgstr "Математика, немецкий язык, английский язык и другие предметы"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:39
 msgid "Wobei BrainBoost unterstützt"
-msgstr "При этом BrainBoost помогает"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:42
-#, fuzzy
-#| msgid "verständliche Erklärungen"
 msgid "Verständliche Erklärungen"
-msgstr "доступные объяснения"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:43
 msgid "Themen werden so erklärt, dass du sie wirklich nachvollziehen kannst."
-msgstr "Темы объясняются так, чтобы ты мог их действительно понять."
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:46
-#, fuzzy
-#| msgid "flexible Termine"
 msgid "Flexible Termine"
-msgstr "гибкое расписание"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:47
 msgid ""
 "Nachhilfe kann passend zu Schule, Freizeit und Prüfungsphasen abgestimmt "
 "werden."
-msgstr "Занятия с репетитором можно организовать с учетом школьного расписания, свободного времени и периодов сдачи экзаменов."
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:50
 msgid "Konkrete Ziele"
-msgstr "Конкретные цели"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:51
 msgid ""
 "Du kannst gezielt an Hausaufgaben, Klassenarbeiten, Grundlagen oder "
 "Prüfungen arbeiten."
-msgstr "Ты можешь целенаправленно заниматься домашними заданиями, контрольными работами, базовыми знаниями или экзаменами."
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:58
 msgid "Geeignet für"
-msgstr "Подходит для"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:60
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
 msgid "Mathe Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:61
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
 msgid "Deutsch Nachhilfe"
-msgstr "Репетиторство BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:62
-#, fuzzy
-#| msgid "Online Nachhilfe"
 msgid "Englisch Nachhilfe"
-msgstr "Онлайн-репетиторство"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:63
-#, fuzzy
-#| msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
 msgid "weitere Fächer nach Bedarf"
-msgstr "дополнительные предметы в зависимости от потребностей и наличия"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:67
 msgid "So funktioniert es"
-msgstr "Как это работает"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:69
-#, fuzzy
-#| msgid "SchülerInnen"
 msgid "Rolle SchülerIn auswählen"
-msgstr "учащиеся"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:70
-#, fuzzy
-#| msgid "Fächer und Ziele"
 msgid "Fach und Ziel angeben"
-msgstr "Предметы и цели"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:71
 msgid "passende Unterstützung bekommen"
-msgstr "получить необходимую поддержку"
+msgstr ""
 
 #: brainboost/core/templates/landing_schuelerinnen.html:77
-#, fuzzy
-#| msgid "Vor-Ort-Nachhilfe anfragen"
 msgid "Jetzt Nachhilfe anfragen"
-msgstr "Заказать репетиторство на дому"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:24
-#, fuzzy
-#| msgid "Über BrainBoost"
 msgid "TutorInnen bei BrainBoost"
-msgstr "О BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:25
 msgid "Werde TutorIn bei BrainBoost"
-msgstr "Станьте репетитором в BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:26
 msgid ""
 "Gib flexible Nachhilfe, unterstütze SchülerInnen und arbeite mit einer "
 "modernen Plattform."
-msgstr "Проводите индивидуальные занятия, помогайте ученикам и работайте с помощью современной платформы."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:27
 #: brainboost/core/templates/landing_tutor.html:103
-#, fuzzy
-#| msgid "TutorIn werden"
 msgid "Als TutorIn bewerben"
-msgstr "Стать наставником"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:29
-#, fuzzy
-#| msgid "BrainBoost Lernbegleitung"
 msgid "BrainBoost TutorInnen-Bewerbung"
-msgstr "Учебная поддержка BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:32
-#, fuzzy
-#| msgid "Regelmäßig Nachhilfe gegeben"
 msgid "Flexible Nachhilfe geben"
-msgstr "Регулярный опыт репетиторства"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:33
 msgid ""
 "Fächer, Verfügbarkeit und passende SchülerInnen werden gemeinsam abgestimmt."
-msgstr "Предметы, наличие мест и подходящие учащиеся согласовываются совместно."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:39
 msgid "Vorteile"
-msgstr "Преимущества"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:42
-#, fuzzy
-#| msgid "flexible Termine"
 msgid "Flexible Zeiten"
-msgstr "гибкое расписание"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:43
 msgid "Stimme deine Verfügbarkeit passend zu Studium, Schule oder Beruf ab."
-msgstr "Согласуй свое расписание с учебой, школой или работой."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:46
-#, fuzzy
-#| msgid "flexible Nachhilfe online oder vor Ort"
 msgid "Online oder vor Ort"
-msgstr "гибкие занятия с репетитором онлайн или на дому"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:47
 msgid ""
 "Nachhilfe kann je nach Bedarf digital oder in Braunschweig vor Ort "
 "stattfinden."
-msgstr "Занятия с репетитором могут проводиться в цифровом формате или на месте в Брауншвейге, в зависимости от потребностей."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:50
 msgid "Unterstützung durch BrainBoost"
-msgstr "Поддержка от BrainBoost"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:51
 msgid ""
 "Du arbeitest nicht allein, sondern mit einer klar organisierten Plattform im "
 "Hintergrund."
-msgstr "Ты работаешь не в одиночку, а с помощью четко организованной платформы, которая работает в фоновом режиме."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:54
 msgid "Klare Organisation"
-msgstr "Четкая организация"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:55
 msgid "Fächer, Zeiten und Kommunikation werden strukturiert abgestimmt."
-msgstr "Расписание, время занятий и вопросы коммуникации согласовываются в соответствии с установленным порядком."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:58
 msgid "Sinnvolle Tätigkeit mit Wirkung"
-msgstr "Полезная деятельность, приносящая результаты"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:59
 msgid ""
 "Du unterstützt SchülerInnen dabei, Inhalte besser zu verstehen und Lernziele "
 "anzugehen."
-msgstr "Ты помогаешь ученикам лучше понимать материал и достигать поставленных учебных целей."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:62
-#, fuzzy
-#| msgid "Für Studierende"
 msgid "Ideal für Studierende"
-msgstr "Для студентов"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:63
 msgid "Die Tätigkeit lässt sich gut mit einem flexiblen Wochenplan verbinden."
-msgstr "Эта работа хорошо сочетается с гибким графиком."
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:70
 msgid "Für wen geeignet?"
-msgstr "Для кого это подходит?"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:72
-#, fuzzy
-#| msgid "Für Studierende"
 msgid "Studierende"
-msgstr "Для студентов"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:73
 msgid "OberstufenschülerInnen mit sehr guten Leistungen"
-msgstr "Учащиеся старших классов с отличными успехами"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:74
-#, fuzzy
-#| msgid "Lehrkraft"
 msgid "Lehrkräfte"
-msgstr "Учитель"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:75
 msgid "Personen mit Fachkompetenz und Freude am Erklären"
-msgstr "Люди, обладающие профессиональными знаниями и любящие объяснять"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:79
 msgid "Anforderungen"
-msgstr "Требования"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:81
 msgid "zuverlässig"
-msgstr "надежный"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:82
 msgid "fachlich sicher"
-msgstr "компетентный в профессиональном плане"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:83
 msgid "freundlich und geduldig"
-msgstr "вежливый и терпеливый"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:84
-#, fuzzy
-#| msgid "transparente Kommunikation"
 msgid "klare Kommunikation"
-msgstr "открытое общение"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:85
 msgid "verantwortungsvoller Umgang mit SchülerInnen"
-msgstr "ответственное отношение к учащимся"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:93
 msgid "Kurze Bewerbung senden"
-msgstr "Отправить краткую заявку"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:94
 msgid "Kennenlern"
-msgstr "Знакомство"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:94
 msgid "gespräch"
-msgstr "беседа"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:95
-#, fuzzy
-#| msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
 msgid "Fächer und Verfügbarkeit klären"
-msgstr "дополнительные предметы в зависимости от потребностей и наличия"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:96
 msgid "Aufnahme als TutorIn"
-msgstr "Прием на должность наставника"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:97
-#, fuzzy
-#| msgid "passende TutorInnen"
 msgid "passende SchülerInnen erhalten"
-msgstr "подходящие преподаватели"
+msgstr ""
 
 #: brainboost/core/templates/landing_tutor.html:102
-#, fuzzy
-#| msgid "TutorIn werden"
 msgid "Jetzt als TutorIn bewerben"
-msgstr "Стать наставником"
+msgstr ""
 
 #: brainboost/core/templates/partials/cookie_notice.html:2
 #: brainboost/core/templates/partials/cookie_notice.html:5
 msgid "Hinweis zu technisch notwendigen Cookies"
-msgstr "Примечание о технически необходимых файлах cookie"
+msgstr ""
 
 #: brainboost/core/templates/partials/cookie_notice.html:7
 msgid ""
@@ -1543,62 +1352,37 @@ msgid ""
 "Schutz), um die Sicherheit und grundlegenden Funktionen der Webapp zu "
 "gewährleisten. Weitere Informationen:"
 msgstr ""
-"Мы используем исключительно технически необходимые файлы cookie (например, "
-"защиту от CSRF на сайте &nbsp;), чтобы обеспечить безопасность и базовые "
-"функции веб-приложения. Дополнительная информация:"
 
 #: brainboost/core/templates/partials/cookie_notice.html:12
 msgid "Verstanden"
-msgstr "Понял"
+msgstr ""
 
 #: brainboost/core/templates/partials/language_popup.html:175
-#, fuzzy
-#| msgid "Sprache wechseln"
 msgid "Sprache wählen"
-msgstr "Сменить язык"
+msgstr "Elegir idioma"
 
 #: brainboost/core/templates/partials/language_popup.html:176
-#, fuzzy
-#| msgid "Preishinweis schließen"
 msgid "Sprachfenster schließen"
-msgstr "Скрыть информацию о цене"
+msgstr "Cerrar ventana de idioma"
 
 #: brainboost/core/templates/partials/language_popup.html:180
 msgid "Animierte Sprachwahl"
-msgstr "Анимационный выбор языка"
+msgstr "Selección de idioma animada"
 
 #: brainboost/core/templates/partials/price_banner.html:2
-#, fuzzy
-#| msgid "Preise"
 msgid "Preishinweis"
-msgstr "Цены"
+msgstr ""
 
 #: brainboost/core/templates/partials/price_banner.html:5
 msgid ""
 "Einzelunterricht ab 19€ / 45 Min – inkl. Lernfortschrittreport + kostenloser "
 "5h-Online-Stornierung!"
 msgstr ""
-"Индивидуальные занятия от 19 € за 45 минут — включая отчет о прогрессе в "
-"обучении + бесплатная отмена онлайн-заказа в течение 5 часов!"
 
 #: brainboost/core/templates/partials/price_banner.html:6
-#, fuzzy
-#| msgid "Preise"
 msgid "Preise ansehen"
-msgstr "Цены"
+msgstr ""
 
 #: brainboost/core/templates/partials/price_banner.html:8
 msgid "Preishinweis schließen"
-msgstr "Скрыть информацию о цене"
-
-#~ msgid "BrainBoost | Startseite"
-#~ msgstr "BrainBoost | Главная страница"
-
-#~ msgid "Wichtiger Hinweis"
-#~ msgstr "Важное замечание"
-
-#~ msgid "Sei schnell! Melde Dich jetzt!"
-#~ msgstr "Поторопись! Записывайся прямо сейчас!"
-
-#~ msgid "Lernorte"
-#~ msgstr "Места обучения"
+msgstr ""

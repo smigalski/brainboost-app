@@ -546,6 +546,47 @@ class LeadFormFlowTests(TestCase):
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-tutor-explained"')
         self.assertContains(response, 'data-cta="nachhilfe-braunschweig-tutor-home"')
 
+    def test_homepage_hero_uses_ctas_instead_of_login_form(self):
+        response = self.client.get(reverse("landing_page"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Willkommen bei")
+        self.assertContains(response, "Kostenlose Probestunde buchen")
+        self.assertContains(response, "Nachhilfe anfragen")
+        self.assertContains(response, "Tutor:in werden")
+        self.assertContains(response, "Zum Login / Registrieren", count=1)
+        self.assertContains(response, reverse("contact") + "?role=parent")
+        self.assertContains(response, reverse("contact") + "?role=student")
+        self.assertContains(response, reverse("contact") + "?role=tutor")
+        self.assertContains(response, reverse("login"))
+        self.assertContains(response, "Die Registrierung erfolgt gemeinsam mit deinem/deiner Tutor:in.")
+        self.assertContains(response, 'data-bb-language-popup')
+        self.assertContains(response, 'data-bb-language-arena')
+        self.assertContains(response, 'data-language-code="de"')
+        self.assertContains(response, 'data-language-code="en"')
+        self.assertContains(response, 'data-language-code="es"')
+        self.assertContains(response, 'data-language-code="pl"')
+        self.assertContains(response, 'data-bb-language-close')
+        self.assertNotContains(response, 'class="language-orbit__button"')
+        self.assertNotContains(response, 'action="%s"' % reverse("login"))
+        self.assertNotContains(response, 'name="username"')
+        self.assertNotContains(response, 'name="password"')
+
+    def test_language_popup_is_rendered_on_public_landing_pages(self):
+        for url_name in [
+            "landing_page",
+            "nachhilfe_anfrage",
+            "tutor_werden",
+            "landing_schuelerinnen",
+        ]:
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name))
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'data-bb-language-popup')
+                self.assertContains(response, 'data-bb-language-close')
+                self.assertContains(response, "Sprache wählen")
+
     def test_role_landing_pages_link_to_prefilled_contact_form(self):
         parent_response = self.client.get(reverse("landing_eltern"))
         student_response = self.client.get(reverse("landing_schuelerinnen"))

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static i18n %}
 {% block title %}{% trans "Nachhilfe Braunschweig – fair & persönlich | BrainBoost" %}{% endblock %}
+{% block language_popup %}{% include "partials/language_popup.html" %}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
@@ -25,6 +26,135 @@
     }
     .brainboost-wordmark__initial {
         color: #fdcd02;
+    }
+    .landing-hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+        align-items: stretch;
+        width: min(1180px, calc(100vw - 32px));
+        min-height: 520px;
+        margin-left: 50%;
+        transform: translateX(-50%);
+        padding: clamp(26px, 4vw, 44px);
+        border: 1px solid rgba(255, 201, 40, 0.42);
+        border-radius: 26px;
+        background:
+            radial-gradient(circle at 78% 18%, rgba(255, 201, 40, 0.25), transparent 34%),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(226, 247, 244, 0.96));
+        box-shadow: 0 28px 60px rgba(13, 64, 70, 0.2);
+        overflow: visible;
+    }
+    .landing-hero__content {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        align-content: center;
+        gap: 18px;
+        width: 100%;
+        min-height: 0;
+    }
+    .landing-hero__eyebrow {
+        width: fit-content;
+        margin: 0;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(44, 138, 138, 0.12);
+        color: var(--teal-dark);
+        font-size: 0.8rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .landing-hero h1 {
+        margin: 0;
+        color: #12343b;
+        font-size: clamp(2.2rem, 4.8vw, 4.3rem);
+        line-height: 0.98;
+    }
+    .landing-hero__subline {
+        margin: 0;
+        color: #1d4c57;
+        font-size: clamp(1.08rem, 1.8vw, 1.35rem);
+        font-weight: 900;
+    }
+    .landing-hero__text {
+        margin: 0;
+        color: #334155;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    .landing-hero__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .landing-hero__cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 13px 17px;
+        border-radius: 14px;
+        font-weight: 900;
+        line-height: 1.15;
+        text-align: center;
+        box-shadow: 0 14px 30px rgba(29, 76, 87, 0.16);
+        overflow-wrap: anywhere;
+    }
+    .landing-hero__cta--primary {
+        background: linear-gradient(135deg, #ffc928, #ff9f1c);
+        color: #17252b;
+    }
+    .landing-hero__cta--secondary {
+        background: #ffffff;
+        color: #1d4c57;
+        border: 1px solid rgba(44, 138, 138, 0.22);
+        box-shadow: 0 12px 26px rgba(29, 76, 87, 0.12);
+    }
+    .landing-hero__cta--tutor {
+        background: linear-gradient(135deg, #1f6666, #2c8a8a);
+        color: #ffffff;
+    }
+    .landing-hero__login {
+        color: #1d4c57;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(44, 138, 138, 0.2);
+        box-shadow: none;
+    }
+    .landing-hero__note {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin: 2px 0 0;
+        padding: 13px 15px;
+        border: 1px solid rgba(255, 201, 40, 0.44);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #334155;
+        box-shadow: 0 12px 24px rgba(29, 76, 87, 0.08);
+    }
+    .landing-hero__note-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 201, 40, 0.28);
+        color: #8a5c00;
+        font-weight: 900;
+    }
+    .landing-hero__note-mark::before {
+        content: "i";
+    }
+    .landing-hero__note p {
+        margin: 0;
+        color: #334155;
+        line-height: 1.45;
     }
     .landing-pricing-summary {
         display: grid;
@@ -422,7 +552,80 @@
         border-radius: 16px;
         background: #fff;
     }
-    @media (max-width: 700px) {
+    @media (max-width: 760px) {
+        .landing-hero {
+            grid-template-columns: 1fr;
+            width: 100%;
+            min-height: 0;
+            margin-left: 0;
+            transform: none;
+            border-radius: 22px;
+            padding-inline: clamp(20px, 6vw, 32px);
+        }
+        .landing-hero__content {
+            width: 100%;
+            min-height: 0;
+            justify-items: center;
+            text-align: center;
+        }
+        .landing-hero h1 {
+            width: 100%;
+            text-align: center;
+        }
+        .brainboost-wordmark {
+            display: block;
+            max-width: 100%;
+            margin: 8px auto 0;
+            font-size: clamp(1.45em, 17vw, 1.78em);
+            text-align: center;
+        }
+        .landing-hero__actions {
+            justify-content: center;
+            align-items: stretch;
+            width: min(100%, 520px);
+            margin-inline: auto;
+        }
+        .landing-hero__cta {
+            width: 100%;
+        }
+        .landing-hero__eyebrow {
+            margin-inline: auto;
+        }
+        .landing-hero__text {
+            max-width: 32rem;
+        }
+        .landing-hero__note {
+            width: min(100%, 520px);
+            justify-content: center;
+            text-align: center;
+        }
+        .page > .card,
+        .page > .card .info-tile,
+        .page > .card .tile-placeholder,
+        .page > .card .muted,
+        .page > .card details,
+        .brainboost-map-card,
+        .home-tutoring-card,
+        .google-review-card,
+        .landing-pricing-summary,
+        .landing-pricing-benefit {
+            text-align: center;
+        }
+        .page > .card .info-tile,
+        .landing-pricing-summary,
+        .landing-pricing-benefits,
+        .home-tutoring-card {
+            justify-items: center;
+        }
+        .page > .card .button,
+        .brainboost-map-link,
+        .home-tutoring-card .button {
+            margin-inline: auto;
+        }
+        .landing-pricing-benefit,
+        .brainboost-map-link {
+            justify-content: center;
+        }
         .landing-pricing-grid,
         .landing-pricing-benefits,
         .learning-location-grid,
@@ -450,36 +653,28 @@
         }
     }
 </style>
-<div style="display:flex;justify-content:center;margin:8px 0 18px;">
-    <a href="{% url 'contact' %}?role=parent" data-cta="probestunde-kontakt" style="display:inline-flex;align-items:center;gap:10px;padding:18px 26px;border:none;border-radius:18px;background:linear-gradient(135deg, #ff2d2d, #ffcc00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 16px 32px rgba(255,45,45,0.35), 0 8px 18px rgba(0,0,0,0.2);cursor:pointer;position:relative;overflow:hidden;text-decoration:none;">
-        <span style="position:absolute;inset:-35%;background:radial-gradient(circle, rgba(255,255,255,0.45) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.2s infinite ease-in-out;pointer-events:none;"></span>
-        <span style="position:relative;z-index:1;">{% trans "Jetzt kostenlos Probestunde buchen!" %}</span>
-    </a>
-</div>
-<div class="card">
-    <h1>
-        {% trans "Willkommen bei" %}
-        <span class="brainboost-wordmark" aria-label="BrainBoost">
-            <span class="brainboost-wordmark__initial">B</span>rain<span class="brainboost-wordmark__initial">B</span>oost
-        </span>
-    </h1>
-    <p class="muted"><strong>{% trans "Stark im Kopf - Stark im Lernen" %}</strong></p>
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="button" type="submit">{% trans "Einloggen" %}</button>
-    </form>
-    <div style="margin-top:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,183,0,0.55);background:linear-gradient(120deg, rgba(255,215,97,0.25), rgba(255,255,255,0.92));box-shadow:0 12px 24px rgba(0,0,0,0.08);display:flex;align-items:flex-start;gap:12px;">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:rgba(255,183,0,0.22);color:var(--accent, #d88700);font-weight:800;font-size:1rem;">!</span>
-        <div>
-            <div style="font-weight:800;color:var(--accent, #d88700);text-transform:uppercase;font-size:0.82rem;letter-spacing:0.05em;">{% trans "Wichtiger Hinweis" %}</div>
-            <p style="margin:6px 0 0;color:var(--text, #1f1f1f);line-height:1.45;">{% blocktrans trimmed %}Die <strong>Registrierung</strong> erfolgt gemeinsam mit deinem/r TutorIn.{% endblocktrans %}</p>
+<div class="card landing-hero">
+    <section class="landing-hero__content" aria-labelledby="landing-hero-title">
+        <p class="landing-hero__eyebrow">{% trans "Nachhilfe in Braunschweig und online" %}</p>
+        <h1 id="landing-hero-title">
+            {% trans "Willkommen bei" %}
+            <span class="brainboost-wordmark" aria-label="BrainBoost">
+                <span class="brainboost-wordmark__initial">B</span>rain<span class="brainboost-wordmark__initial">B</span>oost
+            </span>
+        </h1>
+        <p class="landing-hero__subline">{% trans "Stark im Kopf - stark im Lernen." %}</p>
+        <p class="landing-hero__text">{% blocktrans trimmed %}Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern und Tutor:innen - einfach anfragen, passende Unterstützung finden und gemeinsam besser lernen.{% endblocktrans %}</p>
+        <div class="landing-hero__actions" aria-label="{% trans 'Startaktionen' %}">
+            <a class="button landing-hero__cta landing-hero__cta--primary" href="{% url 'contact' %}?role=parent" data-cta="hero-probestunde-buchen">{% trans "Kostenlose Probestunde buchen" %}</a>
+            <a class="button landing-hero__cta landing-hero__cta--secondary" href="{% url 'contact' %}?role=student" data-cta="hero-nachhilfe-anfragen">{% trans "Nachhilfe anfragen" %}</a>
+            <a class="button landing-hero__cta landing-hero__cta--tutor" href="{% url 'contact' %}?role=tutor" data-cta="hero-tutorin-werden">{% trans "Tutor:in werden" %}</a>
+            <a class="button landing-hero__cta landing-hero__login" href="{% url 'login' %}" data-cta="hero-login-registrieren">{% trans "Zum Login / Registrieren" %}</a>
         </div>
-    </div>
-    <a href="{% url 'contact' %}?role=parent" data-cta="kontakt-schnell-melden" style="margin-top:18px;display:inline-flex;align-items:center;gap:10px;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg, #ff6a00, #ffdd00);color:#1a1a1a;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;box-shadow:0 12px 28px rgba(255,106,0,0.35), 0 6px 16px rgba(0,0,0,0.18);text-decoration:none;position:relative;overflow:hidden;">
-        <span style="position:absolute;inset:-30%;background:radial-gradient(circle, rgba(255,255,255,0.35) 0, rgba(255,255,255,0) 55%);animation:pulseGlow 2.4s infinite ease-in-out;pointer-events:none;"></span>
-        <span style="position:relative;z-index:1;">{% trans "Sei schnell! Melde Dich jetzt!" %}</span>
-    </a>
+        <div class="landing-hero__note" role="note">
+            <span class="landing-hero__note-mark" aria-hidden="true"></span>
+            <p>{% trans "Die Registrierung erfolgt gemeinsam mit deinem/deiner Tutor:in." %}</p>
+        </div>
+    </section>
 </div>
 
 <div class="card info-card">

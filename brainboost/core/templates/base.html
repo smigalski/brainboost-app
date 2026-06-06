@@ -33,6 +33,7 @@
 </head>
 <body>
     <div class="hero-bg"></div>
+    {% block language_popup %}{% endblock %}
     <header class="topbar">
         <div class="topbar-main">
             <a class="brand brand-link" href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">

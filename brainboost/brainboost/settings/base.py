@@ -116,6 +116,7 @@ LANGUAGE_CODE = 'de'
 LANGUAGES = [
     ('de', 'Deutsch'),
     ('en', 'English'),
+    ('es', 'Español'),
     ('pl', 'Polski'),
     ('tr', 'Türkçe'),
     ('ru', 'Русский'),

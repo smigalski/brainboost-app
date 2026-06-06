@@ -107,7 +107,7 @@ FLASHCARD_DECK_SESSION_KEY = "admin_flashcard_deck"
 FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
 GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
-GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "pl", "tr", "ru", "ar"}
+GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "es", "pl", "tr", "ru", "ar"}
 
 
 def _ensure_profile_for_user(user: CustomUser):

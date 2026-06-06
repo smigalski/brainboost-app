@@ -126,12 +126,36 @@ class CampaignLinkBuilderForm(forms.Form):
         initial="/nachhilfe-braunschweig/",
         max_length=500,
     )
-    utm_source = forms.CharField(label="utm_source", initial="meta", max_length=120)
-    utm_medium = forms.CharField(label="utm_medium", initial="paid_social", max_length=120)
-    utm_campaign = forms.CharField(label="utm_campaign", max_length=120, required=False)
-    utm_content = forms.CharField(label="utm_content", max_length=120, required=False)
-    utm_term = forms.CharField(label="utm_term", max_length=120, required=False)
-    role = forms.ChoiceField(label="role", choices=ROLE_CHOICES, required=False)
+    utm_source = forms.CharField(
+        label="utm_source (z. B. instagram, meta)",
+        initial="meta",
+        max_length=120,
+    )
+    utm_medium = forms.CharField(
+        label="utm_medium (z. B. organic_social, paid_social)",
+        initial="paid_social",
+        max_length=120,
+    )
+    utm_campaign = forms.CharField(
+        label="utm_campaign (z. B. braunschweig_nachhilfe_2026)",
+        max_length=120,
+        required=False,
+    )
+    utm_content = forms.CharField(
+        label="utm_content (z. B. post_pruefungsvorbereitung, story_ad_01)",
+        max_length=120,
+        required=False,
+    )
+    utm_term = forms.CharField(
+        label="utm_term (z. B. mathe_nachhilfe, meist leer bei Social)",
+        max_length=120,
+        required=False,
+    )
+    role = forms.ChoiceField(
+        label="role (z. B. Eltern, SchülerInnen, TutorInnen)",
+        choices=ROLE_CHOICES,
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

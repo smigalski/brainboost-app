@@ -1362,6 +1362,74 @@ input[type="file"] {
     .lead-hero__visual {
         min-height: auto;
     }
+
+    .lead-landing,
+    .lead-hero,
+    .lead-hero__content,
+    .lead-section-block,
+    .lead-info-card,
+    .lead-audience-card,
+    .lead-final-cta,
+    .lead-hero__visual {
+        text-align: center;
+    }
+
+    .lead-hero__content,
+    .lead-section-block,
+    .lead-info-card,
+    .lead-audience-card,
+    .lead-card-actions,
+    .lead-final-cta {
+        justify-items: center;
+    }
+
+    .lead-eyebrow,
+    .lead-audience-card__label,
+    .lead-hero p,
+    .lead-section-block p,
+    .lead-info-card p,
+    .lead-audience-card p {
+        margin-inline: auto;
+    }
+
+    .lead-cta {
+        justify-self: center;
+    }
+
+    .lead-hero__actions,
+    .lead-final-cta__actions,
+    .lead-card-actions {
+        justify-content: center;
+    }
+
+    .lead-check-list,
+    .lead-step-list,
+    .lead-pill-list {
+        justify-content: center;
+        justify-items: center;
+    }
+
+    .lead-check-list li {
+        padding-left: 0;
+        padding-top: 28px;
+        text-align: center;
+    }
+
+    .lead-check-list li::before {
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+    }
+
+    .lead-step-list li {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+    }
+
+    .lead-step-list--horizontal li {
+        justify-items: center;
+    }
 }
 
 @media (max-width: 720px) {

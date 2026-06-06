@@ -1,0 +1,655 @@
+{% load i18n %}
+{% get_current_language as LANGUAGE_POPUP_CODE %}
+{% get_available_languages as LANGUAGE_POPUP_LANGUAGES %}
+{% get_language_info_list for LANGUAGE_POPUP_LANGUAGES as language_popup_languages %}
+<style>
+    .bb-language-popup {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: clamp(70px, 10vh, 110px) 16px 28px;
+        background: rgba(13, 64, 70, 0.12);
+        backdrop-filter: blur(10px) saturate(1.2);
+        -webkit-backdrop-filter: blur(10px) saturate(1.2);
+        animation: bbLanguageBackdropIn 260ms ease both;
+    }
+    .bb-language-popup.is-dismissed {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+        transition: opacity 220ms ease, visibility 220ms ease;
+    }
+    .bb-language-popup__window {
+        position: relative;
+        display: grid;
+        grid-template-rows: 40px minmax(360px, 58vh);
+        gap: 14px;
+        width: min(1180px, calc(100vw - 32px));
+        min-height: min(620px, calc(100vh - 120px));
+        padding: 14px 18px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.58);
+        border-radius: 28px;
+        background:
+            linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.07) 48%, rgba(226, 247, 244, 0.14)),
+            radial-gradient(circle at 16% 5%, rgba(255, 255, 255, 0.82), transparent 26%),
+            radial-gradient(circle at 92% 88%, rgba(44, 138, 138, 0.16), transparent 42%);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.88),
+            inset 0 -1px 0 rgba(255, 255, 255, 0.22),
+            0 38px 90px rgba(13, 64, 70, 0.3),
+            0 12px 34px rgba(255, 255, 255, 0.22);
+        backdrop-filter: blur(42px) saturate(1.95) brightness(1.08);
+        -webkit-backdrop-filter: blur(42px) saturate(1.95) brightness(1.08);
+        animation: bbLanguageWindowPop 520ms cubic-bezier(0.2, 0.85, 0.22, 1) both;
+    }
+    .bb-language-popup__window::before {
+        content: "";
+        position: absolute;
+        inset: 1px;
+        border-radius: 27px;
+        padding: 1px;
+        background:
+            linear-gradient(120deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.1) 24%, transparent 46%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 34%);
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        -webkit-mask-composite: xor;
+        pointer-events: none;
+    }
+    .bb-language-popup__bar {
+        position: relative;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) 40px;
+        align-items: center;
+        min-height: 40px;
+    }
+    .bb-language-popup__title {
+        margin: 0;
+        color: #3d5960;
+        font-size: clamp(1.15rem, 2.4vw, 1.65rem);
+        font-weight: 900;
+        line-height: 40px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .bb-language-popup__close {
+        grid-column: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.58);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.34);
+        color: #1d4c57;
+        cursor: pointer;
+        font: inherit;
+        font-size: 24px;
+        font-weight: 900;
+        line-height: 1;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76), 0 10px 22px rgba(13, 64, 70, 0.16);
+        backdrop-filter: blur(18px) saturate(1.5);
+        -webkit-backdrop-filter: blur(18px) saturate(1.5);
+        transition: background 0.18s ease, transform 0.18s ease;
+    }
+    .bb-language-popup__close:hover,
+    .bb-language-popup__close:focus {
+        background: rgba(255, 255, 255, 0.5);
+        transform: translateY(-1px);
+    }
+    .bb-language-popup__arena {
+        position: relative;
+        z-index: 1;
+        min-height: 360px;
+        border: 2px solid rgba(29, 76, 87, 0.28);
+        border-radius: 22px;
+        background:
+            linear-gradient(90deg, rgba(44, 138, 138, 0.1) 1px, transparent 1px),
+            linear-gradient(0deg, rgba(44, 138, 138, 0.1) 1px, transparent 1px),
+            radial-gradient(circle at 50% 50%, rgba(44, 138, 138, 0.1), transparent 42%),
+            rgba(255, 255, 255, 0.1);
+        background-size: 34px 34px;
+        box-shadow:
+            inset 0 0 0 5px rgba(255, 201, 40, 0.1),
+            inset 0 12px 34px rgba(255, 255, 255, 0.26),
+            inset 0 -14px 30px rgba(29, 76, 87, 0.06);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        overflow: hidden;
+    }
+    .bb-language-popup__arena canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+    }
+    .bb-language-popup__form {
+        display: none;
+    }
+    @keyframes bbLanguageBackdropIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes bbLanguageWindowPop {
+        0% {
+            opacity: 0;
+            transform: translateY(18px) scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    @media (max-width: 700px) {
+        .bb-language-popup {
+            padding-top: 28px;
+        }
+        .bb-language-popup__window {
+            grid-template-rows: 40px minmax(320px, 64vh);
+            min-height: min(560px, calc(100vh - 56px));
+            padding: 12px;
+            border-radius: 24px;
+        }
+        .bb-language-popup__arena,
+        .bb-language-popup__arena canvas {
+            min-height: 320px;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .bb-language-popup,
+        .bb-language-popup__window {
+            animation: none;
+        }
+    }
+</style>
+<div class="bb-language-popup" data-bb-language-popup>
+    <section class="bb-language-popup__window" data-bb-language-window aria-labelledby="bb-language-popup-title">
+        <div class="bb-language-popup__bar">
+            <h2 id="bb-language-popup-title" class="bb-language-popup__title">{% trans "Sprache wählen" %}</h2>
+            <button class="bb-language-popup__close" type="button" aria-label="{% trans 'Sprachfenster schließen' %}" data-bb-language-close>
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="bb-language-popup__arena" data-bb-language-arena aria-label="{% trans 'Animierte Sprachwahl' %}"></div>
+        {% for language in language_popup_languages %}
+            <form class="bb-language-popup__form" action="{% url 'set_language' %}" method="post" data-bb-language-form data-language-code="{{ language.code }}" data-language-name="{{ language.name_local }}" {% if language.code == LANGUAGE_POPUP_CODE %}data-language-current="true"{% endif %}>
+                {% csrf_token %}
+                <input type="hidden" name="language" value="{{ language.code }}">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            </form>
+        {% endfor %}
+    </section>
+</div>
+<script type="module">
+    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+
+    (function() {
+        var popup = document.querySelector("[data-bb-language-popup]");
+        var popupWindow = document.querySelector("[data-bb-language-window]");
+        var closeButton = document.querySelector("[data-bb-language-close]");
+        var arena = document.querySelector("[data-bb-language-arena]");
+        var forms = Array.prototype.slice.call(document.querySelectorAll("[data-bb-language-form]"));
+        var dismissedStorageKey = "brainboost-language-popup-dismissed";
+        if (!popup || !arena || !forms.length) {
+            return;
+        }
+
+        function rememberDismissed() {
+            try {
+                window.sessionStorage.setItem(dismissedStorageKey, "1");
+            } catch (error) {
+                return;
+            }
+        }
+
+        function dismissPopup(immediate) {
+            popup.classList.add("is-dismissed");
+            if (immediate) {
+                popup.style.display = "none";
+            }
+        }
+
+        try {
+            if (window.sessionStorage.getItem(dismissedStorageKey) === "1") {
+                dismissPopup(true);
+                return;
+            }
+        } catch (error) {
+            // Continue without persistence if sessionStorage is unavailable.
+        }
+
+        closeButton.addEventListener("click", function(event) {
+            event.stopPropagation();
+            rememberDismissed();
+            dismissPopup();
+        });
+        document.addEventListener("click", function(event) {
+            if (popup.classList.contains("is-dismissed")) {
+                return;
+            }
+            if (popupWindow && popupWindow.contains(event.target)) {
+                return;
+            }
+            rememberDismissed();
+            dismissPopup();
+        });
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "Escape") {
+                rememberDismissed();
+                dismissPopup();
+            }
+        });
+
+        var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+        camera.position.set(0, 0.2, 7.4);
+
+        var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, 0);
+        renderer.domElement.setAttribute("aria-hidden", "true");
+        arena.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 1.9));
+        var keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+        keyLight.position.set(3, 4, 5);
+        scene.add(keyLight);
+        var fillLight = new THREE.PointLight(0xffc928, 2.1, 12);
+        fillLight.position.set(-3, -1, 3);
+        scene.add(fillLight);
+
+        var raycaster = new THREE.Raycaster();
+        var pointer = new THREE.Vector2();
+        var hoveredBall = null;
+        var balls = [];
+        var sphereRadius = 0.68;
+        var bounds = { left: -3, right: 3, bottom: -1.8, top: 1.8 };
+        var wallRestitution = 0.94;
+        var ballRestitution = 0.9;
+        var airDrag = 0.992;
+        var lastFrameTime = 0;
+
+        function drawStar(context, cx, cy, spikes, outerRadius, innerRadius) {
+            var rotation = Math.PI / 2 * 3;
+            var step = Math.PI / spikes;
+            context.beginPath();
+            context.moveTo(cx, cy - outerRadius);
+            for (var i = 0; i < spikes; i += 1) {
+                context.lineTo(cx + Math.cos(rotation) * outerRadius, cy + Math.sin(rotation) * outerRadius);
+                rotation += step;
+                context.lineTo(cx + Math.cos(rotation) * innerRadius, cy + Math.sin(rotation) * innerRadius);
+                rotation += step;
+            }
+            context.closePath();
+            context.fill();
+        }
+
+        function makeFlagTexture(code) {
+            var canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 256;
+            var context = canvas.getContext("2d");
+            var languageCode = String(code || "").toLowerCase();
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, 512, 256);
+
+            if (languageCode === "de") {
+                context.fillStyle = "#000000"; context.fillRect(0, 0, 512, 86);
+                context.fillStyle = "#dd0000"; context.fillRect(0, 86, 512, 85);
+                context.fillStyle = "#ffce00"; context.fillRect(0, 171, 512, 85);
+            } else if (languageCode === "en") {
+                context.fillStyle = "#012169"; context.fillRect(0, 0, 512, 256);
+                context.strokeStyle = "#ffffff"; context.lineWidth = 58;
+                context.beginPath(); context.moveTo(0, 0); context.lineTo(512, 256); context.moveTo(512, 0); context.lineTo(0, 256); context.stroke();
+                context.strokeStyle = "#c8102e"; context.lineWidth = 30;
+                context.beginPath(); context.moveTo(0, 0); context.lineTo(512, 256); context.moveTo(512, 0); context.lineTo(0, 256); context.stroke();
+                context.fillStyle = "#ffffff"; context.fillRect(0, 92, 512, 72); context.fillRect(220, 0, 72, 256);
+                context.fillStyle = "#c8102e"; context.fillRect(0, 108, 512, 40); context.fillRect(236, 0, 40, 256);
+            } else if (languageCode === "pl") {
+                context.fillStyle = "#ffffff"; context.fillRect(0, 0, 512, 128);
+                context.fillStyle = "#dc143c"; context.fillRect(0, 128, 512, 128);
+            } else if (languageCode === "es") {
+                context.fillStyle = "#aa151b"; context.fillRect(0, 0, 512, 64);
+                context.fillStyle = "#f1bf00"; context.fillRect(0, 64, 512, 128);
+                context.fillStyle = "#aa151b"; context.fillRect(0, 192, 512, 64);
+                context.fillStyle = "rgba(170, 21, 27, 0.88)";
+                context.fillRect(118, 96, 42, 62);
+                context.fillStyle = "rgba(255, 255, 255, 0.9)";
+                context.fillRect(126, 104, 26, 46);
+                context.fillStyle = "rgba(170, 21, 27, 0.88)";
+                context.fillRect(130, 108, 18, 18);
+            } else if (languageCode === "tr") {
+                context.fillStyle = "#e30a17"; context.fillRect(0, 0, 512, 256);
+                context.fillStyle = "#ffffff"; context.beginPath(); context.arc(218, 128, 70, 0, Math.PI * 2); context.fill();
+                context.fillStyle = "#e30a17"; context.beginPath(); context.arc(242, 128, 56, 0, Math.PI * 2); context.fill();
+                context.fillStyle = "#ffffff"; drawStar(context, 322, 128, 5, 33, 14);
+            } else if (languageCode === "ru") {
+                context.fillStyle = "#ffffff"; context.fillRect(0, 0, 512, 86);
+                context.fillStyle = "#0039a6"; context.fillRect(0, 86, 512, 85);
+                context.fillStyle = "#d52b1e"; context.fillRect(0, 171, 512, 85);
+            } else if (languageCode === "ar") {
+                context.fillStyle = "#006c35"; context.fillRect(0, 0, 512, 256);
+                context.fillStyle = "#ffffff"; context.fillRect(132, 160, 250, 9); context.fillRect(350, 154, 40, 5);
+                context.font = "700 48px Arial, sans-serif"; context.textAlign = "center"; context.textBaseline = "middle"; context.fillText("العربية", 256, 100);
+            } else {
+                context.fillStyle = "#2c8a8a"; context.fillRect(0, 0, 512, 128);
+                context.fillStyle = "#ffc928"; context.fillRect(0, 128, 512, 128);
+            }
+
+            var texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.anisotropy = 8;
+            return texture;
+        }
+
+        function makeLabelTexture(label) {
+            var canvas = document.createElement("canvas");
+            canvas.width = 512;
+            canvas.height = 192;
+            var context = canvas.getContext("2d");
+            function roundedRect(x, y, width, height, radius) {
+                context.beginPath();
+                context.moveTo(x + radius, y);
+                context.lineTo(x + width - radius, y);
+                context.quadraticCurveTo(x + width, y, x + width, y + radius);
+                context.lineTo(x + width, y + height - radius);
+                context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                context.lineTo(x + radius, y + height);
+                context.quadraticCurveTo(x, y + height, x, y + height - radius);
+                context.lineTo(x, y + radius);
+                context.quadraticCurveTo(x, y, x + radius, y);
+                context.closePath();
+            }
+            var fontSize = 48;
+            context.font = "900 " + fontSize + "px Arial, sans-serif";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            while (context.measureText(label).width > 360 && fontSize > 28) {
+                fontSize -= 3;
+                context.font = "900 " + fontSize + "px Arial, sans-serif";
+            }
+            var textWidth = context.measureText(label).width;
+            var pillWidth = Math.min(430, Math.max(118, textWidth + 58));
+            var pillX = (512 - pillWidth) / 2;
+
+            function draw(shimmerProgress) {
+                context.clearRect(0, 0, 512, 192);
+                context.fillStyle = "rgba(255, 255, 255, 0.93)";
+                context.strokeStyle = "rgba(29, 76, 87, 0.18)";
+                context.lineWidth = 6;
+                roundedRect(pillX, 54, pillWidth, 84, 42);
+                context.fill();
+                context.save();
+                roundedRect(pillX, 54, pillWidth, 84, 42);
+                context.clip();
+                var shimmerX = pillX - pillWidth + (pillWidth * 2) * shimmerProgress;
+                var gradient = context.createLinearGradient(shimmerX - 70, 54, shimmerX + 70, 138);
+                gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+                gradient.addColorStop(0.45, "rgba(255, 255, 255, 0.34)");
+                gradient.addColorStop(0.55, "rgba(255, 255, 255, 0.72)");
+                gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+                context.fillStyle = gradient;
+                context.fillRect(pillX, 54, pillWidth, 84);
+                context.restore();
+                context.stroke();
+                context.fillStyle = "#12343b";
+                context.font = "900 " + fontSize + "px Arial, sans-serif";
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(label, 256, 99);
+            }
+
+            draw(0);
+            var texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return {
+                texture: texture,
+                scaleX: Math.max(0.85, (pillWidth / 265) * 1.25),
+                scaleY: 0.68,
+                hitWidth: pillWidth * 1.25,
+                draw: draw
+            };
+        }
+
+        forms.forEach(function(form, index) {
+            var code = form.dataset.languageCode || "";
+            var label = form.dataset.languageName || code;
+            var material = new THREE.MeshStandardMaterial({
+                map: makeFlagTexture(code),
+                color: 0xffffff,
+                roughness: 0.42,
+                metalness: 0.02,
+                emissive: 0xffffff,
+                emissiveIntensity: form.dataset.languageCurrent === "true" ? 0.08 : 0.02
+            });
+            var sphere = new THREE.Mesh(new THREE.SphereGeometry(sphereRadius, 48, 48), material);
+            var lane = index - (forms.length - 1) / 2;
+            sphere.position.set(lane * 1.05 + (Math.random() * 2 - 1) * 0.32, (Math.random() * 2 - 1) * 0.52, 0);
+            sphere.userData.form = form;
+            sphere.userData.velocity = new THREE.Vector3((Math.random() > 0.5 ? 1 : -1) * (0.18 + Math.random() * 0.16), (Math.random() > 0.5 ? 1 : -1) * (0.15 + Math.random() * 0.14), 0);
+            if (code.toLowerCase() === "tr") {
+                sphere.userData.velocity.add(new THREE.Vector3(3.1, -2.2, 0));
+                sphere.userData.velocity.clampLength(0, 4.8);
+            }
+            sphere.userData.rotationSpeed = new THREE.Vector3(0.004 + Math.random() * 0.006, 0.006 + Math.random() * 0.009, 0.002 + Math.random() * 0.004);
+            scene.add(sphere);
+
+            var labelTexture = makeLabelTexture(label);
+            var labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture.texture, transparent: true }));
+            labelSprite.scale.set(labelTexture.scaleX, labelTexture.scaleY, 1);
+            labelSprite.position.copy(sphere.position);
+            labelSprite.position.z += 0.78;
+            scene.add(labelSprite);
+            balls.push({ sphere: sphere, label: labelSprite, material: material, labelHitWidth: labelTexture.hitWidth, labelTexture: labelTexture, shimmerOffset: index * 0.17 });
+        });
+
+        function updateWorldBounds() {
+            var distance = Math.abs(camera.position.z);
+            var halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * distance;
+            var halfWidth = halfHeight * camera.aspect;
+            var padding = 0.04;
+            bounds.left = camera.position.x - halfWidth + padding;
+            bounds.right = camera.position.x + halfWidth - padding;
+            bounds.bottom = camera.position.y - halfHeight + padding;
+            bounds.top = camera.position.y + halfHeight - padding;
+        }
+
+        function keepBallsInsideBounds() {
+            balls.forEach(function(ball) {
+                var radius = sphereRadius * ball.sphere.scale.x;
+                ball.sphere.position.x = THREE.MathUtils.clamp(ball.sphere.position.x, bounds.left + radius, bounds.right - radius);
+                ball.sphere.position.y = THREE.MathUtils.clamp(ball.sphere.position.y, bounds.bottom + radius, bounds.top - radius);
+                ball.sphere.position.z = 0;
+            });
+        }
+
+        function resize() {
+            var rect = arena.getBoundingClientRect();
+            var width = Math.max(280, Math.floor(rect.width));
+            var height = Math.max(320, Math.floor(rect.height));
+            renderer.setSize(width, height, false);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            updateWorldBounds();
+            keepBallsInsideBounds();
+            render();
+        }
+
+        function setPointer(event) {
+            var rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        function findBallForSphere(sphere) {
+            return balls.find(function(ball) { return ball.sphere === sphere; });
+        }
+
+        function updateHover(event) {
+            setPointer(event);
+            raycaster.setFromCamera(pointer, camera);
+            var hit = raycaster.intersectObjects(balls.map(function(ball) { return ball.sphere; }))[0];
+            hoveredBall = hit ? hit.object : null;
+            renderer.domElement.style.cursor = hoveredBall ? "pointer" : "default";
+            render();
+        }
+
+        function isLabelClick(ball, event) {
+            var rect = renderer.domElement.getBoundingClientRect();
+            var center = ball.sphere.position.clone().project(camera);
+            var centerX = rect.left + ((center.x + 1) / 2) * rect.width;
+            var centerY = rect.top + ((1 - center.y) / 2) * rect.height;
+            var labelWidth = Math.min(rect.width * 0.52, Math.max(105, ball.labelHitWidth * 0.43));
+            return Math.abs(event.clientX - centerX) <= labelWidth / 2
+                && Math.abs(event.clientY - centerY) <= 58 / 2;
+        }
+
+        function findBallForLabelClick(event) {
+            return balls.find(function(ball) {
+                return isLabelClick(ball, event);
+            });
+        }
+
+        function submitLanguage(form) {
+            rememberDismissed();
+            dismissPopup(true);
+            window.setTimeout(function() {
+                if (typeof form.requestSubmit === "function") {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            }, 0);
+        }
+
+        function pushBall(ball, event) {
+            var rect = renderer.domElement.getBoundingClientRect();
+            var center = ball.sphere.position.clone().project(camera);
+            var centerX = rect.left + ((center.x + 1) / 2) * rect.width;
+            var centerY = rect.top + ((1 - center.y) / 2) * rect.height;
+            var dx = centerX - event.clientX;
+            var dy = event.clientY - centerY;
+            var length = Math.hypot(dx, dy) || 1;
+            ball.sphere.userData.velocity.add(new THREE.Vector3(dx / length, dy / length, 0).multiplyScalar(3.8));
+            ball.sphere.userData.velocity.clampLength(0, 5.2);
+        }
+
+        renderer.domElement.addEventListener("pointermove", updateHover);
+        renderer.domElement.addEventListener("pointerleave", function() {
+            hoveredBall = null;
+            renderer.domElement.style.cursor = "default";
+            render();
+        });
+        renderer.domElement.addEventListener("click", function(event) {
+            updateHover(event);
+            var labelBall = findBallForLabelClick(event);
+            if (labelBall) {
+                submitLanguage(labelBall.sphere.userData.form);
+                return;
+            }
+            if (hoveredBall) {
+                var ball = findBallForSphere(hoveredBall);
+                if (ball) {
+                    pushBall(ball, event);
+                }
+            }
+        });
+
+        function render(time) {
+            var hasAnimationTime = typeof time === "number";
+            var t = hasAnimationTime ? time * 0.001 : lastFrameTime;
+            var delta = 0;
+            if (hasAnimationTime) {
+                delta = lastFrameTime ? Math.max(0, Math.min(0.04, t - lastFrameTime)) : 0.016;
+                lastFrameTime = t;
+            }
+            if (!prefersReducedMotion && delta > 0) {
+                balls.forEach(function(ball) {
+                    var sphere = ball.sphere;
+                    sphere.position.addScaledVector(sphere.userData.velocity, delta);
+                    var radius = sphereRadius * sphere.scale.x;
+                    if (sphere.position.x > bounds.right - radius) {
+                        sphere.position.x = bounds.right - radius;
+                        sphere.userData.velocity.x = -Math.abs(sphere.userData.velocity.x) * wallRestitution;
+                    } else if (sphere.position.x < bounds.left + radius) {
+                        sphere.position.x = bounds.left + radius;
+                        sphere.userData.velocity.x = Math.abs(sphere.userData.velocity.x) * wallRestitution;
+                    }
+                    if (sphere.position.y > bounds.top - radius) {
+                        sphere.position.y = bounds.top - radius;
+                        sphere.userData.velocity.y = -Math.abs(sphere.userData.velocity.y) * wallRestitution;
+                    } else if (sphere.position.y < bounds.bottom + radius) {
+                        sphere.position.y = bounds.bottom + radius;
+                        sphere.userData.velocity.y = Math.abs(sphere.userData.velocity.y) * wallRestitution;
+                    }
+                    sphere.position.z = 0;
+                    sphere.userData.velocity.multiplyScalar(airDrag);
+                    sphere.userData.velocity.clampLength(0, 5.2);
+                });
+                for (var i = 0; i < balls.length; i += 1) {
+                    for (var j = i + 1; j < balls.length; j += 1) {
+                        var first = balls[i].sphere;
+                        var second = balls[j].sphere;
+                        var offset = first.position.clone().sub(second.position);
+                        offset.z = 0;
+                        var distance = offset.length();
+                        var minDistance = sphereRadius * first.scale.x + sphereRadius * second.scale.x + 0.04;
+                        if (distance > 0 && distance < minDistance) {
+                            var normal = offset.normalize();
+                            var overlap = minDistance - distance;
+                            first.position.addScaledVector(normal, overlap * 0.5);
+                            second.position.addScaledVector(normal, -overlap * 0.5);
+                            var relativeVelocity = first.userData.velocity.clone().sub(second.userData.velocity);
+                            var speedAlongNormal = relativeVelocity.dot(normal);
+                            if (speedAlongNormal < 0) {
+                                var impulseMagnitude = -(1 + ballRestitution) * speedAlongNormal / 2;
+                                var collisionImpulse = normal.clone().multiplyScalar(impulseMagnitude);
+                                first.userData.velocity.add(collisionImpulse);
+                                second.userData.velocity.sub(collisionImpulse);
+                            }
+                        }
+                    }
+                }
+            }
+            balls.forEach(function(ball) {
+                var isHovered = ball.sphere === hoveredBall;
+                var targetScale = isHovered ? 1.06 : 1;
+                ball.sphere.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.18);
+                ball.material.emissiveIntensity = isHovered ? 0.16 : ball.material.emissiveIntensity * 0.86 + 0.02 * 0.14;
+                if (!prefersReducedMotion && delta > 0) {
+                    var shimmerProgress = (t * 0.38 + ball.shimmerOffset) % 1;
+                    ball.labelTexture.draw(shimmerProgress);
+                    ball.labelTexture.texture.needsUpdate = true;
+                }
+                if (!prefersReducedMotion && delta > 0) {
+                    ball.sphere.rotation.x += ball.sphere.userData.rotationSpeed.x;
+                    ball.sphere.rotation.y += ball.sphere.userData.rotationSpeed.y;
+                    ball.sphere.rotation.z += ball.sphere.userData.rotationSpeed.z;
+                }
+                ball.label.position.x = ball.sphere.position.x;
+                ball.label.position.y = ball.sphere.position.y;
+                ball.label.position.z = ball.sphere.position.z + 0.78;
+            });
+            renderer.render(scene, camera);
+        }
+
+        function animate(time) {
+            render(time);
+            if (!prefersReducedMotion) {
+                window.requestAnimationFrame(animate);
+            }
+        }
+
+        resize();
+        window.addEventListener("resize", resize);
+        animate(0);
+    })();
+</script>
