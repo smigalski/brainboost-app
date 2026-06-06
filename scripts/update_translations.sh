@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
+PYTHON_BIN="${PYTHON_BIN:-python}"
 PROVIDER="${PROVIDER:-deepl}"
-LOCALES=(${LOCALES:-en pl tr ru ar})
+LOCALES=(${LOCALES:-en es pl tr ru ar})
 TEMPLATE_PATHS=("$@")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

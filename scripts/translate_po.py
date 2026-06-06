@@ -35,6 +35,7 @@ ENV_OVERRIDES = {
 }
 DEEPL_TARGETS = {
     "en": "EN-US",
+    "es": "ES",
     "pl": "PL",
     "tr": "TR",
     "ru": "RU",
