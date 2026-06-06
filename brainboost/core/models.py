@@ -605,6 +605,8 @@ class FAQItem(models.Model):
     answer = models.TextField(blank=True)
     question_en = models.CharField(max_length=255, blank=True)
     answer_en = models.TextField(blank=True)
+    question_es = models.CharField(max_length=255, blank=True)
+    answer_es = models.TextField(blank=True)
     question_pl = models.CharField(max_length=255, blank=True)
     answer_pl = models.TextField(blank=True)
     question_tr = models.CharField(max_length=255, blank=True)
@@ -638,7 +640,7 @@ class FAQItem(models.Model):
 
     def _localized_field(self, field_name: str) -> str:
         language = (get_language() or "de").split("-")[0]
-        if language in {"en", "pl", "tr", "ru", "ar"}:
+        if language in {"en", "es", "pl", "tr", "ru", "ar"}:
             translated = getattr(self, f"{field_name}_{language}", "")
             if translated:
                 return translated
