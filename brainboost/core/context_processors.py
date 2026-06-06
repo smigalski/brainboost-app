@@ -12,3 +12,13 @@ def meta_tracking(request):
         "cookiebot_id": getattr(settings, "COOKIEBOT_ID", ""),
         "meta_pixel_id": getattr(settings, "META_PIXEL_ID", ""),
     }
+
+
+def contact_settings(request):
+    return {
+        "public_contact_email": getattr(
+            settings,
+            "PUBLIC_CONTACT_EMAIL",
+            "kontakt@nachhilfe-brainboost.de",
+        ),
+    }

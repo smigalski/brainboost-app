@@ -372,12 +372,6 @@ msgstr "دمية كيارا"
 msgid "E-Mail:"
 msgstr "البريد الإلكتروني:"
 
-#: brainboost/core/templates/contact.html:277
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
-msgid "brainboost.nachhilfe@gmail.com"
-msgstr "دروس خصوصية BrainBoost"
-
 #: brainboost/core/templates/contact.html:278
 msgid "Telefon:"
 msgstr "الهاتف:"

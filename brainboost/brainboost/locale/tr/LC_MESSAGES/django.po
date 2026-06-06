@@ -371,12 +371,6 @@ msgstr "Kiara Bebek"
 msgid "E-Mail:"
 msgstr "E-posta:"
 
-#: brainboost/core/templates/contact.html:277
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
-msgid "brainboost.nachhilfe@gmail.com"
-msgstr "BrainBoost Özel Ders"
-
 #: brainboost/core/templates/contact.html:278
 msgid "Telefon:"
 msgstr "Telefon:"

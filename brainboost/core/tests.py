@@ -355,6 +355,8 @@ class FlashcardAdminTests(TestCase):
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     LEAD_NOTIFICATION_EMAIL="operator@example.com",
+    DEFAULT_FROM_EMAIL="BrainBoost <kontakt@nachhilfe-brainboost.de>",
+    DEFAULT_REPLY_TO_EMAIL="kontakt@nachhilfe-brainboost.de",
 )
 class LeadFormFlowTests(TestCase):
     def _parent_data(self, **overrides):
@@ -406,6 +408,14 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(len(mail.outbox), 2)
         self.assertIn("operator@example.com", mail.outbox[0].to)
         self.assertIn("maria@example.com", mail.outbox[1].to)
+        self.assertEqual(mail.outbox[1].from_email, "BrainBoost <kontakt@nachhilfe-brainboost.de>")
+        self.assertEqual(mail.outbox[1].reply_to, ["kontakt@nachhilfe-brainboost.de"])
+
+    def test_public_contact_email_is_rendered_without_internal_gmail_address(self):
+        response = self.client.get(reverse("contact"))
+
+        self.assertContains(response, "mailto:kontakt@nachhilfe-brainboost.de")
+        self.assertNotContains(response, "brainboost.nachhilfe@gmail.com")
 
     def test_utm_parameters_are_saved_from_query_string(self):
         response = self.client.post(
@@ -1243,7 +1253,11 @@ class TutorProfileBankFieldValidationTests(TestCase):
         self.assertIn("bic", form.errors)
 
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="BrainBoost <kontakt@nachhilfe-brainboost.de>",
+    DEFAULT_REPLY_TO_EMAIL="kontakt@nachhilfe-brainboost.de",
+)
 class BroadcastEmailTests(TestCase):
     def setUp(self):
         self.admin_user = CustomUser.objects.create_user(
@@ -1293,6 +1307,8 @@ class BroadcastEmailTests(TestCase):
         self.assertIn("admin.sender@example.com", recipients)
         self.assertIn("tutor.receiver@example.com", recipients)
         self.assertNotIn("parent.receiver@example.com", recipients)
+        self.assertEqual(mail.outbox[0].from_email, "BrainBoost <kontakt@nachhilfe-brainboost.de>")
+        self.assertEqual(mail.outbox[0].reply_to, ["kontakt@nachhilfe-brainboost.de"])
 
     def test_non_admin_cannot_send_broadcast(self):
         logged_in = self.client.login(username="tutor_receiver", password="test12345")

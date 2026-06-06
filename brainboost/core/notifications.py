@@ -96,6 +96,11 @@ def _lead_operator_recipients() -> list[str]:
     return [fallback] if fallback else []
 
 
+def _default_reply_to() -> list[str]:
+    configured = getattr(settings, "DEFAULT_REPLY_TO_EMAIL", "")
+    return [configured] if configured else []
+
+
 def _send_templated_email(
     subject: str,
     template_base: str,
@@ -115,7 +120,13 @@ def _send_templated_email(
     ok = False
     for recipient in to_list:
         try:
-            message = EmailMultiAlternatives(subject, text_body, from_email, [recipient])
+            message = EmailMultiAlternatives(
+                subject,
+                text_body,
+                from_email,
+                [recipient],
+                reply_to=_default_reply_to(),
+            )
             if html_body.strip():
                 message.attach_alternative(html_body, "text/html")
             message.send()

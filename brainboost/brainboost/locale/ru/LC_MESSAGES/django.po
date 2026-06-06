@@ -375,12 +375,6 @@ msgstr "Кукла Киара"
 msgid "E-Mail:"
 msgstr "Электронная почта:"
 
-#: brainboost/core/templates/contact.html:277
-#, fuzzy
-#| msgid "BrainBoost Nachhilfe"
-msgid "brainboost.nachhilfe@gmail.com"
-msgstr "Репетиторство BrainBoost"
-
 #: brainboost/core/templates/contact.html:278
 msgid "Telefon:"
 msgstr "Телефон:"

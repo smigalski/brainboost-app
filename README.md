@@ -104,7 +104,11 @@ Beispielwerte siehe [`.env.example`](.env.example).
 - `DJANGO_DEV_SECRET_KEY`
 - `DJANGO_SECRET_KEY`
 - `POSTGRES_LOCAL_*` / `POSTGRES_*`
-- `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
+- `PUBLIC_CONTACT_EMAIL`: öffentliche Kontaktadresse, aktuell `kontakt@nachhilfe-brainboost.de`
+- `INTERNAL_CONTACT_EMAIL`: interne Fallback-Adresse, aktuell `brainboost.nachhilfe@gmail.com`
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: SMTP-Zugangsdaten, in Produktion ohne Passwort im Repo
+- `DEFAULT_FROM_EMAIL`, `SERVER_EMAIL`, `DEFAULT_REPLY_TO_EMAIL`: Absender-/Antwortadressen für Systemmails
+- `EMAIL_RECIPIENT` / `LEAD_NOTIFICATION_EMAIL`: Empfänger für Kontaktformular-/Lead-Benachrichtigungen; kann intern weiter auf Gmail zeigen
 - `STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `APP_BASE_URL`
 
@@ -136,4 +140,3 @@ Danach Web-App in PythonAnywhere neu laden.
 ## Lizenz
 
 Copyright © 2025-2026 BrainBoost Nachhilfe. Alle Rechte vorbehalten.
-

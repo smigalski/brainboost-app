@@ -46,13 +46,18 @@ SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# Email (Gmail SMTP)
+# Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "brainboost.nachhilfe@gmail.com")
+PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "kontakt@nachhilfe-brainboost.de")
+INTERNAL_CONTACT_EMAIL = os.environ.get("INTERNAL_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "nachhilfe-brainboost-de.netcup-mail.de")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", PUBLIC_CONTACT_EMAIL)
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
-LEAD_NOTIFICATION_EMAIL = os.environ.get("LEAD_NOTIFICATION_EMAIL", EMAIL_HOST_USER)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", f"BrainBoost <{PUBLIC_CONTACT_EMAIL}>")
+SERVER_EMAIL = os.environ.get("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+DEFAULT_REPLY_TO_EMAIL = os.environ.get("DEFAULT_REPLY_TO_EMAIL", PUBLIC_CONTACT_EMAIL)
+EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", INTERNAL_CONTACT_EMAIL)
+LEAD_NOTIFICATION_EMAIL = os.environ.get("LEAD_NOTIFICATION_EMAIL", EMAIL_RECIPIENT)
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "https://www.nachhilfe-brainboost.de")

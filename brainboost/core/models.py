@@ -135,7 +135,7 @@ class StudentProfile(models.Model):
         encoded = quote(address)
         url = f"https://nominatim.openstreetmap.org/search?q={encoded}&format=json&limit=1"
         req = urllib.request.Request(
-            url, headers={"User-Agent": "brainboost-app/1.0 (brainboost.nachhilfe@gmail.com)"},
+            url, headers={"User-Agent": "brainboost-app/1.0 (kontakt@nachhilfe-brainboost.de)"},
         )
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:

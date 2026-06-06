@@ -273,7 +273,7 @@
             <img src="{% static 'design/Student_Photo_Kiara_Puppe.jpg' %}" alt="{% trans 'Kiara Puppe' %}" class="location-image">
         </div>
         <div class="lead-contact-list">
-            <p><strong>{% trans "E-Mail:" %}</strong><br><a href="mailto:brainboost.nachhilfe@gmail.com">{% trans "brainboost.nachhilfe@gmail.com" %}</a></p>
+            <p><strong>{% trans "E-Mail:" %}</strong><br><a href="mailto:{{ public_contact_email }}">{{ public_contact_email }}</a></p>
             <p><strong>{% trans "Telefon:" %}</strong><br>+49 (0)175 9932553</p>
             <p><strong>{% trans "WhatsApp:" %}</strong><br><a href="https://wa.me/491759932553" target="_blank" rel="noreferrer noopener">{% trans "Nachricht schreiben" %}</a></p>
             <p><strong>{% trans "Erreichbarkeit:" %}</strong><br>{% trans "Montag bis Freitag, 9:00 - 21:00 Uhr" %}</p>

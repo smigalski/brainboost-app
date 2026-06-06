@@ -1380,6 +1380,11 @@ def pricing(request):
     return render(request, "pricing.html")
 
 
+def _default_mail_reply_to() -> list[str]:
+    configured = getattr(settings, "DEFAULT_REPLY_TO_EMAIL", "")
+    return [configured] if configured else []
+
+
 def _send_set_password_email(request, user: CustomUser) -> None:
     if not user.email:
         raise ValueError("missing_email")
@@ -1403,7 +1408,14 @@ def _send_set_password_email(request, user: CustomUser) -> None:
     text_body = render_to_string("emails/registration_confirmation.txt", context)
     html_body = render_to_string("emails/registration_confirmation.html", context)
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
-    message = EmailMultiAlternatives(subject, text_body, from_email, [user.email])
+    reply_to = _default_mail_reply_to()
+    message = EmailMultiAlternatives(
+        subject,
+        text_body,
+        from_email,
+        [user.email],
+        reply_to=reply_to,
+    )
     message.attach_alternative(html_body, "text/html")
     sent = message.send()
     if sent == 0:
@@ -1645,6 +1657,7 @@ def _broadcast_recipient_emails(audience: str) -> list[str]:
 
 def _send_broadcast_emails(subject: str, body: str, recipients: list[str]) -> tuple[int, int]:
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
+    reply_to = _default_mail_reply_to()
     sent = 0
     failed = 0
     context = {
@@ -1656,7 +1669,13 @@ def _send_broadcast_emails(subject: str, body: str, recipients: list[str]) -> tu
     html_body = render_to_string("emails/broadcast_email.html", context)
     for recipient in recipients:
         try:
-            message = EmailMultiAlternatives(subject, text_body, from_email, [recipient])
+            message = EmailMultiAlternatives(
+                subject,
+                text_body,
+                from_email,
+                [recipient],
+                reply_to=reply_to,
+            )
             message.attach_alternative(html_body, "text/html")
             delivered = message.send()
             if delivered:
