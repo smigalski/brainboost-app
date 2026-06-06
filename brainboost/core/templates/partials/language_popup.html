@@ -414,7 +414,8 @@
                 texture: texture,
                 scaleX: Math.max(0.85, (pillWidth / 265) * 1.25),
                 scaleY: 0.68,
-                hitWidth: pillWidth * 1.25,
+                hitWidth: textWidth + 30,
+                hitHeight: 34,
                 draw: draw
             };
         }
@@ -448,7 +449,7 @@
             labelSprite.position.copy(sphere.position);
             labelSprite.position.z += 0.78;
             scene.add(labelSprite);
-            balls.push({ sphere: sphere, label: labelSprite, material: material, labelHitWidth: labelTexture.hitWidth, labelTexture: labelTexture, shimmerOffset: index * 0.17 });
+            balls.push({ sphere: sphere, label: labelSprite, material: material, labelHitWidth: labelTexture.hitWidth, labelHitHeight: labelTexture.hitHeight, labelTexture: labelTexture, shimmerOffset: index * 0.17 });
         });
 
         function updateWorldBounds() {
@@ -493,23 +494,54 @@
             return balls.find(function(ball) { return ball.sphere === sphere; });
         }
 
+        function screenMetricsForBall(ball) {
+            var rect = renderer.domElement.getBoundingClientRect();
+            var center = ball.sphere.position.clone().project(camera);
+            var edge = ball.sphere.position.clone();
+            edge.x += sphereRadius * ball.sphere.scale.x;
+            edge.project(camera);
+            var centerX = rect.left + ((center.x + 1) / 2) * rect.width;
+            var centerY = rect.top + ((1 - center.y) / 2) * rect.height;
+            var edgeX = rect.left + ((edge.x + 1) / 2) * rect.width;
+            var edgeY = rect.top + ((1 - edge.y) / 2) * rect.height;
+            return {
+                centerX: centerX,
+                centerY: centerY,
+                radius: Math.max(28, Math.hypot(edgeX - centerX, edgeY - centerY))
+            };
+        }
+
+        function findBallForBodyClick(event) {
+            var bestBall = null;
+            var bestDistance = Infinity;
+            balls.forEach(function(ball) {
+                var metrics = screenMetricsForBall(ball);
+                var distance = Math.hypot(event.clientX - metrics.centerX, event.clientY - metrics.centerY);
+                if (distance <= metrics.radius && distance < bestDistance) {
+                    bestBall = ball;
+                    bestDistance = distance;
+                }
+            });
+            return bestBall;
+        }
+
         function updateHover(event) {
             setPointer(event);
             raycaster.setFromCamera(pointer, camera);
             var hit = raycaster.intersectObjects(balls.map(function(ball) { return ball.sphere; }))[0];
-            hoveredBall = hit ? hit.object : null;
+            var bodyBall = hit ? findBallForSphere(hit.object) : findBallForBodyClick(event);
+            hoveredBall = bodyBall ? bodyBall.sphere : null;
             renderer.domElement.style.cursor = hoveredBall ? "pointer" : "default";
             render();
         }
 
         function isLabelClick(ball, event) {
             var rect = renderer.domElement.getBoundingClientRect();
-            var center = ball.sphere.position.clone().project(camera);
-            var centerX = rect.left + ((center.x + 1) / 2) * rect.width;
-            var centerY = rect.top + ((1 - center.y) / 2) * rect.height;
-            var labelWidth = Math.min(rect.width * 0.52, Math.max(105, ball.labelHitWidth * 0.43));
-            return Math.abs(event.clientX - centerX) <= labelWidth / 2
-                && Math.abs(event.clientY - centerY) <= 58 / 2;
+            var metrics = screenMetricsForBall(ball);
+            var labelWidth = Math.min(rect.width * 0.34, Math.max(42, ball.labelHitWidth * 0.42));
+            var labelHeight = Math.max(24, ball.labelHitHeight || 30);
+            return Math.abs(event.clientX - metrics.centerX) <= labelWidth / 2
+                && Math.abs(event.clientY - metrics.centerY) <= labelHeight / 2;
         }
 
         function findBallForLabelClick(event) {
@@ -531,12 +563,9 @@
         }
 
         function pushBall(ball, event) {
-            var rect = renderer.domElement.getBoundingClientRect();
-            var center = ball.sphere.position.clone().project(camera);
-            var centerX = rect.left + ((center.x + 1) / 2) * rect.width;
-            var centerY = rect.top + ((1 - center.y) / 2) * rect.height;
-            var dx = centerX - event.clientX;
-            var dy = event.clientY - centerY;
+            var metrics = screenMetricsForBall(ball);
+            var dx = metrics.centerX - event.clientX;
+            var dy = event.clientY - metrics.centerY;
             var length = Math.hypot(dx, dy) || 1;
             ball.sphere.userData.velocity.add(new THREE.Vector3(dx / length, dy / length, 0).multiplyScalar(3.8));
             ball.sphere.userData.velocity.clampLength(0, 5.2);
@@ -555,11 +584,9 @@
                 submitLanguage(labelBall.sphere.userData.form);
                 return;
             }
-            if (hoveredBall) {
-                var ball = findBallForSphere(hoveredBall);
-                if (ball) {
-                    pushBall(ball, event);
-                }
+            var bodyBall = findBallForBodyClick(event);
+            if (bodyBall) {
+                pushBall(bodyBall, event);
             }
         });
 

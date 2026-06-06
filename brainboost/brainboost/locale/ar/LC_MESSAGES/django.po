@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-06 19:27+0200\n"
+"POT-Creation-Date: 2026-06-06 20:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -284,7 +284,7 @@ msgid "Lernfortschritt"
 msgstr "التقدم في التعلم"
 
 #: brainboost/core/templates/base.html:127
-#: brainboost/core/templates/landing.html:778
+#: brainboost/core/templates/landing.html:833
 msgid "Preise"
 msgstr "الأسعار"
 
@@ -403,55 +403,58 @@ msgstr ""
 "دروس خصوصية في براونشفايغ وعبر الإنترنت | رياضيات، إنجليزية، ألمانية | "
 "BrainBoost"
 
-#: brainboost/core/templates/landing.html:603
+#: brainboost/core/templates/landing.html:658
 #: brainboost/core/templates/landing_alle.html:135
 msgid "Nachhilfe in Braunschweig und online"
 msgstr "دروس خصوصية في براونشفايغ وعبر الإنترنت"
 
-#: brainboost/core/templates/landing.html:605
+#: brainboost/core/templates/landing.html:660
 msgid "Willkommen bei"
 msgstr "مرحبًا بكم في"
 
-#: brainboost/core/templates/landing.html:610
+#: brainboost/core/templates/landing.html:665
 msgid "Stark im Kopf - stark im Lernen."
 msgstr "قوي في التفكير - قوي في التعلم."
 
-#: brainboost/core/templates/landing.html:611
+#: brainboost/core/templates/landing.html:666
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
 "und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
 "gemeinsam besser lernen."
-msgstr "دروس خصوصية فردية في براونشفايغ وعبر الإنترنت. للطلاب وأولياء الأمور والمعلمين - ما عليك سوى تقديم طلب، والعثور على الدعم المناسب، والتعلم بشكل أفضل معًا."
+msgstr ""
+"دروس خصوصية فردية في براونشفايغ وعبر الإنترنت. للطلاب وأولياء الأمور "
+"والمعلمين - ما عليك سوى تقديم طلب، والعثور على الدعم المناسب، والتعلم بشكل "
+"أفضل معًا."
 
-#: brainboost/core/templates/landing.html:612
+#: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"
 msgstr "إجراءات سريعة"
 
-#: brainboost/core/templates/landing.html:613
+#: brainboost/core/templates/landing.html:668
 msgid "Kostenlose Probestunde buchen"
 msgstr "احجز درسًا تجريبيًا مجانيًا"
 
-#: brainboost/core/templates/landing.html:614
+#: brainboost/core/templates/landing.html:669
 msgid "Nachhilfe anfragen"
 msgstr "اطلب دروسًا خصوصية"
 
-#: brainboost/core/templates/landing.html:615
+#: brainboost/core/templates/landing.html:670
 msgid "Tutor:in werden"
 msgstr "كن مدرسًا"
 
-#: brainboost/core/templates/landing.html:616
+#: brainboost/core/templates/landing.html:671
 msgid "Zum Login / Registrieren"
 msgstr "تسجيل الدخول / التسجيل"
 
-#: brainboost/core/templates/landing.html:620
+#: brainboost/core/templates/landing.html:675
 msgid "Die Registrierung erfolgt gemeinsam mit deinem/deiner Tutor:in."
 msgstr "يتم التسجيل بالتعاون مع مدرسك أو مدرستك."
 
-#: brainboost/core/templates/landing.html:628
+#: brainboost/core/templates/landing.html:683
 msgid "Über BrainBoost"
 msgstr "نبذة عن BrainBoost"
 
-#: brainboost/core/templates/landing.html:629
+#: brainboost/core/templates/landing.html:684
 msgid ""
 "<strong>BrainBoost</strong> wurde 2025 von Kiara Puppe gegründet und stellt "
 "eine professionelle <strong>Nachhilfeplattform</strong> mit digitaler "
@@ -472,22 +475,22 @@ msgstr ""
 "الجميع في BrainBoost من الاستفادة من ذلك وتحقيق <strong>أقصى</strong> "
 "استفادة من أنفسهم!"
 
-#: brainboost/core/templates/landing.html:634
+#: brainboost/core/templates/landing.html:689
 msgid "Preis & Qualität"
 msgstr "السعر والجودة"
 
-#: brainboost/core/templates/landing.html:635
+#: brainboost/core/templates/landing.html:690
 msgid ""
 "Wir verbinden günstige und faire Preise mit professioneller digitalisierter "
 "Nachhilfe!"
 msgstr ""
 "نحن نجمع بين الأسعار المعقولة والعادلة والدروس الخصوصية الرقمية الاحترافية!"
 
-#: brainboost/core/templates/landing.html:637
+#: brainboost/core/templates/landing.html:692
 msgid "Zu den Preisen"
 msgstr "بشأن الأسعار"
 
-#: brainboost/core/templates/landing.html:638
+#: brainboost/core/templates/landing.html:693
 msgid ""
 "Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest "
 "alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose "
@@ -496,35 +499,35 @@ msgstr ""
 "هل أنت <strong>ولي أمر أو تلميذ أو طالب</strong> وترغب في معرفة كل التفاصيل "
 "المتعلقة باتفاقية التعلم؟ إذاً احجز حصة تجريبية مجانية أو اتصل بي!"
 
-#: brainboost/core/templates/landing.html:640
+#: brainboost/core/templates/landing.html:695
 msgid "Jetzt anfragen"
 msgstr "اطلب الآن"
 
-#: brainboost/core/templates/landing.html:651
+#: brainboost/core/templates/landing.html:706
 msgid "Unser Angebot"
 msgstr "عروضنا"
 
-#: brainboost/core/templates/landing.html:653
+#: brainboost/core/templates/landing.html:708
 msgid "Digitale Lernorte"
 msgstr "مراكز التعلم الرقمية"
 
-#: brainboost/core/templates/landing.html:654
+#: brainboost/core/templates/landing.html:709
 msgid "Digitale Lernräume"
 msgstr "مساحات التعلم الرقمية"
 
-#: brainboost/core/templates/landing.html:694
+#: brainboost/core/templates/landing.html:749
 msgid "Grundschule"
 msgstr "المدرسة الابتدائية"
 
-#: brainboost/core/templates/landing.html:695
+#: brainboost/core/templates/landing.html:750
 msgid "Alle Fächer"
 msgstr "جميع المواد"
 
-#: brainboost/core/templates/landing.html:698
+#: brainboost/core/templates/landing.html:753
 msgid "Weiterführende Schule"
 msgstr "المدرسة الإعدادية"
 
-#: brainboost/core/templates/landing.html:699
+#: brainboost/core/templates/landing.html:754
 msgid ""
 "Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, "
 "Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, "
@@ -542,11 +545,11 @@ msgstr ""
 "strong> على سبيل المثال، العلوم الاجتماعية، العلوم الطبيعية، العمل والاقتصاد "
 "والتكنولوجيا والمواد الاختيارية الإلزامية"
 
-#: brainboost/core/templates/landing.html:702
+#: brainboost/core/templates/landing.html:757
 msgid "Erweitertes Lernangebot"
 msgstr "مجموعة واسعة من البرامج التعليمية"
 
-#: brainboost/core/templates/landing.html:703
+#: brainboost/core/templates/landing.html:758
 msgid ""
 "Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf "
 "Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten"
@@ -555,11 +558,11 @@ msgstr ""
 "بالإضافة إلى إعداد محدد للامتحانات الصفية والامتحانات النهائية وأعمال "
 "الأبحاث في المقررات الدراسية"
 
-#: brainboost/core/templates/landing.html:706
+#: brainboost/core/templates/landing.html:761
 msgid "Für Studierende"
 msgstr "للطلاب"
 
-#: brainboost/core/templates/landing.html:707
+#: brainboost/core/templates/landing.html:762
 msgid ""
 "Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und "
 "Masterarbeiten - von der Struktur bis zur finalen Überarbeitung"
@@ -567,19 +570,19 @@ msgstr ""
 "دعم احترافي في إعداد ورش العمل والمشاريع والأبحاث وأطروحات البكالوريوس "
 "والماجستير - بدءًا من الهيكل وصولاً إلى المراجعة النهائية"
 
-#: brainboost/core/templates/landing.html:718
+#: brainboost/core/templates/landing.html:773
 #, fuzzy
 #| msgid "Google-Bewertung"
 msgid "Google-Bewertungen"
 msgstr "تقييم Google"
 
-#: brainboost/core/templates/landing.html:720
+#: brainboost/core/templates/landing.html:775
 #, fuzzy, python-format
 #| msgid "Google-Bewertung"
 msgid "Google-Bewertung %(rating)s von 5"
 msgstr "تقييم Google"
 
-#: brainboost/core/templates/landing.html:725
+#: brainboost/core/templates/landing.html:780
 #, python-format
 msgid "Basierend auf %(count)s Google-Bewertung"
 msgid_plural "Basierend auf %(count)s Google-Bewertungen"
@@ -590,46 +593,48 @@ msgstr[3] ""
 msgstr[4] ""
 msgstr[5] ""
 
-#: brainboost/core/templates/landing.html:728
+#: brainboost/core/templates/landing.html:783
 msgid ""
 "Aktuelle Google-Bewertungen werden hier angezeigt, sobald die Google Places "
 "API eingerichtet ist."
-msgstr "سيتم عرض تقييمات Google الحالية هنا بمجرد إعداد واجهة برمجة تطبيقات Google Places."
+msgstr ""
+"سيتم عرض تقييمات Google الحالية هنا بمجرد إعداد واجهة برمجة تطبيقات Google "
+"Places."
 
-#: brainboost/core/templates/landing.html:732
+#: brainboost/core/templates/landing.html:787
 #, fuzzy
 #| msgid "Preise"
 msgid "Alle ansehen"
 msgstr "الأسعار"
 
-#: brainboost/core/templates/landing.html:733
+#: brainboost/core/templates/landing.html:788
 #, fuzzy
 #| msgid "Jetzt bei Google bewerten"
 msgid "Jetzt bewerten"
 msgstr "قيمنا الآن على Google"
 
-#: brainboost/core/templates/landing.html:752
+#: brainboost/core/templates/landing.html:807
 #, python-format
 msgid "%(rating)s von 5 Sternen"
 msgstr "%(rating)s من أصل 5 نجوم"
 
-#: brainboost/core/templates/landing.html:759
+#: brainboost/core/templates/landing.html:814
 #, fuzzy
 #| msgid "Google-Bewertung"
 msgid "Google-Bewertungen bewegen"
 msgstr "تقييم Google"
 
-#: brainboost/core/templates/landing.html:760
+#: brainboost/core/templates/landing.html:815
 #, fuzzy
 #| msgid "Google-Bewertung"
 msgid "Vorherige Bewertung"
 msgstr "تقييم Google"
 
-#: brainboost/core/templates/landing.html:761
+#: brainboost/core/templates/landing.html:816
 msgid "Nächste Bewertung"
 msgstr "التقييم التالي"
 
-#: brainboost/core/templates/landing.html:766
+#: brainboost/core/templates/landing.html:821
 msgid ""
 "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze "
 "Bewertung bei Google."
@@ -637,15 +642,15 @@ msgstr ""
 "إذا كنت راضياً عن BrainBoost، فسأكون سعيداً جداً إذا كتبت تقييماً قصيراً على "
 "Google."
 
-#: brainboost/core/templates/landing.html:768
+#: brainboost/core/templates/landing.html:823
 msgid "Jetzt bei Google bewerten"
 msgstr "قيمنا الآن على Google"
 
-#: brainboost/core/templates/landing.html:779
+#: brainboost/core/templates/landing.html:834
 msgid "Kurz & transparent"
 msgstr "موجز وشفاف"
 
-#: brainboost/core/templates/landing.html:782
+#: brainboost/core/templates/landing.html:837
 msgid ""
 "Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und "
 "Lernfortschritt."
@@ -653,59 +658,59 @@ msgstr ""
 "أسعار دروس خصوصية شفافة لكل جلسة، تشمل المتابعة الرقمية ومتابعة التقدم "
 "الدراسي."
 
-#: brainboost/core/templates/landing.html:783
+#: brainboost/core/templates/landing.html:838
 msgid "Preisübersicht"
 msgstr "نظرة عامة على الأسعار"
 
-#: brainboost/core/templates/landing.html:785
+#: brainboost/core/templates/landing.html:840
 msgid "45 Minuten"
 msgstr "45 دقيقة"
 
-#: brainboost/core/templates/landing.html:789
+#: brainboost/core/templates/landing.html:844
 msgid "60 Minuten"
 msgstr "60 دقيقة"
 
-#: brainboost/core/templates/landing.html:793
+#: brainboost/core/templates/landing.html:848
 msgid "90 Minuten"
 msgstr "90 دقيقة"
 
-#: brainboost/core/templates/landing.html:798
+#: brainboost/core/templates/landing.html:853
 msgid "inkl. kostenloser WebApp"
 msgstr "بما في ذلك تطبيق ويب مجاني"
 
-#: brainboost/core/templates/landing.html:799
+#: brainboost/core/templates/landing.html:854
 msgid "inkl. Lernfortschrittreports"
 msgstr "بما في ذلك تقارير التقدم الدراسي"
 
-#: brainboost/core/templates/landing.html:800
+#: brainboost/core/templates/landing.html:855
 msgid "inkl. Online-Terminplanung"
 msgstr "بما في ذلك تحديد المواعيد عبر الإنترنت"
 
-#: brainboost/core/templates/landing.html:801
+#: brainboost/core/templates/landing.html:856
 msgid "inkl. individuellen Lernmaterialien"
 msgstr "بما في ذلك المواد التعليمية المخصصة"
 
-#: brainboost/core/templates/landing.html:803
+#: brainboost/core/templates/landing.html:858
 msgid "Zu den weiteren Vorteilen!"
 msgstr "إلى المزايا الأخرى!"
 
-#: brainboost/core/templates/landing.html:813
+#: brainboost/core/templates/landing.html:868
 msgid "Google Maps öffnen (externer Link)"
 msgstr "فتح خرائط Google (رابط خارجي)"
 
-#: brainboost/core/templates/landing.html:817
+#: brainboost/core/templates/landing.html:872
 msgid "Interaktive Karte mit BrainBoost Lernorten"
 msgstr "خريطة تفاعلية لمواقع BrainBoost التعليمية"
 
-#: brainboost/core/templates/landing.html:821
+#: brainboost/core/templates/landing.html:876
 msgid "Ganz bequem lernen"
 msgstr "التعلم بكل راحة"
 
-#: brainboost/core/templates/landing.html:822
+#: brainboost/core/templates/landing.html:877
 msgid "Nachhilfe vor Ort bei dir!*"
 msgstr "دروس خصوصية في منزلك!*"
 
-#: brainboost/core/templates/landing.html:823
+#: brainboost/core/templates/landing.html:878
 msgid ""
 "Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir "
 "nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem "
@@ -714,11 +719,11 @@ msgstr ""
 "إذا سمحت الظروف التنظيمية بذلك، سيأتي مدرسك أو مدرستك إلى منزلك. وبذلك يظل "
 "التعلم مريحًا وشخصيًا ومباشرًا في بيئتك المعتادة."
 
-#: brainboost/core/templates/landing.html:824
+#: brainboost/core/templates/landing.html:879
 msgid "Vor-Ort-Nachhilfe anfragen"
 msgstr "طلب دروس خصوصية في المنزل"
 
-#: brainboost/core/templates/landing.html:825
+#: brainboost/core/templates/landing.html:880
 msgid ""
 "* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab "
 "transparent abgestimmt."
@@ -726,19 +731,19 @@ msgstr ""
 "* قد يتم فرض رسوم نقل حسب المسافة. وسيتم الاتفاق على التفاصيل مسبقًا وبشكل "
 "شفاف."
 
-#: brainboost/core/templates/landing.html:832
+#: brainboost/core/templates/landing.html:887
 msgid "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!"
 msgstr "انضم إلى فريق المُدرِّسين واكسب ما يصل إلى 1000 يورو شهريًّا أثناء دراستك!"
 
-#: brainboost/core/templates/landing.html:833
+#: brainboost/core/templates/landing.html:888
 msgid "Jetzt bewerben und keine Chance verpassen!"
 msgstr "تقدم بطلبك الآن ولا تفوت أي فرصة!"
 
-#: brainboost/core/templates/landing.html:838
+#: brainboost/core/templates/landing.html:893
 msgid "BrainBoost Feedback"
 msgstr "تعليقات حول BrainBoost"
 
-#: brainboost/core/templates/landing.html:839
+#: brainboost/core/templates/landing.html:894
 msgid ""
 "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist "
 "dafür nötig?"
@@ -746,31 +751,31 @@ msgstr ""
 "تسعى BrainBoost إلى أن تصبح أفضل منصة للدروس الخصوصية في ألمانيا! ما الذي "
 "يتطلبه ذلك؟"
 
-#: brainboost/core/templates/landing.html:840
+#: brainboost/core/templates/landing.html:895
 msgid "Anonymes Feedback geben"
 msgstr "تقديم ملاحظات دون الكشف عن الهوية"
 
-#: brainboost/core/templates/landing.html:844
+#: brainboost/core/templates/landing.html:899
 msgid "FAQ"
 msgstr "الأسئلة الشائعة"
 
-#: brainboost/core/templates/landing.html:852
+#: brainboost/core/templates/landing.html:907
 msgid "Noch keine FAQ für die Startseite vorhanden."
 msgstr "لا توجد أسئلة وأجوبة للصفحة الرئيسية حتى الآن."
 
-#: brainboost/core/templates/landing.html:862
+#: brainboost/core/templates/landing.html:917
 msgid "BrainBoost Lernort"
 msgstr "مركز BrainBoost للتعلم"
 
-#: brainboost/core/templates/landing.html:863
+#: brainboost/core/templates/landing.html:918
 msgid "Karl-Schmidt-Straße 20, 38114 Braunschweig"
 msgstr "شارع كارل شميدت 20، 38114 براونشفايغ"
 
-#: brainboost/core/templates/landing.html:864
+#: brainboost/core/templates/landing.html:919
 msgid "Stadtbibliothek Braunschweig"
 msgstr "مكتبة مدينة براونشفايغ"
 
-#: brainboost/core/templates/landing.html:865
+#: brainboost/core/templates/landing.html:920
 msgid "Zentraler Treffpunkt in der Innenstadt"
 msgstr "نقطة التقاء رئيسية في وسط المدينة"
 
@@ -1076,7 +1081,10 @@ msgid ""
 "BrainBoost erklärt Eltern, wie individuelle Nachhilfe in Braunschweig und "
 "online organisiert wird: passende TutorInnen, klare Kommunikation und "
 "gezielte Förderung."
-msgstr "تشرح BrainBoost للآباء والأمهات كيفية تنظيم الدروس الخصوصية الفردية في براونشفايغ وعبر الإنترنت: اختيار المعلمين المناسبين، والتواصل الواضح، والدعم الموجه."
+msgstr ""
+"تشرح BrainBoost للآباء والأمهات كيفية تنظيم الدروس الخصوصية الفردية في "
+"براونشفايغ وعبر الإنترنت: اختيار المعلمين المناسبين، والتواصل الواضح، والدعم "
+"الموجه."
 
 #: brainboost/core/templates/landing_eltern.html:23
 #, fuzzy
@@ -1089,7 +1097,10 @@ msgid ""
 "Wenn dein Kind Unterstützung in Mathe, Deutsch, Englisch oder einem anderen "
 "Fach braucht, hilft BrainBoost dabei, den Bedarf klar einzuordnen und "
 "passende TutorInnen zu finden."
-msgstr "إذا كان طفلك بحاجة إلى دعم في الرياضيات أو اللغة الألمانية أو الإنجليزية أو أي مادة أخرى، فإن BrainBoost تساعدك على تحديد احتياجاته بوضوح والعثور على مدرسين مناسبين."
+msgstr ""
+"إذا كان طفلك بحاجة إلى دعم في الرياضيات أو اللغة الألمانية أو الإنجليزية أو "
+"أي مادة أخرى، فإن BrainBoost تساعدك على تحديد احتياجاته بوضوح والعثور على "
+"مدرسين مناسبين."
 
 #: brainboost/core/templates/landing_eltern.html:27
 #, fuzzy
@@ -1120,7 +1131,8 @@ msgstr "المعلمون المناسبون"
 #: brainboost/core/templates/landing_eltern.html:41
 msgid ""
 "Fach, Klassenstufe, Lernziel und Unterrichtsform werden vorab eingeordnet."
-msgstr "يتم تحديد المادة الدراسية والصف الدراسي والهدف التعليمي وأسلوب التدريس مسبقًا."
+msgstr ""
+"يتم تحديد المادة الدراسية والصف الدراسي والهدف التعليمي وأسلوب التدريس مسبقًا."
 
 #: brainboost/core/templates/landing_eltern.html:44
 #, fuzzy
@@ -1140,7 +1152,8 @@ msgstr "التواصل الشفاف"
 
 #: brainboost/core/templates/landing_eltern.html:49
 msgid "Absprachen zu Zeiten, Ort, Zielen und nächstem Schritt bleiben klar."
-msgstr "تظل الترتيبات المتعلقة بالمواعيد والمكان والأهداف والخطوة التالية واضحة."
+msgstr ""
+"تظل الترتيبات المتعلقة بالمواعيد والمكان والأهداف والخطوة التالية واضحة."
 
 #: brainboost/core/templates/landing_eltern.html:56
 msgid "Typische Anliegen"
@@ -1205,7 +1218,9 @@ msgstr "دروس خصوصية في براونشفايغ وعبر الإنترن�
 msgid ""
 "BrainBoost erklärt SchülerInnen, wie verständliche Nachhilfe in Braunschweig "
 "und online bei Hausaufgaben, Prüfungen und schwierigen Themen unterstützt."
-msgstr "يشرح BrainBoost للطلاب كيف يقدم دروسًا خصوصية سهلة الفهم في براونشفايغ وعبر الإنترنت لمساعدتهم في الواجبات المنزلية والامتحانات والمواضيع الصعبة."
+msgstr ""
+"يشرح BrainBoost للطلاب كيف يقدم دروسًا خصوصية سهلة الفهم في براونشفايغ وعبر "
+"الإنترنت لمساعدتهم في الواجبات المنزلية والامتحانات والمواضيع الصعبة."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:25
 #, fuzzy
@@ -1218,7 +1233,9 @@ msgid ""
 "BrainBoost hilft dir, schwierige Themen verständlicher zu machen, "
 "Hausaufgaben besser zu bewältigen und dich gezielt auf Prüfungen "
 "vorzubereiten."
-msgstr "يساعدك BrainBoost على فهم المواضيع الصعبة بشكل أفضل، وإنجاز الواجبات المنزلية بسهولة أكبر، والاستعداد للامتحانات بشكل أكثر تركيزًا."
+msgstr ""
+"يساعدك BrainBoost على فهم المواضيع الصعبة بشكل أفضل، وإنجاز الواجبات "
+"المنزلية بسهولة أكبر، والاستعداد للامتحانات بشكل أكثر تركيزًا."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:29
 #, fuzzy
@@ -1263,7 +1280,9 @@ msgstr "مواعيد مرنة"
 msgid ""
 "Nachhilfe kann passend zu Schule, Freizeit und Prüfungsphasen abgestimmt "
 "werden."
-msgstr "يمكن تنظيم الدروس الخصوصية بما يتناسب مع مواعيد الدراسة وأوقات الفراغ وفترات الامتحانات."
+msgstr ""
+"يمكن تنظيم الدروس الخصوصية بما يتناسب مع مواعيد الدراسة وأوقات الفراغ وفترات "
+"الامتحانات."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:50
 msgid "Konkrete Ziele"
@@ -1273,7 +1292,9 @@ msgstr "أهداف محددة"
 msgid ""
 "Du kannst gezielt an Hausaufgaben, Klassenarbeiten, Grundlagen oder "
 "Prüfungen arbeiten."
-msgstr "يمكنك التركيز على الواجبات المنزلية أو الاختبارات الصفية أو الأساسيات أو الامتحانات."
+msgstr ""
+"يمكنك التركيز على الواجبات المنزلية أو الاختبارات الصفية أو الأساسيات أو "
+"الامتحانات."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:58
 msgid "Geeignet für"
@@ -1367,7 +1388,8 @@ msgstr "خبرة منتظمة في تقديم الدروس الخصوصية"
 #: brainboost/core/templates/landing_tutor.html:33
 msgid ""
 "Fächer, Verfügbarkeit und passende SchülerInnen werden gemeinsam abgestimmt."
-msgstr "يتم التنسيق بشكل مشترك بشأن المواد الدراسية والتوافر والطلاب المناسبين."
+msgstr ""
+"يتم التنسيق بشكل مشترك بشأن المواد الدراسية والتوافر والطلاب المناسبين."
 
 #: brainboost/core/templates/landing_tutor.html:39
 msgid "Vorteile"
@@ -1393,7 +1415,8 @@ msgstr "دروس خصوصية مرنة عبر الإنترنت أو في الم�
 msgid ""
 "Nachhilfe kann je nach Bedarf digital oder in Braunschweig vor Ort "
 "stattfinden."
-msgstr "يمكن أن تُقدم الدروس الخصوصية إما عبر الإنترنت أو في برونزويك، حسب الحاجة."
+msgstr ""
+"يمكن أن تُقدم الدروس الخصوصية إما عبر الإنترنت أو في برونزويك، حسب الحاجة."
 
 #: brainboost/core/templates/landing_tutor.html:50
 msgid "Unterstützung durch BrainBoost"

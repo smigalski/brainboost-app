@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BrainBoost\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-06 19:43+0200\n"
+"POT-Creation-Date: 2026-06-06 20:32+0200\n"
 "PO-Revision-Date: 2026-06-06 19:43+0200\n"
 "Last-Translator: BrainBoost\n"
 "Language-Team: Spanish\n"
@@ -19,389 +19,389 @@ msgstr ""
 
 #: brainboost/core/admin.py:30
 msgid "Personal info"
-msgstr ""
+msgstr "Datos personales"
 
 #: brainboost/core/admin.py:31
 msgid "Role"
-msgstr ""
+msgstr "Función"
 
 #: brainboost/core/admin.py:33
 msgid "Permissions"
-msgstr ""
+msgstr "Permisos"
 
 #: brainboost/core/admin.py:44
 msgid "Important dates"
-msgstr ""
+msgstr "Fechas importantes"
 
 #: brainboost/core/forms.py:169
 msgid ""
 "Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage gespeichert "
 "und verarbeitet werden."
-msgstr ""
+msgstr "Acepto que mis datos se almacenen y traten con el fin de gestionar mi solicitud."
 
 #: brainboost/core/forms.py:173
 msgid "Bitte stimme der Verarbeitung deiner Angaben zu."
-msgstr ""
+msgstr "Por favor, da tu consentimiento para el tratamiento de tus datos."
 
 #: brainboost/core/forms.py:219
 msgid "Ich frage an als"
-msgstr ""
+msgstr "Pregunto en calidad de"
 
 #: brainboost/core/forms.py:220
 msgid "Name"
-msgstr ""
+msgstr "Nombre"
 
 #: brainboost/core/forms.py:221 brainboost/core/forms.py:254
 msgid "E-Mail"
-msgstr ""
+msgstr "Correo electrónico"
 
 #: brainboost/core/forms.py:222
 msgid "Telefonnummer"
-msgstr ""
+msgstr "Número de teléfono"
 
 #: brainboost/core/forms.py:223
 msgid "Bevorzugte Kontaktart"
-msgstr ""
+msgstr "Forma de contacto preferida"
 
 #: brainboost/core/forms.py:224
 msgid "Fach/Fächer"
-msgstr ""
+msgstr "Asignatura/Asignaturas"
 
 #: brainboost/core/forms.py:225
 msgid "Klassenstufe"
-msgstr ""
+msgstr "Curso"
 
 #: brainboost/core/forms.py:226
 msgid "Unterrichtsform"
-msgstr ""
+msgstr "Tipo de clase"
 
 #: brainboost/core/forms.py:227
 msgid "Ziel der Nachhilfe"
-msgstr ""
+msgstr "Objetivo de las clases particulares"
 
 #: brainboost/core/forms.py:228
 msgid "Dringlichkeit"
-msgstr ""
+msgstr "Urgencia"
 
 #: brainboost/core/forms.py:229 brainboost/core/templates/contact.html:251
 msgid "Nachricht"
-msgstr ""
+msgstr "Mensaje"
 
 #: brainboost/core/forms.py:230
 msgid "Aktueller Status"
-msgstr ""
+msgstr "Estado actual"
 
 #: brainboost/core/forms.py:231
 msgid "Fächer"
-msgstr ""
+msgstr "Asignaturas"
 
 #: brainboost/core/forms.py:232
 msgid "Klassenstufen"
-msgstr ""
+msgstr "Cursos"
 
 #: brainboost/core/forms.py:233
 msgid "Verfügbarkeit pro Woche"
-msgstr ""
+msgstr "Disponibilidad por semana"
 
 #: brainboost/core/forms.py:234
 msgid "Erfahrung"
-msgstr ""
+msgstr "Experiencia"
 
 #: brainboost/core/forms.py:235
 msgid "Motivation"
-msgstr ""
+msgstr "Motivación"
 
 #: brainboost/core/forms.py:238 brainboost/core/forms.py:239
 msgid "E-Mail oder Telefonnummer reicht aus."
-msgstr ""
+msgstr "Basta con un correo electrónico o un número de teléfono."
 
 #: brainboost/core/forms.py:245 brainboost/core/templates/contact.html:147
 msgid "Elternteil"
-msgstr ""
+msgstr "padre o madre"
 
 #: brainboost/core/forms.py:246 brainboost/core/templates/contact.html:148
 msgid "SchülerIn"
-msgstr ""
+msgstr "Alumno/a"
 
 #: brainboost/core/forms.py:247 brainboost/core/templates/contact.html:149
 msgid "TutorIn"
-msgstr ""
+msgstr "Tutor/a"
 
 #: brainboost/core/forms.py:251 brainboost/core/forms.py:257
 #: brainboost/core/forms.py:263 brainboost/core/forms.py:271
 msgid "Bitte auswählen"
-msgstr ""
+msgstr "Selecciona una opción"
 
 #: brainboost/core/forms.py:252
 msgid "WhatsApp"
-msgstr ""
+msgstr "WhatsApp"
 
 #: brainboost/core/forms.py:253
 msgid "Telefon"
-msgstr ""
+msgstr "Teléfono"
 
 #: brainboost/core/forms.py:258
 msgid "Online"
-msgstr ""
+msgstr "En línea"
 
 #: brainboost/core/forms.py:259
 msgid "Vor Ort"
-msgstr ""
+msgstr "In situ"
 
 #: brainboost/core/forms.py:260
 msgid "Beides"
-msgstr ""
+msgstr "Ambas cosas"
 
 #: brainboost/core/forms.py:264
 msgid "SchülerIn Oberstufe"
-msgstr ""
+msgstr "Alumno/a de secundaria"
 
 #: brainboost/core/forms.py:265
 msgid "StudentIn"
-msgstr ""
+msgstr "Estudiante"
 
 #: brainboost/core/forms.py:266
 msgid "Lehrkraft"
-msgstr ""
+msgstr "profesor"
 
 #: brainboost/core/forms.py:267
 msgid "Berufstätig"
-msgstr ""
+msgstr "En activo"
 
 #: brainboost/core/forms.py:268
 msgid "Sonstiges"
-msgstr ""
+msgstr "Varios"
 
 #: brainboost/core/forms.py:272
 msgid "Noch keine Erfahrung"
-msgstr ""
+msgstr "Aún no tengo experiencia"
 
 #: brainboost/core/forms.py:273
 msgid "Etwas Erfahrung"
-msgstr ""
+msgstr "Un poco de experiencia"
 
 #: brainboost/core/forms.py:274
 msgid "Regelmäßig Nachhilfe gegeben"
-msgstr ""
+msgstr "Ha dado clases particulares de forma habitual"
 
 #: brainboost/core/forms.py:275
 msgid "Professionelle Unterrichtserfahrung"
-msgstr ""
+msgstr "Experiencia docente profesional"
 
 #: brainboost/core/forms.py:279
 msgid "Vor- und Nachname"
-msgstr ""
+msgstr "Nombre y apellidos"
 
 #: brainboost/core/forms.py:282
 msgid "z. B. Mathe, Englisch"
-msgstr ""
+msgstr "por ejemplo, matemáticas, inglés"
 
 #: brainboost/core/forms.py:283
 msgid "z. B. 8. Klasse"
-msgstr ""
+msgstr "por ejemplo, 8.º curso"
 
 #: brainboost/core/forms.py:284
 msgid "z. B. Noten verbessern, Prüfung vorbereiten"
-msgstr ""
+msgstr "por ejemplo, mejorar las notas, prepararse para un examen"
 
 #: brainboost/core/forms.py:285
 msgid "z. B. möglichst bald, innerhalb der nächsten Wochen"
-msgstr ""
+msgstr "por ejemplo, lo antes posible, en las próximas semanas"
 
 #: brainboost/core/forms.py:286
 msgid "z. B. Mathe, Physik, Englisch"
-msgstr ""
+msgstr "por ejemplo, matemáticas, física, inglés"
 
 #: brainboost/core/forms.py:287
 msgid "z. B. Klasse 5-10, Oberstufe"
-msgstr ""
+msgstr "por ejemplo, cursos 5.º a 10.º, secundaria"
 
 #: brainboost/core/forms.py:288
 msgid "z. B. 4-6 Stunden, Mo/Di abends"
-msgstr ""
+msgstr "por ejemplo, de 4 a 6 horas, los lunes y martes por la tarde"
 
 #: brainboost/core/forms.py:327
 msgid "Bitte gib mindestens eine E-Mail-Adresse oder Telefonnummer an."
-msgstr ""
+msgstr "Por favor, indica al menos una dirección de correo electrónico o un número de teléfono."
 
 #: brainboost/core/forms.py:334 brainboost/core/forms.py:344
 msgid "Dieses Feld ist erforderlich."
-msgstr ""
+msgstr "Este campo es obligatorio."
 
 #: brainboost/core/templates/base.html:41
 msgid "icon"
-msgstr ""
+msgstr "icono"
 
 #: brainboost/core/templates/base.html:44
 #: brainboost/core/templates/landing_alle.html:134
 msgid "BrainBoost Nachhilfe"
-msgstr ""
+msgstr "Clases particulares BrainBoost"
 
 #: brainboost/core/templates/base.html:45
 msgid "Stark im Kopf - Stark im Lernen"
-msgstr ""
+msgstr "Fuerte mentalmente, fuerte en el aprendizaje"
 
 #: brainboost/core/templates/base.html:50
 msgid "Profil"
-msgstr ""
+msgstr "Perfil"
 
 #: brainboost/core/templates/base.html:52
 msgid "Profilbild"
-msgstr ""
+msgstr "Foto de perfil"
 
 #: brainboost/core/templates/base.html:66
 msgid "Sprache wechseln"
-msgstr ""
+msgstr "Cambiar idioma"
 
 #: brainboost/core/templates/base.html:90
 msgid "Menü ausrollen"
-msgstr ""
+msgstr "Despliega el menú"
 
 #: brainboost/core/templates/base.html:108
 msgid "Menü einklappen"
-msgstr ""
+msgstr "Ocultar el menú"
 
 #: brainboost/core/templates/base.html:117
 msgid "TutorIn werden"
-msgstr ""
+msgstr "Convertirse en tutor"
 
 #: brainboost/core/templates/base.html:119
 msgid "Dashboard"
-msgstr ""
+msgstr "Panel de control"
 
 #: brainboost/core/templates/base.html:121
 msgid "Admins"
-msgstr ""
+msgstr "Administradores"
 
 #: brainboost/core/templates/base.html:123
 msgid "Termine"
-msgstr ""
+msgstr "Fechas"
 
 #: brainboost/core/templates/base.html:124
 msgid "Lernfortschritt"
-msgstr ""
+msgstr "Progreso en el aprendizaje"
 
 #: brainboost/core/templates/base.html:127
-#: brainboost/core/templates/landing.html:778
+#: brainboost/core/templates/landing.html:833
 msgid "Preise"
-msgstr ""
+msgstr "Precios"
 
 #: brainboost/core/templates/base.html:130
 #: brainboost/core/templates/base.html:172
 #: brainboost/core/templates/contact.html:131
 #: brainboost/core/templates/contact.html:158
 msgid "Kontakt"
-msgstr ""
+msgstr "Contacto"
 
 #: brainboost/core/templates/base.html:134
 msgid "Ausloggen"
-msgstr ""
+msgstr "Cerrar sesión"
 
 #: brainboost/core/templates/base.html:136
 msgid "Einloggen"
-msgstr ""
+msgstr "Iniciar sesión"
 
 #: brainboost/core/templates/base.html:156
 msgid "Abschnitte anzeigen"
-msgstr ""
+msgstr "Mostrar secciones"
 
 #: brainboost/core/templates/base.html:173
 msgid "Impressum"
-msgstr ""
+msgstr "Aviso legal"
 
 #: brainboost/core/templates/base.html:174
 #: brainboost/core/templates/partials/cookie_notice.html:8
 msgid "Datenschutz"
-msgstr ""
+msgstr "Protección de datos"
 
 #: brainboost/core/templates/base.html:175
 msgid "AGB"
-msgstr ""
+msgstr "Condiciones generales"
 
 #: brainboost/core/templates/base.html:176
 msgid "Cookies"
-msgstr ""
+msgstr "Cookies"
 
 #: brainboost/core/templates/contact.html:132
 msgid ""
 "Stelle deine Anfrage für Nachhilfe oder bewirb dich als TutorIn. Wir melden "
 "uns zeitnah über deinen bevorzugten Kontaktweg."
-msgstr ""
+msgstr "Envía tu solicitud de clases particulares o preséntate como tutor o tutora. Nos pondremos en contacto contigo lo antes posible a través del canal de contacto que nos indiques."
 
 #: brainboost/core/templates/contact.html:145
 msgid "Du bist ..."
-msgstr ""
+msgstr "Eres..."
 
 #: brainboost/core/templates/contact.html:146
 msgid "Du bist"
-msgstr ""
+msgstr "Tú eres"
 
 #: brainboost/core/templates/contact.html:184
 msgid "Nachhilfe"
-msgstr ""
+msgstr "Clases particulares"
 
 #: brainboost/core/templates/contact.html:215
 msgid "TutorIn-Profil"
-msgstr ""
+msgstr "Perfil del tutor"
 
 #: brainboost/core/templates/contact.html:264
 msgid "Anfrage senden"
-msgstr ""
+msgstr "Enviar solicitud"
 
 #: brainboost/core/templates/contact.html:265
 msgid "Wir nutzen deine Angaben nur zur Bearbeitung dieser Anfrage."
-msgstr ""
+msgstr "Utilizaremos tus datos únicamente para tramitar esta solicitud."
 
 #: brainboost/core/templates/contact.html:271
 msgid "Direktkontakt"
-msgstr ""
+msgstr "Contacto directo"
 
 #: brainboost/core/templates/contact.html:273
 msgid "Kiara Puppe"
-msgstr ""
+msgstr "Muñeca Kiara"
 
 #: brainboost/core/templates/contact.html:276
 msgid "E-Mail:"
-msgstr ""
+msgstr "Correo electrónico:"
 
 #: brainboost/core/templates/contact.html:277
 msgid "Telefon:"
-msgstr ""
+msgstr "Teléfono:"
 
 #: brainboost/core/templates/contact.html:278
 msgid "WhatsApp:"
-msgstr ""
+msgstr "WhatsApp:"
 
 #: brainboost/core/templates/contact.html:278
 msgid "Nachricht schreiben"
-msgstr ""
+msgstr "Escribir un mensaje"
 
 #: brainboost/core/templates/contact.html:279
 msgid "Erreichbarkeit:"
-msgstr ""
+msgstr "Accesibilidad:"
 
 #: brainboost/core/templates/contact.html:279
 msgid "Montag bis Freitag, 9:00 - 21:00 Uhr"
-msgstr ""
+msgstr "De lunes a viernes, de 9:00 a 21:00 horas"
 
 #: brainboost/core/templates/landing.html:3
 msgid "Nachhilfe Braunschweig – fair & persönlich | BrainBoost"
-msgstr ""
+msgstr "Clases particulares en Brunswick: justas y personalizadas | BrainBoost"
 
-#: brainboost/core/templates/landing.html:603
+#: brainboost/core/templates/landing.html:658
 #: brainboost/core/templates/landing_alle.html:135
 msgid "Nachhilfe in Braunschweig und online"
 msgstr "Tutoría en Braunschweig y online"
 
-#: brainboost/core/templates/landing.html:605
+#: brainboost/core/templates/landing.html:660
 msgid "Willkommen bei"
 msgstr "Bienvenido a"
 
-#: brainboost/core/templates/landing.html:610
+#: brainboost/core/templates/landing.html:665
 msgid "Stark im Kopf - stark im Lernen."
 msgstr "Mente fuerte - aprendizaje fuerte."
 
-#: brainboost/core/templates/landing.html:611
+#: brainboost/core/templates/landing.html:666
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
 "und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
@@ -411,35 +411,35 @@ msgstr ""
 "tutores: solo envía una solicitud, encuentra el apoyo adecuado y aprende "
 "mejor en conjunto."
 
-#: brainboost/core/templates/landing.html:612
+#: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"
 msgstr "Acciones rápidas"
 
-#: brainboost/core/templates/landing.html:613
+#: brainboost/core/templates/landing.html:668
 msgid "Kostenlose Probestunde buchen"
 msgstr "Reservar una clase de prueba gratuita"
 
-#: brainboost/core/templates/landing.html:614
+#: brainboost/core/templates/landing.html:669
 msgid "Nachhilfe anfragen"
 msgstr "Solicitar tutoría"
 
-#: brainboost/core/templates/landing.html:615
+#: brainboost/core/templates/landing.html:670
 msgid "Tutor:in werden"
 msgstr "Convertirse en tutor"
 
-#: brainboost/core/templates/landing.html:616
+#: brainboost/core/templates/landing.html:671
 msgid "Zum Login / Registrieren"
 msgstr "Iniciar sesión / Registrarse"
 
-#: brainboost/core/templates/landing.html:620
+#: brainboost/core/templates/landing.html:675
 msgid "Die Registrierung erfolgt gemeinsam mit deinem/deiner Tutor:in."
 msgstr "El registro se realiza junto con tu tutor o tutora."
 
-#: brainboost/core/templates/landing.html:628
+#: brainboost/core/templates/landing.html:683
 msgid "Über BrainBoost"
-msgstr ""
+msgstr "Acerca de BrainBoost"
 
-#: brainboost/core/templates/landing.html:629
+#: brainboost/core/templates/landing.html:684
 msgid ""
 "<strong>BrainBoost</strong> wurde 2025 von Kiara Puppe gegründet und stellt "
 "eine professionelle <strong>Nachhilfeplattform</strong> mit digitaler "
@@ -450,58 +450,58 @@ msgid ""
 "gerechten Umgang mit eigenständigem und traditionellem Lernen zu verbinden, "
 "damit alle bei BrainBoost davon profitieren können und das <strong>Beste</"
 "strong> aus sich herausholen können!"
-msgstr ""
+msgstr "<strong>BrainBoost</strong> fue fundada en 2025 por Kiara Puppe y es una <strong>plataforma</strong> profesional <strong>de clases particulares</strong> con infraestructura digital. BrainBoost combina la creciente digitalización con los métodos de aprendizaje tradicionales, ya que <strong>la IA</strong> y otras <strong>herramientas inteligentes</strong> pueden complementar el aprendizaje de forma eficaz, ¡siempre que se utilicen correctamente! Por eso, BrainBoost ayuda a combinar el aprendizaje autónomo y tradicional con un enfoque adecuado a la IA, para que todos puedan beneficiarse de BrainBoost y sacar lo <strong>mejor</strong> de sí mismos."
 
-#: brainboost/core/templates/landing.html:634
+#: brainboost/core/templates/landing.html:689
 msgid "Preis & Qualität"
-msgstr ""
+msgstr "Precio y calidad"
 
-#: brainboost/core/templates/landing.html:635
+#: brainboost/core/templates/landing.html:690
 msgid ""
 "Wir verbinden günstige und faire Preise mit professioneller digitalisierter "
 "Nachhilfe!"
-msgstr ""
+msgstr "¡Ofrecemos precios asequibles y justos junto con clases particulares profesionales y digitalizadas!"
 
-#: brainboost/core/templates/landing.html:637
+#: brainboost/core/templates/landing.html:692
 msgid "Zu den Preisen"
-msgstr ""
+msgstr "Ver precios"
 
-#: brainboost/core/templates/landing.html:638
+#: brainboost/core/templates/landing.html:693
 msgid ""
 "Bist Du <strong>Elternteil, SchülerIn oder StudentIn</strong> und möchtest "
 "alle Details zur Lernvereinbarung wissen? Dann buche eine kostenlose "
 "Probestunde oder kontaktiere mich!"
-msgstr ""
-
-#: brainboost/core/templates/landing.html:640
-msgid "Jetzt anfragen"
-msgstr ""
-
-#: brainboost/core/templates/landing.html:651
-msgid "Unser Angebot"
-msgstr ""
-
-#: brainboost/core/templates/landing.html:653
-msgid "Digitale Lernorte"
-msgstr ""
-
-#: brainboost/core/templates/landing.html:654
-msgid "Digitale Lernräume"
-msgstr ""
-
-#: brainboost/core/templates/landing.html:694
-msgid "Grundschule"
-msgstr ""
+msgstr "¿Eres <strong>padre, </strong>madre<strong>, alumno o estudiante</strong> y quieres conocer todos los detalles del acuerdo de aprendizaje? ¡Pues reserva una clase de prueba gratuita o ponte en contacto conmigo!"
 
 #: brainboost/core/templates/landing.html:695
+msgid "Jetzt anfragen"
+msgstr "Solicitar información ahora"
+
+#: brainboost/core/templates/landing.html:706
+msgid "Unser Angebot"
+msgstr "Nuestra oferta"
+
+#: brainboost/core/templates/landing.html:708
+msgid "Digitale Lernorte"
+msgstr "Espacios de aprendizaje digitales"
+
+#: brainboost/core/templates/landing.html:709
+msgid "Digitale Lernräume"
+msgstr "Espacios de aprendizaje digitales"
+
+#: brainboost/core/templates/landing.html:749
+msgid "Grundschule"
+msgstr "Escuela primaria"
+
+#: brainboost/core/templates/landing.html:750
 msgid "Alle Fächer"
-msgstr ""
+msgstr "Todas las asignaturas"
 
-#: brainboost/core/templates/landing.html:698
+#: brainboost/core/templates/landing.html:753
 msgid "Weiterführende Schule"
-msgstr ""
+msgstr "Instituto de secundaria"
 
-#: brainboost/core/templates/landing.html:699
+#: brainboost/core/templates/landing.html:754
 msgid ""
 "Deutsch, Mathematik, Englisch, Französisch, Politik, Physik, Biologie, "
 "Chemie, Erdkunde und Musik. <strong>Abitur-Leistungskurse:</strong> Deutsch, "
@@ -509,227 +509,227 @@ msgid ""
 "Fächer:</strong> z. B. Wirtschaft, Rechnungswesen, Pädagogik, Gesundheit und "
 "Sozialkunde. <strong>IGS-Fächer:</strong> z. B. Gesellschaftslehre, "
 "Naturwissenschaften, Arbeit-Wirtschaft-Technik und Wahlpflichtkurse"
-msgstr ""
+msgstr "Alemán, Matemáticas, Inglés, Francés, Educación Cívica, Física, Biología, Química, Geografía y Música. <strong>Asignaturas de nivel avanzado del Abitur:</strong> Alemán, Inglés, Francés, Educación Cívica, Matemáticas, Física y Química. <strong>Asignaturas de la BBS:</strong> p. ej., Economía, Contabilidad, Pedagogía, Salud y Ciencias Sociales. <strong>Asignaturas de la IGS:</strong> p. ej., Ciencias Sociales, Ciencias Naturales, Trabajo, Economía y Tecnología, y asignaturas optativas obligatorias."
 
-#: brainboost/core/templates/landing.html:702
+#: brainboost/core/templates/landing.html:757
 msgid "Erweitertes Lernangebot"
-msgstr ""
+msgstr "Oferta formativa ampliada"
 
-#: brainboost/core/templates/landing.html:703
+#: brainboost/core/templates/landing.html:758
 msgid ""
 "Zertifizierter DaF-/DaZ-Unterricht sowie gezielte Vorbereitung auf "
 "Klassenarbeiten, Klausuren, Abschlussprüfungen und Seminarfacharbeiten"
-msgstr ""
+msgstr "Clases certificadas de alemán como lengua extranjera (DaF) y alemán como segunda lengua (DaZ), así como preparación específica para exámenes parciales, exámenes finales, exámenes de fin de curso y trabajos de seminario"
 
-#: brainboost/core/templates/landing.html:706
+#: brainboost/core/templates/landing.html:761
 msgid "Für Studierende"
-msgstr ""
+msgstr "Para estudiantes"
 
-#: brainboost/core/templates/landing.html:707
+#: brainboost/core/templates/landing.html:762
 msgid ""
 "Professionelle Begleitung bei Seminar-, Projekt-, Studien-, Bachelor- und "
 "Masterarbeiten - von der Struktur bis zur finalen Überarbeitung"
-msgstr ""
+msgstr "Asistencia profesional para trabajos de seminario, proyectos, trabajos de fin de carrera y tesis de grado y máster: desde la estructura hasta la revisión final"
 
-#: brainboost/core/templates/landing.html:718
+#: brainboost/core/templates/landing.html:773
 msgid "Google-Bewertungen"
-msgstr ""
+msgstr "Opiniones de Google"
 
-#: brainboost/core/templates/landing.html:720
+#: brainboost/core/templates/landing.html:775
 #, python-format
 msgid "Google-Bewertung %(rating)s von 5"
-msgstr ""
+msgstr "Valoración de Google: %(rating)s de 5"
 
-#: brainboost/core/templates/landing.html:725
+#: brainboost/core/templates/landing.html:780
 #, python-format
 msgid "Basierend auf %(count)s Google-Bewertung"
 msgid_plural "Basierend auf %(count)s Google-Bewertungen"
 msgstr[0] ""
 msgstr[1] ""
 
-#: brainboost/core/templates/landing.html:728
+#: brainboost/core/templates/landing.html:783
 msgid ""
 "Aktuelle Google-Bewertungen werden hier angezeigt, sobald die Google Places "
 "API eingerichtet ist."
-msgstr ""
+msgstr "Las reseñas actuales de Google se mostrarán aquí tan pronto como se haya configurado la API de Google Places."
 
-#: brainboost/core/templates/landing.html:732
+#: brainboost/core/templates/landing.html:787
 msgid "Alle ansehen"
-msgstr ""
+msgstr "Ver todo"
 
-#: brainboost/core/templates/landing.html:733
+#: brainboost/core/templates/landing.html:788
 msgid "Jetzt bewerten"
-msgstr ""
+msgstr "Valora ahora"
 
-#: brainboost/core/templates/landing.html:752
+#: brainboost/core/templates/landing.html:807
 #, python-format
 msgid "%(rating)s von 5 Sternen"
-msgstr ""
+msgstr "%(rating)s de 5 estrellas"
 
-#: brainboost/core/templates/landing.html:759
+#: brainboost/core/templates/landing.html:814
 msgid "Google-Bewertungen bewegen"
-msgstr ""
+msgstr "Las reseñas de Google influyen"
 
-#: brainboost/core/templates/landing.html:760
+#: brainboost/core/templates/landing.html:815
 msgid "Vorherige Bewertung"
-msgstr ""
+msgstr "Valoración anterior"
 
-#: brainboost/core/templates/landing.html:761
+#: brainboost/core/templates/landing.html:816
 msgid "Nächste Bewertung"
-msgstr ""
+msgstr "Siguiente valoración"
 
-#: brainboost/core/templates/landing.html:766
+#: brainboost/core/templates/landing.html:821
 msgid ""
 "Wenn Du mit BrainBoost zufrieden bist, freue ich mich sehr über eine kurze "
 "Bewertung bei Google."
-msgstr ""
+msgstr "Si estás satisfecho con BrainBoost, te agradecería mucho que dejaras una breve reseña en Google."
 
-#: brainboost/core/templates/landing.html:768
+#: brainboost/core/templates/landing.html:823
 msgid "Jetzt bei Google bewerten"
-msgstr ""
+msgstr "Valora ahora en Google"
 
-#: brainboost/core/templates/landing.html:779
+#: brainboost/core/templates/landing.html:834
 msgid "Kurz & transparent"
-msgstr ""
+msgstr "Breve y transparente"
 
-#: brainboost/core/templates/landing.html:782
+#: brainboost/core/templates/landing.html:837
 msgid ""
 "Transparente Nachhilfe-Preise pro Termin, inkl. digitaler Begleitung und "
 "Lernfortschritt."
-msgstr ""
+msgstr "Precios transparentes por sesión de clases particulares, con seguimiento digital y evaluación del progreso incluido."
 
-#: brainboost/core/templates/landing.html:783
+#: brainboost/core/templates/landing.html:838
 msgid "Preisübersicht"
-msgstr ""
+msgstr "Resumen de precios"
 
-#: brainboost/core/templates/landing.html:785
+#: brainboost/core/templates/landing.html:840
 msgid "45 Minuten"
-msgstr ""
+msgstr "45 minutos"
 
-#: brainboost/core/templates/landing.html:789
+#: brainboost/core/templates/landing.html:844
 msgid "60 Minuten"
-msgstr ""
+msgstr "60 minutos"
 
-#: brainboost/core/templates/landing.html:793
+#: brainboost/core/templates/landing.html:848
 msgid "90 Minuten"
-msgstr ""
+msgstr "90 minutos"
 
-#: brainboost/core/templates/landing.html:798
+#: brainboost/core/templates/landing.html:853
 msgid "inkl. kostenloser WebApp"
-msgstr ""
+msgstr "incluye una aplicación web gratuita"
 
-#: brainboost/core/templates/landing.html:799
+#: brainboost/core/templates/landing.html:854
 msgid "inkl. Lernfortschrittreports"
-msgstr ""
+msgstr "incluidos los informes de progreso en el aprendizaje"
 
-#: brainboost/core/templates/landing.html:800
+#: brainboost/core/templates/landing.html:855
 msgid "inkl. Online-Terminplanung"
-msgstr ""
+msgstr "incluye la gestión de citas online"
 
-#: brainboost/core/templates/landing.html:801
+#: brainboost/core/templates/landing.html:856
 msgid "inkl. individuellen Lernmaterialien"
-msgstr ""
+msgstr "incluye materiales didácticos personalizados"
 
-#: brainboost/core/templates/landing.html:803
+#: brainboost/core/templates/landing.html:858
 msgid "Zu den weiteren Vorteilen!"
-msgstr ""
+msgstr "¡Descubre más ventajas!"
 
-#: brainboost/core/templates/landing.html:813
+#: brainboost/core/templates/landing.html:868
 msgid "Google Maps öffnen (externer Link)"
-msgstr ""
+msgstr "Abrir Google Maps (enlace externo)"
 
-#: brainboost/core/templates/landing.html:817
+#: brainboost/core/templates/landing.html:872
 msgid "Interaktive Karte mit BrainBoost Lernorten"
-msgstr ""
+msgstr "Mapa interactivo con los centros de aprendizaje de BrainBoost"
 
-#: brainboost/core/templates/landing.html:821
+#: brainboost/core/templates/landing.html:876
 msgid "Ganz bequem lernen"
-msgstr ""
+msgstr "Aprender con total comodidad"
 
-#: brainboost/core/templates/landing.html:822
+#: brainboost/core/templates/landing.html:877
 msgid "Nachhilfe vor Ort bei dir!*"
-msgstr ""
+msgstr "¡Clases particulares en tu casa!*"
 
-#: brainboost/core/templates/landing.html:823
+#: brainboost/core/templates/landing.html:878
 msgid ""
 "Wenn es organisatorisch passt, kommt dein Tutor oder deine Tutorin zu dir "
 "nach Hause. So bleibt Lernen entspannt, persönlich und direkt in deinem "
 "gewohnten Umfeld."
-msgstr ""
+msgstr "Si la organización lo permite, tu tutor o tutora irá a tu casa. Así, el aprendizaje será relajado, personalizado y se desarrollará directamente en tu entorno habitual."
 
-#: brainboost/core/templates/landing.html:824
+#: brainboost/core/templates/landing.html:879
 msgid "Vor-Ort-Nachhilfe anfragen"
-msgstr ""
+msgstr "Solicitar clases particulares a domicilio"
 
-#: brainboost/core/templates/landing.html:825
+#: brainboost/core/templates/landing.html:880
 msgid ""
 "* Je nach Entfernung können Fahrtkosten anfallen. Die Details werden vorab "
 "transparent abgestimmt."
-msgstr ""
+msgstr "* Dependiendo de la distancia, pueden aplicarse gastos de desplazamiento. Los detalles se acordarán con antelación de forma transparente."
 
-#: brainboost/core/templates/landing.html:832
+#: brainboost/core/templates/landing.html:887
 msgid "TutorIn werden und bis zu 1000€ im Monat neben dem Studium verdienen!"
-msgstr ""
+msgstr "¡Conviértete en tutor y gana hasta 1000 € al mes mientras estudias!"
 
-#: brainboost/core/templates/landing.html:833
+#: brainboost/core/templates/landing.html:888
 msgid "Jetzt bewerben und keine Chance verpassen!"
-msgstr ""
+msgstr "¡Envía tu solicitud ahora y no pierdas esta oportunidad!"
 
-#: brainboost/core/templates/landing.html:838
+#: brainboost/core/templates/landing.html:893
 msgid "BrainBoost Feedback"
-msgstr ""
+msgstr "Comentarios sobre BrainBoost"
 
-#: brainboost/core/templates/landing.html:839
+#: brainboost/core/templates/landing.html:894
 msgid ""
 "BrainBoost möchte die beste Nachhilfeplattform Deutschlands werden! Was ist "
 "dafür nötig?"
-msgstr ""
+msgstr "¡BrainBoost quiere convertirse en la mejor plataforma de clases particulares de Alemania! ¿Qué se necesita para ello?"
 
-#: brainboost/core/templates/landing.html:840
+#: brainboost/core/templates/landing.html:895
 msgid "Anonymes Feedback geben"
-msgstr ""
+msgstr "Enviar comentarios de forma anónima"
 
-#: brainboost/core/templates/landing.html:844
+#: brainboost/core/templates/landing.html:899
 msgid "FAQ"
-msgstr ""
+msgstr "Preguntas frecuentes"
 
-#: brainboost/core/templates/landing.html:852
+#: brainboost/core/templates/landing.html:907
 msgid "Noch keine FAQ für die Startseite vorhanden."
-msgstr ""
+msgstr "Aún no hay preguntas frecuentes disponibles para la página de inicio."
 
-#: brainboost/core/templates/landing.html:862
+#: brainboost/core/templates/landing.html:917
 msgid "BrainBoost Lernort"
-msgstr ""
+msgstr "Centro de aprendizaje BrainBoost"
 
-#: brainboost/core/templates/landing.html:863
+#: brainboost/core/templates/landing.html:918
 msgid "Karl-Schmidt-Straße 20, 38114 Braunschweig"
-msgstr ""
+msgstr "Calle Karl-Schmidt, 20, 38114 Brunswick"
 
-#: brainboost/core/templates/landing.html:864
+#: brainboost/core/templates/landing.html:919
 msgid "Stadtbibliothek Braunschweig"
-msgstr ""
+msgstr "Biblioteca municipal de Brunswick"
 
-#: brainboost/core/templates/landing.html:865
+#: brainboost/core/templates/landing.html:920
 msgid "Zentraler Treffpunkt in der Innenstadt"
-msgstr ""
+msgstr "Un punto de encuentro céntrico en el centro de la ciudad"
 
 #: brainboost/core/templates/landing_alle.html:4
 msgid "Nachhilfe Braunschweig & online | Mathe, Englisch, Deutsch | BrainBoost"
-msgstr ""
+msgstr "Clases particulares en Brunswick y online | Matemáticas, inglés, alemán | BrainBoost"
 
 #: brainboost/core/templates/landing_alle.html:6
 msgid ""
 "Individuelle Nachhilfe in Braunschweig und online: Mathe, Deutsch, Englisch "
 "und weitere Fächer. Für Eltern, SchülerInnen und TutorInnen. Jetzt kostenlos "
 "anfragen."
-msgstr ""
+msgstr "Clases particulares personalizadas en Brunswick y online: matemáticas, alemán, inglés y otras asignaturas. Para padres, alumnos y profesores particulares. Solicita información gratis ahora."
 
 #: brainboost/core/templates/landing_alle.html:136
 msgid ""
 "BrainBoost verbindet individuelle Nachhilfe mit klarer Organisation: Online "
 "Nachhilfe und TutorInnen in Braunschweig für Mathe, Deutsch, Englisch und "
 "weitere Fächer."
-msgstr ""
+msgstr "BrainBoost combina clases particulares personalizadas con una organización clara: clases particulares online y profesores particulares en Braunschweig para matemáticas, alemán, inglés y otras asignaturas."
 
 #: brainboost/core/templates/landing_alle.html:138
 #: brainboost/core/templates/landing_alle.html:170
@@ -741,7 +741,7 @@ msgstr ""
 #: brainboost/core/templates/landing_schuelerinnen.html:27
 #: brainboost/core/templates/landing_schuelerinnen.html:78
 msgid "Kostenlose Anfrage stellen"
-msgstr ""
+msgstr "Solicitar presupuesto sin compromiso"
 
 #: brainboost/core/templates/landing_alle.html:139
 #: brainboost/core/templates/landing_alle.html:172
@@ -749,33 +749,33 @@ msgstr ""
 #: brainboost/core/templates/landing_alle.html:206
 #: brainboost/core/templates/landing_alle.html:248
 msgid "Mehr über BrainBoost erfahren"
-msgstr ""
+msgstr "Más información sobre BrainBoost"
 
 #: brainboost/core/templates/landing_alle.html:142
 msgid "BrainBoost Lernbegleitung"
-msgstr ""
+msgstr "Acompañamiento educativo BrainBoost"
 
 #: brainboost/core/templates/landing_alle.html:143
 #: brainboost/core/templates/landing_eltern.html:28
 #: brainboost/core/templates/landing_schuelerinnen.html:30
 #: brainboost/core/templates/landing_tutor.html:30
 msgid "BrainBoost Logo"
-msgstr ""
+msgstr "Logotipo de BrainBoost"
 
 #: brainboost/core/templates/landing_alle.html:145
 #: brainboost/core/templates/landing_alle.html:237
 msgid "Nachhilfe Braunschweig"
-msgstr ""
+msgstr "Clases particulares en Brunswick"
 
 #: brainboost/core/templates/landing_alle.html:146
 msgid ""
 "Passende Lernbegleitung für Eltern, SchülerInnen und TutorInnen. Online oder "
 "vor Ort möglich."
-msgstr ""
+msgstr "Apoyo educativo a medida para padres, alumnos y tutores. Disponible en línea o presencial."
 
 #: brainboost/core/templates/landing_alle.html:152
 msgid "Individuelle Nachhilfe für Braunschweig"
-msgstr ""
+msgstr "Clases particulares en Brunswick"
 
 #: brainboost/core/templates/landing_alle.html:153
 msgid ""
@@ -783,167 +783,167 @@ msgid ""
 "Deutsch Nachhilfe Braunschweig: Entscheidend ist, dass Unterstützung zum "
 "Lernstand, Fach und Ziel passt. BrainBoost strukturiert die Anfrage und "
 "hilft dabei, passende Nachhilfe online oder in Braunschweig zu organisieren."
-msgstr ""
+msgstr "Ya se trate de clases particulares de matemáticas en Brunswick, de inglés en Brunswick o de alemán en Brunswick: lo importante es que la ayuda se adapte al nivel de aprendizaje, a la asignatura y a los objetivos. BrainBoost analiza la solicitud y ayuda a organizar las clases particulares adecuadas, ya sea en línea o en Brunswick."
 
 #: brainboost/core/templates/landing_alle.html:157
 msgid "Nachhilfe passend zu deiner Rolle"
-msgstr ""
+msgstr "Clases particulares adaptadas a tu función"
 
 #: brainboost/core/templates/landing_alle.html:160
 msgid "Eltern"
-msgstr ""
+msgstr "Padres"
 
 #: brainboost/core/templates/landing_alle.html:161
 msgid "Für Eltern"
-msgstr ""
+msgstr "Para los padres"
 
 #: brainboost/core/templates/landing_alle.html:162
 msgid ""
 "Eltern suchen zuverlässige, individuelle Unterstützung für ihr Kind. "
 "BrainBoost hilft, Lernbedarf, Fach und Ziel einzuordnen und passende "
 "TutorInnen in Braunschweig oder online zu finden."
-msgstr ""
+msgstr "Los padres buscan un apoyo fiable y personalizado para sus hijos. BrainBoost ayuda a identificar las necesidades de aprendizaje, la asignatura y los objetivos, y a encontrar tutores adecuados en Braunschweig o en línea."
 
 #: brainboost/core/templates/landing_alle.html:164
 msgid "passende TutorInnen"
-msgstr ""
+msgstr "profesores adecuados"
 
 #: brainboost/core/templates/landing_alle.html:165
 msgid "individuelle Förderung"
-msgstr ""
+msgstr "apoyo personalizado"
 
 #: brainboost/core/templates/landing_alle.html:166
 #: brainboost/core/templates/landing_alle.html:240
 msgid "transparente Kommunikation"
-msgstr ""
+msgstr "comunicación transparente"
 
 #: brainboost/core/templates/landing_alle.html:167
 #: brainboost/core/templates/landing_alle.html:184
 msgid "online oder in Braunschweig"
-msgstr ""
+msgstr "en línea o en Brunswick"
 
 #: brainboost/core/templates/landing_alle.html:171
 #: brainboost/core/templates/landing_eltern.html:22
 msgid "Für Eltern erklärt"
-msgstr ""
+msgstr "Explicado para los padres"
 
 #: brainboost/core/templates/landing_alle.html:177
 msgid "SchülerInnen"
-msgstr ""
+msgstr "Alumnos y alumnas"
 
 #: brainboost/core/templates/landing_alle.html:178
 msgid "Für SchülerInnen"
-msgstr ""
+msgstr "Para alumnos y alumnas"
 
 #: brainboost/core/templates/landing_alle.html:179
 msgid ""
 "SchülerInnen erhalten verständliche Unterstützung bei Hausaufgaben, "
 "Prüfungen und schwierigen Themen. Die Nachhilfe bleibt konkret, flexibel und "
 "auf den eigenen Lernstand abgestimmt."
-msgstr ""
+msgstr "Los alumnos reciben ayuda clara y sencilla con los deberes, los exámenes y los temas más difíciles. Las clases particulares son prácticas, flexibles y se adaptan al nivel de cada uno."
 
 #: brainboost/core/templates/landing_alle.html:181
 msgid "verständliche Erklärungen"
-msgstr ""
+msgstr "explicaciones claras"
 
 #: brainboost/core/templates/landing_alle.html:182
 msgid "flexible Termine"
-msgstr ""
+msgstr "horarios flexibles"
 
 #: brainboost/core/templates/landing_alle.html:183
 msgid "Mathe, Deutsch, Englisch und weitere Fächer"
-msgstr ""
+msgstr "Matemáticas, alemán, inglés y otras asignaturas"
 
 #: brainboost/core/templates/landing_alle.html:188
 #: brainboost/core/templates/landing_schuelerinnen.html:24
 msgid "Für SchülerInnen erklärt"
-msgstr ""
+msgstr "Explicado para los alumnos"
 
 #: brainboost/core/templates/landing_alle.html:194
 msgid "TutorInnen"
-msgstr ""
+msgstr "Tutores"
 
 #: brainboost/core/templates/landing_alle.html:195
 msgid "Für TutorInnen"
-msgstr ""
+msgstr "Para los tutores"
 
 #: brainboost/core/templates/landing_alle.html:196
 msgid ""
 "TutorInnen können über BrainBoost Nachhilfe anbieten und SchülerInnen "
 "unterstützen. Der Prozess ist strukturiert, professionell sichtbar und auf "
 "flexible Nachhilfe online oder vor Ort ausgelegt."
-msgstr ""
+msgstr "Los tutores pueden ofrecer clases particulares a través de BrainBoost y ayudar a los alumnos. El proceso está bien estructurado, goza de reconocimiento profesional y está diseñado para impartir clases particulares de forma flexible, ya sea en línea o presencial."
 
 #: brainboost/core/templates/landing_alle.html:198
 msgid "strukturierter Vermittlungsprozess"
-msgstr ""
+msgstr "proceso de mediación estructurado"
 
 #: brainboost/core/templates/landing_alle.html:199
 msgid "professionelle Außendarstellung"
-msgstr ""
+msgstr "imagen profesional"
 
 #: brainboost/core/templates/landing_alle.html:200
 msgid "digitale Unterstützung über die WebApp"
-msgstr ""
+msgstr "asistencia digital a través de la aplicación web"
 
 #: brainboost/core/templates/landing_alle.html:201
 msgid "flexible Nachhilfe online oder vor Ort"
-msgstr ""
+msgstr "Clases particulares flexibles, en línea o presenciales"
 
 #: brainboost/core/templates/landing_alle.html:205
 msgid "Für Tutoren erklärt"
-msgstr ""
+msgstr "Explicado para los tutores"
 
 #: brainboost/core/templates/landing_alle.html:214
 msgid "Fächer und Ziele"
-msgstr ""
+msgstr "Asignaturas y objetivos"
 
 #: brainboost/core/templates/landing_alle.html:216
 msgid ""
 "Mathe Nachhilfe Braunschweig für Grundlagen, Klassenarbeiten und "
 "Prüfungsvorbereitung"
-msgstr ""
+msgstr "Clases particulares de matemáticas en Brunswick: conceptos básicos, exámenes y preparación de exámenes"
 
 #: brainboost/core/templates/landing_alle.html:217
 msgid ""
 "Deutsch Nachhilfe Braunschweig für Grammatik, Texte und sichere "
 "Ausdrucksweise"
-msgstr ""
+msgstr "Clases particulares de alemán en Brunswick: gramática, redacción y expresión oral con seguridad"
 
 #: brainboost/core/templates/landing_alle.html:218
 msgid ""
 "Englisch Nachhilfe Braunschweig für Vokabeln, Grammatik und mündliche "
 "Sicherheit"
-msgstr ""
+msgstr "Clases particulares de inglés en Braunschweig: vocabulario, gramática y confianza al hablar"
 
 #: brainboost/core/templates/landing_alle.html:219
 msgid "weitere Fächer je nach Bedarf und Verfügbarkeit"
-msgstr ""
+msgstr "Otras asignaturas, según las necesidades y la disponibilidad"
 
 #: brainboost/core/templates/landing_alle.html:223
 #: brainboost/core/templates/landing_tutor.html:91
 msgid "Ablauf"
-msgstr ""
+msgstr "Procedimiento"
 
 #: brainboost/core/templates/landing_alle.html:225
 msgid "Anfrage ausfüllen"
-msgstr ""
+msgstr "Rellena el formulario de solicitud"
 
 #: brainboost/core/templates/landing_alle.html:226
 msgid "Lernziel und passende Unterrichtsform abstimmen"
-msgstr ""
+msgstr "Adaptar el objetivo didáctico a la modalidad de enseñanza adecuada"
 
 #: brainboost/core/templates/landing_alle.html:227
 msgid "geeignete TutorInnen in Braunschweig oder online finden"
-msgstr ""
+msgstr "Encontrar tutores adecuados en Brunswick o en línea"
 
 #: brainboost/core/templates/landing_alle.html:228
 msgid "individuelle Nachhilfe starten"
-msgstr ""
+msgstr "Empezar clases particulares"
 
 #: brainboost/core/templates/landing_alle.html:234
 msgid "Online Nachhilfe und Nachhilfe vor Ort"
-msgstr ""
+msgstr "Clases particulares online y presenciales"
 
 #: brainboost/core/templates/landing_alle.html:235
 msgid ""
@@ -951,411 +951,411 @@ msgid ""
 "Prüfungsvorbereitung und kurzfristige Unterstützung. Die Nachhilfe kann "
 "flexibel online stattfinden oder mit TutorInnen in Braunschweig abgestimmt "
 "werden."
-msgstr ""
+msgstr "BrainBoost es ideal para el acompañamiento académico regular, la preparación específica de exámenes y el apoyo a corto plazo. Las clases particulares pueden impartirse de forma flexible en línea o concertarse con los tutores en Braunschweig."
 
 #: brainboost/core/templates/landing_alle.html:238
 msgid "Online Nachhilfe"
-msgstr ""
+msgstr "Clases particulares online"
 
 #: brainboost/core/templates/landing_alle.html:239
 msgid "Mathe, Deutsch, Englisch"
-msgstr ""
+msgstr "Matemáticas, alemán, inglés"
 
 #: brainboost/core/templates/landing_alle.html:245
 msgid "Jetzt passende Nachhilfe in Braunschweig oder online anfragen"
-msgstr ""
+msgstr "Solicita ahora clases particulares a medida en Brunswick o por internet"
 
 #: brainboost/core/templates/landing_eltern.html:4
 msgid "Nachhilfe für Eltern in Braunschweig & online | BrainBoost"
-msgstr ""
+msgstr "Clases particulares para padres en Brunswick y online | BrainBoost"
 
 #: brainboost/core/templates/landing_eltern.html:6
 msgid ""
 "BrainBoost erklärt Eltern, wie individuelle Nachhilfe in Braunschweig und "
 "online organisiert wird: passende TutorInnen, klare Kommunikation und "
 "gezielte Förderung."
-msgstr ""
+msgstr "BrainBoost explica a los padres cómo se organizan las clases particulares en Brunswick y en línea: tutores adecuados, comunicación clara y apoyo específico."
 
 #: brainboost/core/templates/landing_eltern.html:23
 msgid "Nachhilfe für Eltern in Braunschweig und online"
-msgstr ""
+msgstr "Clases particulares para padres en Brunswick y en línea"
 
 #: brainboost/core/templates/landing_eltern.html:24
 msgid ""
 "Wenn dein Kind Unterstützung in Mathe, Deutsch, Englisch oder einem anderen "
 "Fach braucht, hilft BrainBoost dabei, den Bedarf klar einzuordnen und "
 "passende TutorInnen zu finden."
-msgstr ""
+msgstr "Si tu hijo necesita ayuda con las matemáticas, el alemán, el inglés o cualquier otra asignatura, BrainBoost te ayuda a identificar claramente sus necesidades y a encontrar los tutores adecuados."
 
 #: brainboost/core/templates/landing_eltern.html:27
 msgid "BrainBoost Eltern-Nachhilfe"
-msgstr ""
+msgstr "BrainBoost: clases particulares para padres"
 
 #: brainboost/core/templates/landing_eltern.html:30
 msgid "Klare Unterstützung für dein Kind"
-msgstr ""
+msgstr "Un apoyo incondicional para tu hijo"
 
 #: brainboost/core/templates/landing_eltern.html:31
 msgid "Online oder vor Ort in Braunschweig, mit transparenter Abstimmung."
-msgstr ""
+msgstr "En línea o presencialmente en Brunswick, con una coordinación transparente."
 
 #: brainboost/core/templates/landing_eltern.html:37
 msgid "Was Eltern wichtig ist"
-msgstr ""
+msgstr "Lo que es importante para los padres"
 
 #: brainboost/core/templates/landing_eltern.html:40
 msgid "Passende TutorInnen"
-msgstr ""
+msgstr "Tutores adecuados"
 
 #: brainboost/core/templates/landing_eltern.html:41
 msgid ""
 "Fach, Klassenstufe, Lernziel und Unterrichtsform werden vorab eingeordnet."
-msgstr ""
+msgstr "La asignatura, el curso, el objetivo didáctico y la modalidad de enseñanza se determinan con antelación."
 
 #: brainboost/core/templates/landing_eltern.html:44
 msgid "Individuelle Förderung"
-msgstr ""
+msgstr "Apoyo personalizado"
 
 #: brainboost/core/templates/landing_eltern.html:45
 msgid "Die Nachhilfe orientiert sich am konkreten Lernstand deines Kindes."
-msgstr ""
+msgstr "Las clases particulares se adaptan al nivel académico concreto de tu hijo."
 
 #: brainboost/core/templates/landing_eltern.html:48
 msgid "Transparente Kommunikation"
-msgstr ""
+msgstr "Comunicación transparente"
 
 #: brainboost/core/templates/landing_eltern.html:49
 msgid "Absprachen zu Zeiten, Ort, Zielen und nächstem Schritt bleiben klar."
-msgstr ""
+msgstr "Los acuerdos sobre horarios, lugar, objetivos y próximos pasos quedan claros."
 
 #: brainboost/core/templates/landing_eltern.html:56
 msgid "Typische Anliegen"
-msgstr ""
+msgstr "Cuestiones habituales"
 
 #: brainboost/core/templates/landing_eltern.html:58
 msgid "Noten verbessern"
-msgstr ""
+msgstr "Mejorar las notas"
 
 #: brainboost/core/templates/landing_eltern.html:59
 msgid "Grundlagen aufholen"
-msgstr ""
+msgstr "Poner al día los conocimientos básicos"
 
 #: brainboost/core/templates/landing_eltern.html:60
 msgid "Klassenarbeiten vorbereiten"
-msgstr ""
+msgstr "Preparar los exámenes"
 
 #: brainboost/core/templates/landing_eltern.html:61
 msgid "regelmäßige Lernbegleitung aufbauen"
-msgstr ""
+msgstr "establecer un acompañamiento educativo regular"
 
 #: brainboost/core/templates/landing_eltern.html:65
 msgid "So läuft die Anfrage ab"
-msgstr ""
+msgstr "Así es como se tramita la solicitud"
 
 #: brainboost/core/templates/landing_eltern.html:67
 msgid "Rolle Eltern auswählen und Anfrage senden"
-msgstr ""
+msgstr "Seleccionar el rol de los padres y enviar la solicitud"
 
 #: brainboost/core/templates/landing_eltern.html:68
 msgid "Fach, Ziel und Unterrichtsform abstimmen"
-msgstr ""
+msgstr "Adaptar la asignatura, los objetivos y la modalidad de enseñanza"
 
 #: brainboost/core/templates/landing_eltern.html:69
 msgid "passende Nachhilfe starten"
-msgstr ""
+msgstr "Empezar clases particulares"
 
 #: brainboost/core/templates/landing_eltern.html:75
 msgid "Jetzt passende Nachhilfe für dein Kind anfragen"
-msgstr ""
+msgstr "Solicita ahora clases particulares adecuadas para tu hijo"
 
 #: brainboost/core/templates/landing_eltern.html:77
 #: brainboost/core/templates/landing_schuelerinnen.html:79
 msgid "Zur Übersicht"
-msgstr ""
+msgstr "Volver al resumen"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:4
 msgid "Nachhilfe für SchülerInnen in Braunschweig & online | BrainBoost"
-msgstr ""
+msgstr "Clases particulares para estudiantes en Brunswick y online | BrainBoost"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:6
 msgid ""
 "BrainBoost erklärt SchülerInnen, wie verständliche Nachhilfe in Braunschweig "
 "und online bei Hausaufgaben, Prüfungen und schwierigen Themen unterstützt."
-msgstr ""
+msgstr "BrainBoost explica a los alumnos cómo les ayuda con los deberes, los exámenes y las materias difíciles a través de clases particulares claras y comprensibles, tanto en Brunswick como en línea."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:25
 msgid "Nachhilfe für SchülerInnen in Braunschweig und online"
-msgstr ""
+msgstr "Clases particulares para alumnos en Brunswick y en línea"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:26
 msgid ""
 "BrainBoost hilft dir, schwierige Themen verständlicher zu machen, "
 "Hausaufgaben besser zu bewältigen und dich gezielt auf Prüfungen "
 "vorzubereiten."
-msgstr ""
+msgstr "BrainBoost te ayuda a entender mejor los temas difíciles, a hacer mejor los deberes y a prepararte de forma específica para los exámenes."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:29
 msgid "BrainBoost SchülerInnen-Nachhilfe"
-msgstr ""
+msgstr "BrainBoost: clases particulares para estudiantes"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:32
 msgid "Verständlich lernen"
-msgstr ""
+msgstr "Aprender de forma comprensible"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:33
 msgid ""
 "Mathe, Deutsch, Englisch und weitere Fächer online oder in Braunschweig."
-msgstr ""
+msgstr "Matemáticas, alemán, inglés y otras asignaturas, tanto en línea como en Brunswick."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:39
 msgid "Wobei BrainBoost unterstützt"
-msgstr ""
+msgstr "BrainBoost ayuda a"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:42
 msgid "Verständliche Erklärungen"
-msgstr ""
+msgstr "Explicaciones claras"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:43
 msgid "Themen werden so erklärt, dass du sie wirklich nachvollziehen kannst."
-msgstr ""
+msgstr "Los temas se explican de tal manera que puedas entenderlos de verdad."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:46
 msgid "Flexible Termine"
-msgstr ""
+msgstr "Horarios flexibles"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:47
 msgid ""
 "Nachhilfe kann passend zu Schule, Freizeit und Prüfungsphasen abgestimmt "
 "werden."
-msgstr ""
+msgstr "Las clases particulares se pueden adaptar al horario escolar, al tiempo libre y a los periodos de exámenes."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:50
 msgid "Konkrete Ziele"
-msgstr ""
+msgstr "Objetivos concretos"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:51
 msgid ""
 "Du kannst gezielt an Hausaufgaben, Klassenarbeiten, Grundlagen oder "
 "Prüfungen arbeiten."
-msgstr ""
+msgstr "Puedes centrarte específicamente en los deberes, los exámenes parciales, los conceptos básicos o los exámenes finales."
 
 #: brainboost/core/templates/landing_schuelerinnen.html:58
 msgid "Geeignet für"
-msgstr ""
+msgstr "Apto para"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:60
 msgid "Mathe Nachhilfe"
-msgstr ""
+msgstr "Clases particulares de matemáticas"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:61
 msgid "Deutsch Nachhilfe"
-msgstr ""
+msgstr "Clases particulares de alemán"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:62
 msgid "Englisch Nachhilfe"
-msgstr ""
+msgstr "Clases particulares de inglés"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:63
 msgid "weitere Fächer nach Bedarf"
-msgstr ""
+msgstr "otras asignaturas según sea necesario"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:67
 msgid "So funktioniert es"
-msgstr ""
+msgstr "Así es como funciona"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:69
 msgid "Rolle SchülerIn auswählen"
-msgstr ""
+msgstr "Seleccionar el rol de alumno/a"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:70
 msgid "Fach und Ziel angeben"
-msgstr ""
+msgstr "Indicar la asignatura y el objetivo"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:71
 msgid "passende Unterstützung bekommen"
-msgstr ""
+msgstr "recibir la ayuda necesaria"
 
 #: brainboost/core/templates/landing_schuelerinnen.html:77
 msgid "Jetzt Nachhilfe anfragen"
-msgstr ""
+msgstr "Solicita clases particulares ahora"
 
 #: brainboost/core/templates/landing_tutor.html:24
 msgid "TutorInnen bei BrainBoost"
-msgstr ""
+msgstr "Profesores de BrainBoost"
 
 #: brainboost/core/templates/landing_tutor.html:25
 msgid "Werde TutorIn bei BrainBoost"
-msgstr ""
+msgstr "Conviértete en tutor o tutora en BrainBoost"
 
 #: brainboost/core/templates/landing_tutor.html:26
 msgid ""
 "Gib flexible Nachhilfe, unterstütze SchülerInnen und arbeite mit einer "
 "modernen Plattform."
-msgstr ""
+msgstr "Imparte clases particulares con flexibilidad, ayuda a los alumnos y trabaja con una plataforma moderna."
 
 #: brainboost/core/templates/landing_tutor.html:27
 #: brainboost/core/templates/landing_tutor.html:103
 msgid "Als TutorIn bewerben"
-msgstr ""
+msgstr "Solicitar un puesto de tutor/a"
 
 #: brainboost/core/templates/landing_tutor.html:29
 msgid "BrainBoost TutorInnen-Bewerbung"
-msgstr ""
+msgstr "Solicitud para ser tutor de BrainBoost"
 
 #: brainboost/core/templates/landing_tutor.html:32
 msgid "Flexible Nachhilfe geben"
-msgstr ""
+msgstr "Dar clases particulares con flexibilidad"
 
 #: brainboost/core/templates/landing_tutor.html:33
 msgid ""
 "Fächer, Verfügbarkeit und passende SchülerInnen werden gemeinsam abgestimmt."
-msgstr ""
+msgstr "Las asignaturas, la disponibilidad y los alumnos adecuados se acordarán de forma conjunta."
 
 #: brainboost/core/templates/landing_tutor.html:39
 msgid "Vorteile"
-msgstr ""
+msgstr "Ventajas"
 
 #: brainboost/core/templates/landing_tutor.html:42
 msgid "Flexible Zeiten"
-msgstr ""
+msgstr "Horarios flexibles"
 
 #: brainboost/core/templates/landing_tutor.html:43
 msgid "Stimme deine Verfügbarkeit passend zu Studium, Schule oder Beruf ab."
-msgstr ""
+msgstr "Adapta tu disponibilidad a tus estudios, al colegio o al trabajo."
 
 #: brainboost/core/templates/landing_tutor.html:46
 msgid "Online oder vor Ort"
-msgstr ""
+msgstr "En línea o en persona"
 
 #: brainboost/core/templates/landing_tutor.html:47
 msgid ""
 "Nachhilfe kann je nach Bedarf digital oder in Braunschweig vor Ort "
 "stattfinden."
-msgstr ""
+msgstr "Las clases particulares pueden impartirse de forma digital o presencial en Brunswick, según las necesidades."
 
 #: brainboost/core/templates/landing_tutor.html:50
 msgid "Unterstützung durch BrainBoost"
-msgstr ""
+msgstr "Apoyo de BrainBoost"
 
 #: brainboost/core/templates/landing_tutor.html:51
 msgid ""
 "Du arbeitest nicht allein, sondern mit einer klar organisierten Plattform im "
 "Hintergrund."
-msgstr ""
+msgstr "No trabajas solo, sino con una plataforma bien organizada que te respalda."
 
 #: brainboost/core/templates/landing_tutor.html:54
 msgid "Klare Organisation"
-msgstr ""
+msgstr "Una organización clara"
 
 #: brainboost/core/templates/landing_tutor.html:55
 msgid "Fächer, Zeiten und Kommunikation werden strukturiert abgestimmt."
-msgstr ""
+msgstr "Las asignaturas, los horarios y la comunicación se coordinan de forma estructurada."
 
 #: brainboost/core/templates/landing_tutor.html:58
 msgid "Sinnvolle Tätigkeit mit Wirkung"
-msgstr ""
+msgstr "Una actividad significativa y con impacto"
 
 #: brainboost/core/templates/landing_tutor.html:59
 msgid ""
 "Du unterstützt SchülerInnen dabei, Inhalte besser zu verstehen und Lernziele "
 "anzugehen."
-msgstr ""
+msgstr "Ayudas a los alumnos a comprender mejor los contenidos y a alcanzar los objetivos de aprendizaje."
 
 #: brainboost/core/templates/landing_tutor.html:62
 msgid "Ideal für Studierende"
-msgstr ""
+msgstr "Ideal para estudiantes"
 
 #: brainboost/core/templates/landing_tutor.html:63
 msgid "Die Tätigkeit lässt sich gut mit einem flexiblen Wochenplan verbinden."
-msgstr ""
+msgstr "Este trabajo se puede compaginar perfectamente con un horario semanal flexible."
 
 #: brainboost/core/templates/landing_tutor.html:70
 msgid "Für wen geeignet?"
-msgstr ""
+msgstr "¿Para quién es adecuado?"
 
 #: brainboost/core/templates/landing_tutor.html:72
 msgid "Studierende"
-msgstr ""
+msgstr "Estudiantes"
 
 #: brainboost/core/templates/landing_tutor.html:73
 msgid "OberstufenschülerInnen mit sehr guten Leistungen"
-msgstr ""
+msgstr "Alumnos de secundaria con muy buenos resultados"
 
 #: brainboost/core/templates/landing_tutor.html:74
 msgid "Lehrkräfte"
-msgstr ""
+msgstr "Profesores"
 
 #: brainboost/core/templates/landing_tutor.html:75
 msgid "Personen mit Fachkompetenz und Freude am Erklären"
-msgstr ""
+msgstr "Personas con conocimientos especializados y a las que les guste explicar cosas"
 
 #: brainboost/core/templates/landing_tutor.html:79
 msgid "Anforderungen"
-msgstr ""
+msgstr "Requisitos"
 
 #: brainboost/core/templates/landing_tutor.html:81
 msgid "zuverlässig"
-msgstr ""
+msgstr "fiable"
 
 #: brainboost/core/templates/landing_tutor.html:82
 msgid "fachlich sicher"
-msgstr ""
+msgstr "con sólidos conocimientos técnicos"
 
 #: brainboost/core/templates/landing_tutor.html:83
 msgid "freundlich und geduldig"
-msgstr ""
+msgstr "amable y paciente"
 
 #: brainboost/core/templates/landing_tutor.html:84
 msgid "klare Kommunikation"
-msgstr ""
+msgstr "comunicación clara"
 
 #: brainboost/core/templates/landing_tutor.html:85
 msgid "verantwortungsvoller Umgang mit SchülerInnen"
-msgstr ""
+msgstr "trato responsable hacia los alumnos"
 
 #: brainboost/core/templates/landing_tutor.html:93
 msgid "Kurze Bewerbung senden"
-msgstr ""
+msgstr "Enviar una breve solicitud"
 
 #: brainboost/core/templates/landing_tutor.html:94
 msgid "Kennenlern"
-msgstr ""
+msgstr "Presentación"
 
 #: brainboost/core/templates/landing_tutor.html:94
 msgid "gespräch"
-msgstr ""
+msgstr "conversación"
 
 #: brainboost/core/templates/landing_tutor.html:95
 msgid "Fächer und Verfügbarkeit klären"
-msgstr ""
+msgstr "Aclarar las asignaturas y la disponibilidad"
 
 #: brainboost/core/templates/landing_tutor.html:96
 msgid "Aufnahme als TutorIn"
-msgstr ""
+msgstr "Admisión como tutor/a"
 
 #: brainboost/core/templates/landing_tutor.html:97
 msgid "passende SchülerInnen erhalten"
-msgstr ""
+msgstr "recibir a los alumnos adecuados"
 
 #: brainboost/core/templates/landing_tutor.html:102
 msgid "Jetzt als TutorIn bewerben"
-msgstr ""
+msgstr "Solicita ahora el puesto de tutor/a"
 
 #: brainboost/core/templates/partials/cookie_notice.html:2
 #: brainboost/core/templates/partials/cookie_notice.html:5
 msgid "Hinweis zu technisch notwendigen Cookies"
-msgstr ""
+msgstr "Aviso sobre las cookies técnicamente necesarias"
 
 #: brainboost/core/templates/partials/cookie_notice.html:7
 msgid ""
 "Wir verwenden ausschließlich technisch notwendige Cookies (z.&nbsp;B. CSRF-"
 "Schutz), um die Sicherheit und grundlegenden Funktionen der Webapp zu "
 "gewährleisten. Weitere Informationen:"
-msgstr ""
+msgstr "Utilizamos únicamente cookies técnicamente necesarias (por ej., &nbsp; B. protección CSRF) para garantizar la seguridad y las funciones básicas de la aplicación web. Más información:"
 
 #: brainboost/core/templates/partials/cookie_notice.html:12
 msgid "Verstanden"
-msgstr ""
+msgstr "Entendido"
 
 #: brainboost/core/templates/partials/language_popup.html:175
 msgid "Sprache wählen"
@@ -1371,18 +1371,18 @@ msgstr "Selección de idioma animada"
 
 #: brainboost/core/templates/partials/price_banner.html:2
 msgid "Preishinweis"
-msgstr ""
+msgstr "Nota sobre los precios"
 
 #: brainboost/core/templates/partials/price_banner.html:5
 msgid ""
 "Einzelunterricht ab 19€ / 45 Min – inkl. Lernfortschrittreport + kostenloser "
 "5h-Online-Stornierung!"
-msgstr ""
+msgstr "Clases particulares a partir de 19 € / 45 min – ¡Incluye informe de progreso + 5 horas de cancelación online gratis!"
 
 #: brainboost/core/templates/partials/price_banner.html:6
 msgid "Preise ansehen"
-msgstr ""
+msgstr "Ver precios"
 
 #: brainboost/core/templates/partials/price_banner.html:8
 msgid "Preishinweis schließen"
-msgstr ""
+msgstr "Ocultar información sobre precios"
