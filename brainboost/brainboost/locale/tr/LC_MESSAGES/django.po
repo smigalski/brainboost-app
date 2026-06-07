@@ -419,13 +419,14 @@ msgstr "Zihinde güçlü - öğrenmede güçlü."
 
 #: brainboost/core/templates/landing.html:666
 msgid ""
-"Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
-"und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
-"gemeinsam besser lernen."
+"Individuelle Nachhilfe in Braunschweig und online für Schüler:innen und "
+"Student:innen. Eltern behalten Kosten und Lernfortschritt im Blick, während "
+"wir passende Tutor:innen und Nachhilfelehrer:innen engagieren."
 msgstr ""
-"Braunschweig&#x27;da ve çevrimiçi bire bir özel ders. Öğrenciler, veliler ve "
-"öğretmenler için – kolayca başvurun, size uygun desteği bulun ve birlikte "
-"daha iyi öğrenin."
+"Braunschweig'da ve çevrim içi öğrenciler ve üniversite öğrencileri için "
+"bireysel özel ders. Veliler maliyetleri ve öğrenme ilerlemesini net biçimde "
+"takip ederken biz uygun eğitmenleri ve özel ders öğretmenlerini "
+"görevlendiriyoruz."
 
 #: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"

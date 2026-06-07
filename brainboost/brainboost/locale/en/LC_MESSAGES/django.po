@@ -416,13 +416,13 @@ msgstr "Strong mind - strong learning."
 
 #: brainboost/core/templates/landing.html:666
 msgid ""
-"Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
-"und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
-"gemeinsam besser lernen."
+"Individuelle Nachhilfe in Braunschweig und online für Schüler:innen und "
+"Student:innen. Eltern behalten Kosten und Lernfortschritt im Blick, während "
+"wir passende Tutor:innen und Nachhilfelehrer:innen engagieren."
 msgstr ""
-"Personalized tutoring in Braunschweig and online. For students, parents, and "
-"tutors—just send a request, find the right support, and learn better "
-"together."
+"Personalized tutoring in Braunschweig and online for school pupils and "
+"university students. Parents keep a clear view of costs and learning "
+"progress while we engage suitable tutors and private teachers."
 
 #: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"

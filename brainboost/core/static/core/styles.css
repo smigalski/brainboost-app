@@ -253,6 +253,8 @@ strong.logo { color: var(--logo-turquoise); }
 }
 
 .brand-text {
+    display: grid;
+    gap: 2px;
     min-width: 0;
 }
 
@@ -304,7 +306,12 @@ strong.logo { color: var(--logo-turquoise); }
     display: block;
     line-height: 1;
 }
-.brand-sub { font-size: 13px; color: var(--slate); }
+.brand-sub {
+    display: block;
+    color: var(--slate);
+    font-size: 13px;
+    line-height: 1.12;
+}
 
 .nav-links {
     display: flex;
@@ -1595,6 +1602,7 @@ input[type="file"] {
 
     .brand-sub {
         font-size: 12px;
+        line-height: 1.08;
     }
 
     .brand-icon img {

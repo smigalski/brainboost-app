@@ -423,13 +423,13 @@ msgstr "Сильный ум - сильное обучение."
 
 #: brainboost/core/templates/landing.html:666
 msgid ""
-"Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
-"und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
-"gemeinsam besser lernen."
+"Individuelle Nachhilfe in Braunschweig und online für Schüler:innen und "
+"Student:innen. Eltern behalten Kosten und Lernfortschritt im Blick, während "
+"wir passende Tutor:innen und Nachhilfelehrer:innen engagieren."
 msgstr ""
-"Индивидуальные занятия с репетитором в Брауншвейге и онлайн. Для школьников, "
-"родителей и репетиторов — просто отправьте запрос, найдите подходящую помощь "
-"и учитесь лучше вместе."
+"Индивидуальные занятия с репетитором в Брауншвейге и онлайн для школьников и "
+"студентов. Родители получают четкий обзор расходов и прогресса обучения, а "
+"мы привлекаем подходящих репетиторов и преподавателей."
 
 #: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"

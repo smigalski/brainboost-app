@@ -418,13 +418,13 @@ msgstr "قوي في التفكير - قوي في التعلم."
 
 #: brainboost/core/templates/landing.html:666
 msgid ""
-"Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
-"und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
-"gemeinsam besser lernen."
+"Individuelle Nachhilfe in Braunschweig und online für Schüler:innen und "
+"Student:innen. Eltern behalten Kosten und Lernfortschritt im Blick, während "
+"wir passende Tutor:innen und Nachhilfelehrer:innen engagieren."
 msgstr ""
-"دروس خصوصية فردية في براونشفايغ وعبر الإنترنت. للطلاب وأولياء الأمور "
-"والمعلمين - ما عليك سوى تقديم طلب، والعثور على الدعم المناسب، والتعلم بشكل "
-"أفضل معًا."
+"دروس خصوصية فردية في براونشفايغ وعبر الإنترنت للتلاميذ والطلاب الجامعيين. "
+"يحتفظ أولياء الأمور برؤية واضحة للتكاليف والتقدم الدراسي، بينما نختار "
+"المدرسين والمعلمين الخصوصيين المناسبين."
 
 #: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"

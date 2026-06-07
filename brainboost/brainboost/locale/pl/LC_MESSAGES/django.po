@@ -423,13 +423,13 @@ msgstr "Mocna głowa - mocna nauka."
 
 #: brainboost/core/templates/landing.html:666
 msgid ""
-"Individuelle Nachhilfe in Braunschweig und online. Für Schüler:innen, Eltern "
-"und Tutor:innen - einfach anfragen, passende Unterstützung finden und "
-"gemeinsam besser lernen."
+"Individuelle Nachhilfe in Braunschweig und online für Schüler:innen und "
+"Student:innen. Eltern behalten Kosten und Lernfortschritt im Blick, während "
+"wir passende Tutor:innen und Nachhilfelehrer:innen engagieren."
 msgstr ""
-"Indywidualne korepetycje w Brunszwiku i online. Dla uczniów, rodziców i "
-"korepetytorów – wystarczy złożyć zapytanie, znaleźć odpowiednie wsparcie i "
-"wspólnie uczyć się lepiej."
+"Indywidualne korepetycje w Brunszwiku i online dla uczniów i studentów. "
+"Rodzice zachowują jasny wgląd w koszty i postępy w nauce, a my angażujemy "
+"odpowiednich korepetytorów i nauczycieli."
 
 #: brainboost/core/templates/landing.html:667
 msgid "Startaktionen"
