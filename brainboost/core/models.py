@@ -1,8 +1,5 @@
-import json
-import urllib.request
 from datetime import datetime, timedelta
 from decimal import Decimal
-from math import radians, sin, cos, sqrt, atan2
 from pathlib import Path
 from urllib.parse import quote
 
@@ -82,8 +79,6 @@ class StudentProfile(models.Model):
     degree_program = models.CharField(max_length=255, blank=True)
     affected_courses = models.TextField(blank=True)
     tutoring_goal = models.TextField(blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
     zoom_link = models.URLField(blank=True)
     zumpad_link = models.URLField(blank=True)
 
@@ -111,46 +106,6 @@ class StudentProfile(models.Model):
         full_name = self.user.get_full_name().strip()
         return full_name or self.user.username
 
-    def save(self, *args, **kwargs):
-        should_geocode = False
-        if self.address:
-            if self.pk:
-                try:
-                    previous = StudentProfile.objects.get(pk=self.pk)
-                    should_geocode = previous.address != self.address or not (self.latitude and self.longitude)
-                except StudentProfile.DoesNotExist:
-                    should_geocode = True
-            else:
-                should_geocode = True
-
-        if should_geocode:
-            coords = self._geocode_address(self.address)
-            if coords:
-                self.latitude, self.longitude = coords
-
-        super().save(*args, **kwargs)
-
-    @staticmethod
-    def _geocode_address(address: str):
-        encoded = quote(address)
-        url = f"https://nominatim.openstreetmap.org/search?q={encoded}&format=json&limit=1"
-        req = urllib.request.Request(
-            url, headers={"User-Agent": "brainboost-app/1.0 (kontakt@nachhilfe-brainboost.de)"},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.load(resp)
-        except Exception:
-            return None
-
-        if not data:
-            return None
-        try:
-            return float(data[0]["lat"]), float(data[0]["lon"])
-        except (KeyError, ValueError, TypeError):
-            return None
-
-
 class TutorProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
@@ -158,8 +113,6 @@ class TutorProfile(models.Model):
     bank_name = models.CharField(max_length=255, blank=True)
     iban = models.CharField(max_length=34, blank=True)
     bic = models.CharField(max_length=11, blank=True)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
     assigned_tutors = models.ManyToManyField(
         "self",
         symmetrical=False,
@@ -350,28 +303,7 @@ class Lesson(models.Model):
         if self.ort == self.Ort.BIB_WOB:
             return 70.0
 
-        if self.ort == self.Ort.ZUHAUSE_STUDENT:
-            s_lat, s_lon = self.student.latitude, self.student.longitude
-            t_lat, t_lon = (
-                getattr(self.tutor, "latitude", None),
-                getattr(self.tutor, "longitude", None),
-            )
-            if None not in (s_lat, s_lon, t_lat, t_lon):
-                base_km = self._haversine_km(t_lat, t_lon, s_lat, s_lon)
-                return round(base_km * 2 * 1.35, 2)
         return None
-
-    @staticmethod
-    def _haversine_km(lat1, lon1, lat2, lon2):
-        """Distance between two lat/lon points in km."""
-        r = 6371.0
-        dlat = radians(lat2 - lat1)
-        dlon = radians(lon2 - lon1)
-        a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(
-            dlon / 2
-        ) ** 2
-        c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return round(r * c, 2)
 
     @property
     def scheduled_datetime(self) -> datetime:

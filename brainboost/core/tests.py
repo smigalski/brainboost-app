@@ -41,10 +41,12 @@ from .models import (
 )
 from .views import (
     _auto_complete_past_lessons,
+    _assign_location_and_distance,
     _build_epc_payment_payload,
     _build_campaign_url,
     _build_invoice_pdf_context,
     _build_progress_chart_data,
+    _google_driving_distance_km,
     _lead_campaign_stats,
     _sync_temporary_tutor_assignments,
 )
@@ -1502,6 +1504,89 @@ class InvoiceDiscountContextTests(TestCase):
         )
 
         self.assertEqual(context["iban"], "DE44 5001 0517 5407 3249 31")
+
+
+class GoogleRoutesDistanceTests(TestCase):
+    @override_settings(GOOGLE_ROUTES_API_KEY="routes-test-key")
+    @patch("core.views.urlopen")
+    def test_google_driving_distance_km_uses_routes_api_distance_meters(self, mocked_urlopen):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return json.dumps({"routes": [{"distanceMeters": 12345}]}).encode("utf-8")
+
+        mocked_urlopen.return_value = Response()
+
+        distance = _google_driving_distance_km(
+            "Tutorstrasse 1, Braunschweig",
+            "Schuelerstrasse 2, Braunschweig",
+        )
+
+        self.assertEqual(distance, Decimal("12.35"))
+        request = mocked_urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "https://routes.googleapis.com/directions/v2:computeRoutes")
+        self.assertEqual(request.headers["X-goog-api-key"], "routes-test-key")
+        self.assertEqual(request.headers["X-goog-fieldmask"], "routes.distanceMeters")
+        payload = json.loads(request.data.decode("utf-8"))
+        self.assertEqual(payload["origin"]["address"], "Tutorstrasse 1, Braunschweig")
+        self.assertEqual(payload["destination"]["address"], "Schuelerstrasse 2, Braunschweig")
+        self.assertEqual(payload["travelMode"], "DRIVE")
+
+    @override_settings(GOOGLE_ROUTES_API_KEY="")
+    @patch("core.views.urlopen")
+    def test_google_driving_distance_km_skips_without_api_key(self, mocked_urlopen):
+        distance = _google_driving_distance_km(
+            "Tutorstrasse 1, Braunschweig",
+            "Schuelerstrasse 2, Braunschweig",
+        )
+
+        self.assertIsNone(distance)
+        mocked_urlopen.assert_not_called()
+
+    @patch("core.views._google_driving_distance_km", return_value=Decimal("7.25"))
+    def test_assign_location_and_distance_stores_round_trip_for_home_lessons(self, mocked_distance):
+        tutor_user = CustomUser.objects.create_user(
+            username="routes_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        student_user = CustomUser.objects.create_user(
+            username="routes_student",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+        )
+        tutor = TutorProfile.objects.create(
+            user=tutor_user,
+            address="Tutorstrasse 1, Braunschweig",
+        )
+        student = StudentProfile.objects.create(
+            user=student_user,
+            address="Schuelerstrasse 2, Braunschweig",
+        )
+        lesson = Lesson(
+            tutor=tutor,
+            student=student,
+            date=date(2026, 6, 10),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ZUHAUSE_STUDENT,
+            fach="mathe",
+            status=Lesson.Status.PLANNED,
+        )
+
+        _assign_location_and_distance(lesson)
+
+        self.assertEqual(lesson.location_address, "Schuelerstrasse 2, Braunschweig")
+        self.assertEqual(lesson.distance_km, Decimal("14.50"))
+        mocked_distance.assert_called_once_with(
+            "Tutorstrasse 1, Braunschweig",
+            "Schuelerstrasse 2, Braunschweig",
+        )
 
 
 class LessonCancellationChargeableTests(TestCase):

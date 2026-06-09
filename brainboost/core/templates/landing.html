@@ -35,8 +35,7 @@
         align-items: stretch;
         width: min(1180px, calc(100vw - 32px));
         min-height: 520px;
-        margin-left: 50%;
-        transform: translateX(-50%);
+        margin-inline: calc((100% - min(1180px, calc(100vw - 32px))) / 2);
         padding: clamp(26px, 4vw, 44px);
         border: 1px solid rgba(255, 201, 40, 0.42);
         border-radius: 26px;
@@ -557,8 +556,7 @@
             grid-template-columns: 1fr;
             width: 100%;
             min-height: 0;
-            margin-left: 0;
-            transform: none;
+            margin-inline: 0;
             border-radius: 22px;
             padding-inline: clamp(20px, 6vw, 32px);
         }

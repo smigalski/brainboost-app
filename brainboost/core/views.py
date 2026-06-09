@@ -12,6 +12,7 @@ import re
 import unicodedata
 from typing import Optional
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from django.conf import settings
 from django.contrib import messages
@@ -108,6 +109,7 @@ FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
 GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
 GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "es", "pl", "tr", "ru", "ar"}
+GOOGLE_ROUTES_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -121,20 +123,6 @@ def _ensure_profile_for_user(user: CustomUser):
         ParentProfile.objects.create(user=user)
     elif user.role == CustomUser.Roles.TUTOR and not hasattr(user, "tutor_profile"):
         TutorProfile.objects.create(user=user)
-
-
-def _haversine_km(lat1, lon1, lat2, lon2):
-    """Compute distance between two lat/lon points in km."""
-    from math import radians, sin, cos, sqrt, atan2
-
-    r = 6371.0
-    dlat = radians(lat2 - lat1)
-    dlon = radians(lon2 - lon1)
-    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(
-        dlon / 2
-    ) ** 2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return round(r * c, 2)
 
 
 def _rating_stars(rating) -> list[str]:
@@ -231,6 +219,55 @@ def _get_google_reviews_summary() -> dict:
     return summary
 
 
+def _google_driving_distance_km(origin_address: str, destination_address: str) -> Optional[Decimal]:
+    api_key = settings.GOOGLE_ROUTES_API_KEY
+    origin_address = (origin_address or "").strip()
+    destination_address = (destination_address or "").strip()
+    if not api_key or not origin_address or not destination_address:
+        return None
+
+    payload = {
+        "origin": {"address": origin_address},
+        "destination": {"address": destination_address},
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_UNAWARE",
+        "computeAlternativeRoutes": False,
+        "regionCode": "de",
+        "units": "METRIC",
+    }
+    request = Request(
+        GOOGLE_ROUTES_ENDPOINT,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": api_key,
+            "X-Goog-FieldMask": "routes.distanceMeters",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError):
+        logger.exception("Google Routes Fahrstrecke konnte nicht berechnet werden.")
+        return None
+
+    routes = data.get("routes") or []
+    if not routes:
+        logger.warning(
+            "Google Routes lieferte keine Route fuer origin=%r destination=%r.",
+            origin_address,
+            destination_address,
+        )
+        return None
+    try:
+        distance_meters = Decimal(str(routes[0]["distanceMeters"]))
+    except (KeyError, TypeError, ValueError):
+        logger.warning("Google Routes Antwort enthaelt keine gueltige distanceMeters-Angabe.")
+        return None
+    return (distance_meters / Decimal("1000")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
 def landing_page(request):
     form = EmailOrUsernameAuthenticationForm(request)
     return render(
@@ -251,13 +288,12 @@ def _assign_location_and_distance(lesson: Lesson):
     if lesson.ort == Lesson.Ort.ZUHAUSE_STUDENT:
         student = lesson.student
         address = student.address
-        lat = student.latitude
-        lon = student.longitude
-        tutor_lat = getattr(lesson.tutor, "latitude", None)
-        tutor_lon = getattr(lesson.tutor, "longitude", None)
-        if None not in (lat, lon, tutor_lat, tutor_lon):
-            base_km = _haversine_km(tutor_lat, tutor_lon, lat, lon)
-            distance = round(base_km * 2 * 1.35, 2)
+        one_way_distance = _google_driving_distance_km(lesson.tutor.address, student.address)
+        if one_way_distance is not None:
+            distance = (one_way_distance * Decimal("2")).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP,
+            )
     elif lesson.ort == Lesson.Ort.BIB:
         address = "Bibliothek Braunschweig"
     elif lesson.ort == Lesson.Ort.BIB_WOB:
