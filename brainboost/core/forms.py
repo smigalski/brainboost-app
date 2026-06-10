@@ -1670,10 +1670,10 @@ class StudentProfileForm(BaseProfileUpdateForm):
 
 
 class TutorProfileForm(BaseProfileUpdateForm):
-    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    phone_number = forms.CharField(max_length=50, required=True, label="Telefonnummer")
     address = forms.CharField(
         max_length=255,
-        required=False,
+        required=True,
         label="Adresse",
         widget=forms.TextInput(
             attrs={
@@ -1684,11 +1684,11 @@ class TutorProfileForm(BaseProfileUpdateForm):
             }
         ),
     )
-    account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
-    bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
+    account_holder = forms.CharField(max_length=255, required=True, label="KontoinhaberIn")
+    bank_name = forms.CharField(max_length=255, required=True, label="Bankname")
     iban = forms.CharField(
         max_length=42,
-        required=False,
+        required=True,
         label="IBAN",
         widget=forms.TextInput(
             attrs={
@@ -1702,7 +1702,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
     )
     bic = forms.CharField(
         max_length=20,
-        required=False,
+        required=True,
         label="BIC",
         widget=forms.TextInput(
             attrs={
@@ -1716,6 +1716,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
+        self.fields["email"].required = True
         profile = user.tutor_profile
         self.fields["phone_number"].initial = profile.phone_number
         self.fields["address"].initial = profile.address

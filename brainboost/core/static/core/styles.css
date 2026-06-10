@@ -454,6 +454,11 @@ h1, h2, h3 {
 
 p { margin: 0 0 12px; color: var(--slate); }
 
+.required-marker {
+    color: var(--red);
+    font-weight: 900;
+}
+
 .button {
     display: inline-block;
     padding: 12px 18px;

@@ -1419,13 +1419,31 @@ class TutorProfileBankFieldValidationTests(TestCase):
             "first_name": "Tina",
             "last_name": "Tutor",
             "email": self.user.email,
-            "phone_number": "",
-            "address": "",
-            "account_holder": "",
-            "bank_name": "",
-            "iban": "",
-            "bic": "",
+            "phone_number": "0176 123456",
+            "address": "Tutorstrasse 1, Braunschweig",
+            "account_holder": "Tina Tutor",
+            "bank_name": "Sparkasse",
+            "iban": "DE44500105175407324931",
+            "bic": "DEUTDEFFXXX",
         }
+
+    def test_tutor_profile_required_fields_are_marked_on_profile_page(self):
+        self.client.login(username="tutor_profile_form", password="test12345")
+
+        response = self.client.get(reverse("profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="required-marker"', count=8)
+
+    def test_tutor_profile_requires_contact_address_and_bank_fields(self):
+        data = self._base_form_data()
+        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic"]:
+            data[field_name] = ""
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertFalse(form.is_valid())
+        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic"]:
+            self.assertIn(field_name, form.errors)
 
     def test_profile_form_normalizes_iban_and_bic(self):
         data = self._base_form_data()
