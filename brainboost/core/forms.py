@@ -333,6 +333,8 @@ class LeadForm(forms.ModelForm):
                 if not (cleaned.get(field_name) or "").strip():
                     self.add_error(field_name, _("Dieses Feld ist erforderlich."))
         elif role == Lead.Role.TUTOR:
+            if not email:
+                self.add_error("email", _("Für TutorInnen-Bewerbungen ist eine E-Mail-Adresse erforderlich."))
             required_tutor_fields = [
                 "teaching_subjects",
                 "teaching_grades",

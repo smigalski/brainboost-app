@@ -832,6 +832,13 @@ class Lead(models.Model):
         blank=True,
     )
     motivation = models.TextField(blank=True)
+    converted_tutor = models.OneToOneField(
+        "TutorProfile",
+        on_delete=models.SET_NULL,
+        related_name="source_lead",
+        blank=True,
+        null=True,
+    )
     # Future extension: add an optional FileField here if tutor application
     # documents should be uploaded with leads, e.g. upload_to="lead_uploads/%Y/%m/".
     created_at = models.DateTimeField(auto_now_add=True)

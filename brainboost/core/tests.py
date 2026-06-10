@@ -2,12 +2,14 @@ from datetime import date, time, timedelta
 from decimal import Decimal
 from io import StringIO
 import json
+from smtplib import SMTPAuthenticationError
 import tempfile
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 from xml.etree import ElementTree
 
 from django.contrib.auth import authenticate
+from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -502,6 +504,25 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(lead.subject, "Mathe, Physik")
         self.assertEqual(lead.grade, "5-10")
 
+    def test_tutor_lead_requires_email_even_when_phone_is_present(self):
+        response = self.client.post(
+            reverse("contact"),
+            data=self._tutor_data(email="", phone="0176 123456"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Lead.objects.count(), 0)
+        self.assertContains(response, "Für TutorInnen-Bewerbungen ist eine E-Mail-Adresse erforderlich.")
+
+    def test_contact_page_marks_tutor_tab_as_application_profile(self):
+        response = self.client.get(reverse("contact") + "?role=tutor")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Das ist dein Bewerbungsprofil als TutorIn.")
+        self.assertContains(response, "in ein TutorInnen-Profil um")
+        self.assertContains(response, 'data-tutor-email-required')
+        self.assertContains(response, 'data-selected-role="tutor"')
+
     def test_parent_landing_links_to_prefilled_contact_form(self):
         response = self.client.get(reverse("nachhilfe_anfrage"))
 
@@ -790,7 +811,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertRedirects(response, reverse("dashboard"))
 
     def test_staff_users_can_see_lead_dashboard(self):
-        self._lead()
+        self._lead(role=Lead.Role.TUTOR, name="Tina Tutor", email="tina@example.com")
         self.client.force_login(self.staff_user)
 
         response = self.client.get(reverse("lead_dashboard"))
@@ -798,6 +819,135 @@ class LeadAdminToolsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Lead-Zentrale")
         self.assertContains(response, "Neue Leads")
+        self.assertContains(response, "Zur TutorIn machen")
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        EMAIL_HOST_USER="smtp-user",
+        EMAIL_HOST_PASSWORD="smtp-password",
+        DEFAULT_FROM_EMAIL="BrainBoost <kontakt@nachhilfe-brainboost.de>",
+        DEFAULT_REPLY_TO_EMAIL="kontakt@nachhilfe-brainboost.de",
+    )
+    def test_staff_user_can_convert_tutor_lead_to_tutor_profile(self):
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Tina Tutor",
+            email="tina.tutor@example.com",
+            phone="0176 123456",
+            subject="Mathe, Physik",
+            grade="5-10",
+            teaching_subjects="Mathe, Physik",
+            teaching_grades="5-10",
+            weekly_availability="4 Stunden",
+            experience_level=Lead.ExperienceLevel.SOME,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_convert_to_tutor", args=[lead.id]),
+            data={"next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.WON)
+        self.assertTrue(lead.follow_up_done)
+        self.assertIsNotNone(lead.converted_tutor)
+        tutor_user = lead.converted_tutor.user
+        self.assertEqual(tutor_user.role, CustomUser.Roles.TUTOR)
+        self.assertEqual(tutor_user.email, "tina.tutor@example.com")
+        self.assertEqual(tutor_user.first_name, "Tina")
+        self.assertEqual(tutor_user.last_name, "Tutor")
+        self.assertFalse(tutor_user.has_usable_password())
+        self.assertEqual(lead.converted_tutor.phone_number, "0176 123456")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("tina.tutor@example.com", mail.outbox[0].to)
+        self.assertIn("Passwort", mail.outbox[0].subject)
+        self.assertIn("Profil vervollständigen", mail.outbox[0].body)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        EMAIL_HOST_USER="smtp-user",
+        EMAIL_HOST_PASSWORD="smtp-password",
+    )
+    @patch(
+        "core.views._send_set_password_email",
+        side_effect=SMTPAuthenticationError(535, b"5.7.8 Error: authentication failed"),
+    )
+    def test_smtp_authentication_failure_keeps_tutor_and_shows_retryable_message(self, mocked_send):
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Tina Tutor",
+            email="tina.retry@example.com",
+            phone="0176 123456",
+            teaching_subjects="Mathe",
+            teaching_grades="5-10",
+            weekly_availability="4 Stunden",
+            experience_level=Lead.ExperienceLevel.SOME,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_convert_to_tutor", args=[lead.id]),
+            data={"next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertIsNotNone(lead.converted_tutor)
+        self.assertEqual(lead.converted_tutor.user.email, "tina.retry@example.com")
+        messages = [str(message) for message in get_messages(response.wsgi_request)]
+        self.assertTrue(any("SMTP-Anmeldung fehlgeschlagen" in message for message in messages))
+        self.assertFalse(any("5.7.8 Error" in message for message in messages))
+        mocked_send.assert_called_once()
+
+        dashboard_response = self.client.get(reverse("lead_dashboard"))
+        self.assertContains(dashboard_response, "TutorIn angelegt")
+        self.assertContains(dashboard_response, "Mail erneut senden")
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        EMAIL_HOST_USER="smtp-user",
+        EMAIL_HOST_PASSWORD="smtp-password",
+        DEFAULT_FROM_EMAIL="BrainBoost <kontakt@nachhilfe-brainboost.de>",
+    )
+    def test_converted_tutor_lead_can_resend_password_mail(self):
+        tutor_user = CustomUser.objects.create_user(
+            username="converted_retry",
+            email="converted.retry@example.com",
+            role=CustomUser.Roles.TUTOR,
+        )
+        tutor = TutorProfile.objects.create(user=tutor_user)
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Converted Retry",
+            email="converted.retry@example.com",
+            converted_tutor=tutor,
+            status=Lead.Status.WON,
+            follow_up_done=True,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_convert_to_tutor", args=[lead.id]),
+            data={"next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        self.assertEqual(CustomUser.objects.filter(email="converted.retry@example.com").count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("converted.retry@example.com", mail.outbox[0].to)
+
+    def test_non_tutor_leads_cannot_be_converted_to_tutor(self):
+        lead = self._lead(role=Lead.Role.PARENT)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(reverse("lead_convert_to_tutor", args=[lead.id]))
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        self.assertFalse(CustomUser.objects.filter(email=lead.email, role=CustomUser.Roles.TUTOR).exists())
+        lead.refresh_from_db()
+        self.assertIsNone(lead.converted_tutor)
 
     def test_csv_export_is_staff_only_and_contains_expected_fields(self):
         self._lead(utm_campaign="eltern_mathe_braunschweig", internal_notes="Anrufen")

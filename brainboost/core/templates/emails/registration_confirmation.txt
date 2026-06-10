@@ -7,6 +7,8 @@ dein BrainBoost-Konto wurde erstellt.
 Bitte setze dein Passwort über folgenden Link:
 {{ set_password_url }}
 
+Nach dem Login kannst du dein Profil vervollständigen.
+
 Wenn du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.
 
 Viele Grüße

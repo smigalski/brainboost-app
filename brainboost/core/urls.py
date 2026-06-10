@@ -26,6 +26,7 @@ urlpatterns = [
     path("admins/", views.admin_tasks, name="admin_tasks"),
     path("karteikarten/", views.flashcards, name="flashcards"),
     path("admins/leads/", views.lead_dashboard, name="lead_dashboard"),
+    path("admins/leads/<int:lead_id>/zur-tutorin-machen/", views.lead_convert_to_tutor, name="lead_convert_to_tutor"),
     path("admins/leads/export/", views.lead_export_csv, name="lead_export_csv"),
     path("admins/meta-ads/link-generator/", views.campaign_link_builder, name="campaign_link_builder"),
     path("admins/meta-ads/guide/", views.meta_ads_guide, name="meta_ads_guide"),

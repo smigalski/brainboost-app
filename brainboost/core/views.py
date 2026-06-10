@@ -9,6 +9,7 @@ from pathlib import Path
 
 import logging
 import re
+from smtplib import SMTPAuthenticationError
 import unicodedata
 from typing import Optional
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
@@ -22,12 +23,14 @@ from django.core.cache import cache
 from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.db.models.functions import TruncDate
 from django.template.loader import render_to_string
 from django.utils.formats import date_format
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import get_language
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.utils.encoding import force_bytes
@@ -1458,6 +1461,65 @@ def _send_set_password_email(request, user: CustomUser) -> None:
         raise RuntimeError("email_send_failed")
 
 
+def _username_base_from_lead(lead: Lead) -> str:
+    email_local = (lead.email or "").split("@", 1)[0]
+    source = email_local or lead.name or f"tutor-{lead.pk}"
+    return slugify(source).replace("-", "_")[:120] or f"tutor_{lead.pk}"
+
+
+def _unique_username_from_lead(lead: Lead) -> str:
+    base = _username_base_from_lead(lead)
+    candidate = base
+    suffix = 1
+    while CustomUser.objects.filter(username__iexact=candidate).exists():
+        suffix += 1
+        candidate = f"{base[:140]}_{suffix}"
+    return candidate
+
+
+def _split_lead_name(lead: Lead) -> tuple[str, str]:
+    parts = (lead.name or "").strip().split()
+    if not parts:
+        return "", ""
+    if len(parts) == 1:
+        return parts[0][:150], ""
+    return parts[0][:150], " ".join(parts[1:])[:150]
+
+
+def _create_tutor_from_lead(lead: Lead) -> CustomUser:
+    if lead.converted_tutor_id:
+        return lead.converted_tutor.user
+    if not lead.email:
+        raise ValueError("missing_email")
+
+    first_name, last_name = _split_lead_name(lead)
+    with transaction.atomic():
+        lead = Lead.objects.select_for_update().get(pk=lead.pk)
+        if lead.converted_tutor_id:
+            return TutorProfile.objects.select_related("user").get(pk=lead.converted_tutor_id).user
+        user = CustomUser(
+            username=_unique_username_from_lead(lead),
+            first_name=first_name,
+            last_name=last_name,
+            email=lead.email,
+            role=CustomUser.Roles.TUTOR,
+            is_active=True,
+            is_staff=False,
+            is_superuser=False,
+        )
+        user.set_unusable_password()
+        user.save()
+        tutor_profile = TutorProfile.objects.create(
+            user=user,
+            phone_number=lead.phone,
+        )
+        lead.converted_tutor = tutor_profile
+        lead.status = Lead.Status.WON
+        lead.follow_up_done = True
+        lead.save(update_fields=["converted_tutor", "status", "follow_up_done", "updated_at"])
+    return user
+
+
 def _has_admin_access(user: CustomUser) -> bool:
     return bool(user.is_staff or user.is_superuser)
 
@@ -2513,7 +2575,11 @@ def lead_dashboard(request):
 
     start_date = _valid_iso_date(request.GET.get("start_date", ""))
     end_date = _valid_iso_date(request.GET.get("end_date", ""))
-    leads = _filter_leads_by_period(Lead.objects.all(), start_date, end_date)
+    leads = _filter_leads_by_period(
+        Lead.objects.select_related("converted_tutor__user"),
+        start_date,
+        end_date,
+    )
 
     period_rows = (
         leads.annotate(day=TruncDate("created_at"))
@@ -2545,6 +2611,60 @@ def lead_dashboard(request):
         "recent_leads": leads.order_by("-created_at")[:30],
     }
     return render(request, "lead_dashboard.html", context)
+
+
+@login_required
+def lead_convert_to_tutor(request, lead_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        messages.error(request, "Du darfst TutorInnen-Leads nicht umwandeln.")
+        return redirect("dashboard")
+    if request.method != "POST":
+        return redirect("lead_dashboard")
+
+    next_url = request.POST.get("next") or reverse("lead_dashboard")
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = reverse("lead_dashboard")
+
+    lead = get_object_or_404(Lead.objects.select_related("converted_tutor__user"), pk=lead_id)
+    if lead.role != Lead.Role.TUTOR:
+        messages.error(request, "Nur TutorInnen-Leads können in TutorInnen umgewandelt werden.")
+        return redirect(next_url)
+
+    try:
+        user = _create_tutor_from_lead(lead)
+        _send_set_password_email(request, user)
+    except ValueError:
+        messages.error(
+            request,
+            "Für diesen TutorInnen-Lead ist keine E-Mail-Adresse hinterlegt.",
+        )
+    except SMTPAuthenticationError:
+        logger.exception("SMTP-Anmeldung beim Versand der TutorInnen-Mail fehlgeschlagen.")
+        messages.error(
+            request,
+            "TutorIn wurde angelegt, aber die Mail konnte nicht versendet werden: "
+            "SMTP-Anmeldung fehlgeschlagen. Bitte prüfe EMAIL_HOST_USER und EMAIL_HOST_PASSWORD "
+            "in der Produktionsumgebung und sende die Mail danach erneut.",
+        )
+    except Exception as exc:
+        logger.exception("TutorInnen-Lead konnte nicht umgewandelt oder benachrichtigt werden.")
+        messages.error(
+            request,
+            "TutorIn wurde angelegt, aber die Mail konnte nicht versendet werden. "
+            "Bitte prüfe die Mail-Konfiguration und sende die Mail danach erneut.",
+        )
+    else:
+        action_label = "erneut versendet" if lead.converted_tutor_id else "versendet"
+        messages.success(
+            request,
+            f"{lead.name} wurde als TutorIn angelegt. Die Mail zum Passwortsetzen und Profilausfüllen wurde {action_label}.",
+        )
+    return redirect(next_url)
 
 
 @login_required

@@ -70,6 +70,26 @@
         background: #ffffff;
         box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
     }
+    .lead-application-note {
+        display: grid;
+        gap: 4px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255, 201, 40, 0.55);
+        border-radius: 12px;
+        background:
+            linear-gradient(135deg, rgba(255, 201, 40, 0.22), rgba(255, 255, 255, 0.92)),
+            #ffffff;
+        color: var(--accent);
+        box-shadow: 0 10px 22px rgba(31, 102, 102, 0.1);
+    }
+    .lead-application-note strong {
+        color: var(--teal-dark);
+        font-size: 1.02rem;
+    }
+    .lead-application-note span {
+        color: #334155;
+        line-height: 1.4;
+    }
     .lead-role-field {
         position: absolute;
         width: 1px;
@@ -100,6 +120,12 @@
     }
     .lead-required {
         color: var(--red);
+    }
+    .lead-required[data-tutor-email-required] {
+        display: none;
+    }
+    .lead-form[data-selected-role="tutor"] .lead-required[data-tutor-email-required] {
+        display: inline;
     }
     .lead-actions {
         display: flex;
@@ -163,7 +189,7 @@
                         {% if form.name.errors %}<p class="lead-error">{{ form.name.errors|join:", " }}</p>{% endif %}
                     </div>
                     <div class="lead-field">
-                        <label class="lead-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                        <label class="lead-label" for="{{ form.email.id_for_label }}">{{ form.email.label }} <span class="lead-required" data-tutor-email-required>*</span></label>
                         {{ form.email }}
                         {% if form.email.errors %}<p class="lead-error">{{ form.email.errors|join:", " }}</p>{% endif %}
                     </div>
@@ -213,6 +239,10 @@
 
             <section class="lead-section" data-role-fields="tutor" role="tabpanel">
                 <h2 class="lead-section__title">{% trans "TutorIn-Profil" %}</h2>
+                <div class="lead-application-note">
+                    <strong>{% trans "Das ist dein Bewerbungsprofil als TutorIn." %}</strong>
+                    <span>{% trans "Wenn deine Bewerbung angenommen wird, wandeln wir diese Angaben in ein TutorInnen-Profil um und senden dir einen Link, damit du Passwort, Adresse und Zahlungsdaten sicher ergänzen kannst." %}</span>
+                </div>
                 <div class="lead-field-grid">
                     <div class="lead-field">
                         <label class="lead-label" for="{{ form.education_status.id_for_label }}">{{ form.education_status.label }}</label>
@@ -308,6 +338,7 @@
 
         function updateRoleSections() {
             var role = selectedRole();
+            form.dataset.selectedRole = role;
             roleTabs.forEach(function (tab) {
                 var isActive = tab.dataset.roleTab === role;
                 tab.classList.toggle("is-active", isActive);

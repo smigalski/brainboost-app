@@ -86,6 +86,29 @@
             gap: 10px;
             margin-top: 12px;
         }
+
+        .lead-inline-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .lead-inline-actions form {
+            margin: 0;
+        }
+
+        .lead-table .button {
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            box-shadow: none;
+        }
+
+        .lead-converted {
+            color: #246b3a;
+            font-weight: 800;
+        }
     </style>
 
     <h1>Lead-Zentrale</h1>
@@ -234,7 +257,7 @@
         <h2>Offene Leads</h2>
         <div class="lead-table-wrap">
             <table class="lead-table">
-                <thead><tr><th>Lead</th><th>Status</th><th>Follow-up</th><th>Kampagne</th></tr></thead>
+                <thead><tr><th>Lead</th><th>Status</th><th>Follow-up</th><th>Kampagne</th><th>Aktion</th></tr></thead>
                 <tbody>
                     {% for lead in open_leads %}
                         <tr>
@@ -245,9 +268,31 @@
                             <td>{{ lead.get_status_display }}</td>
                             <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"-" }}</td>
                             <td>{{ lead.utm_campaign|default:"unknown" }}</td>
+                            <td>
+                                {% if lead.role == "tutor" %}
+                                    <div class="lead-inline-actions">
+                                        {% if lead.converted_tutor_id %}
+                                            <span class="lead-converted">TutorIn angelegt</span>
+                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button class="button" type="submit">Mail erneut senden</button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button class="button" type="submit">Zur TutorIn machen</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="4">Keine offenen Leads.</td></tr>
+                        <tr><td colspan="5">Keine offenen Leads.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -258,7 +303,7 @@
         <h2>Neueste Leads</h2>
         <div class="lead-table-wrap">
             <table class="lead-table">
-                <thead><tr><th>Datum</th><th>Name</th><th>Rolle</th><th>Fach</th><th>Status</th><th>UTM</th></tr></thead>
+                <thead><tr><th>Datum</th><th>Name</th><th>Rolle</th><th>Fach</th><th>Status</th><th>UTM</th><th>Aktion</th></tr></thead>
                 <tbody>
                     {% for lead in recent_leads %}
                         <tr>
@@ -268,9 +313,31 @@
                             <td>{{ lead.subject|default:"-" }}</td>
                             <td>{{ lead.get_status_display }}</td>
                             <td>{{ lead.utm_campaign|default:"unknown" }}</td>
+                            <td>
+                                {% if lead.role == "tutor" %}
+                                    <div class="lead-inline-actions">
+                                        {% if lead.converted_tutor_id %}
+                                            <span class="lead-converted">TutorIn angelegt</span>
+                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button class="button" type="submit">Mail erneut senden</button>
+                                            </form>
+                                        {% else %}
+                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                <button class="button" type="submit">Zur TutorIn machen</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="6">Keine Leads im Zeitraum.</td></tr>
+                        <tr><td colspan="7">Keine Leads im Zeitraum.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
