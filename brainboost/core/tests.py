@@ -20,6 +20,7 @@ from django.utils import timezone
 from openpyxl import Workbook
 
 from .forms import (
+    AdminTaskCreateForm,
     BrainBoostFeedbackForm,
     InvoiceGenerateForm,
     LearningMaterialForm,
@@ -1048,6 +1049,41 @@ class AdminTaskManagerTests(TestCase):
         }
         data.update(overrides)
         return AdminTask.objects.create(**data)
+
+    def test_admin_task_title_allows_up_to_1000_characters(self):
+        self.assertEqual(AdminTask._meta.get_field("title").max_length, 1000)
+
+        valid_form = AdminTaskCreateForm(
+            data={
+                "title": "x" * 1000,
+                "importance": AdminTask.Importance.NORMAL,
+                "days": 7,
+                "owner": self.staff_user.id,
+            }
+        )
+        self.assertTrue(valid_form.is_valid(), valid_form.errors)
+
+        invalid_form = AdminTaskCreateForm(
+            data={
+                "title": "x" * 1001,
+                "importance": AdminTask.Importance.NORMAL,
+                "days": 7,
+                "owner": self.staff_user.id,
+            }
+        )
+        self.assertFalse(invalid_form.is_valid())
+        self.assertIn("title", invalid_form.errors)
+
+    def test_task_create_field_is_resizing_textarea_with_1000_character_limit(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("admin_tasks"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<textarea", html=False)
+        self.assertContains(response, 'form="create-task-form"')
+        self.assertContains(response, 'maxlength="1000"')
+        self.assertContains(response, "data-auto-resize-textarea")
 
     def test_complete_button_marks_task_done_and_removes_it_from_task_rows(self):
         task = self._task()

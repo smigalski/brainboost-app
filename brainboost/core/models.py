@@ -628,7 +628,7 @@ class AdminTask(models.Model):
         DOING = "doing", "doing"
         DONE = "done", "done"
 
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=1000)
     image = models.ImageField(upload_to="admin_tasks/%Y/%m/", blank=True)
     importance = models.CharField(
         max_length=20,

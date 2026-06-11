@@ -415,6 +415,7 @@
         .admin-task-row td textarea,
         .admin-task-row td select,
         .admin-tasks-table .task-add-row input,
+        .admin-tasks-table .task-add-row textarea,
         .admin-tasks-table .task-add-row select {
             min-width: 120px;
         }
@@ -423,6 +424,7 @@
         .admin-task-row td textarea,
         .admin-task-row td select,
         .admin-tasks-table .task-add-row input[type="text"],
+        .admin-tasks-table .task-add-row textarea,
         .admin-tasks-table .task-add-row select {
             padding: 9px 10px;
             border-radius: 10px;
@@ -431,13 +433,22 @@
             width: 100%;
         }
 
-        .admin-task-row td textarea {
+        .admin-task-row td textarea,
+        .admin-tasks-table .task-add-row textarea {
             min-height: 92px;
-            resize: vertical;
             overflow: hidden;
             line-height: 1.45;
             font: inherit;
             white-space: pre-wrap;
+        }
+
+        .admin-tasks-table .task-add-row textarea {
+            min-height: 44px;
+            resize: none;
+        }
+
+        .admin-task-row td textarea {
+            resize: vertical;
         }
 
         .task-add-row {
@@ -902,7 +913,7 @@
                                         <img class="idea-card__image" src="{{ item.task.image.url }}" alt="">
                                     </button>
                                 {% endif %}
-                                <textarea class="task-edit-field" data-task-title-input name="title" form="update-task-{{ item.task.id }}" rows="3" required>{{ item.task.title }}</textarea>
+                                <textarea class="task-edit-field" data-task-title-input name="title" form="update-task-{{ item.task.id }}" rows="3" maxlength="1000" required>{{ item.task.title }}</textarea>
                             </td>
                             <td>
                                 <div class="task-field-display">{{ item.task.get_importance_display }}</div>
@@ -974,14 +985,15 @@
 
                     <tr class="task-add-row">
                         <td>
-                            <input
-                                type="text"
+                            <textarea
                                 name="title"
                                 form="create-task-form"
                                 placeholder="Aufgabe hinzufügen"
-                                value="{{ create_form.title.value|default:'' }}"
+                                rows="1"
+                                maxlength="1000"
+                                data-auto-resize-textarea
                                 required
-                            >
+                            >{{ create_form.title.value|default:'' }}</textarea>
                         </td>
                         <td>
                             <select

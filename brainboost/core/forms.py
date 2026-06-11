@@ -364,6 +364,14 @@ class AdminTaskBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["title"].label = "Aufgabe"
+        self.fields["title"].max_length = 1000
+        self.fields["title"].widget = forms.Textarea(
+            attrs={
+                "rows": 1,
+                "maxlength": 1000,
+                "data-auto-resize-textarea": "",
+            }
+        )
         self.fields["importance"].label = "Wichtigkeit"
         self.fields["days"].label = "Tage"
         self.fields["owner"].label = "Verantwortlicher"
