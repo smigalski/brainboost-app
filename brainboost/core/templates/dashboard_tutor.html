@@ -9,9 +9,126 @@
             flex-direction: column;
             gap: 24px;
         }
+        .tutor-onboarding-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--teal-dark);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 14px 34px rgba(31,102,102,0.22);
+            list-style: none;
+        }
+        .tutor-onboarding-toggle::-webkit-details-marker {
+            display: none;
+        }
+        .tutor-onboarding-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+        .tutor-onboarding-disclosure[open] .tutor-onboarding-toggle {
+            background: #1f6666;
+        }
+        .tutor-onboarding-steps {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .tutor-onboarding-step {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        .tutor-onboarding-step__mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            font-weight: 900;
+        }
+        .tutor-onboarding-step--done .tutor-onboarding-step__mark {
+            background: #16a34a;
+            color: #fff;
+        }
+        .tutor-onboarding-step--done .tutor-onboarding-step__title {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+        .tutor-onboarding-step__title {
+            margin: 0;
+            color: #102a2f;
+            font-weight: 900;
+        }
+        .tutor-onboarding-step__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
     </style>
     <div class="tutor-dashboard-grid">
         <div style="display:flex; flex-direction:column; gap:14px;">
+            <details class="tutor-onboarding-disclosure" style="padding:14px 16px; border-radius:16px; background:rgba(31,102,102,0.08); border:1px solid rgba(31,102,102,0.16);">
+                <summary style="display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none;">
+                    <div>
+                        <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--teal-dark); margin-bottom:6px;">TutorInnen-Weg</div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <strong>Dein Status</strong>
+                            <span class="tutor-status-badge tutor-status-badge--{{ tutor_profile.status }}">{{ tutor_status_label }}</span>
+                        </div>
+                    </div>
+                    <span class="tutor-onboarding-toggle" aria-label="TutorInnen-Weg anzeigen">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <line x1="5" y1="7" x2="19" y2="7"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <line x1="5" y1="17" x2="19" y2="17"></line>
+                        </svg>
+                    </span>
+                </summary>
+                <div class="tutor-onboarding-panel">
+                    <div class="tutor-onboarding-steps">
+                        {% for step in tutor_onboarding_steps %}
+                            <div class="tutor-onboarding-step{% if step.done %} tutor-onboarding-step--done{% endif %}">
+                                <span class="tutor-onboarding-step__mark">{% if step.done %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+                                <div>
+                                    <p class="tutor-onboarding-step__title">{{ step.title }}</p>
+                                    <div class="tutor-onboarding-step__meta">
+                                        {% if step.status_label %}
+                                            <span class="tutor-status-badge tutor-status-badge--{{ step.status_label }}">{{ step.status_label }}</span>
+                                        {% endif %}
+                                        {% if step.show_bbb_button %}
+                                            <a class="button" style="background:#5fb5ff;color:#0b1b2a;" href="{{ step.bbb_link }}" target="_blank" rel="noopener">BBB-Raum</a>
+                                        {% endif %}
+                                    </div>
+                                    {% if step.description %}
+                                        <div class="muted" style="margin-top:8px;">{{ step.description }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
             <div style="padding:14px 16px; border-radius:14px; background:rgba(95,181,255,0.14); border:1px solid rgba(74,128,255,0.18);">
                 <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#24507e; margin-bottom:10px;">News</div>
                 <div style="display:flex; flex-direction:column; gap:10px;">
@@ -78,17 +195,28 @@
                 {% endif %}
                 <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
                     <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Schritt 1</div>
-                    <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'parent_create' %}">Eltern anlegen</a>
+                    {% if tutor_can_create_accounts %}
+                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'parent_create' %}">Eltern anlegen</a>
+                    {% else %}
+                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">Eltern anlegen</span>
+                        <div class="muted" style="font-size:0.82rem; margin-top:8px;">Freigeschaltet, sobald dein TutorInnen-Status aktiv ist.</div>
+                    {% endif %}
                 </div>
                 <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
                     <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Schritt 2</div>
-                    {% if has_parent_profiles %}
+                    {% if tutor_can_create_accounts and has_parent_profiles %}
                         <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">SchülerIn anlegen</a>
                     {% else %}
                         <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">SchülerIn anlegen</span>
-                        <div class="muted" style="font-size:0.82rem; margin-top:8px;">Erst nach dem ersten Elternteil verfuegbar.</div>
+                        <div class="muted" style="font-size:0.82rem; margin-top:8px;">
+                            {% if tutor_can_create_accounts %}Erst nach dem ersten Elternteil verfuegbar.{% else %}Freigeschaltet, sobald dein TutorInnen-Status aktiv ist.{% endif %}
+                        </div>
                     {% endif %}
-                    <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'independent_student_create' %}">StudentIn anlegen</a>
+                    {% if tutor_can_create_accounts %}
+                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'independent_student_create' %}">StudentIn anlegen</a>
+                    {% else %}
+                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">StudentIn anlegen</span>
+                    {% endif %}
                 </div>
             </div>
 

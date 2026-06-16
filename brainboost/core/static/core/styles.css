@@ -265,9 +265,52 @@ strong.logo { color: var(--logo-turquoise); }
 }
 
 .profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
     color: inherit;
     flex-shrink: 0;
+}
+
+.tutor-status-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    max-width: 132px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #eef2f7;
+    color: #334155;
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1.1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tutor-status-badge--beworben,
+.tutor-status-badge--eingeladen,
+.tutor-status-badge--kennengelernt {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.tutor-status-badge--akzeptiert,
+.tutor-status-badge--onboarding {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.tutor-status-badge--aktiv {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tutor-status-badge--abgelehnt {
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .profile-link__avatar,

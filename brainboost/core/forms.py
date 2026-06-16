@@ -1389,6 +1389,18 @@ class TutorCreateForm(BaseUserCreateForm):
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
     account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
     bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
+    tax_number = forms.CharField(max_length=80, required=False, label="Steuernummer")
+    bbb_link = forms.URLField(required=False, label="BigBlueButton-Raum")
+    status = forms.ChoiceField(
+        choices=TutorProfile.Status.choices,
+        initial=TutorProfile.Status.ACTIVE,
+        required=True,
+        label="TutorInnen-Status",
+    )
+    self_employment_verified = forms.BooleanField(
+        required=False,
+        label="Selbständigkeit verifiziert",
+    )
     iban = forms.CharField(
         max_length=42,
         required=False,
@@ -1435,6 +1447,10 @@ class TutorCreateForm(BaseUserCreateForm):
                 "bank_name",
                 "iban",
                 "bic",
+                "tax_number",
+                "bbb_link",
+                "status",
+                "self_employment_verified",
             ]
         )
 
@@ -1451,6 +1467,10 @@ class TutorCreateForm(BaseUserCreateForm):
                 bank_name=self.cleaned_data.get("bank_name", ""),
                 iban=self.cleaned_data.get("iban", ""),
                 bic=self.cleaned_data.get("bic", ""),
+                tax_number=self.cleaned_data.get("tax_number", ""),
+                bbb_link=self.cleaned_data.get("bbb_link", ""),
+                status=self.cleaned_data.get("status") or TutorProfile.Status.ACTIVE,
+                self_employment_verified=self.cleaned_data.get("self_employment_verified", False),
             )
         return user
 
@@ -1721,8 +1741,20 @@ class TutorProfileForm(BaseProfileUpdateForm):
             }
         ),
     )
+    tax_number = forms.CharField(max_length=80, required=True, label="Steuernummer")
+    bbb_link = forms.URLField(required=False, label="BigBlueButton-Raum")
+    status = forms.ChoiceField(
+        choices=TutorProfile.Status.choices,
+        required=False,
+        label="TutorInnen-Status",
+    )
+    self_employment_verified = forms.BooleanField(
+        required=False,
+        label="Selbständigkeit verifiziert",
+    )
 
     def __init__(self, *args, user: CustomUser, **kwargs):
+        self.can_manage_tutor_status = kwargs.pop("can_manage_tutor_status", False)
         super().__init__(*args, user=user, **kwargs)
         self.fields["email"].required = True
         profile = user.tutor_profile
@@ -1732,6 +1764,29 @@ class TutorProfileForm(BaseProfileUpdateForm):
         self.fields["bank_name"].initial = profile.bank_name
         self.fields["iban"].initial = profile.iban
         self.fields["bic"].initial = profile.bic
+        self.fields["tax_number"].initial = profile.tax_number
+        self.fields["bbb_link"].initial = profile.bbb_link
+        self.fields["status"].initial = profile.status
+        self.fields["self_employment_verified"].initial = profile.self_employment_verified
+        self.fields["status"].disabled = not self.can_manage_tutor_status
+        self.fields["self_employment_verified"].disabled = not self.can_manage_tutor_status
+        self.fields["bbb_link"].disabled = not self.can_manage_tutor_status
+        if not self.can_manage_tutor_status:
+            self.fields.pop("status")
+            self.fields.pop("self_employment_verified")
+            self.fields.pop("bbb_link")
+        requires_self_employment = profile.status in {
+            TutorProfile.Status.ACCEPTED,
+            TutorProfile.Status.ONBOARDING,
+            TutorProfile.Status.ACTIVE,
+        }
+        for field_name in ["account_holder", "bank_name", "iban", "bic", "tax_number"]:
+            self.fields[field_name].required = requires_self_employment
+            if not requires_self_employment:
+                self.fields[field_name].disabled = True
+                self.fields[field_name].help_text = (
+                    "Dieses Feld wird nach einem erfolgreichen Kennenlerngespräch freigeschaltet."
+                )
         self.order_fields(
             [
                 "avatar_icon",
@@ -1747,6 +1802,10 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "bank_name",
                 "iban",
                 "bic",
+                "tax_number",
+                "bbb_link",
+                "status",
+                "self_employment_verified",
             ]
         )
 
@@ -1759,6 +1818,13 @@ class TutorProfileForm(BaseProfileUpdateForm):
         profile.bank_name = self.cleaned_data.get("bank_name", "")
         profile.iban = self.cleaned_data.get("iban", "")
         profile.bic = self.cleaned_data.get("bic", "")
+        profile.tax_number = self.cleaned_data.get("tax_number", "")
+        if self.can_manage_tutor_status:
+            profile.bbb_link = self.cleaned_data.get("bbb_link", "")
+            profile.status = self.cleaned_data.get("status") or profile.status
+            profile.self_employment_verified = self.cleaned_data.get(
+                "self_employment_verified", False
+            )
         profile.save()
         return user
 

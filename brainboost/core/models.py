@@ -101,18 +101,42 @@ class StudentProfile(models.Model):
         related_name="assigned_students",
         blank=True,
     )
+    created_by_tutor = models.ForeignKey(
+        "TutorProfile",
+        on_delete=models.SET_NULL,
+        related_name="created_students",
+        blank=True,
+        null=True,
+    )
 
     def __str__(self) -> str:
         full_name = self.user.get_full_name().strip()
         return full_name or self.user.username
 
 class TutorProfile(models.Model):
+    class Status(models.TextChoices):
+        APPLIED = "beworben", "beworben"
+        INVITED = "eingeladen", "eingeladen"
+        MET = "kennengelernt", "kennengelernt"
+        ACCEPTED = "akzeptiert", "akzeptiert"
+        REJECTED = "abgelehnt", "abgelehnt"
+        ONBOARDING = "onboarding", "onboarding"
+        ACTIVE = "aktiv", "aktiv"
+
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
     account_holder = models.CharField(max_length=255, blank=True)
     bank_name = models.CharField(max_length=255, blank=True)
     iban = models.CharField(max_length=34, blank=True)
     bic = models.CharField(max_length=11, blank=True)
+    tax_number = models.CharField(max_length=80, blank=True)
+    bbb_link = models.URLField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    self_employment_verified = models.BooleanField(default=False)
     assigned_tutors = models.ManyToManyField(
         "self",
         symmetrical=False,
@@ -131,6 +155,22 @@ class TutorProfile(models.Model):
 
     def __str__(self) -> str:
         return f"TutorIn: {self.user.username}"
+
+    @property
+    def is_active_tutor(self) -> bool:
+        return self.status == self.Status.ACTIVE
+
+    @property
+    def self_employment_fields_complete(self) -> bool:
+        return all(
+            [
+                (self.account_holder or "").strip(),
+                (self.bank_name or "").strip(),
+                (self.iban or "").strip(),
+                (self.bic or "").strip(),
+                (self.tax_number or "").strip(),
+            ]
+        )
 
 
 class TemporaryTutorAssignment(models.Model):

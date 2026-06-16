@@ -68,7 +68,8 @@ class ParentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "bbb_link")
+    list_display = ("user", "bbb_link", "created_by_tutor")
+    list_filter = ("created_by_tutor",)
     filter_horizontal = ("parents", "assigned_tutors")
 
     @admin.display(description="BBB-Link")
@@ -78,7 +79,9 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
-    list_display = ("user",)
+    list_display = ("user", "status", "self_employment_verified", "bbb_link")
+    list_filter = ("status", "self_employment_verified")
+    search_fields = ("user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("assigned_tutors",)
 
 

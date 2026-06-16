@@ -8,13 +8,20 @@
             <h1>Mein Profil</h1>
             <p>Hier kannst du deine Angaben und dein Profil-Icon anpassen.</p>
         </div>
-        {% if request.user.profile_image %}
-            <img class="profile-hero-icon profile-hero-icon--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
-        {% else %}
-            <div class="profile-hero-icon{% if not request.user.avatar_icon %} profile-hero-icon--empty{% endif %}">
-                {{ request.user.avatar_symbol }}
-            </div>
-        {% endif %}
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            {% if request.user.profile_image %}
+                <img class="profile-hero-icon profile-hero-icon--image" src="{{ request.user.profile_image.url }}" alt="Profilbild">
+            {% else %}
+                <div class="profile-hero-icon{% if not request.user.avatar_icon %} profile-hero-icon--empty{% endif %}">
+                    {{ request.user.avatar_symbol }}
+                </div>
+            {% endif %}
+            {% if request.user.role == "tutor" and request.user.tutor_profile %}
+                <span class="tutor-status-badge tutor-status-badge--{{ request.user.tutor_profile.status }}">
+                    {{ request.user.tutor_profile.get_status_display }}
+                </span>
+            {% endif %}
+        </div>
     </div>
 
     <form method="post" enctype="multipart/form-data" style="display:grid; gap:20px;">

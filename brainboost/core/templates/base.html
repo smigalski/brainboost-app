@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1016">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1017">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <meta name="theme-color" content="#2c8a8a">
@@ -63,6 +63,11 @@
                             <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="{% trans 'Profilbild' %}">
                         {% else %}
                             <span class="profile-link__avatar{% if not request.user.avatar_icon %} profile-link__avatar--empty{% endif %}">{{ request.user.avatar_symbol }}</span>
+                        {% endif %}
+                        {% if request.user.role == "tutor" and request.user.tutor_profile %}
+                            <span class="tutor-status-badge tutor-status-badge--{{ request.user.tutor_profile.status }}">
+                                {{ request.user.tutor_profile.get_status_display }}
+                            </span>
                         {% endif %}
                     </a>
                 {% endif %}

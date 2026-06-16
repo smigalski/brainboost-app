@@ -345,7 +345,115 @@ def _missing_tutor_bank_field_labels(tutor_profile: TutorProfile) -> list[str]:
         missing_fields.append("IBAN")
     if not (tutor_profile.bic or "").strip():
         missing_fields.append("BIC")
+    if not (tutor_profile.tax_number or "").strip():
+        missing_fields.append("Steuernummer")
     return missing_fields
+
+
+def _tutor_self_employment_complete(tutor_profile: TutorProfile) -> bool:
+    return (
+        tutor_profile.self_employment_fields_complete
+        and tutor_profile.self_employment_verified
+    )
+
+
+def _tutor_has_completed_lesson(tutor_profile: TutorProfile):
+    return Lesson.objects.filter(
+        tutor=tutor_profile,
+        status=Lesson.Status.COMPLETED,
+    ).exists()
+
+
+def _tutor_has_completed_self_created_student_lesson(tutor_profile: TutorProfile):
+    return Lesson.objects.filter(
+        tutor=tutor_profile,
+        student__created_by_tutor=tutor_profile,
+        status=Lesson.Status.COMPLETED,
+    ).exists()
+
+
+def _sync_tutor_onboarding_status(tutor_profile: TutorProfile) -> None:
+    original_status = tutor_profile.status
+    if tutor_profile.status == TutorProfile.Status.ACCEPTED and _tutor_self_employment_complete(
+        tutor_profile
+    ):
+        tutor_profile.status = TutorProfile.Status.ONBOARDING
+    if tutor_profile.status == TutorProfile.Status.ONBOARDING and _tutor_has_completed_lesson(
+        tutor_profile
+    ):
+        tutor_profile.status = TutorProfile.Status.ACTIVE
+    if tutor_profile.status != original_status:
+        tutor_profile.save(update_fields=["status"])
+
+
+def _tutor_can_create_accounts(tutor_profile: TutorProfile) -> bool:
+    return tutor_profile.status == TutorProfile.Status.ACTIVE
+
+
+def _tutor_onboarding_steps(tutor_profile: TutorProfile) -> list[dict]:
+    status = tutor_profile.status
+    meeting_status = status if status in {
+        TutorProfile.Status.INVITED,
+        TutorProfile.Status.MET,
+        TutorProfile.Status.ACCEPTED,
+        TutorProfile.Status.REJECTED,
+    } else TutorProfile.Status.ACCEPTED
+    successful_meeting_done = status in {
+        TutorProfile.Status.ACCEPTED,
+        TutorProfile.Status.ONBOARDING,
+        TutorProfile.Status.ACTIVE,
+    }
+    rejected = status == TutorProfile.Status.REJECTED
+    self_employment_done = _tutor_self_employment_complete(tutor_profile)
+    first_assigned_lesson_done = _tutor_has_completed_lesson(tutor_profile)
+    self_created_lesson_done = _tutor_has_completed_self_created_student_lesson(tutor_profile)
+
+    return [
+        {
+            "title": "Bewerbungsprofil ausgefüllt",
+            "done": True,
+            "status_label": "beworben",
+            "description": "",
+        },
+        {
+            "title": "Kennenlerngespräch (30min)",
+            "done": successful_meeting_done,
+            "status_label": meeting_status,
+            "description": (
+                "Dein Profil wird innerhalb von 7 Tagen gelöscht."
+                if rejected
+                else ""
+            ),
+            "show_bbb_button": bool(tutor_profile.bbb_link) and not rejected,
+            "bbb_link": tutor_profile.bbb_link,
+        },
+        {
+            "title": "Selbständigkeit",
+            "done": self_employment_done,
+            "status_label": TutorProfile.Status.ONBOARDING,
+            "description": (
+                "IBAN, BIC, Steuernummer und Verifikation sind vollständig."
+                if self_employment_done
+                else "Nach Annahme werden IBAN, BIC und Steuernummer im Profil freigeschaltet."
+            ),
+        },
+        {
+            "title": "SchülerInnen und StudentInnen erhalten",
+            "done": first_assigned_lesson_done,
+            "status_label": TutorProfile.Status.ACTIVE,
+            "description": (
+                "Ab der ersten erfolgreich absolvierten Einheit werden die Konto-Anlage-Buttons freigeschaltet."
+            ),
+        },
+        {
+            "title": "Eigene SchülerInnen/StudentInnen anlegen",
+            "done": self_created_lesson_done,
+            "status_label": "",
+            "description": (
+                "Erledigt, sobald du selbst ein neues Lernprofil angelegt und eine Nachhilfeeinheit damit absolviert hast."
+            ),
+        },
+    ]
 
 
 def _normalize_whatsapp_number(raw_number: str) -> str:
@@ -1308,6 +1416,14 @@ def contact(request):
                 if value:
                     setattr(lead, key, value)
             lead.save()
+            if lead.role == Lead.Role.TUTOR:
+                try:
+                    user = _create_tutor_from_lead(lead, mark_lead_won=False)
+                    _send_set_password_email(request, user)
+                except Exception:
+                    logger.exception(
+                        "TutorInnen-Bewerbung wurde gespeichert, aber die Registrierungsmail konnte nicht versendet werden."
+                    )
             notify_lead_created(lead)
             if lead.role == Lead.Role.TUTOR:
                 request.session["lead_tracking_pending"] = "tutor"
@@ -1340,7 +1456,7 @@ def lead_thanks_tutor(request):
         "lead_thanks.html",
         {
             "title": "Danke für deine Bewerbung",
-            "message": "Wir prüfen deine Angaben und melden uns zeitnah bei dir.",
+            "message": "Wir haben deine Bewerbung erhalten. Du bekommst per E-Mail den Link zum Passwortsetzen und kannst danach deinen Status im BrainBoost-Dashboard verfolgen.",
             "meta_lead_content_name": "Tutor Bewerbung" if tracking_pending else "",
             "meta_lead_content_category": "tutors" if tracking_pending else "",
         },
@@ -1486,8 +1602,14 @@ def _split_lead_name(lead: Lead) -> tuple[str, str]:
     return parts[0][:150], " ".join(parts[1:])[:150]
 
 
-def _create_tutor_from_lead(lead: Lead) -> CustomUser:
+def _create_tutor_from_lead(lead: Lead, *, mark_lead_won: bool = True) -> CustomUser:
     if lead.converted_tutor_id:
+        if mark_lead_won and (
+            lead.status != Lead.Status.WON or not lead.follow_up_done
+        ):
+            lead.status = Lead.Status.WON
+            lead.follow_up_done = True
+            lead.save(update_fields=["status", "follow_up_done", "updated_at"])
         return lead.converted_tutor.user
     if not lead.email:
         raise ValueError("missing_email")
@@ -1512,11 +1634,15 @@ def _create_tutor_from_lead(lead: Lead) -> CustomUser:
         tutor_profile = TutorProfile.objects.create(
             user=user,
             phone_number=lead.phone,
+            status=TutorProfile.Status.APPLIED,
         )
         lead.converted_tutor = tutor_profile
-        lead.status = Lead.Status.WON
-        lead.follow_up_done = True
-        lead.save(update_fields=["converted_tutor", "status", "follow_up_done", "updated_at"])
+        update_fields = ["converted_tutor", "updated_at"]
+        if mark_lead_won:
+            lead.status = Lead.Status.WON
+            lead.follow_up_done = True
+            update_fields.extend(["status", "follow_up_done"])
+        lead.save(update_fields=update_fields)
     return user
 
 
@@ -2070,10 +2196,16 @@ def dashboard(request):
             _auto_complete_past_lessons(
                 Lesson.objects.filter(tutor=tutor_profile)
             )
+            _sync_tutor_onboarding_status(tutor_profile)
             assigned_students = _assigned_students_qs(tutor_profile)
             assigned_tutors = _assigned_tutors_qs(tutor_profile)
+            can_create_accounts = _tutor_can_create_accounts(tutor_profile)
 
             context["is_admin_tutor"] = request.user.is_superuser
+            context["tutor_profile"] = tutor_profile
+            context["tutor_status_label"] = tutor_profile.get_status_display()
+            context["tutor_can_create_accounts"] = can_create_accounts
+            context["tutor_onboarding_steps"] = _tutor_onboarding_steps(tutor_profile)
             context["can_send_broadcast_email"] = _has_admin_access(request.user)
             context["can_manage_faq"] = _has_faq_admin_access(request.user)
             context["has_parent_profiles"] = ParentProfile.objects.exists()
@@ -2097,7 +2229,16 @@ def dashboard(request):
             context["pending_faq_count"] = FAQItem.objects.filter(is_published=False).count()
             missing_bank_fields = _missing_tutor_bank_field_labels(tutor_profile)
             context["missing_tutor_bank_fields"] = missing_bank_fields
-            if missing_bank_fields and not request.session.get("bank_data_reminder_shown", False):
+            if (
+                tutor_profile.status
+                in {
+                    TutorProfile.Status.ACCEPTED,
+                    TutorProfile.Status.ONBOARDING,
+                    TutorProfile.Status.ACTIVE,
+                }
+                and missing_bank_fields
+                and not request.session.get("bank_data_reminder_shown", False)
+            ):
                 context["show_bank_data_popup"] = True
                 context["missing_tutor_bank_fields_text"] = ", ".join(missing_bank_fields)
                 request.session["bank_data_reminder_shown"] = True
@@ -2907,15 +3048,18 @@ def profile_view(request):
         _is_learning_profile_user(request.user)
         or request.user.role == CustomUser.Roles.TUTOR
     )
+    form_kwargs = {"user": request.user}
+    if request.user.role == CustomUser.Roles.TUTOR:
+        form_kwargs["can_manage_tutor_status"] = _has_admin_access(request.user)
 
     if request.method == "POST":
-        form = form_class(request.POST, request.FILES, user=request.user)
+        form = form_class(request.POST, request.FILES, **form_kwargs)
         if form.is_valid():
             form.save()
             messages.success(request, "Dein Profil wurde aktualisiert.")
             return redirect("profile")
     else:
-        form = form_class(user=request.user)
+        form = form_class(**form_kwargs)
 
     return render(
         request,
@@ -3031,7 +3175,12 @@ def resend_set_password_email(request, user_id):
 
 @login_required
 def parent_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR:
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
+        request.user, "tutor_profile"
+    ):
+        return redirect("dashboard")
+    if not _tutor_can_create_accounts(request.user.tutor_profile):
+        messages.error(request, "Konten können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
         return redirect("dashboard")
     if request.method == "POST":
         form = ParentCreateForm(request.POST)
@@ -3111,11 +3260,16 @@ def student_create(request):
         request.user, "tutor_profile"
     ):
         return redirect("dashboard")
+    if not _tutor_can_create_accounts(request.user.tutor_profile):
+        messages.error(request, "SchülerInnen können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
+        return redirect("dashboard")
     if request.method == "POST":
         form = StudentCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
+            user.student_profile.created_by_tutor = request.user.tutor_profile
+            user.student_profile.save(update_fields=["created_by_tutor"])
             account_label = (
                 "StudentIn"
                 if user.role == CustomUser.Roles.INDEPENDENT_STUDENT
@@ -3153,11 +3307,16 @@ def independent_student_create(request):
         request.user, "tutor_profile"
     ):
         return redirect("dashboard")
+    if not _tutor_can_create_accounts(request.user.tutor_profile):
+        messages.error(request, "StudentInnen können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
+        return redirect("dashboard")
     if request.method == "POST":
         form = IndependentStudentCreateForm(request.POST)
         if form.is_valid():
             user = form.save()
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
+            user.student_profile.created_by_tutor = request.user.tutor_profile
+            user.student_profile.save(update_fields=["created_by_tutor"])
             if not user.email:
                 messages.success(
                     request,
