@@ -83,7 +83,10 @@
                         {% endif %}
                         <label for="{{ field.id_for_label }}">
                             {{ field.label }}
-                            {% if field.field.required %}<span class="required-marker">*</span>{% endif %}
+                            {% if field.field.required or field.name == "tax_number" %}<span class="required-marker">*</span>{% endif %}
+                            {% if field.name == "tax_number" %}
+                                <span class="profile-field-info" tabindex="0" title="betriebliche Steuernummer im 13-stelligen ELSTER-/Bundesformat oder Steuernummer im normalen Bescheidformat bitte einfügen" aria-label="betriebliche Steuernummer im 13-stelligen ELSTER-/Bundesformat oder Steuernummer im normalen Bescheidformat bitte einfügen" data-tooltip="betriebliche Steuernummer im 13-stelligen ELSTER-/Bundesformat oder Steuernummer im normalen Bescheidformat bitte einfügen">!</span>
+                            {% endif %}
                         </label>
                         {{ field }}
                         {% if field.help_text %}

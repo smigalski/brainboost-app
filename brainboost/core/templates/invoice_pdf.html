@@ -21,7 +21,13 @@
 
         @page {
             size: A4;
-            margin: 12mm;
+            margin: 12mm 12mm 18mm 12mm;
+            @bottom-center {
+                content: "Steuernummer TutorIn: {{ tutor_tax_number }} · BrainBoost Steuernummer: {{ brainboost_tax_number }} · Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.";
+                font-family: "Poppins", "Century Gothic", "DejaVu Sans", sans-serif;
+                font-size: 6.4pt;
+                color: #5f6b7a;
+            }
         }
 
         :root {
@@ -90,6 +96,14 @@
             font-size: 10pt;
         }
 
+        .brand-owner-line {
+            margin: 5px 0 0 0;
+            color: var(--muted);
+            font-size: 7.2pt;
+            line-height: 1.25;
+            text-decoration: underline;
+        }
+
         .invoice-meta {
             text-align: right;
         }
@@ -154,6 +168,13 @@
 
         .panel-row {
             margin: 0 0 6px 0;
+        }
+
+        .student-address {
+            margin: 0 0 12px 0;
+            font-size: 9pt;
+            line-height: 1.35;
+            white-space: pre-line;
         }
 
         table {
@@ -286,26 +307,29 @@
             <div class="brand-copy">
                 <p class="brand-title">BrainBoost Nachhilfe</p>
                 <p class="brand-subtitle">Stark im Kopf - Stark im Lernen</p>
+                <p class="brand-owner-line">Inh.: Kiara Puppe, Anschrift: Karl-Schmidt-Str. 20, 38114 Braunschweig</p>
             </div>
         </div>
         <div class="invoice-meta">
             <h1>Rechnung</h1>
+            {% if invoice_number %}
+                <div>Rechnungsnummer: {{ invoice_number }}</div>
+            {% endif %}
             <div>Rechnungsdatum: {{ invoice_date|date:"d.m.Y" }}</div>
             <div class="due-date">Fällig bis: {{ due_date|date:"d.m.Y" }}</div>
         </div>
     </div>
     <div class="summary-grid">
         <div class="panel">
+            <p class="student-address"><strong>Anschrift:</strong><br>{{ recipient_name }}<br>{{ student_address }}</p>
             <p class="panel-title">Leistungsdaten</p>
+            <p class="panel-row"><strong>Kundennummer:</strong> {{ customer_number }}</p>
             <p class="panel-row"><strong>Leistungszeitraum:</strong> {{ period_label }}</p>
-            <p class="panel-row"><strong>SchülerIn:</strong> {{ student_name }}</p>
+            <p class="panel-row"><strong>SchülerIn/StudentIn:</strong> {{ student_name }}</p>
             <p class="panel-row"><strong>TutorIn:</strong> {{ tutor_name }}</p>
         </div>
         <div class="panel">
             <p class="panel-title">Tariflogik</p>
-            <p class="panel-row">45 Min. = 19,00 EUR</p>
-            <p class="panel-row">60 Min. = 25,00 EUR</p>
-            <p class="panel-row">90 Min. = 36,00 EUR</p>
             <p class="panel-row muted">Fahrtkosten ab mehr als 3 km: 0,30 EUR/km</p>
             <p class="panel-row muted">27 % Zuschlag an Feiertagen sowie samstags und sonntags</p>
         </div>
@@ -313,18 +337,20 @@
 
     <table class="line-items">
         <colgroup>
-            <col style="width: 19%;">
-            <col style="width: 31%;">
+            <col style="width: 15%;">
+            <col style="width: 26%;">
             <col style="width: 10%;">
+            <col style="width: 12%;">
             <col style="width: 11%;">
             <col style="width: 12%;">
-            <col style="width: 17%;">
+            <col style="width: 14%;">
         </colgroup>
         <thead>
             <tr>
                 <th>Datum</th>
                 <th>Fach / Ort</th>
                 <th class="numeric">Dauer</th>
+                <th class="numeric">Grundpreis</th>
                 <th class="numeric">Fahrt</th>
                 <th class="numeric">Zuschlag</th>
                 <th class="numeric">Gesamt</th>
@@ -336,7 +362,6 @@
                     <td>
                         <div><strong>{{ item.date|date:"d.m.Y" }}</strong></div>
                         <div class="muted">{{ item.time|time:"H:i" }}</div>
-                        <div class="notes">Grundpreis {{ item.base_amount }} EUR</div>
                     </td>
                     <td>
                         <div>{{ item.subject }}</div>
@@ -346,6 +371,7 @@
                         {% endif %}
                     </td>
                     <td class="numeric">{{ item.duration_minutes }} Min.</td>
+                    <td class="numeric">{{ item.base_amount }} EUR</td>
                     <td class="numeric">{{ item.travel_amount }} EUR</td>
                     <td class="numeric">{{ item.surcharge_amount }} EUR</td>
                     <td class="numeric"><strong>{{ item.total_amount }} EUR</strong></td>

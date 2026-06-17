@@ -130,6 +130,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -162,6 +163,7 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8000")
 CANONICAL_DOMAIN = os.getenv("CANONICAL_DOMAIN", "www.nachhilfe-brainboost.de")
 INDEXNOW_KEY = os.getenv("INDEXNOW_KEY", "").strip()
+BRAINBOOST_TAX_NUMBER = os.getenv("STEUERNUMMER_BRAINBOOST", "").strip()
 
 
 # Optional per-event toggles for notifications.

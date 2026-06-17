@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
+import re
 from urllib.parse import quote
 
 from django.conf import settings
@@ -11,6 +12,27 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import get_language
+
+
+def _format_profile_number(prefix: str, sequence: int) -> str:
+    serial = f"{sequence:06d}"
+    return f"{prefix}-{serial[:3]}-{serial[3:]}"
+
+
+def _parse_profile_number(value: str, prefix: str) -> int:
+    if not value:
+        return 0
+    match = re.fullmatch(rf"{re.escape(prefix)}-(\d{{3}})-(\d{{3}})", value)
+    if not match:
+        return 0
+    return int(f"{match.group(1)}{match.group(2)}")
+
+
+def _next_profile_number(model, field_name: str, prefix: str) -> str:
+    max_number = 0
+    for value in model.objects.exclude(**{field_name: ""}).values_list(field_name, flat=True):
+        max_number = max(max_number, _parse_profile_number(value or "", prefix))
+    return _format_profile_number(prefix, max_number + 1)
 
 
 class CustomUser(AbstractUser):
@@ -42,6 +64,8 @@ class CustomUser(AbstractUser):
         upload_to="profile_images/",
         blank=True,
     )
+    pending_email = models.EmailField(blank=True)
+    pending_email_requested_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.username} ({self.get_role_display()})"
@@ -67,15 +91,22 @@ class ParentProfile(models.Model):
         related_name="parent_profile",
     )
     phone_number = models.CharField(max_length=50, blank=True)
+    customer_number = models.CharField(max_length=12, unique=True, null=True, blank=True)
 
     def __str__(self) -> str:
         full_name = self.user.get_full_name().strip()
         return full_name or self.user.username
 
+    def save(self, *args, **kwargs):
+        if not self.customer_number:
+            self.customer_number = _next_profile_number(ParentProfile, "customer_number", "ELT")
+        super().save(*args, **kwargs)
+
 
 class StudentProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
+    profile_number = models.CharField(max_length=13, unique=True, null=True, blank=True)
     degree_program = models.CharField(max_length=255, blank=True)
     affected_courses = models.TextField(blank=True)
     tutoring_goal = models.TextField(blank=True)
@@ -113,6 +144,19 @@ class StudentProfile(models.Model):
         full_name = self.user.get_full_name().strip()
         return full_name or self.user.username
 
+    @property
+    def profile_number_prefix(self) -> str:
+        return "STUD" if self.user.role == CustomUser.Roles.INDEPENDENT_STUDENT else "SCHU"
+
+    def save(self, *args, **kwargs):
+        if not self.profile_number:
+            self.profile_number = _next_profile_number(
+                StudentProfile,
+                "profile_number",
+                self.profile_number_prefix,
+            )
+        super().save(*args, **kwargs)
+
 class TutorProfile(models.Model):
     class Status(models.TextChoices):
         APPLIED = "beworben", "beworben"
@@ -122,14 +166,17 @@ class TutorProfile(models.Model):
         REJECTED = "abgelehnt", "abgelehnt"
         ONBOARDING = "onboarding", "onboarding"
         ACTIVE = "aktiv", "aktiv"
+        PAUSED = "pausiert", "pausiert"
 
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
+    tutor_number = models.CharField(max_length=12, unique=True, null=True, blank=True)
     account_holder = models.CharField(max_length=255, blank=True)
     bank_name = models.CharField(max_length=255, blank=True)
     iban = models.CharField(max_length=34, blank=True)
     bic = models.CharField(max_length=11, blank=True)
     tax_number = models.CharField(max_length=80, blank=True)
+    tax_number_pending = models.BooleanField(default=False)
     bbb_link = models.URLField(blank=True)
     status = models.CharField(
         max_length=20,
@@ -156,6 +203,11 @@ class TutorProfile(models.Model):
     def __str__(self) -> str:
         return f"TutorIn: {self.user.username}"
 
+    def save(self, *args, **kwargs):
+        if not self.tutor_number:
+            self.tutor_number = _next_profile_number(TutorProfile, "tutor_number", "TUT")
+        super().save(*args, **kwargs)
+
     @property
     def is_active_tutor(self) -> bool:
         return self.status == self.Status.ACTIVE
@@ -168,7 +220,7 @@ class TutorProfile(models.Model):
                 (self.bank_name or "").strip(),
                 (self.iban or "").strip(),
                 (self.bic or "").strip(),
-                (self.tax_number or "").strip(),
+                (self.tax_number or "").strip() or self.tax_number_pending,
             ]
         )
 

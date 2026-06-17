@@ -1,0 +1,17 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Hallo {{ user.first_name|default:user.username }},
+
+du hast in deinem BrainBoost-Profil eine neue E-Mail-Adresse hinterlegt:
+{{ new_email }}
+
+Bitte bestätige die Änderung über folgenden Link:
+{{ confirm_url }}
+
+Die bisherige E-Mail-Adresse bleibt aktiv, bis du diesen Link geklickt hast.
+
+Wenn du diese Änderung nicht angefragt hast, kannst du diese E-Mail ignorieren.
+
+Viele Grüße
+Dein BrainBoost-Team
+{% endblock %}

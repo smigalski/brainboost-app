@@ -19,11 +19,12 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
+from django.core import signing
 from django.core.cache import cache
 from django.contrib.staticfiles import finders
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.db.models.functions import TruncDate
@@ -113,6 +114,8 @@ GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
 GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "es", "pl", "tr", "ru", "ar"}
 GOOGLE_ROUTES_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes"
+EMAIL_CHANGE_TOKEN_MAX_AGE = 60 * 60 * 24 * 7
+EMAIL_CHANGE_TOKEN_SALT = "brainboost.profile-email-change"
 
 
 def _ensure_profile_for_user(user: CustomUser):
@@ -345,16 +348,40 @@ def _missing_tutor_bank_field_labels(tutor_profile: TutorProfile) -> list[str]:
         missing_fields.append("IBAN")
     if not (tutor_profile.bic or "").strip():
         missing_fields.append("BIC")
-    if not (tutor_profile.tax_number or "").strip():
+    if not (tutor_profile.tax_number or "").strip() and not tutor_profile.tax_number_pending:
         missing_fields.append("Steuernummer")
     return missing_fields
 
 
 def _tutor_self_employment_complete(tutor_profile: TutorProfile) -> bool:
-    return (
-        tutor_profile.self_employment_fields_complete
-        and tutor_profile.self_employment_verified
-    )
+    return tutor_profile.self_employment_fields_complete
+
+
+def _tutor_tax_number_reminder_due(tutor_profile: TutorProfile) -> bool:
+    if (tutor_profile.tax_number or "").strip():
+        return False
+    if tutor_profile.status not in {
+        TutorProfile.Status.ACCEPTED,
+        TutorProfile.Status.ONBOARDING,
+        TutorProfile.Status.ACTIVE,
+    }:
+        return False
+    return timezone.now() - tutor_profile.user.date_joined >= timedelta(days=28)
+
+
+def _sync_tutor_tax_number_status(tutor_profile: TutorProfile) -> None:
+    has_tax_number = bool((tutor_profile.tax_number or "").strip())
+    if tutor_profile.status == TutorProfile.Status.PAUSED and has_tax_number:
+        tutor_profile.status = TutorProfile.Status.ACTIVE
+        tutor_profile.save(update_fields=["status"])
+        return
+    if (
+        tutor_profile.status == TutorProfile.Status.ACTIVE
+        and not has_tax_number
+        and timezone.now() - tutor_profile.user.date_joined >= timedelta(days=60)
+    ):
+        tutor_profile.status = TutorProfile.Status.PAUSED
+        tutor_profile.save(update_fields=["status"])
 
 
 def _tutor_has_completed_lesson(tutor_profile: TutorProfile):
@@ -574,14 +601,38 @@ GERMAN_MONTH_NAMES = {
     11: "November",
     12: "Dezember",
 }
-INVOICE_NUMBER_PATTERN = re.compile(r"RE-(\d{3,})_", re.IGNORECASE)
+INVOICE_NUMBER_PATTERN = re.compile(r"RE-A(\d{2})-(\d{4})", re.IGNORECASE)
+LEGACY_INVOICE_NUMBER_PATTERN = re.compile(r"WRE-(\d{5,})_", re.IGNORECASE)
 
 
 def _sanitize_invoice_name_part(value: str) -> str:
     normalized = unicodedata.normalize("NFKD", value or "")
     ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-    cleaned = "".join(ch for ch in ascii_text if ch.isalnum())
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", ascii_text).strip("_")
+    cleaned = re.sub(r"_+", "_", cleaned)
     return cleaned or "Unbekannt"
+
+
+def _format_invoice_number(sequence: int) -> str:
+    if sequence < 1:
+        raise ValueError("Rechnungsnummern müssen positiv sein.")
+    group = ((sequence - 1) // 9999) + 1
+    number = ((sequence - 1) % 9999) + 1
+    if group > 99:
+        raise ValueError("Der Rechnungsnummernkreis RE-A99-9999 ist ausgeschöpft.")
+    return f"RE-A{group:02d}-{number:04d}"
+
+
+def _parse_invoice_number(value: str) -> Optional[int]:
+    match = INVOICE_NUMBER_PATTERN.search(value or "")
+    if not match:
+        legacy_match = LEGACY_INVOICE_NUMBER_PATTERN.search(value or "")
+        if legacy_match:
+            return int(legacy_match.group(1))
+        return None
+    group = int(match.group(1))
+    number = int(match.group(2))
+    return ((group - 1) * 9999) + number
 
 
 def _normalize_iban(value: str) -> str:
@@ -761,19 +812,19 @@ def _next_invoice_number() -> int:
     if latest and latest.invoice_number:
         max_number = latest.invoice_number
     for file_name in Invoice.objects.exclude(file="").values_list("file", flat=True):
-        match = INVOICE_NUMBER_PATTERN.search(file_name or "")
-        if match:
-            max_number = max(max_number, int(match.group(1)))
+        parsed_number = _parse_invoice_number(file_name or "")
+        if parsed_number:
+            max_number = max(max_number, parsed_number)
     return max_number + 1
 
 
 def _invoice_filename(invoice: Invoice, invoice_number: Optional[int] = None) -> str:
     year, month = _invoice_period_parts(invoice)
     student_name = _sanitize_invoice_name_part(
-        f"{invoice.student.user.first_name}{invoice.student.user.last_name}"
+        _display_name(invoice.student.user)
     )
     sequence = invoice_number or invoice.invoice_number or _next_invoice_number()
-    return f"WRE-{sequence:05d}_{GERMAN_MONTH_NAMES[month]}{str(year)[-2:]}_{student_name}.pdf"
+    return f"{_format_invoice_number(sequence)}_{GERMAN_MONTH_NAMES[month]}{str(year)[-2:]}_{student_name}.pdf"
 
 
 def _rename_invoice_file(invoice: Invoice, filename: str) -> None:
@@ -832,6 +883,23 @@ def _invoice_release_message(invoice: Invoice, verb: str) -> str:
     if invoice.student.user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
         return f"Rechnung wurde {verb} und die StudentIn wurde per Mail benachrichtigt, falls eine E-Mail hinterlegt ist."
     return f"Rechnung wurde {verb}. Versand an Eltern erst über den Eltern-Button."
+
+
+def _invoice_recipient_address(student: StudentProfile) -> dict[str, str]:
+    parent = student.parents.select_related("user").order_by("user__last_name", "user__first_name", "user__username").first()
+    recipient_user = parent.user if parent else student.user
+    customer_number = parent.customer_number if parent else student.profile_number
+    address = (student.address or "").strip()
+    normalized_address = "\n".join(
+        part.strip()
+        for part in re.split(r"[\n,]+", address)
+        if part.strip()
+    )
+    return {
+        "name": _display_name(recipient_user),
+        "address": normalized_address or "Keine Anschrift hinterlegt",
+        "customer_number": customer_number or "-",
+    }
 
 
 INVOICE_RATE_BY_DURATION = {
@@ -978,9 +1046,11 @@ def _build_invoice_pdf_context(
     lessons,
     discount_type: str = "",
     discount_value: Optional[Decimal] = None,
+    invoice_number: str = "",
 ) -> dict:
     tutor_name = _display_name(tutor_profile.user)
     student_name = _display_name(student.user)
+    recipient_address = _invoice_recipient_address(student)
     period_label = date_format(period_start, "F Y")
     today = timezone.localdate()
     subtotal_amount = Decimal("0.00")
@@ -1022,7 +1092,13 @@ def _build_invoice_pdf_context(
     return {
         "tutor_name": tutor_name,
         "student_name": student_name,
+        "recipient_name": recipient_address["name"],
+        "student_address": recipient_address["address"],
+        "customer_number": recipient_address["customer_number"],
+        "tutor_tax_number": tutor_profile.tax_number or "-",
+        "brainboost_tax_number": getattr(settings, "BRAINBOOST_TAX_NUMBER", "") or "_________________",
         "period_label": period_label,
+        "invoice_number": invoice_number,
         "invoice_date": today,
         "due_date": today + timedelta(days=7),
         "line_items": line_items,
@@ -1570,6 +1646,43 @@ def _send_set_password_email(request, user: CustomUser) -> None:
         from_email,
         [user.email],
         reply_to=reply_to,
+    )
+    message.attach_alternative(html_body, "text/html")
+    sent = message.send()
+    if sent == 0:
+        raise RuntimeError("email_send_failed")
+
+
+def _email_change_token(user: CustomUser, email: str) -> str:
+    return signing.dumps(
+        {"user_id": user.pk, "email": email},
+        salt=EMAIL_CHANGE_TOKEN_SALT,
+    )
+
+
+def _send_email_change_confirmation(request, user: CustomUser) -> None:
+    if not user.pending_email:
+        raise ValueError("missing_pending_email")
+    token = _email_change_token(user, user.pending_email)
+    confirm_url = request.build_absolute_uri(
+        reverse("profile_email_confirm", kwargs={"token": token})
+    )
+    context = {
+        "heading": "BrainBoost: Neue E-Mail bestätigen",
+        "user": user,
+        "new_email": user.pending_email,
+        "confirm_url": confirm_url,
+    }
+    subject = "BrainBoost: Neue E-Mail bestätigen"
+    text_body = render_to_string("emails/profile_email_change.txt", context)
+    html_body = render_to_string("emails/profile_email_change.html", context)
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local")
+    message = EmailMultiAlternatives(
+        subject,
+        text_body,
+        from_email,
+        [user.pending_email],
+        reply_to=_default_mail_reply_to(),
     )
     message.attach_alternative(html_body, "text/html")
     sent = message.send()
@@ -2197,6 +2310,7 @@ def dashboard(request):
                 Lesson.objects.filter(tutor=tutor_profile)
             )
             _sync_tutor_onboarding_status(tutor_profile)
+            _sync_tutor_tax_number_status(tutor_profile)
             assigned_students = _assigned_students_qs(tutor_profile)
             assigned_tutors = _assigned_tutors_qs(tutor_profile)
             can_create_accounts = _tutor_can_create_accounts(tutor_profile)
@@ -2242,6 +2356,12 @@ def dashboard(request):
                 context["show_bank_data_popup"] = True
                 context["missing_tutor_bank_fields_text"] = ", ".join(missing_bank_fields)
                 request.session["bank_data_reminder_shown"] = True
+            if (
+                _tutor_tax_number_reminder_due(tutor_profile)
+                and not request.session.get("tax_number_reminder_shown", False)
+            ):
+                context["show_tax_number_popup"] = True
+                request.session["tax_number_reminder_shown"] = True
     else:
         template = "dashboard_student.html"
     return render(request, template, context)
@@ -3055,8 +3175,25 @@ def profile_view(request):
     if request.method == "POST":
         form = form_class(request.POST, request.FILES, **form_kwargs)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Dein Profil wurde aktualisiert.")
+            user = form.save()
+            if getattr(form, "email_change_requested", False):
+                try:
+                    _send_email_change_confirmation(request, user)
+                except Exception:
+                    logger.exception("E-Mail Änderungsbestätigung konnte nicht versendet werden.")
+                    messages.error(
+                        request,
+                        "Die neue E-Mail wurde vorgemerkt, aber die Bestätigungsmail konnte nicht versendet werden.",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        "Wir haben dir eine Bestätigungsmail an die neue E-Mail-Adresse gesendet. Die Änderung wird erst nach Bestätigung aktiv.",
+                    )
+            if request.user.role == CustomUser.Roles.TUTOR and hasattr(request.user, "tutor_profile"):
+                _sync_tutor_tax_number_status(request.user.tutor_profile)
+            if not getattr(form, "email_change_requested", False):
+                messages.success(request, "Dein Profil wurde aktualisiert.")
             return redirect("profile")
     else:
         form = form_class(**form_kwargs)
@@ -3070,6 +3207,37 @@ def profile_view(request):
             "is_tutor_profile_form": request.user.role == CustomUser.Roles.TUTOR,
         },
     )
+
+
+def profile_email_confirm(request, token):
+    try:
+        payload = signing.loads(
+            token,
+            salt=EMAIL_CHANGE_TOKEN_SALT,
+            max_age=EMAIL_CHANGE_TOKEN_MAX_AGE,
+        )
+    except signing.SignatureExpired:
+        messages.error(request, "Der Bestätigungslink für die E-Mail-Adresse ist abgelaufen.")
+        return redirect("login")
+    except signing.BadSignature:
+        messages.error(request, "Der Bestätigungslink für die E-Mail-Adresse ist ungültig.")
+        return redirect("login")
+
+    user = get_object_or_404(CustomUser, pk=payload.get("user_id"))
+    new_email = (payload.get("email") or "").strip()
+    if not new_email or user.pending_email.lower() != new_email.lower():
+        messages.error(request, "Diese E-Mail-Änderung ist nicht mehr aktiv.")
+        return redirect("login")
+    if CustomUser.objects.filter(email__iexact=new_email).exclude(pk=user.pk).exists():
+        messages.error(request, "Diese E-Mail-Adresse wird bereits verwendet.")
+        return redirect("login")
+
+    user.email = new_email
+    user.pending_email = ""
+    user.pending_email_requested_at = None
+    user.save(update_fields=["email", "pending_email", "pending_email_requested_at"])
+    messages.success(request, "Deine neue E-Mail-Adresse wurde bestätigt.")
+    return redirect("profile" if request.user.is_authenticated else "login")
 
 
 @login_required
@@ -4065,45 +4233,56 @@ def invoice_upload(request):
                         "Für diesen Monat gibt es keine abrechenbaren Termine.",
                     )
                 else:
+                    invoice = None
                     try:
-                        invoice_context = _build_invoice_pdf_context(
-                            tutor_profile=tutor_profile,
-                            student=student,
-                            period_start=period_start,
-                            lessons=lessons,
-                            discount_type=generate_form.cleaned_data["discount_type"],
-                            discount_value=generate_form.cleaned_data["discount_value"],
-                        )
-                        pdf_bytes = _generate_invoice_pdf(
-                            request=request,
-                            tutor_profile=tutor_profile,
-                            student=student,
-                            period_start=period_start,
-                            lessons=lessons,
-                            invoice_context=invoice_context,
-                        )
+                        for _attempt in range(5):
+                            next_invoice_number = _next_invoice_number()
+                            invoice_context = _build_invoice_pdf_context(
+                                tutor_profile=tutor_profile,
+                                student=student,
+                                period_start=period_start,
+                                lessons=lessons,
+                                discount_type=generate_form.cleaned_data["discount_type"],
+                                discount_value=generate_form.cleaned_data["discount_value"],
+                                invoice_number=_format_invoice_number(next_invoice_number),
+                            )
+                            pdf_bytes = _generate_invoice_pdf(
+                                request=request,
+                                tutor_profile=tutor_profile,
+                                student=student,
+                                period_start=period_start,
+                                lessons=lessons,
+                                invoice_context=invoice_context,
+                            )
+                            invoice = Invoice(
+                                student=student,
+                                uploaded_by=tutor_profile,
+                                invoice_number=next_invoice_number,
+                                sent_at=timezone.now(),
+                                billing_year=period_start.year,
+                                billing_month=period_start.month,
+                                discount_type=invoice_context["discount_type"],
+                                discount_value=invoice_context["discount_value"],
+                                discount_amount=invoice_context["discount_amount"],
+                                amount_total=invoice_context["total_amount"],
+                            )
+                            filename = _invoice_filename(invoice, next_invoice_number)
+                            invoice.file.save(filename, ContentFile(pdf_bytes), save=False)
+                            try:
+                                invoice.save()
+                            except IntegrityError:
+                                if invoice.file:
+                                    invoice.file.storage.delete(invoice.file.name)
+                                invoice = None
+                                continue
+                            break
+                        if invoice is None:
+                            raise RuntimeError("Es konnte keine eindeutige Rechnungsnummer vergeben werden.")
                     except ValueError as exc:
                         generate_form.add_error("discount_value", str(exc))
-                        pdf_bytes = None
                     except RuntimeError as exc:
                         generate_form.add_error(None, str(exc))
-                        pdf_bytes = None
-                    if pdf_bytes is None:
-                        pass
-                    else:
-                        invoice = Invoice(
-                            student=student,
-                            uploaded_by=tutor_profile,
-                            billing_year=period_start.year,
-                            billing_month=period_start.month,
-                            discount_type=invoice_context["discount_type"],
-                            discount_value=invoice_context["discount_value"],
-                            discount_amount=invoice_context["discount_amount"],
-                            amount_total=invoice_context["total_amount"],
-                        )
-                        filename = _invoice_filename(invoice)
-                        invoice.file.save(filename, ContentFile(pdf_bytes), save=False)
-                        invoice.save()
+                    if invoice is not None:
                         if not tutor_profile.supervising_tutors.exists():
                             invoice.approved_by = tutor_profile
                             invoice.approved_at = timezone.now()

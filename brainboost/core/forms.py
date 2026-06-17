@@ -12,6 +12,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .models import (
@@ -86,6 +87,19 @@ def _validate_bic(value: str) -> str:
     if not re.fullmatch(r"[A-Z0-9]{8}([A-Z0-9]{3})?", bic):
         raise ValidationError("Bitte gib eine gueltige BIC ein.")
     return bic
+
+
+def _validate_tax_number(value: str) -> str:
+    tax_number = (value or "").strip()
+    if not tax_number:
+        return ""
+    if re.fullmatch(r"\d{2}/\d{3}/\d{5}", tax_number):
+        return tax_number
+    if re.fullmatch(r"\d{13}", tax_number):
+        return tax_number
+    raise ValidationError(
+        "Bitte gib die Steuernummer im Format 12/345/67890 oder als 13-stelliges ELSTER-/Bundesformat ein."
+    )
 
 
 class BroadcastEmailForm(forms.Form):
@@ -844,9 +858,9 @@ class InvoiceForm(forms.ModelForm):
 
 class InvoiceGenerateForm(forms.Form):
     student = forms.ModelChoiceField(queryset=StudentProfile.objects.none(), label="SchülerIn")
-    period = forms.CharField(
+    period = forms.ChoiceField(
         label="Monat / Jahr",
-        widget=forms.TextInput(attrs={"type": "month"}),
+        choices=(),
     )
     discount_value = forms.DecimalField(
         required=False,
@@ -876,6 +890,67 @@ class InvoiceGenerateForm(forms.Form):
         super().__init__(*args, **kwargs)
         if allowed_students is not None:
             self.fields["student"].queryset = allowed_students
+            self.fields["period"].choices = self._period_choices(allowed_students)
+        else:
+            self.fields["period"].choices = [("", "---------")]
+
+        bound_period = ""
+        if self.is_bound:
+            bound_period = (self.data.get(self.add_prefix("period")) or "").strip()
+        if bound_period:
+            choice_values = {value for value, _label in self.fields["period"].choices}
+            try:
+                parsed_period = datetime.strptime(bound_period, "%Y-%m").date()
+            except ValueError:
+                parsed_period = None
+            if parsed_period and bound_period not in choice_values:
+                self.fields["period"].choices = [
+                    *self.fields["period"].choices,
+                    (bound_period, self._period_label(parsed_period)),
+                ]
+
+    @staticmethod
+    def _period_label(period_date):
+        month_names = {
+            1: "Januar",
+            2: "Februar",
+            3: "März",
+            4: "April",
+            5: "Mai",
+            6: "Juni",
+            7: "Juli",
+            8: "August",
+            9: "September",
+            10: "Oktober",
+            11: "November",
+            12: "Dezember",
+        }
+        return f"{month_names[period_date.month]} {period_date.year}"
+
+    @classmethod
+    def _period_choices(cls, allowed_students):
+        billable_dates = (
+            Lesson.objects.filter(student__in=allowed_students)
+            .filter(
+                Q(status=Lesson.Status.COMPLETED)
+                | Q(status=Lesson.Status.CANCELLED, cancellation_chargeable=True)
+            )
+            .values_list("date", flat=True)
+        )
+        period_keys = sorted(
+            {(lesson_date.year, lesson_date.month) for lesson_date in billable_dates},
+            reverse=True,
+        )
+        return [
+            ("", "---------"),
+            *[
+                (
+                    f"{year:04d}-{month:02d}",
+                    cls._period_label(datetime(year, month, 1).date()),
+                )
+                for year, month in period_keys
+            ],
+        ]
 
     def clean_period(self):
         value = (self.cleaned_data.get("period") or "").strip()
@@ -1390,16 +1465,16 @@ class TutorCreateForm(BaseUserCreateForm):
     account_holder = forms.CharField(max_length=255, required=False, label="KontoinhaberIn")
     bank_name = forms.CharField(max_length=255, required=False, label="Bankname")
     tax_number = forms.CharField(max_length=80, required=False, label="Steuernummer")
-    bbb_link = forms.URLField(required=False, label="BigBlueButton-Raum")
+    bbb_link = forms.URLField(required=False, label="BBB-Link (Kennenlerngespräch)")
     status = forms.ChoiceField(
         choices=TutorProfile.Status.choices,
         initial=TutorProfile.Status.ACTIVE,
         required=True,
         label="TutorInnen-Status",
     )
-    self_employment_verified = forms.BooleanField(
+    tax_number_pending = forms.BooleanField(
         required=False,
-        label="Selbständigkeit verifiziert",
+        label="Fragebogen ausgefüllt und warte auf Steuernummer",
     )
     iban = forms.CharField(
         max_length=42,
@@ -1450,7 +1525,7 @@ class TutorCreateForm(BaseUserCreateForm):
                 "tax_number",
                 "bbb_link",
                 "status",
-                "self_employment_verified",
+                "tax_number_pending",
             ]
         )
 
@@ -1470,7 +1545,7 @@ class TutorCreateForm(BaseUserCreateForm):
                 tax_number=self.cleaned_data.get("tax_number", ""),
                 bbb_link=self.cleaned_data.get("bbb_link", ""),
                 status=self.cleaned_data.get("status") or TutorProfile.Status.ACTIVE,
-                self_employment_verified=self.cleaned_data.get("self_employment_verified", False),
+                tax_number_pending=self.cleaned_data.get("tax_number_pending", False),
             )
         return user
 
@@ -1479,6 +1554,9 @@ class TutorCreateForm(BaseUserCreateForm):
 
     def clean_bic(self):
         return _validate_bic(self.cleaned_data.get("bic", ""))
+
+    def clean_tax_number(self):
+        return _validate_tax_number(self.cleaned_data.get("tax_number", ""))
 
 
 class BaseProfileUpdateForm(forms.Form):
@@ -1513,12 +1591,19 @@ class BaseProfileUpdateForm(forms.Form):
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         self.user_instance = user
+        self.email_change_requested = False
+        self.pending_email_to_verify = ""
         super().__init__(*args, **kwargs)
         self.fields["avatar_icon"].initial = user.avatar_icon
         self.fields["username"].initial = user.username
         self.fields["first_name"].initial = user.first_name
         self.fields["last_name"].initial = user.last_name
-        self.fields["email"].initial = user.email
+        self.fields["email"].initial = user.pending_email or user.email
+        if user.pending_email:
+            self.fields["email"].help_text = (
+                f"Ausstehende Bestätigung: {user.pending_email}. "
+                "Die aktuelle E-Mail bleibt aktiv, bis der Bestätigungslink geklickt wurde."
+            )
         self.fields["profile_image"].help_text = (
             "Optional. Maximal 15 MB. Das Bild wird beim Speichern komprimiert."
         )
@@ -1531,6 +1616,25 @@ class BaseProfileUpdateForm(forms.Form):
         ).exists():
             raise ValidationError("Dieser Benutzername ist bereits vergeben.")
         return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip()
+        current_email = (self.user_instance.email or "").strip()
+        if not email or email.lower() == current_email.lower():
+            return email
+        duplicate_email_exists = (
+            CustomUser.objects.filter(email__iexact=email)
+            .exclude(pk=self.user_instance.pk)
+            .exists()
+        )
+        duplicate_pending_exists = (
+            CustomUser.objects.filter(pending_email__iexact=email)
+            .exclude(pk=self.user_instance.pk)
+            .exists()
+        )
+        if duplicate_email_exists or duplicate_pending_exists:
+            raise ValidationError("Diese E-Mail-Adresse wird bereits verwendet oder wartet bereits auf Bestätigung.")
+        return email
 
     def clean_profile_image(self):
         uploaded_file = self.cleaned_data.get("profile_image")
@@ -1591,27 +1695,43 @@ class BaseProfileUpdateForm(forms.Form):
 
     def _save_user(self) -> CustomUser:
         user = self.user_instance
+        requested_email = (self.cleaned_data.get("email") or "").strip()
+        current_email = (user.email or "").strip()
+        pending_email = (user.pending_email or "").strip()
         user.avatar_icon = self.cleaned_data.get("avatar_icon", "")
         user.username = self.cleaned_data["username"]
         user.first_name = self.cleaned_data.get("first_name", "")
         user.last_name = self.cleaned_data.get("last_name", "")
-        user.email = self.cleaned_data.get("email", "")
+        if requested_email and requested_email.lower() == pending_email.lower():
+            pass
+        elif requested_email and requested_email.lower() != current_email.lower():
+            user.pending_email = requested_email
+            user.pending_email_requested_at = timezone.now()
+            self.email_change_requested = True
+            self.pending_email_to_verify = requested_email
+        else:
+            user.email = requested_email
+            user.pending_email = ""
+            user.pending_email_requested_at = None
         self._update_profile_image(user)
         user.save()
         return user
 
 
 class ParentProfileForm(BaseProfileUpdateForm):
+    customer_number = forms.CharField(required=False, disabled=True, label="Kundennummer")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
         self.fields["phone_number"].initial = user.parent_profile.phone_number
+        self.fields["customer_number"].initial = user.parent_profile.customer_number
         self.order_fields(
             [
                 "avatar_icon",
                 "profile_image",
                 "remove_profile_image",
+                "customer_number",
                 "username",
                 "first_name",
                 "last_name",
@@ -1629,6 +1749,7 @@ class ParentProfileForm(BaseProfileUpdateForm):
 
 
 class StudentProfileForm(BaseProfileUpdateForm):
+    profile_number = forms.CharField(required=False, disabled=True, label="Profilnummer")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
     address = forms.CharField(
         max_length=255,
@@ -1658,6 +1779,7 @@ class StudentProfileForm(BaseProfileUpdateForm):
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
         profile = user.student_profile
+        self.fields["profile_number"].initial = profile.profile_number
         self.fields["phone_number"].initial = profile.phone_number
         self.fields["address"].initial = profile.address
         self.fields["degree_program"].initial = profile.degree_program
@@ -1672,6 +1794,7 @@ class StudentProfileForm(BaseProfileUpdateForm):
                 "avatar_icon",
                 "profile_image",
                 "remove_profile_image",
+                "profile_number",
                 "username",
                 "first_name",
                 "last_name",
@@ -1698,6 +1821,7 @@ class StudentProfileForm(BaseProfileUpdateForm):
 
 
 class TutorProfileForm(BaseProfileUpdateForm):
+    tutor_number = forms.CharField(required=False, disabled=True, label="TutorInnennummer")
     phone_number = forms.CharField(max_length=50, required=True, label="Telefonnummer")
     address = forms.CharField(
         max_length=255,
@@ -1741,16 +1865,27 @@ class TutorProfileForm(BaseProfileUpdateForm):
             }
         ),
     )
-    tax_number = forms.CharField(max_length=80, required=True, label="Steuernummer")
+    tax_number = forms.CharField(
+        max_length=80,
+        required=True,
+        label="Steuernummer",
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "12/345/67890 oder 13-stellig",
+                "autocomplete": "off",
+                "inputmode": "text",
+            }
+        ),
+    )
     bbb_link = forms.URLField(required=False, label="BigBlueButton-Raum")
     status = forms.ChoiceField(
         choices=TutorProfile.Status.choices,
         required=False,
         label="TutorInnen-Status",
     )
-    self_employment_verified = forms.BooleanField(
+    tax_number_pending = forms.BooleanField(
         required=False,
-        label="Selbständigkeit verifiziert",
+        label="Fragebogen ausgefüllt und warte auf Steuernummer",
     )
 
     def __init__(self, *args, user: CustomUser, **kwargs):
@@ -1758,6 +1893,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
         super().__init__(*args, user=user, **kwargs)
         self.fields["email"].required = True
         profile = user.tutor_profile
+        self.fields["tutor_number"].initial = profile.tutor_number
         self.fields["phone_number"].initial = profile.phone_number
         self.fields["address"].initial = profile.address
         self.fields["account_holder"].initial = profile.account_holder
@@ -1767,22 +1903,23 @@ class TutorProfileForm(BaseProfileUpdateForm):
         self.fields["tax_number"].initial = profile.tax_number
         self.fields["bbb_link"].initial = profile.bbb_link
         self.fields["status"].initial = profile.status
-        self.fields["self_employment_verified"].initial = profile.self_employment_verified
+        self.fields["tax_number_pending"].initial = profile.tax_number_pending
         self.fields["status"].disabled = not self.can_manage_tutor_status
-        self.fields["self_employment_verified"].disabled = not self.can_manage_tutor_status
         self.fields["bbb_link"].disabled = not self.can_manage_tutor_status
         if not self.can_manage_tutor_status:
             self.fields.pop("status")
-            self.fields.pop("self_employment_verified")
             self.fields.pop("bbb_link")
-        requires_self_employment = profile.status in {
+        self.requires_self_employment = profile.status in {
             TutorProfile.Status.ACCEPTED,
             TutorProfile.Status.ONBOARDING,
             TutorProfile.Status.ACTIVE,
+            TutorProfile.Status.PAUSED,
         }
-        for field_name in ["account_holder", "bank_name", "iban", "bic", "tax_number"]:
-            self.fields[field_name].required = requires_self_employment
-            if not requires_self_employment:
+        for field_name in ["account_holder", "bank_name", "iban", "bic", "tax_number", "tax_number_pending"]:
+            self.fields[field_name].required = self.requires_self_employment
+            if field_name in {"tax_number", "tax_number_pending"}:
+                self.fields[field_name].required = False
+            if not self.requires_self_employment:
                 self.fields[field_name].disabled = True
                 self.fields[field_name].help_text = (
                     "Dieses Feld wird nach einem erfolgreichen Kennenlerngespräch freigeschaltet."
@@ -1792,6 +1929,7 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "avatar_icon",
                 "profile_image",
                 "remove_profile_image",
+                "tutor_number",
                 "username",
                 "first_name",
                 "last_name",
@@ -1803,9 +1941,9 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "iban",
                 "bic",
                 "tax_number",
+                "tax_number_pending",
                 "bbb_link",
                 "status",
-                "self_employment_verified",
             ]
         )
 
@@ -1819,12 +1957,10 @@ class TutorProfileForm(BaseProfileUpdateForm):
         profile.iban = self.cleaned_data.get("iban", "")
         profile.bic = self.cleaned_data.get("bic", "")
         profile.tax_number = self.cleaned_data.get("tax_number", "")
+        profile.tax_number_pending = self.cleaned_data.get("tax_number_pending", False)
         if self.can_manage_tutor_status:
             profile.bbb_link = self.cleaned_data.get("bbb_link", "")
             profile.status = self.cleaned_data.get("status") or profile.status
-            profile.self_employment_verified = self.cleaned_data.get(
-                "self_employment_verified", False
-            )
         profile.save()
         return user
 
@@ -1833,3 +1969,18 @@ class TutorProfileForm(BaseProfileUpdateForm):
 
     def clean_bic(self):
         return _validate_bic(self.cleaned_data.get("bic", ""))
+
+    def clean_tax_number(self):
+        return _validate_tax_number(self.cleaned_data.get("tax_number", ""))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tax_number = cleaned_data.get("tax_number", "")
+        tax_number_pending = cleaned_data.get("tax_number_pending", False)
+        tax_field = self.fields.get("tax_number")
+        if self.requires_self_employment and tax_field and not tax_number and not tax_number_pending:
+            self.add_error(
+                "tax_number",
+                "Bitte gib eine Steuernummer ein oder markiere, dass der Fragebogen ausgefüllt ist und du auf die Steuernummer wartest.",
+            )
+        return cleaned_data

@@ -40,6 +40,7 @@ urlpatterns = [
         name="tutor_student_assignment",
     ),
     path("profil/", views.profile_view, name="profile"),
+    path("profil/email/bestaetigen/<path:token>/", views.profile_email_confirm, name="profile_email_confirm"),
     path(
         "profil/passwort/",
         auth_views.PasswordChangeView.as_view(

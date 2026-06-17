@@ -63,13 +63,15 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(ParentProfile)
 class ParentProfileAdmin(admin.ModelAdmin):
-    list_display = ("user",)
+    list_display = ("user", "customer_number")
+    search_fields = ("customer_number", "user__username", "user__first_name", "user__last_name", "user__email")
 
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "bbb_link", "created_by_tutor")
+    list_display = ("user", "profile_number", "bbb_link", "created_by_tutor")
     list_filter = ("created_by_tutor",)
+    search_fields = ("profile_number", "user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("parents", "assigned_tutors")
 
     @admin.display(description="BBB-Link")
@@ -79,9 +81,9 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "status", "self_employment_verified", "bbb_link")
-    list_filter = ("status", "self_employment_verified")
-    search_fields = ("user__username", "user__first_name", "user__last_name", "user__email")
+    list_display = ("user", "tutor_number", "status", "tax_number_pending", "bbb_link")
+    list_filter = ("status", "tax_number_pending")
+    search_fields = ("tutor_number", "user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("assigned_tutors",)
 
 

@@ -2,17 +2,20 @@ from datetime import date, time, timedelta
 from decimal import Decimal
 from io import StringIO
 import json
+import re
 from smtplib import SMTPAuthenticationError
 import tempfile
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 from xml.etree import ElementTree
 
+from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -49,6 +52,8 @@ from .views import (
     _build_campaign_url,
     _build_invoice_pdf_context,
     _build_progress_chart_data,
+    _format_invoice_number,
+    _invoice_filename,
     _google_driving_distance_km,
     _lead_campaign_stats,
     _sync_temporary_tutor_assignments,
@@ -1377,6 +1382,31 @@ class InvoiceGenerateFormTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("discount_value", form.errors)
 
+    def test_period_field_is_select_with_billable_month_options(self):
+        tutor_user = CustomUser.objects.create_user(
+            username="invoice_month_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        tutor = TutorProfile.objects.create(user=tutor_user)
+        Lesson.objects.create(
+            tutor=tutor,
+            student=self.student,
+            date=date(2026, 3, 10),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        form = InvoiceGenerateForm(
+            allowed_students=StudentProfile.objects.filter(pk=self.student.pk),
+        )
+
+        self.assertIsInstance(form.fields["period"].widget, forms.Select)
+        self.assertIn(("2026-03", "März 2026"), list(form.fields["period"].choices))
+
 
 class EmailOrUsernameLoginTests(TestCase):
     def setUp(self):
@@ -1416,7 +1446,7 @@ class TutorBankDataReminderTests(TestCase):
         self.assertTrue(first_response.context.get("show_bank_data_popup"))
         self.assertEqual(
             first_response.context.get("missing_tutor_bank_fields"),
-            ["KontoinhaberIn", "Bankname", "IBAN", "BIC"],
+            ["KontoinhaberIn", "Bankname", "IBAN", "BIC", "Steuernummer"],
         )
 
         second_response = self.client.get(reverse("dashboard"))
@@ -1428,6 +1458,7 @@ class TutorBankDataReminderTests(TestCase):
         self.tutor_profile.bank_name = "Sparkasse"
         self.tutor_profile.iban = "DE44500105175407324931"
         self.tutor_profile.bic = "DEUTDEFFXXX"
+        self.tutor_profile.tax_number = "12/345/67890"
         self.tutor_profile.save()
 
         logged_in = self.client.login(username="tutor_missing_bank_data", password="test12345")
@@ -1437,6 +1468,152 @@ class TutorBankDataReminderTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context.get("show_bank_data_popup", False))
         self.assertEqual(response.context.get("missing_tutor_bank_fields"), [])
+
+    def test_dashboard_shows_tax_number_reminder_after_four_weeks(self):
+        self.tutor_profile.account_holder = "Max Mustermann"
+        self.tutor_profile.bank_name = "Sparkasse"
+        self.tutor_profile.iban = "DE44500105175407324931"
+        self.tutor_profile.bic = "DEUTDEFFXXX"
+        self.tutor_profile.tax_number_pending = True
+        self.tutor_profile.save()
+        self.user.date_joined = timezone.now() - timedelta(days=29)
+        self.user.save(update_fields=["date_joined"])
+
+        self.client.login(username="tutor_missing_bank_data", password="test12345")
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context.get("show_tax_number_popup"))
+
+    def test_dashboard_pauses_active_tutor_after_two_months_without_tax_number(self):
+        self.tutor_profile.account_holder = "Max Mustermann"
+        self.tutor_profile.bank_name = "Sparkasse"
+        self.tutor_profile.iban = "DE44500105175407324931"
+        self.tutor_profile.bic = "DEUTDEFFXXX"
+        self.tutor_profile.tax_number_pending = True
+        self.tutor_profile.status = TutorProfile.Status.ACTIVE
+        self.tutor_profile.save()
+        self.user.date_joined = timezone.now() - timedelta(days=61)
+        self.user.save(update_fields=["date_joined"])
+
+        self.client.login(username="tutor_missing_bank_data", password="test12345")
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.tutor_profile.refresh_from_db()
+        self.assertEqual(self.tutor_profile.status, TutorProfile.Status.PAUSED)
+        self.assertFalse(response.context.get("tutor_can_create_accounts"))
+
+    def test_pending_tax_number_is_not_reported_as_missing_bank_field(self):
+        self.tutor_profile.tax_number_pending = True
+        self.tutor_profile.save(update_fields=["tax_number_pending"])
+
+        self.client.login(username="tutor_missing_bank_data", password="test12345")
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Steuernummer", response.context.get("missing_tutor_bank_fields"))
+
+
+class ProfileNumberTests(TestCase):
+    def test_profiles_receive_role_specific_numbers(self):
+        parent_user = CustomUser.objects.create_user(
+            username="number_parent",
+            role=CustomUser.Roles.PARENT,
+        )
+        student_user = CustomUser.objects.create_user(
+            username="number_student",
+            role=CustomUser.Roles.STUDENT,
+        )
+        independent_user = CustomUser.objects.create_user(
+            username="number_independent_student",
+            role=CustomUser.Roles.INDEPENDENT_STUDENT,
+        )
+        tutor_user = CustomUser.objects.create_user(
+            username="number_tutor",
+            role=CustomUser.Roles.TUTOR,
+        )
+
+        parent = ParentProfile.objects.create(user=parent_user)
+        student = StudentProfile.objects.create(user=student_user)
+        independent_student = StudentProfile.objects.create(user=independent_user)
+        tutor = TutorProfile.objects.create(user=tutor_user)
+
+        self.assertEqual(parent.customer_number, "ELT-000-001")
+        self.assertEqual(student.profile_number, "SCHU-000-001")
+        self.assertEqual(independent_student.profile_number, "STUD-000-001")
+        self.assertEqual(tutor.tutor_number, "TUT-000-001")
+
+    def test_profile_page_shows_tutor_number(self):
+        user = CustomUser.objects.create_user(
+            username="number_profile_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        tutor = TutorProfile.objects.create(user=user)
+
+        self.client.login(username="number_profile_tutor", password="test12345")
+        response = self.client.get(reverse("profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "TutorInnennummer")
+        self.assertContains(response, tutor.tutor_number)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class ProfileEmailChangeTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="email_change_parent",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+            first_name="Erika",
+            last_name="Mustermann",
+            email="alt@example.com",
+        )
+        ParentProfile.objects.create(user=self.user)
+
+    def test_profile_email_change_requires_confirmation_before_replacing_email(self):
+        self.client.login(username="email_change_parent", password="test12345")
+        response = self.client.post(
+            reverse("profile"),
+            data={
+                "username": self.user.username,
+                "first_name": "Erika",
+                "last_name": "Mustermann",
+                "email": "neu@example.com",
+                "phone_number": "0176 123456",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "alt@example.com")
+        self.assertEqual(self.user.pending_email, "neu@example.com")
+        self.assertIsNotNone(self.user.pending_email_requested_at)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["neu@example.com"])
+
+        match = re.search(r"http://testserver(?P<path>/profil/email/bestaetigen/[^\s]+)", mail.outbox[0].body)
+        self.assertIsNotNone(match)
+        confirm_response = self.client.get(match.group("path"))
+
+        self.assertEqual(confirm_response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "neu@example.com")
+        self.assertEqual(self.user.pending_email, "")
+        self.assertIsNone(self.user.pending_email_requested_at)
+
+    def test_profile_page_shows_pending_email_notice(self):
+        self.user.pending_email = "wartet@example.com"
+        self.user.pending_email_requested_at = timezone.now()
+        self.user.save(update_fields=["pending_email", "pending_email_requested_at"])
+
+        self.client.login(username="email_change_parent", password="test12345")
+        response = self.client.get(reverse("profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ausstehende Bestätigung: wartet@example.com")
 
 
 class TutorProfileBankFieldValidationTests(TestCase):
@@ -1461,6 +1638,7 @@ class TutorProfileBankFieldValidationTests(TestCase):
             "bank_name": "Sparkasse",
             "iban": "DE44500105175407324931",
             "bic": "DEUTDEFFXXX",
+            "tax_number": "12/345/67890",
         }
 
     def test_tutor_profile_required_fields_are_marked_on_profile_page(self):
@@ -1469,16 +1647,26 @@ class TutorProfileBankFieldValidationTests(TestCase):
         response = self.client.get(reverse("profile"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="required-marker"', count=8)
+        self.assertContains(response, "TutorInnennummer")
+        self.assertContains(response, self.user.tutor_profile.tutor_number)
+        self.assertContains(response, 'class="required-marker"', count=9)
+        self.assertContains(response, 'class="profile-field-info"')
+        self.assertContains(response, 'title="betriebliche Steuernummer')
+        self.assertContains(
+            response,
+            "betriebliche Steuernummer im 13-stelligen ELSTER-/Bundesformat oder Steuernummer im normalen Bescheidformat bitte einfügen",
+        )
+        self.assertContains(response, "Fragebogen ausgefüllt und warte auf Steuernummer")
+        self.assertNotContains(response, "Selbständigkeit verifiziert")
 
     def test_tutor_profile_requires_contact_address_and_bank_fields(self):
         data = self._base_form_data()
-        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic"]:
+        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic", "tax_number"]:
             data[field_name] = ""
         form = TutorProfileForm(data=data, user=self.user)
 
         self.assertFalse(form.is_valid())
-        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic"]:
+        for field_name in ["email", "phone_number", "address", "account_holder", "bank_name", "iban", "bic", "tax_number"]:
             self.assertIn(field_name, form.errors)
 
     def test_profile_form_normalizes_iban_and_bic(self):
@@ -1490,6 +1678,40 @@ class TutorProfileBankFieldValidationTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["iban"], "DE44500105175407324931")
         self.assertEqual(form.cleaned_data["bic"], "DEUTDEFFXXX")
+
+    def test_profile_form_accepts_normal_tax_number_format(self):
+        data = self._base_form_data()
+        data["tax_number"] = "12/345/67890"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["tax_number"], "12/345/67890")
+
+    def test_profile_form_accepts_13_digit_tax_number_format(self):
+        data = self._base_form_data()
+        data["tax_number"] = "1234567890123"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["tax_number"], "1234567890123")
+
+    def test_profile_form_rejects_invalid_tax_number_format(self):
+        data = self._base_form_data()
+        data["tax_number"] = "123/45"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("tax_number", form.errors)
+
+    def test_profile_form_allows_empty_tax_number_when_questionnaire_is_pending(self):
+        data = self._base_form_data()
+        data["tax_number"] = ""
+        data["tax_number_pending"] = "on"
+        form = TutorProfileForm(data=data, user=self.user)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["tax_number"], "")
+        self.assertTrue(form.cleaned_data["tax_number_pending"])
 
     def test_profile_form_rejects_invalid_bic_length(self):
         data = self._base_form_data()
@@ -1708,6 +1930,279 @@ class InvoiceDiscountContextTests(TestCase):
         )
 
         self.assertEqual(context["iban"], "DE44 5001 0517 5407 3249 31")
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MEDIA_ROOT=tempfile.mkdtemp(),
+)
+class InvoiceNumberingTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="invoice_number_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutorin",
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="invoice_number_student",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Max",
+            last_name="Mustermann",
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.student.assigned_tutors.add(self.tutor)
+        self.lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 5, 8),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+        self.client.login(username="invoice_number_tutor", password="test12345")
+
+    def test_generated_invoices_receive_unique_number_and_filename(self):
+        captured_numbers = []
+
+        def fake_generate_invoice_pdf(*args, **kwargs):
+            captured_numbers.append(kwargs["invoice_context"]["invoice_number"])
+            return b"%PDF-1.4\n%fake\n"
+
+        with patch("core.views._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
+            for _ in range(2):
+                response = self.client.post(
+                    reverse("invoice_upload"),
+                    data={
+                        "action": "generate",
+                        "student": str(self.student.id),
+                        "period": "2026-05",
+                        "discount_type": "",
+                        "discount_value": "",
+                    },
+                )
+                self.assertEqual(response.status_code, 302)
+
+        invoices = list(Invoice.objects.order_by("invoice_number"))
+        self.assertEqual([invoice.invoice_number for invoice in invoices], [1, 2])
+        self.assertEqual(captured_numbers, ["RE-A01-0001", "RE-A01-0002"])
+        self.assertEqual(
+            invoices[0].display_filename,
+            "RE-A01-0001_Mai26_Max_Mustermann.pdf",
+        )
+        self.assertEqual(
+            invoices[1].display_filename,
+            "RE-A01-0002_Mai26_Max_Mustermann.pdf",
+        )
+
+    def test_invoice_filename_uses_formatted_number_month_and_sanitized_name(self):
+        invoice = Invoice(
+            student=self.student,
+            uploaded_by=self.tutor,
+            invoice_number=1,
+            billing_year=2026,
+            billing_month=5,
+        )
+
+        self.assertEqual(
+            _invoice_filename(invoice),
+            "RE-A01-0001_Mai26_Max_Mustermann.pdf",
+        )
+
+    def test_invoice_pdf_template_shows_number_above_date_not_filename(self):
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 5, 1),
+            lessons=[self.lesson],
+            invoice_number=_format_invoice_number(1),
+        )
+
+        html = render_to_string(
+            "invoice_pdf.html",
+            {
+                **context,
+                "logo_url": "",
+                "shababa_font_woff2_url": "",
+                "shababa_font_woff_url": "",
+                "payment_qr_url": None,
+            },
+        )
+
+        number_index = html.index("Rechnungsnummer: RE-A01-0001")
+        date_index = html.index("Rechnungsdatum:")
+        self.assertLess(number_index, date_index)
+        self.assertNotIn("RE-A01-0001_Mai26_Max_Mustermann.pdf", html)
+
+
+class InvoicePdfTemplateLayoutTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="invoice_layout_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutorin",
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="invoice_layout_student",
+            password="test12345",
+            role=CustomUser.Roles.STUDENT,
+            first_name="Max",
+            last_name="Mustermann",
+        )
+        self.tutor = TutorProfile.objects.create(
+            user=self.tutor_user,
+            tax_number="12/345/67890",
+        )
+        self.student = StudentProfile.objects.create(
+            user=self.student_user,
+            address="Musterstraße 12\n38100 Braunschweig",
+        )
+
+    def _lesson(self, duration_minutes):
+        return Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 5, duration_minutes // 15),
+            time=time(15, 0),
+            duration_minutes=duration_minutes,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+
+    def _render_invoice_html(self):
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 5, 1),
+            lessons=[self._lesson(45), self._lesson(60), self._lesson(90)],
+            invoice_number=_format_invoice_number(1),
+        )
+        return render_to_string(
+            "invoice_pdf.html",
+            {
+                **context,
+                "logo_url": "",
+                "shababa_font_woff2_url": "",
+                "shababa_font_woff_url": "",
+                "payment_qr_url": None,
+            },
+        )
+
+    def test_line_items_show_base_price_column_for_supported_durations(self):
+        html = self._render_invoice_html()
+
+        self.assertIn("Grundpreis", html)
+        self.assertIn("45 Min.", html)
+        self.assertIn("19,00 EUR", html)
+        self.assertIn("60 Min.", html)
+        self.assertIn("25,00 EUR", html)
+        self.assertIn("90 Min.", html)
+        self.assertIn("36,00 EUR", html)
+        self.assertNotIn("Grundpreis 19,00 EUR", html)
+        self.assertNotIn("45 Min. = 19,00 EUR", html)
+        self.assertNotIn("60 Min. = 25,00 EUR", html)
+        self.assertNotIn("90 Min. = 36,00 EUR", html)
+
+    @override_settings(BRAINBOOST_TAX_NUMBER="98/765/43210")
+    def test_header_student_address_and_page_footer_are_rendered(self):
+        html = self._render_invoice_html()
+
+        self.assertIn(
+            "Inh.: Kiara Puppe, Anschrift: Karl-Schmidt-Str. 20, 38114 Braunschweig",
+            html,
+        )
+        self.assertIn("text-decoration: underline", html)
+        self.assertIn("<strong>Anschrift:</strong>", html)
+        self.assertIn("<strong>SchülerIn/StudentIn:</strong>", html)
+        self.assertIn("<strong>Kundennummer:</strong>", html)
+        self.assertIn(self.student.profile_number, html)
+        self.assertLess(html.index("Max Mustermann"), html.index("Leistungsdaten"))
+        self.assertIn("Musterstraße 12", html)
+        self.assertIn("38100 Braunschweig", html)
+        self.assertIn("Steuernummer TutorIn: 12/345/67890", html)
+        self.assertIn("12/345/67890", html)
+        self.assertIn("BrainBoost Steuernummer: 98/765/43210", html)
+        self.assertIn("Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.", html)
+        self.assertIn("@bottom-center", html)
+
+    def test_address_uses_parent_name_when_student_has_parent_and_splits_commas(self):
+        parent_user = CustomUser.objects.create_user(
+            username="invoice_layout_parent",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+            first_name="Erika",
+            last_name="Mustermann",
+        )
+        parent = ParentProfile.objects.create(user=parent_user)
+        self.student.parents.add(parent)
+        self.student.address = "Karl-Schmidt-Straße 1, Braunschweig-Nordstadt, Germany"
+        self.student.save(update_fields=["address"])
+
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 5, 1),
+            lessons=[self._lesson(60)],
+        )
+
+        self.assertEqual(context["recipient_name"], "Erika Mustermann")
+        self.assertEqual(context["customer_number"], parent.customer_number)
+        self.assertEqual(
+            context["student_address"],
+            "Karl-Schmidt-Straße 1\nBraunschweig-Nordstadt\nGermany",
+        )
+
+    def test_address_uses_student_name_when_student_has_no_parent(self):
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=self.student,
+            period_start=date(2026, 5, 1),
+            lessons=[self._lesson(60)],
+        )
+
+        self.assertEqual(context["recipient_name"], "Max Mustermann")
+        self.assertEqual(context["customer_number"], self.student.profile_number)
+
+    def test_invoice_customer_number_uses_student_number_for_independent_student(self):
+        independent_user = CustomUser.objects.create_user(
+            username="invoice_layout_independent",
+            password="test12345",
+            role=CustomUser.Roles.INDEPENDENT_STUDENT,
+            first_name="Sina",
+            last_name="Studentin",
+        )
+        independent_student = StudentProfile.objects.create(
+            user=independent_user,
+            address="Campusweg 2\n38100 Braunschweig",
+        )
+        lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=independent_student,
+            date=date(2026, 5, 10),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+            status=Lesson.Status.COMPLETED,
+        )
+
+        context = _build_invoice_pdf_context(
+            tutor_profile=self.tutor,
+            student=independent_student,
+            period_start=date(2026, 5, 1),
+            lessons=[lesson],
+        )
+
+        self.assertTrue(independent_student.profile_number.startswith("STUD-"))
+        self.assertEqual(context["customer_number"], independent_student.profile_number)
 
 
 class GoogleRoutesDistanceTests(TestCase):

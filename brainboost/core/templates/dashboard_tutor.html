@@ -288,6 +288,16 @@ window.addEventListener('DOMContentLoaded', function () {
     }
 });
 {% endif %}
+
+{% if show_tax_number_popup %}
+window.addEventListener('DOMContentLoaded', function () {
+    const message = "Deine Anmeldung ist seit etwa 4 Wochen aktiv. Die Steuernummer sollte nach ca. 4 Wochen postalisch eingetroffen sein. Bitte trage sie im Profil ein, sobald sie vorliegt.";
+    const goToProfile = window.confirm(message + "\n\nJetzt zum Profil wechseln?");
+    if (goToProfile) {
+        window.location.href = "{% url 'profile' %}#bankdaten";
+    }
+});
+{% endif %}
 </script>
 {% endblock %}
 {% endblock %}

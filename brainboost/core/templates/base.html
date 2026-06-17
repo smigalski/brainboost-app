@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1017">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1020">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <meta name="theme-color" content="#2c8a8a">
@@ -44,6 +44,24 @@
 </head>
 <body>
     <div class="hero-bg"></div>
+    <div class="app-install-banner" data-app-install-banner>
+        <div class="app-install-banner__content">
+            <span class="app-install-banner__text">Bitte BrainBoost als App-Icon (<span data-app-install-size>ca. 1 MB</span>) zum Hauptbildschirm hinzufügen!</span>
+            <button class="app-install-banner__download" type="button" aria-label="BrainBoost als App hinzufügen" data-app-install-button>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 3v11"></path>
+                    <path d="M7 9l5 5 5-5"></path>
+                    <path d="M5 19h14"></path>
+                </svg>
+            </button>
+            <button class="app-install-banner__close" type="button" aria-label="App-Hinweis schließen" data-app-install-close>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
     {% block language_popup %}{% endblock %}
     <header class="topbar">
         <div class="topbar-main">
@@ -63,11 +81,6 @@
                             <img class="profile-link__avatar profile-link__avatar--image" src="{{ request.user.profile_image.url }}" alt="{% trans 'Profilbild' %}">
                         {% else %}
                             <span class="profile-link__avatar{% if not request.user.avatar_icon %} profile-link__avatar--empty{% endif %}">{{ request.user.avatar_symbol }}</span>
-                        {% endif %}
-                        {% if request.user.role == "tutor" and request.user.tutor_profile %}
-                            <span class="tutor-status-badge tutor-status-badge--{{ request.user.tutor_profile.status }}">
-                                {{ request.user.tutor_profile.get_status_display }}
-                            </span>
                         {% endif %}
                     </a>
                 {% endif %}
@@ -231,9 +244,97 @@
         var cardNav = document.querySelector("[data-card-nav]");
         var cardNavToggle = document.querySelector("[data-card-nav-toggle]");
         var cardNavMenu = document.querySelector("[data-card-nav-menu]");
+        var appInstallBanner = document.querySelector("[data-app-install-banner]");
+        var appInstallButton = document.querySelector("[data-app-install-button]");
+        var appInstallClose = document.querySelector("[data-app-install-close]");
+        var appInstallSize = document.querySelector("[data-app-install-size]");
+        var deferredInstallPrompt = null;
         var menuIsOpen = false;
         var menuIsAnimating = false;
         var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var appAssetUrls = [
+            "{% static 'site.webmanifest' %}",
+            "{% static 'core/styles.css' %}?v=1020",
+            "{% static 'core/cookie_notice.css' %}?v=1",
+            "{% static 'core/cookie_notice.js' %}?v=1",
+            "{% static 'css/price_banner.css' %}?v=1",
+            "{% static 'js/price_banner.js' %}?v=1",
+            "{% static 'design/LogoPNG.png' %}",
+            "{% static 'design/app-icons/apple-touch-icon.png' %}",
+            "{% static 'design/app-icons/apple-touch-icon-152.png' %}",
+            "{% static 'design/app-icons/apple-touch-icon-120.png' %}",
+            "{% static 'design/app-icons/apple-touch-icon-167.png' %}",
+            "{% static 'design/app-icons/icon-192.png' %}",
+            "{% static 'design/app-icons/icon-512.png' %}",
+            "{% static 'fonts/shababa/shababa-w01-regular.woff2' %}"
+        ];
+
+        function isStandaloneApp() {
+            return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+        }
+
+        function setAppInstallBannerState(isVisible) {
+            if (!appInstallBanner) {
+                return;
+            }
+            if (isVisible) {
+                appInstallBanner.hidden = false;
+                appInstallBanner.setAttribute("aria-hidden", "false");
+                requestAnimationFrame(function () {
+                    appInstallBanner.classList.remove("is-collapsed");
+                });
+                return;
+            }
+            appInstallBanner.setAttribute("aria-hidden", "true");
+            appInstallBanner.classList.add("is-collapsed");
+            window.setTimeout(function () {
+                if (appInstallBanner.classList.contains("is-collapsed")) {
+                    appInstallBanner.hidden = true;
+                }
+            }, prefersReducedMotion ? 0 : 300);
+        }
+
+        function formatAppSize(bytes) {
+            if (!bytes || bytes < 1) {
+                return "ca. 1 MB";
+            }
+            var megabytes = bytes / (1024 * 1024);
+            var rounded = Math.max(1, Math.ceil(megabytes));
+            return "ca. " + rounded + " MB";
+        }
+
+        function updateApproximateAppSize() {
+            if (!appInstallSize || !window.fetch) {
+                return;
+            }
+            Promise.all(appAssetUrls.map(function (url) {
+                return fetch(url, { method: "HEAD", cache: "force-cache" })
+                    .then(function (response) {
+                        var length = response.headers.get("content-length");
+                        return length ? Number(length) : 0;
+                    })
+                    .catch(function () {
+                        return 0;
+                    });
+            })).then(function (sizes) {
+                var total = sizes.reduce(function (sum, size) {
+                    return sum + (Number.isFinite(size) ? size : 0);
+                }, 0);
+                if (total > 0) {
+                    appInstallSize.textContent = formatAppSize(total);
+                }
+            });
+        }
+
+        function showInstallFallback() {
+            var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+            var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            if (isIOS || isSafari) {
+                window.alert("Safari erlaubt das Hinzufügen nur über Teilen. Tippe auf iPhone/iPad auf Teilen und dann auf 'Zum Home-Bildschirm'. Beim Mac nutze 'Zum Dock hinzufügen'.");
+                return;
+            }
+            window.alert("Wenn dein Browser keinen Installationsdialog zeigt, nutze das Browser-Menü und wähle 'App installieren', 'Zum Startbildschirm hinzufügen' oder 'Lesezeichen hinzufügen'.");
+        }
 
         function setLanguageSwitchState(isOpen) {
             if (!languageSwitch || !languageSwitchToggle || !languageSwitchMenu) {
@@ -328,6 +429,39 @@
                     return;
                 }
                 toggleMenu(false);
+            });
+        }
+
+        window.addEventListener("beforeinstallprompt", function (event) {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+        });
+
+        if (appInstallBanner) {
+            if (isStandaloneApp()) {
+                setAppInstallBannerState(false);
+            } else {
+                setAppInstallBannerState(true);
+                updateApproximateAppSize();
+            }
+        }
+
+        if (appInstallClose) {
+            appInstallClose.addEventListener("click", function () {
+                setAppInstallBannerState(false);
+            });
+        }
+
+        if (appInstallButton) {
+            appInstallButton.addEventListener("click", function () {
+                if (deferredInstallPrompt) {
+                    deferredInstallPrompt.prompt();
+                    deferredInstallPrompt.userChoice.finally(function () {
+                        deferredInstallPrompt = null;
+                    });
+                    return;
+                }
+                showInstallFallback();
             });
         }
 
