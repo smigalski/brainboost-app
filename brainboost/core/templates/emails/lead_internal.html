@@ -1,6 +1,11 @@
 {% extends "emails/base.html" %}
 {% block content %}
 <p>Eine neue BrainBoost Anfrage ist eingegangen.</p>
+<p>
+    <a href="{{ lead_dashboard_url }}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#1f6666;color:#ffffff;text-decoration:none;font-weight:700;">
+        Kontaktieren
+    </a>
+</p>
 <table style="width:100%;border-collapse:collapse;">
     <tr><td><strong>Rolle</strong></td><td>{{ lead.get_role_display }}</td></tr>
     <tr><td><strong>Name</strong></td><td>{{ lead.name }}</td></tr>

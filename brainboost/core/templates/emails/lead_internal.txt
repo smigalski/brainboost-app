@@ -1,5 +1,8 @@
 Neue BrainBoost Anfrage
 
+Kontaktieren:
+{{ lead_dashboard_url }}
+
 Rolle: {{ lead.get_role_display }}
 Name: {{ lead.name }}
 E-Mail: {{ lead.email|default:"-" }}

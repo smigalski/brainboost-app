@@ -2,7 +2,6 @@ import base64
 import csv
 import io
 import json
-import random
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
 from pathlib import Path
@@ -38,10 +37,8 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_scheme
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from openpyxl import load_workbook
 
 from .forms import (
-    FlashcardUploadForm,
     LessonForm,
     ProgressEntryForm,
     LearningMaterialForm,
@@ -108,8 +105,6 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
-FLASHCARD_DECK_SESSION_KEY = "admin_flashcard_deck"
-FLASHCARD_COUNTS = (10, 20, 25, 50, 100)
 GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
 GOOGLE_REVIEWS_SUPPORTED_LANGUAGES = {"de", "en", "es", "pl", "tr", "ru", "ar"}
@@ -1889,38 +1884,6 @@ def _build_campaign_url(base_url: str, params: dict[str, str]) -> str:
     )
 
 
-def _parse_flashcard_workbook(uploaded_file) -> list[dict]:
-    try:
-        workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
-    except Exception as exc:
-        raise ValueError("Die XLSX-Datei konnte nicht gelesen werden.") from exc
-
-    sheet = workbook.active
-    cards: list[dict] = []
-    for row in sheet.iter_rows(min_row=1, max_col=2, values_only=True):
-        german = str(row[0]).strip() if row and row[0] is not None else ""
-        polish = str(row[1]).strip() if len(row) > 1 and row[1] is not None else ""
-        if not german and not polish:
-            continue
-        if not german or not polish:
-            continue
-        cards.append({"de": german, "pl": polish})
-
-    if not cards:
-        raise ValueError("Die Datei enthält keine vollständigen Karteikarten in Spalte A und B.")
-    return cards
-
-
-def _flashcard_count_options(deck_size: int) -> list[dict]:
-    return [
-        {
-            "value": count,
-            "disabled": count > deck_size,
-        }
-        for count in FLASHCARD_COUNTS
-    ]
-
-
 def _admin_users_queryset():
     return CustomUser.objects.filter(is_active=True).filter(
         Q(is_staff=True) | Q(is_superuser=True)
@@ -2768,67 +2731,6 @@ def admin_tasks(request):
 
 
 @login_required
-def flashcards(request):
-    _ensure_profile_for_user(request.user)
-    if not _has_admin_access(request.user):
-        return redirect("dashboard")
-
-    deck = request.session.get(FLASHCARD_DECK_SESSION_KEY, [])
-    study_cards = []
-    selected_count = None
-
-    if request.method == "POST":
-        action = (request.POST.get("action") or "").strip()
-        if action == "upload":
-            form = FlashcardUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                try:
-                    deck = _parse_flashcard_workbook(form.cleaned_data["file"])
-                except ValueError as exc:
-                    messages.error(request, str(exc))
-                else:
-                    request.session[FLASHCARD_DECK_SESSION_KEY] = deck
-                    request.session.modified = True
-                    messages.success(request, f"{len(deck)} Karteikarten wurden importiert.")
-                    return redirect("flashcards")
-        elif action == "start":
-            form = FlashcardUploadForm()
-            if not deck:
-                messages.error(request, "Bitte lade zuerst eine XLSX-Datei hoch.")
-            else:
-                try:
-                    selected_count = int(request.POST.get("card_count", ""))
-                except (TypeError, ValueError):
-                    selected_count = 0
-                if selected_count not in FLASHCARD_COUNTS:
-                    messages.error(request, "Bitte wähle eine gültige Anzahl Karteikarten aus.")
-                elif selected_count > len(deck):
-                    messages.error(
-                        request,
-                        f"Für diese Auswahl brauchst du mindestens {selected_count} Karteikarten.",
-                    )
-                else:
-                    study_cards = random.sample(deck, selected_count)
-        else:
-            form = FlashcardUploadForm()
-    else:
-        form = FlashcardUploadForm()
-
-    deck_size = len(deck)
-    return render(
-        request,
-        "flashcards.html",
-        {
-            "form": form,
-            "deck_size": deck_size,
-            "count_options": _flashcard_count_options(deck_size),
-            "study_cards": study_cards,
-            "selected_count": selected_count,
-        },
-    )
-
-
-@login_required
 def lead_dashboard(request):
     _ensure_profile_for_user(request.user)
     if not _has_admin_access(request.user):
@@ -2870,8 +2772,92 @@ def lead_dashboard(request):
         "period_rows": period_rows,
         "open_leads": open_leads,
         "recent_leads": leads.order_by("-created_at")[:30],
+        "lead_status_choices": Lead.Status.choices,
     }
     return render(request, "lead_dashboard.html", context)
+
+
+def _safe_admin_next_url(request) -> str:
+    next_url = request.POST.get("next") or request.GET.get("next") or reverse("lead_dashboard")
+    if not url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return reverse("lead_dashboard")
+    return next_url
+
+
+@login_required
+def lead_mark_contacted(request, lead_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        return JsonResponse({"ok": False, "error": "unauthorized"}, status=403)
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "method_not_allowed"}, status=405)
+
+    lead = get_object_or_404(Lead, pk=lead_id)
+    if lead.status == Lead.Status.NEW:
+        lead.status = Lead.Status.CONTACTED
+        if not lead.contacted_at:
+            lead.contacted_at = timezone.now()
+        lead.save(update_fields=["status", "contacted_at", "updated_at"])
+    elif lead.status == Lead.Status.CONTACTED and not lead.contacted_at:
+        lead.contacted_at = timezone.now()
+        lead.save(update_fields=["contacted_at", "updated_at"])
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "status": lead.status,
+            "status_label": lead.get_status_display(),
+            "contacted_at": lead.contacted_at.isoformat() if lead.contacted_at else "",
+        }
+    )
+
+
+@login_required
+def lead_update_status(request, lead_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        messages.error(request, "Du darfst Lead-Status nicht ändern.")
+        return redirect("dashboard")
+    next_url = _safe_admin_next_url(request)
+    if request.method != "POST":
+        return redirect(next_url)
+
+    lead = get_object_or_404(Lead, pk=lead_id)
+    next_status = (request.POST.get("status") or "").strip()
+    valid_statuses = {choice[0] for choice in Lead.Status.choices}
+    if next_status not in valid_statuses:
+        messages.error(request, "Ungültiger Lead-Status.")
+        return redirect(next_url)
+
+    update_fields = ["status", "updated_at"]
+    lead.status = next_status
+    if next_status == Lead.Status.CONTACTED and not lead.contacted_at:
+        lead.contacted_at = timezone.now()
+        update_fields.append("contacted_at")
+    lead.save(update_fields=update_fields)
+    messages.success(request, f"Status von {lead.name} wurde auf {lead.get_status_display()} gesetzt.")
+    return redirect(next_url)
+
+
+@login_required
+def lead_delete(request, lead_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        messages.error(request, "Du darfst Leads nicht entfernen.")
+        return redirect("dashboard")
+    next_url = _safe_admin_next_url(request)
+    if request.method != "POST":
+        return redirect(next_url)
+
+    lead = get_object_or_404(Lead, pk=lead_id)
+    lead_name = lead.name
+    lead.delete()
+    messages.success(request, f"Lead {lead_name} wurde entfernt.")
+    return redirect(next_url)
 
 
 @login_required
@@ -2883,13 +2869,7 @@ def lead_convert_to_tutor(request, lead_id):
     if request.method != "POST":
         return redirect("lead_dashboard")
 
-    next_url = request.POST.get("next") or reverse("lead_dashboard")
-    if not url_has_allowed_host_and_scheme(
-        next_url,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure(),
-    ):
-        next_url = reverse("lead_dashboard")
+    next_url = _safe_admin_next_url(request)
 
     lead = get_object_or_404(Lead.objects.select_related("converted_tutor__user"), pk=lead_id)
     if lead.role != Lead.Role.TUTOR:

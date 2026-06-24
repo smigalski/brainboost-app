@@ -20,7 +20,6 @@ from django.test import SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
-from openpyxl import Workbook
 
 from .forms import (
     AdminTaskCreateForm,
@@ -288,80 +287,6 @@ class IndependentStudentAccountTests(TestCase):
         self.assertIsNone(invoice.payment_requested_by)
 
 
-class FlashcardAdminTests(TestCase):
-    def _xlsx_file(self, rows=12):
-        workbook = Workbook()
-        sheet = workbook.active
-        for index in range(1, rows + 1):
-            sheet.append([f"Deutsch {index}", f"Polnisch {index}"])
-        buffer = tempfile.SpooledTemporaryFile()
-        workbook.save(buffer)
-        buffer.seek(0)
-        return SimpleUploadedFile(
-            "karten.xlsx",
-            buffer.read(),
-            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
-
-    def setUp(self):
-        self.admin_user = CustomUser.objects.create_user(
-            username="admin",
-            password="pw",
-            role=CustomUser.Roles.TUTOR,
-            is_staff=True,
-        )
-        self.regular_user = CustomUser.objects.create_user(
-            username="regular",
-            password="pw",
-            role=CustomUser.Roles.STUDENT,
-        )
-
-    def test_flashcards_require_admin_access(self):
-        self.client.login(username="regular", password="pw")
-
-        response = self.client.get(reverse("flashcards"))
-
-        self.assertRedirects(response, reverse("dashboard"))
-
-    def test_admin_page_links_to_flashcards(self):
-        self.client.login(username="admin", password="pw")
-
-        response = self.client.get(reverse("admin_tasks"))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse("flashcards"))
-        self.assertContains(response, "Karteikarten öffnen")
-
-    def test_admin_can_upload_xlsx_flashcards(self):
-        self.client.login(username="admin", password="pw")
-
-        response = self.client.post(
-            reverse("flashcards"),
-            data={"action": "upload", "file": self._xlsx_file(rows=12)},
-        )
-
-        self.assertRedirects(response, reverse("flashcards"))
-        deck = self.client.session["admin_flashcard_deck"]
-        self.assertEqual(len(deck), 12)
-        self.assertEqual(deck[0], {"de": "Deutsch 1", "pl": "Polnisch 1"})
-
-    def test_admin_can_start_random_session_after_upload(self):
-        self.client.login(username="admin", password="pw")
-        self.client.post(
-            reverse("flashcards"),
-            data={"action": "upload", "file": self._xlsx_file(rows=20)},
-        )
-
-        response = self.client.post(
-            reverse("flashcards"),
-            data={"action": "start", "card_count": "10"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "flashcard-study-cards")
-        self.assertContains(response, "1 / 10")
-
-
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     LEAD_NOTIFICATION_EMAIL="operator@example.com",
@@ -420,6 +345,19 @@ class LeadFormFlowTests(TestCase):
         self.assertIn("maria@example.com", mail.outbox[1].to)
         self.assertEqual(mail.outbox[1].from_email, "BrainBoost <kontakt@nachhilfe-brainboost.de>")
         self.assertEqual(mail.outbox[1].reply_to, ["kontakt@nachhilfe-brainboost.de"])
+
+    @override_settings(APP_BASE_URL="https://www.nachhilfe-brainboost.de")
+    def test_internal_lead_email_links_to_contact_action(self):
+        response = self.client.post(reverse("contact"), data=self._parent_data())
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        lead = Lead.objects.get()
+        internal_mail = mail.outbox[0]
+        lead_url = f"https://www.nachhilfe-brainboost.de{reverse('lead_dashboard')}?lead_id={lead.id}"
+        self.assertIn("Kontaktieren", internal_mail.body)
+        self.assertIn(lead_url, internal_mail.body)
+        self.assertIn("Kontaktieren", internal_mail.alternatives[0][0])
+        self.assertIn(lead_url, internal_mail.alternatives[0][0])
 
     def test_public_contact_email_is_rendered_without_internal_gmail_address(self):
         response = self.client.get(reverse("contact"))
@@ -817,7 +755,13 @@ class LeadAdminToolsTests(TestCase):
         self.assertRedirects(response, reverse("dashboard"))
 
     def test_staff_users_can_see_lead_dashboard(self):
-        self._lead(role=Lead.Role.TUTOR, name="Tina Tutor", email="tina@example.com")
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Tina Tutor",
+            email="tina@example.com",
+            phone="+49 176 123456",
+            message="Ich möchte Nachhilfe geben.",
+        )
         self.client.force_login(self.staff_user)
 
         response = self.client.get(reverse("lead_dashboard"))
@@ -825,7 +769,113 @@ class LeadAdminToolsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Lead-Zentrale")
         self.assertContains(response, "Neue Leads")
+        self.assertContains(response, "Kontaktieren")
+        self.assertContains(response, reverse("lead_mark_contacted", args=[lead.id]))
+        self.assertContains(response, reverse("lead_update_status", args=[lead.id]))
+        self.assertContains(response, reverse("lead_delete", args=[lead.id]))
+        self.assertContains(response, 'name="status"')
+        self.assertContains(response, "Entfernen")
+        self.assertContains(response, 'data-email="tina@example.com"')
+        self.assertContains(response, 'data-phone="+49 176 123456"')
         self.assertContains(response, "Zur TutorIn machen")
+
+    def test_staff_user_can_mark_new_lead_as_contacted(self):
+        lead = self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(reverse("lead_mark_contacted", args=[lead.id]))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["status"], Lead.Status.CONTACTED)
+        self.assertEqual(payload["status_label"], "Kontaktiert")
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.CONTACTED)
+        self.assertIsNotNone(lead.contacted_at)
+        self.assertIsNotNone(lead.last_status_change_at)
+
+    def test_contact_action_does_not_downgrade_closed_leads(self):
+        lead = self._lead(status=Lead.Status.WON)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(reverse("lead_mark_contacted", args=[lead.id]))
+
+        self.assertEqual(response.status_code, 200)
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.WON)
+
+    def test_non_staff_users_cannot_mark_lead_as_contacted(self):
+        lead = self._lead()
+        self.client.force_login(self.normal_user)
+
+        response = self.client.post(reverse("lead_mark_contacted", args=[lead.id]))
+
+        self.assertEqual(response.status_code, 403)
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
+
+    def test_staff_user_can_update_lead_status_from_dashboard(self):
+        lead = self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.id]),
+            data={"status": Lead.Status.APPOINTMENT_PLANNED, "next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.APPOINTMENT_PLANNED)
+        self.assertIsNotNone(lead.last_status_change_at)
+
+    def test_staff_user_status_update_to_contacted_sets_contacted_at(self):
+        lead = self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.id]),
+            data={"status": Lead.Status.CONTACTED, "next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.CONTACTED)
+        self.assertIsNotNone(lead.contacted_at)
+
+    def test_non_staff_users_cannot_update_lead_status(self):
+        lead = self._lead()
+        self.client.force_login(self.normal_user)
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.id]),
+            data={"status": Lead.Status.WON},
+        )
+
+        self.assertRedirects(response, reverse("dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.NEW)
+
+    def test_staff_user_can_delete_lead_from_dashboard(self):
+        lead = self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_delete", args=[lead.id]),
+            data={"next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        self.assertFalse(Lead.objects.filter(pk=lead.pk).exists())
+
+    def test_non_staff_users_cannot_delete_lead(self):
+        lead = self._lead()
+        self.client.force_login(self.normal_user)
+
+        response = self.client.post(reverse("lead_delete", args=[lead.id]))
+
+        self.assertRedirects(response, reverse("dashboard"))
+        self.assertTrue(Lead.objects.filter(pk=lead.pk).exists())
 
     @override_settings(
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",

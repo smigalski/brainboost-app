@@ -88,6 +88,11 @@ def _build_urls(request) -> dict:
     }
 
 
+def _build_absolute_app_url(path: str) -> str:
+    base_url = getattr(settings, "APP_BASE_URL", "http://localhost:8000").rstrip("/")
+    return f"{base_url}{path}"
+
+
 def _lead_operator_recipients() -> list[str]:
     configured = getattr(settings, "LEAD_NOTIFICATION_EMAIL", "")
     if configured:
@@ -144,6 +149,9 @@ def notify_lead_created(lead: Lead) -> None:
     context = {
         "heading": "Neue Anfrage",
         "lead": lead,
+        "lead_dashboard_url": _build_absolute_app_url(
+            f"{reverse('lead_dashboard')}?lead_id={lead.pk}"
+        ),
     }
     _send_templated_email(
         internal_subject,

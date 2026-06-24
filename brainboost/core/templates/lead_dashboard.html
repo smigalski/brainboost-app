@@ -98,6 +98,20 @@
             margin: 0;
         }
 
+        .lead-status-form {
+            min-width: 150px;
+        }
+
+        .lead-status-form select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            background: #ffffff;
+            color: #25323a;
+            font: inherit;
+        }
+
         .lead-table .button {
             padding: 8px 10px;
             border-radius: 8px;
@@ -105,9 +119,61 @@
             box-shadow: none;
         }
 
+        .lead-table .button.lead-delete-button {
+            background: #fff2f2;
+            color: #8d1f1f;
+            border: 1px solid rgba(141, 31, 31, 0.25);
+        }
+
         .lead-converted {
             color: #246b3a;
             font-weight: 800;
+        }
+
+        .lead-contact-modal[hidden] {
+            display: none;
+        }
+
+        .lead-contact-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(13, 28, 34, 0.48);
+        }
+
+        .lead-contact-modal__dialog {
+            width: min(460px, 100%);
+            padding: 20px;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .lead-contact-modal__dialog h3 {
+            margin-top: 0;
+        }
+
+        .lead-contact-modal__actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .lead-contact-modal__actions .button[disabled] {
+            cursor: not-allowed;
+            opacity: 0.45;
+            filter: grayscale(1);
+            box-shadow: none;
+        }
+
+        .lead-contact-modal__close {
+            margin-top: 10px;
+            width: 100%;
+            background: #eef3f3;
+            color: #1f3838;
         }
     </style>
 
@@ -265,12 +331,33 @@
                                 <a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a><br>
                                 <span class="muted">{{ lead.email|default:lead.phone }}</span>
                             </td>
-                            <td>{{ lead.get_status_display }}</td>
+                            <td data-lead-status-cell="{{ lead.id }}">
+                                <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" onchange="this.form.submit()">
+                                        {% for value, label in lead_status_choices %}
+                                            <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
                             <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"-" }}</td>
                             <td>{{ lead.utm_campaign|default:"unknown" }}</td>
                             <td>
-                                {% if lead.role == "tutor" %}
-                                    <div class="lead-inline-actions">
+                                <div class="lead-inline-actions">
+                                    <button
+                                        class="button"
+                                        type="button"
+                                        data-lead-contact-button
+                                        data-contact-url="{% url 'lead_mark_contacted' lead.id %}"
+                                        data-name="{{ lead.name }}"
+                                        data-email="{{ lead.email }}"
+                                        data-phone="{{ lead.phone }}"
+                                        data-subject="{{ lead.subject }}"
+                                        data-message="{{ lead.message }}"
+                                    >Kontaktieren</button>
+                                    {% if lead.role == "tutor" %}
                                         {% if lead.converted_tutor_id %}
                                             <span class="lead-converted">TutorIn angelegt</span>
                                             <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
@@ -285,10 +372,13 @@
                                                 <button class="button" type="submit">Zur TutorIn machen</button>
                                             </form>
                                         {% endif %}
-                                    </div>
-                                {% else %}
-                                    -
-                                {% endif %}
+                                    {% endif %}
+                                    <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button class="button lead-delete-button" type="submit">Entfernen</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% empty %}
@@ -311,11 +401,32 @@
                             <td><a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a></td>
                             <td>{{ lead.get_role_display }}</td>
                             <td>{{ lead.subject|default:"-" }}</td>
-                            <td>{{ lead.get_status_display }}</td>
+                            <td data-lead-status-cell="{{ lead.id }}">
+                                <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" onchange="this.form.submit()">
+                                        {% for value, label in lead_status_choices %}
+                                            <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </td>
                             <td>{{ lead.utm_campaign|default:"unknown" }}</td>
                             <td>
-                                {% if lead.role == "tutor" %}
-                                    <div class="lead-inline-actions">
+                                <div class="lead-inline-actions">
+                                    <button
+                                        class="button"
+                                        type="button"
+                                        data-lead-contact-button
+                                        data-contact-url="{% url 'lead_mark_contacted' lead.id %}"
+                                        data-name="{{ lead.name }}"
+                                        data-email="{{ lead.email }}"
+                                        data-phone="{{ lead.phone }}"
+                                        data-subject="{{ lead.subject }}"
+                                        data-message="{{ lead.message }}"
+                                    >Kontaktieren</button>
+                                    {% if lead.role == "tutor" %}
                                         {% if lead.converted_tutor_id %}
                                             <span class="lead-converted">TutorIn angelegt</span>
                                             <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
@@ -330,10 +441,13 @@
                                                 <button class="button" type="submit">Zur TutorIn machen</button>
                                             </form>
                                         {% endif %}
-                                    </div>
-                                {% else %}
-                                    -
-                                {% endif %}
+                                    {% endif %}
+                                    <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button class="button lead-delete-button" type="submit">Entfernen</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% empty %}
@@ -344,4 +458,147 @@
         </div>
     </section>
 </div>
+
+<div class="lead-contact-modal" data-lead-contact-modal hidden>
+    <div class="lead-contact-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="lead-contact-title">
+        <h3 id="lead-contact-title">Kontaktieren</h3>
+        <p class="muted" data-lead-contact-name></p>
+        <div class="lead-contact-modal__actions">
+            <button class="button" type="button" data-lead-contact-method="whatsapp">Per WhatsApp</button>
+            <button class="button" type="button" data-lead-contact-method="email">Per E-Mail</button>
+        </div>
+        <button class="button lead-contact-modal__close" type="button" data-lead-contact-close>Abbrechen</button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modal = document.querySelector("[data-lead-contact-modal]");
+        if (!modal) return;
+
+        var currentLead = null;
+        var nameElement = modal.querySelector("[data-lead-contact-name]");
+        var closeButton = modal.querySelector("[data-lead-contact-close]");
+        var methodButtons = Array.from(modal.querySelectorAll("[data-lead-contact-method]"));
+
+        function csrfToken() {
+            var match = document.cookie.match(/(?:^|; )csrftoken=([^;]+)/);
+            return match ? decodeURIComponent(match[1]) : "";
+        }
+
+        function normalizeWhatsAppPhone(phone) {
+            var value = (phone || "").trim();
+            if (!value) return "";
+            if (value.indexOf("+") === 0) {
+                return value.replace(/[^\d]/g, "");
+            }
+            if (value.indexOf("00") === 0) {
+                return value.replace(/[^\d]/g, "").replace(/^00/, "");
+            }
+            return value.replace(/[^\d]/g, "");
+        }
+
+        function quotedMessage(message) {
+            var value = (message || "-").trim() || "-";
+            return value.split(/\r?\n/).map(function (line) {
+                return "> " + line;
+            }).join("\n");
+        }
+
+        function emailUrl(lead) {
+            var subject = lead.subject ? lead.name + ", " + lead.subject : lead.name;
+            var body = [
+                "",
+                "",
+                "--- Nachricht der Anfrage ---",
+                quotedMessage(lead.message)
+            ].join("\n");
+            return "mailto:" + encodeURIComponent(lead.email) +
+                "?subject=" + encodeURIComponent(subject) +
+                "&body=" + encodeURIComponent(body);
+        }
+
+        function whatsappUrl(lead) {
+            var phone = normalizeWhatsAppPhone(lead.phone);
+            return "https://wa.me/" + phone;
+        }
+
+        function openModal(lead) {
+            currentLead = lead;
+            nameElement.textContent = lead.name;
+            methodButtons.forEach(function (button) {
+                var method = button.dataset.leadContactMethod;
+                var disabled = method === "email" ? !lead.email : !normalizeWhatsAppPhone(lead.phone);
+                button.disabled = disabled;
+            });
+            modal.hidden = false;
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            currentLead = null;
+        }
+
+        function updateStatusCells(lead, payload) {
+            document.querySelectorAll('[data-lead-status-cell="' + lead.id + '"]').forEach(function (cell) {
+                var select = cell.querySelector('select[name="status"]');
+                if (select && payload.status) {
+                    select.value = payload.status;
+                    return;
+                }
+                cell.textContent = payload.status_label || cell.textContent;
+            });
+        }
+
+        function markContacted(lead) {
+            return fetch(lead.contactUrl, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken(),
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            }).then(function (response) {
+                if (!response.ok) throw new Error("contact_status_failed");
+                return response.json();
+            }).then(function (payload) {
+                updateStatusCells(lead, payload);
+            });
+        }
+
+        document.querySelectorAll("[data-lead-contact-button]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                openModal({
+                    id: button.dataset.contactUrl.match(/\/leads\/(\d+)\//)[1],
+                    contactUrl: button.dataset.contactUrl,
+                    name: button.dataset.name || "",
+                    email: button.dataset.email || "",
+                    phone: button.dataset.phone || "",
+                    subject: button.dataset.subject || "",
+                    message: button.dataset.message || ""
+                });
+            });
+        });
+
+        methodButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                if (!currentLead || button.disabled) return;
+                var targetUrl = button.dataset.leadContactMethod === "email"
+                    ? emailUrl(currentLead)
+                    : whatsappUrl(currentLead);
+                markContacted(currentLead).finally(function () {
+                    window.location.href = targetUrl;
+                    closeModal();
+                });
+            });
+        });
+
+        closeButton.addEventListener("click", closeModal);
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) closeModal();
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !modal.hidden) closeModal();
+        });
+    }());
+</script>
 {% endblock %}
