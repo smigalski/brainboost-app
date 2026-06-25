@@ -204,10 +204,17 @@
         }
 
         .idea-task-card {
-            border: 1px solid rgba(0, 0, 0, 0.12);
+            --task-accent-rgb: 199, 21, 133;
+            --task-accent-strong: #c71585;
+            border: 1px solid rgba(var(--task-accent-rgb), 0.32);
             border-radius: 8px;
-            background: #fff;
+            background: linear-gradient(
+                90deg,
+                rgba(var(--task-accent-rgb), 0.14),
+                rgba(255, 255, 255, 0.96)
+            );
             padding: 10px;
+            box-shadow: inset 4px 0 0 var(--task-accent-strong);
         }
 
         .idea-modal-backdrop {
@@ -369,11 +376,35 @@
         }
 
         .admin-task-row {
+            --task-accent-rgb: 199, 21, 133;
+            --task-accent-strong: #c71585;
             background: linear-gradient(
                 90deg,
-                rgba(230, 57, 70, var(--urgency-alpha, 0.08)),
+                rgba(var(--task-accent-rgb), 0.18),
                 rgba(255, 255, 255, 0.92)
             );
+            box-shadow: inset 5px 0 0 var(--task-accent-strong);
+        }
+
+        .admin-task-row[data-importance="idee"],
+        .kanban-card[data-importance="idee"],
+        .idea-task-card[data-importance="idee"] {
+            --task-accent-rgb: 232, 86, 121;
+            --task-accent-strong: #e85679;
+        }
+
+        .admin-task-row[data-importance="normal"],
+        .kanban-card[data-importance="normal"],
+        .idea-task-card[data-importance="normal"] {
+            --task-accent-rgb: 199, 21, 133;
+            --task-accent-strong: #c71585;
+        }
+
+        .admin-task-row[data-importance="prio"],
+        .kanban-card[data-importance="prio"],
+        .idea-task-card[data-importance="prio"] {
+            --task-accent-rgb: 114, 16, 44;
+            --task-accent-strong: #72102c;
         }
 
         .admin-task-row td input,
@@ -543,11 +574,17 @@
         }
 
         .kanban-card {
+            --task-accent-rgb: 199, 21, 133;
+            --task-accent-strong: #c71585;
             border-radius: 12px;
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            background: #fff;
+            border: 1px solid rgba(var(--task-accent-rgb), 0.36);
+            background: linear-gradient(
+                180deg,
+                rgba(var(--task-accent-rgb), 0.12),
+                rgba(255, 255, 255, 0.96) 34%
+            );
             padding: 11px;
-            box-shadow: 0 7px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 4px 0 var(--task-accent-strong), 0 7px 16px rgba(0, 0, 0, 0.1);
             cursor: grab;
             display: flex;
             flex-direction: column;
@@ -556,18 +593,16 @@
         }
 
         .kanban-column[data-status="todo"] .kanban-card {
-            border-color: rgba(230, 57, 70, 0.32);
-            background: rgba(255, 255, 255, 0.96);
+            border-color: rgba(var(--task-accent-rgb), 0.36);
         }
 
         .kanban-column[data-status="doing"] .kanban-card {
-            border-color: rgba(255, 164, 28, 0.4);
-            background: rgba(255, 255, 255, 0.96);
+            border-color: rgba(var(--task-accent-rgb), 0.4);
         }
 
         .kanban-column[data-status="done"] .kanban-card {
-            border-color: rgba(19, 154, 104, 0.38);
-            background: rgba(255, 255, 255, 0.96);
+            border-color: rgba(var(--task-accent-rgb), 0.32);
+            opacity: 0.82;
         }
 
         .kanban-card.dragging {
@@ -808,7 +843,7 @@
                 <p class="admin-note">Idee hierhin ziehen, um daraus eine Aufgabe zu machen.</p>
                 <div class="idea-todo-dropzone" data-idea-todo-zone>
                     {% for item in todo_task_rows %}
-                        <article class="idea-task-card">
+                        <article class="idea-task-card" data-importance="{{ item.task.importance }}">
                             <div class="idea-card__title">{{ item.task.title }}</div>
                             {% if item.task.image %}
                                 <button class="idea-card__image-button" type="button" data-idea-image-preview="{{ item.task.image.url }}" aria-label="Bildvorschau öffnen">
@@ -829,7 +864,7 @@
     </section>
 
     <section class="admin-panel" data-admin-panel="tasks"{% if selected_tab != 'tasks' %} hidden{% endif %}>
-        <p class="admin-note">Die Zeilen werden automatisch röter, je näher die Deadline kommt. Status wird direkt aus dem Kanban übernommen.</p>
+        <p class="admin-note">Aufgaben werden nach Wichtigkeit markiert: Idee rosa-rot, normal magenta-rot, prio weinrot. Status wird direkt aus dem Kanban übernommen.</p>
 
         {% if create_form.errors %}
             <div class="admin-form-errors">
@@ -859,7 +894,7 @@
                             data-task-row
                             data-task-id="{{ item.task.id }}"
                             data-status="{{ item.task.status }}"
-                            style="--urgency-alpha: {{ item.urgency_alpha }};"
+                            data-importance="{{ item.task.importance }}"
                         >
                             <td>
                                 <div class="task-title-display">{{ item.task.title }}</div>
@@ -1010,6 +1045,7 @@
                                 draggable="true"
                                 data-kanban-card
                                 data-task-id="{{ item.task.id }}"
+                                data-importance="{{ item.task.importance }}"
                                 data-status="{{ item.task.status }}"
                                 data-status-url="{% url 'admin_task_status_update' item.task.id %}"
                             >
@@ -1242,13 +1278,10 @@
                 }
             }
 
-            function updateRowUrgency(taskId, urgencyAlpha, status) {
+            function updateRowStatus(taskId, status) {
                 var row = document.querySelector('[data-task-row][data-task-id="' + taskId + '"]');
                 if (!row) {
                     return;
-                }
-                if (urgencyAlpha) {
-                    row.style.setProperty("--urgency-alpha", urgencyAlpha);
                 }
                 row.dataset.status = status;
             }
@@ -1422,7 +1455,7 @@
                                 droppedCard.dataset.status = payload.status;
                                 updateStatusChip(taskId, payload.status, payload.status_label);
                                 updateDeadlineLabel(taskId, payload.deadline_label);
-                                updateRowUrgency(taskId, payload.urgency_alpha, payload.status);
+                                updateRowStatus(taskId, payload.status);
                             })
                             .catch(function () {
                                 droppedSourceZone.insertBefore(droppedCard, droppedSourceZone.querySelector("[data-empty-hint]"));

@@ -1902,14 +1902,6 @@ def _admin_task_view_data(task: AdminTask, today: date) -> dict:
     created_on = timezone.localtime(task.created_at).date() if task.created_at else today
     due_date = created_on + timedelta(days=task.days)
     days_left = (due_date - today).days
-    total_days = max(task.days, 1)
-    if days_left < 0:
-        progress_ratio = 1.0
-    else:
-        progress_ratio = min(max((total_days - days_left) / total_days, 0.0), 1.0)
-    urgency_alpha = 0.06 + (progress_ratio * 0.34)
-    if task.status == AdminTask.Status.DONE:
-        urgency_alpha = min(urgency_alpha, 0.12)
 
     if days_left < 0:
         deadline_label = f"ueberfaellig seit {abs(days_left)} Tag(en)"
@@ -1924,7 +1916,6 @@ def _admin_task_view_data(task: AdminTask, today: date) -> dict:
         "due_date": due_date,
         "days_left": days_left,
         "deadline_label": deadline_label,
-        "urgency_alpha": f"{urgency_alpha:.2f}",
     }
 
 
@@ -3000,7 +2991,6 @@ def admin_task_status_update(request, task_id: int):
             "status": task.status,
             "status_label": task.get_status_display(),
             "deadline_label": task_data["deadline_label"],
-            "urgency_alpha": task_data["urgency_alpha"],
         }
     )
 
