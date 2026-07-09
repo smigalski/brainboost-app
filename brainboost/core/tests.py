@@ -1014,7 +1014,7 @@ class LeadAdminToolsTests(TestCase):
         EMAIL_HOST_PASSWORD="smtp-password",
     )
     @patch(
-        "core.views._send_set_password_email",
+        "core.views.leads._send_set_password_email",
         side_effect=SMTPAuthenticationError(535, b"5.7.8 Error: authentication failed"),
     )
     def test_smtp_authentication_failure_keeps_tutor_and_shows_retryable_message(self, mocked_send):
@@ -2111,7 +2111,7 @@ class InvoiceNumberingTests(TestCase):
             captured_numbers.append(kwargs["invoice_context"]["invoice_number"])
             return b"%PDF-1.4\n%fake\n"
 
-        with patch("core.views._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
+        with patch("core.views.invoices._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
             for _ in range(2):
                 response = self.client.post(
                     reverse("invoice_upload"),
@@ -2205,7 +2205,7 @@ class StripeWebhookSecurityTests(TestCase):
         )
 
     @override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="")
-    @patch("core.views._stripe_client")
+    @patch("core.views.invoices._stripe_client")
     def test_webhook_rejects_events_without_configured_secret(self, mocked_stripe_client):
         stripe = SimpleNamespace(
             Webhook=SimpleNamespace(construct_event=Mock()),
@@ -2229,8 +2229,8 @@ class StripeWebhookSecurityTests(TestCase):
         STRIPE_SECRET_KEY="sk_test_123",
         STRIPE_WEBHOOK_SECRET="whsec_test_123",
     )
-    @patch("core.views.notify_invoice_payment_received_tutor")
-    @patch("core.views._stripe_client")
+    @patch("core.views.invoices.notify_invoice_payment_received_tutor")
+    @patch("core.views.invoices._stripe_client")
     def test_webhook_uses_signature_secret_and_marks_invoice_paid(
         self,
         mocked_stripe_client,
@@ -2441,7 +2441,7 @@ class InvoicePdfTemplateLayoutTests(TestCase):
 
 class GoogleRoutesDistanceTests(TestCase):
     @override_settings(GOOGLE_ROUTES_API_KEY="routes-test-key")
-    @patch("core.views.urlopen")
+    @patch("core.views.common.urlopen")
     def test_google_driving_distance_km_uses_routes_api_distance_meters(self, mocked_urlopen):
         class Response:
             def __enter__(self):
@@ -2471,7 +2471,7 @@ class GoogleRoutesDistanceTests(TestCase):
         self.assertEqual(payload["travelMode"], "DRIVE")
 
     @override_settings(GOOGLE_ROUTES_API_KEY="")
-    @patch("core.views.urlopen")
+    @patch("core.views.common.urlopen")
     def test_google_driving_distance_km_skips_without_api_key(self, mocked_urlopen):
         distance = _google_driving_distance_km(
             "Tutorstrasse 1, Braunschweig",
@@ -2481,7 +2481,7 @@ class GoogleRoutesDistanceTests(TestCase):
         self.assertIsNone(distance)
         mocked_urlopen.assert_not_called()
 
-    @patch("core.views._google_driving_distance_km", return_value=Decimal("7.25"))
+    @patch("core.views.common._google_driving_distance_km", return_value=Decimal("7.25"))
     def test_assign_location_and_distance_stores_round_trip_for_home_lessons(self, mocked_distance):
         tutor_user = CustomUser.objects.create_user(
             username="routes_tutor",
@@ -2818,7 +2818,7 @@ class InvoiceGenerationChargeableCancellationTests(TestCase):
             captured["lessons"] = list(kwargs["lessons"])
             return b"%PDF-1.4\n%fake\n"
 
-        with patch("core.views._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
+        with patch("core.views.invoices._generate_invoice_pdf", side_effect=fake_generate_invoice_pdf):
             response = self.client.post(
                 reverse("invoice_upload"),
                 data={
