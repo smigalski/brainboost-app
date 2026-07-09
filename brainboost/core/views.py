@@ -38,6 +38,21 @@ from django.utils.http import urlsafe_base64_encode, url_has_allowed_host_and_sc
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
+from .access import (
+    assigned_students_qs as _assigned_students_qs,
+    assigned_tutors_qs as _assigned_tutors_qs,
+    can_approve_invoice,
+    can_access_material as _can_access_material,
+    can_cancel_lesson,
+    can_delete_invoice,
+    can_delete_material,
+    can_manage_invoice,
+    can_manage_lesson,
+    can_request_lesson_reschedule,
+    can_view_lesson,
+    has_admin_access as _has_admin_access,
+    payer_invoice_qs,
+)
 from .forms import (
     LessonForm,
     ProgressEntryForm,
@@ -1754,10 +1769,6 @@ def _create_tutor_from_lead(lead: Lead, *, mark_lead_won: bool = True) -> Custom
     return user
 
 
-def _has_admin_access(user: CustomUser) -> bool:
-    return bool(user.is_staff or user.is_superuser)
-
-
 LEAD_EXPORT_FIELDS = [
     "created_at",
     "role",
@@ -1977,37 +1988,6 @@ def _send_broadcast_emails(subject: str, body: str, recipients: list[str]) -> tu
             failed += 1
             logger.exception("Rundmail Versand fehlgeschlagen fuer %s", recipient)
     return sent, failed
-
-
-def _assigned_students_qs(tutor_profile: TutorProfile):
-    return (
-        StudentProfile.objects.filter(assigned_tutors=tutor_profile)
-        .select_related("user")
-        .distinct()
-    )
-
-
-def _assigned_tutors_qs(tutor_profile: TutorProfile):
-    return tutor_profile.assigned_tutors.select_related("user").distinct()
-
-
-def _can_access_material(user: CustomUser, material: LearningMaterial) -> bool:
-    if _has_admin_access(user):
-        return True
-
-    if user.role == CustomUser.Roles.TUTOR and hasattr(user, "tutor_profile"):
-        tutor_profile = user.tutor_profile
-        if material.uploaded_by_id == tutor_profile.id:
-            return True
-        return material.student.assigned_tutors.filter(pk=tutor_profile.pk).exists()
-
-    if _is_learning_profile_user(user) and hasattr(user, "student_profile"):
-        return material.student_id == user.student_profile.id
-
-    if user.role == CustomUser.Roles.PARENT and hasattr(user, "parent_profile"):
-        return material.student.parents.filter(pk=user.parent_profile.pk).exists()
-
-    return False
 
 
 def _tutor_student_assignment_url_with_source(
@@ -3709,15 +3689,7 @@ def lesson_cancel(request, lesson_id):
     _ensure_profile_for_user(request.user)
     lesson = get_object_or_404(Lesson, pk=lesson_id)
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-    allowed = False
-    # TutorIn, StudentIn oder Elternteil dürfen stornieren
-    if hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile:
-        allowed = True
-    if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
-        allowed = True
-    if hasattr(request.user, "parent_profile") and request.user.parent_profile.students.filter(id=lesson.student_id).exists():
-        allowed = True
-    if not allowed:
+    if not can_cancel_lesson(request.user, lesson):
         return JsonResponse({"ok": False, "message": "Keine Berechtigung."}, status=403) if is_ajax else redirect("lesson_list")
 
     if request.method != "POST":
@@ -3774,12 +3746,7 @@ def lesson_reschedule_request(request, lesson_id):
     lesson = get_object_or_404(Lesson, pk=lesson_id)
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
 
-    allowed = False
-    if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
-        allowed = True
-    if hasattr(request.user, "parent_profile") and request.user.parent_profile.students.filter(id=lesson.student_id).exists():
-        allowed = True
-    if not allowed:
+    if not can_request_lesson_reschedule(request.user, lesson):
         return JsonResponse({"ok": False, "message": "Keine Berechtigung."}, status=403) if is_ajax else redirect("lesson_list")
 
     if request.method != "POST":
@@ -3815,14 +3782,7 @@ def lesson_reschedule_request(request, lesson_id):
 def lesson_google_calendar(request, lesson_id):
     _ensure_profile_for_user(request.user)
     lesson = get_object_or_404(Lesson, pk=lesson_id)
-    allowed = False
-    if hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile:
-        allowed = True
-    if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
-        allowed = True
-    if hasattr(request.user, "parent_profile") and request.user.parent_profile.students.filter(id=lesson.student_id).exists():
-        allowed = True
-    if not allowed:
+    if not can_view_lesson(request.user, lesson):
         return redirect("lesson_list")
     return redirect(_lesson_google_calendar_url_for_user(request.user, lesson))
 
@@ -3831,14 +3791,7 @@ def lesson_google_calendar(request, lesson_id):
 def lesson_ics(request, lesson_id):
     _ensure_profile_for_user(request.user)
     lesson = get_object_or_404(Lesson, pk=lesson_id)
-    allowed = False
-    if hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile:
-        allowed = True
-    if hasattr(request.user, "student_profile") and lesson.student == request.user.student_profile:
-        allowed = True
-    if hasattr(request.user, "parent_profile") and request.user.parent_profile.students.filter(id=lesson.student_id).exists():
-        allowed = True
-    if not allowed:
+    if not can_view_lesson(request.user, lesson):
         return redirect("lesson_list")
 
     start = lesson.scheduled_datetime.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -3873,8 +3826,7 @@ def lesson_ics(request, lesson_id):
 def lesson_edit(request, lesson_id):
     _ensure_profile_for_user(request.user)
     lesson = get_object_or_404(Lesson, pk=lesson_id)
-    is_tutor = hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile
-    if not is_tutor:
+    if not can_manage_lesson(request.user, lesson):
         return redirect("lesson_list")
     next_url = request.GET.get("next") or request.POST.get("next") or reverse("lesson_list")
     if not url_has_allowed_host_and_scheme(
@@ -3887,7 +3839,7 @@ def lesson_edit(request, lesson_id):
         form = LessonForm(
             data=request.POST,
             instance=lesson,
-            tutor_profile=request.user.tutor_profile if is_tutor else None,
+            tutor_profile=request.user.tutor_profile,
             is_edit=True,
             allowed_students=None,
         )
@@ -3910,7 +3862,7 @@ def lesson_edit(request, lesson_id):
     else:
         form = LessonForm(
             instance=lesson,
-            tutor_profile=request.user.tutor_profile if is_tutor else None,
+            tutor_profile=request.user.tutor_profile,
             is_edit=True,
             allowed_students=None,
         )
@@ -3932,8 +3884,7 @@ def lesson_edit(request, lesson_id):
 def lesson_delete(request, lesson_id):
     _ensure_profile_for_user(request.user)
     lesson = get_object_or_404(Lesson, pk=lesson_id)
-    is_tutor = hasattr(request.user, "tutor_profile") and lesson.tutor == request.user.tutor_profile
-    if not is_tutor:
+    if not can_manage_lesson(request.user, lesson):
         return redirect("lesson_list")
 
     if request.method == "POST":
@@ -3997,9 +3948,7 @@ def material_upload(request, kind: str):
     if kind not in (LearningMaterial.Kind.TASK, LearningMaterial.Kind.SOLUTION):
         return redirect("dashboard")
 
-    allowed_students = StudentProfile.objects.filter(
-        assigned_tutors=request.user.tutor_profile
-    ).distinct()
+    allowed_students = _assigned_students_qs(request.user.tutor_profile)
     heading = "Aufgabe hochladen" if kind == LearningMaterial.Kind.TASK else "Ergebnisse hochladen"
 
     if request.method == "POST":
@@ -4061,16 +4010,11 @@ def material_delete(request, material_id):
     if request.method != "POST":
         return redirect("tutor_solution_list")
 
-    tutor_profile = request.user.tutor_profile
     material = get_object_or_404(
         LearningMaterial.objects.select_related("student__user", "uploaded_by__user"),
         pk=material_id,
     )
-    can_delete = (
-        material.uploaded_by_id == tutor_profile.id
-        or _has_admin_access(request.user)
-    )
-    if not can_delete:
+    if not can_delete_material(request.user, material):
         messages.error(request, "Du darfst diese Datei nicht löschen.")
         return redirect("tutor_solution_list")
 
@@ -4372,7 +4316,7 @@ def invoice_approve(request, invoice_id):
         pk=invoice_id,
     )
 
-    if not tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists():
+    if not can_approve_invoice(request.user, invoice):
         messages.error(request, "Du darfst diese Rechnung nicht freigeben.")
         return redirect("invoice_upload")
 
@@ -4394,16 +4338,11 @@ def invoice_notify_parent(request, invoice_id, parent_id):
     if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
         return redirect("dashboard")
 
-    tutor_profile = request.user.tutor_profile
     invoice = get_object_or_404(
         Invoice.objects.select_related("student__user", "uploaded_by__user", "approved_by__user"),
         pk=invoice_id,
     )
-    can_manage = (
-        invoice.uploaded_by_id == tutor_profile.id
-        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
-    )
-    if not can_manage:
+    if not can_manage_invoice(request.user, invoice):
         messages.error(request, "Du darfst diese Rechnung nicht an Eltern versenden.")
         return redirect("invoice_upload")
     if not invoice.is_approved:
@@ -4429,17 +4368,12 @@ def invoice_notify_student(request, invoice_id):
     if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
         return redirect("dashboard")
 
-    tutor_profile = request.user.tutor_profile
     invoice = get_object_or_404(
         Invoice.objects.select_related("student__user", "uploaded_by__user", "approved_by__user")
         .prefetch_related("student__parents__user"),
         pk=invoice_id,
     )
-    can_manage = (
-        invoice.uploaded_by_id == tutor_profile.id
-        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
-    )
-    if not can_manage:
+    if not can_manage_invoice(request.user, invoice):
         messages.error(request, "Du darfst diese Rechnung nicht an SchülerInnen/StudentInnen versenden.")
         return redirect("invoice_upload")
     if not invoice.is_approved:
@@ -4470,16 +4404,11 @@ def invoice_delete(request, invoice_id):
     if request.method != "POST":
         return redirect("invoice_upload")
 
-    tutor_profile = request.user.tutor_profile
     invoice = get_object_or_404(
         Invoice.objects.select_related("student__user", "uploaded_by__user"),
         pk=invoice_id,
     )
-    can_delete = (
-        invoice.uploaded_by_id == tutor_profile.id
-        or _has_admin_access(request.user)
-    )
-    if not can_delete:
+    if not can_delete_invoice(request.user, invoice):
         messages.error(request, "Du darfst diese Rechnung nicht löschen.")
         return redirect("invoice_upload")
 
@@ -4508,14 +4437,10 @@ def invoice_select_payment(request, invoice_id, method):
         return redirect("invoice_list")
 
     parent_profile = request.user.parent_profile if is_parent else None
-    invoice_qs = Invoice.objects.select_related("student__user", "uploaded_by__user").filter(
-        pk=invoice_id,
-        approved_at__isnull=False,
-    )
-    if is_parent:
-        invoice_qs = invoice_qs.filter(student__parents=parent_profile)
-    else:
-        invoice_qs = invoice_qs.filter(student=request.user.student_profile)
+    invoice_qs = payer_invoice_qs(request.user).select_related(
+        "student__user",
+        "uploaded_by__user",
+    ).filter(pk=invoice_id)
     invoice = get_object_or_404(invoice_qs)
     if invoice.payment_status == Invoice.PaymentStatus.PAID:
         messages.info(request, "Diese Rechnung ist bereits als bezahlt markiert.")
@@ -4544,14 +4469,10 @@ def invoice_checkout(request, invoice_id):
         return redirect("invoice_list")
 
     parent_profile = request.user.parent_profile if is_parent else None
-    invoice_qs = Invoice.objects.select_related("student__user", "uploaded_by__user").filter(
-        pk=invoice_id,
-        approved_at__isnull=False,
-    )
-    if is_parent:
-        invoice_qs = invoice_qs.filter(student__parents=parent_profile)
-    else:
-        invoice_qs = invoice_qs.filter(student=request.user.student_profile)
+    invoice_qs = payer_invoice_qs(request.user).select_related(
+        "student__user",
+        "uploaded_by__user",
+    ).filter(pk=invoice_id)
     invoice = get_object_or_404(invoice_qs)
     if not invoice.can_pay_online:
         messages.error(request, "Für diese Rechnung ist aktuell keine Online-Zahlung verfügbar.")
@@ -4624,12 +4545,13 @@ def stripe_webhook(request):
 
     payload = request.body
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
-    webhook_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", "")
+    webhook_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", "").strip()
+    if not webhook_secret:
+        logger.error("Stripe webhook rejected because STRIPE_WEBHOOK_SECRET is not configured.")
+        return HttpResponse(status=500)
+
     try:
-        if webhook_secret:
-            event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
-        else:
-            event = stripe.Event.construct_from(json.loads(payload.decode("utf-8")), stripe.api_key)
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
     except Exception:
         return HttpResponse(status=400)
 
@@ -4683,11 +4605,7 @@ def invoice_confirm_payment(request, invoice_id):
         ),
         pk=invoice_id,
     )
-    can_manage = (
-        invoice.uploaded_by_id == tutor_profile.id
-        or tutor_profile.assigned_tutors.filter(pk=invoice.uploaded_by_id).exists()
-    )
-    if not can_manage:
+    if not can_manage_invoice(request.user, invoice):
         messages.error(request, "Du darfst diesen Zahlungseingang nicht bestätigen.")
         return redirect("invoice_upload")
     if not invoice.can_confirm_receipt:
@@ -4999,15 +4917,11 @@ def invoice_list(request):
         messages.success(request, "Die Online-Zahlung wurde erfolgreich abgeschlossen. Die Rechnung wurde aktualisiert.")
     elif payment_status == "cancelled":
         messages.info(request, "Die Online-Zahlung wurde abgebrochen.")
-    students = (
-        request.user.parent_profile.students.all()
-        if is_parent
-        else StudentProfile.objects.filter(pk=request.user.student_profile.pk)
+    invoices = payer_invoice_qs(request.user).select_related(
+        "student__user",
+        "uploaded_by__user",
+        "approved_by__user",
     )
-    invoices = Invoice.objects.filter(
-        student__in=students,
-        approved_at__isnull=False,
-    ).select_related("student__user", "uploaded_by__user", "approved_by__user")
     return render(
         request,
         "invoice_list.html",

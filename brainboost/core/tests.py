@@ -5,7 +5,8 @@ import json
 import re
 from smtplib import SMTPAuthenticationError
 import tempfile
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 from urllib.parse import parse_qs, urlsplit
 from xml.etree import ElementTree
 
@@ -28,6 +29,7 @@ from .forms import (
     LearningMaterialForm,
     TutorProfileForm,
 )
+from .access import can_access_student, can_manage_lesson, can_view_invoice
 from .models import (
     BrainBoostFeedback,
     CustomUser,
@@ -160,6 +162,84 @@ class SeoEndpointTests(SimpleTestCase):
         call_command("submit_indexnow", stdout=output)
 
         self.assertIn("Status 202", output.getvalue())
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class AccessPolicyTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="access_tutor",
+            password="pw",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.other_tutor_user = CustomUser.objects.create_user(
+            username="access_other_tutor",
+            password="pw",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.parent_user = CustomUser.objects.create_user(
+            username="access_parent",
+            password="pw",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="access_student",
+            password="pw",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.other_student_user = CustomUser.objects.create_user(
+            username="access_other_student",
+            password="pw",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.other_tutor = TutorProfile.objects.create(user=self.other_tutor_user)
+        self.parent = ParentProfile.objects.create(user=self.parent_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.other_student = StudentProfile.objects.create(user=self.other_student_user)
+        self.student.parents.add(self.parent)
+        self.student.assigned_tutors.add(self.tutor)
+        self.lesson = Lesson.objects.create(
+            tutor=self.tutor,
+            student=self.student,
+            date=date(2026, 4, 1),
+            time=time(15, 0),
+            duration_minutes=60,
+            ort=Lesson.Ort.ONLINE,
+            fach="mathe",
+        )
+        self.invoice = Invoice.objects.create(
+            student=self.student,
+            uploaded_by=self.tutor,
+            approved_by=self.tutor,
+            approved_at=timezone.now(),
+            amount_total=Decimal("25.00"),
+            file=SimpleUploadedFile("rechnung.pdf", b"%PDF-1.4\n"),
+        )
+
+    def test_can_access_student_for_linked_users_only(self):
+        self.assertTrue(can_access_student(self.tutor_user, self.student))
+        self.assertTrue(can_access_student(self.parent_user, self.student))
+        self.assertTrue(can_access_student(self.student_user, self.student))
+        self.assertFalse(can_access_student(self.other_tutor_user, self.student))
+        self.assertFalse(can_access_student(self.student_user, self.other_student))
+
+    def test_can_manage_lesson_only_for_lesson_tutor(self):
+        self.assertTrue(can_manage_lesson(self.tutor_user, self.lesson))
+        self.assertFalse(can_manage_lesson(self.other_tutor_user, self.lesson))
+        self.assertFalse(can_manage_lesson(self.parent_user, self.lesson))
+        self.assertFalse(can_manage_lesson(self.student_user, self.lesson))
+
+    def test_can_view_invoice_requires_approved_invoice_and_relationship(self):
+        self.assertTrue(can_view_invoice(self.parent_user, self.invoice))
+        self.assertTrue(can_view_invoice(self.tutor_user, self.invoice))
+        self.assertFalse(can_view_invoice(self.other_tutor_user, self.invoice))
+        self.assertFalse(can_view_invoice(self.student_user, self.invoice))
+
+        self.invoice.approved_at = None
+        self.invoice.save(update_fields=["approved_at"])
+        self.assertFalse(can_view_invoice(self.parent_user, self.invoice))
+        self.assertFalse(can_view_invoice(self.tutor_user, self.invoice))
 
 
 @override_settings(
@@ -2095,6 +2175,103 @@ class InvoiceNumberingTests(TestCase):
         date_index = html.index("Rechnungsdatum:")
         self.assertLess(number_index, date_index)
         self.assertNotIn("RE-A01-0001_Mai26_Max_Mustermann.pdf", html)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MEDIA_ROOT=tempfile.mkdtemp(),
+)
+class StripeWebhookSecurityTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="stripe_webhook_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.student_user = CustomUser.objects.create_user(
+            username="stripe_webhook_student",
+            password="test12345",
+            role=CustomUser.Roles.INDEPENDENT_STUDENT,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.invoice = Invoice.objects.create(
+            student=self.student,
+            uploaded_by=self.tutor,
+            approved_by=self.tutor,
+            approved_at=timezone.now(),
+            amount_total=Decimal("25.00"),
+            file=SimpleUploadedFile("rechnung.pdf", b"%PDF-1.4\n"),
+        )
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="")
+    @patch("core.views._stripe_client")
+    def test_webhook_rejects_events_without_configured_secret(self, mocked_stripe_client):
+        stripe = SimpleNamespace(
+            Webhook=SimpleNamespace(construct_event=Mock()),
+            Event=SimpleNamespace(construct_from=Mock()),
+        )
+        mocked_stripe_client.return_value = stripe
+
+        response = self.client.post(
+            reverse("stripe_webhook"),
+            data=json.dumps({"type": "checkout.session.completed"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 500)
+        stripe.Webhook.construct_event.assert_not_called()
+        stripe.Event.construct_from.assert_not_called()
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.payment_status, Invoice.PaymentStatus.OPEN)
+
+    @override_settings(
+        STRIPE_SECRET_KEY="sk_test_123",
+        STRIPE_WEBHOOK_SECRET="whsec_test_123",
+    )
+    @patch("core.views.notify_invoice_payment_received_tutor")
+    @patch("core.views._stripe_client")
+    def test_webhook_uses_signature_secret_and_marks_invoice_paid(
+        self,
+        mocked_stripe_client,
+        mocked_notify,
+    ):
+        event = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_test_123",
+                    "payment_intent": "pi_test_123",
+                    "metadata": {"invoice_id": str(self.invoice.id)},
+                }
+            },
+        }
+        stripe = SimpleNamespace(
+            Webhook=SimpleNamespace(construct_event=Mock(return_value=event)),
+            Event=SimpleNamespace(construct_from=Mock()),
+        )
+        mocked_stripe_client.return_value = stripe
+
+        response = self.client.post(
+            reverse("stripe_webhook"),
+            data=json.dumps(event),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="signed-payload",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        stripe.Webhook.construct_event.assert_called_once()
+        payload, signature, secret = stripe.Webhook.construct_event.call_args.args
+        self.assertEqual(json.loads(payload.decode("utf-8")), event)
+        self.assertEqual(signature, "signed-payload")
+        self.assertEqual(secret, "whsec_test_123")
+        stripe.Event.construct_from.assert_not_called()
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.payment_status, Invoice.PaymentStatus.PAID)
+        self.assertEqual(self.invoice.payment_method, Invoice.PaymentMethod.ONLINE)
+        self.assertEqual(self.invoice.stripe_checkout_session_id, "cs_test_123")
+        self.assertEqual(self.invoice.stripe_payment_intent_id, "pi_test_123")
+        mocked_notify.assert_called_once()
 
 
 class InvoicePdfTemplateLayoutTests(TestCase):
