@@ -419,15 +419,15 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(lead.utm_campaign, "new-campaign")
         self.assertEqual(lead.campaign, "new-campaign")
 
-    def test_invalid_form_without_contact_detail_is_not_saved(self):
+    def test_invalid_form_without_email_is_not_saved(self):
         response = self.client.post(
             reverse("contact"),
-            data=self._parent_data(email="", phone=""),
+            data=self._parent_data(email="", phone="0176 123456"),
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Lead.objects.count(), 0)
-        self.assertContains(response, "mindestens eine E-Mail-Adresse")
+        self.assertContains(response, "Bitte gib eine E-Mail-Adresse an.")
 
     def test_privacy_checkbox_is_required(self):
         data = self._parent_data()
@@ -456,7 +456,7 @@ class LeadFormFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Lead.objects.count(), 0)
-        self.assertContains(response, "Für TutorInnen-Bewerbungen ist eine E-Mail-Adresse erforderlich.")
+        self.assertContains(response, "Bitte gib eine E-Mail-Adresse an.")
 
     def test_contact_page_marks_tutor_tab_as_application_profile(self):
         response = self.client.get(reverse("contact") + "?role=tutor")
@@ -464,6 +464,7 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Das ist dein Bewerbungsprofil als TutorIn.")
         self.assertContains(response, "in ein TutorInnen-Profil um")
+        self.assertContains(response, "SchülerIn/StudentIn")
         self.assertContains(response, 'data-tutor-email-required')
         self.assertContains(response, 'data-selected-role="tutor"')
 
