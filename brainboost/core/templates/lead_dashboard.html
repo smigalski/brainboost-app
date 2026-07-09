@@ -355,6 +355,7 @@
                                         data-email="{{ lead.email }}"
                                         data-phone="{{ lead.phone }}"
                                         data-subject="{{ lead.subject }}"
+                                        data-goal="{{ lead.goal }}"
                                         data-message="{{ lead.message }}"
                                     >Kontaktieren</button>
                                     {% if lead.role == "tutor" %}
@@ -424,6 +425,7 @@
                                         data-email="{{ lead.email }}"
                                         data-phone="{{ lead.phone }}"
                                         data-subject="{{ lead.subject }}"
+                                        data-goal="{{ lead.goal }}"
                                         data-message="{{ lead.message }}"
                                     >Kontaktieren</button>
                                     {% if lead.role == "tutor" %}
@@ -500,17 +502,25 @@
 
         function quotedMessage(message) {
             var value = (message || "-").trim() || "-";
-            return value.split(/\r?\n/).map(function (line) {
-                return "> " + line;
-            }).join("\n");
+            return value;
+        }
+
+        function firstName(name) {
+            return (name || "").trim().split(/\s+/)[0] || "";
         }
 
         function emailUrl(lead) {
             var subject = lead.subject ? lead.name + ", " + lead.subject : lead.name;
+            var greetingName = firstName(lead.name);
             var body = [
+                "Guten Tag" + (greetingName ? " " + greetingName : "") + "!",
+                "",
+                "Gerne helfen wir...",
                 "",
                 "",
-                "--- Nachricht der Anfrage ---",
+                "------------------------------------------------",
+                "Dein Ziel: " + (lead.goal || "-"),
+                "Deine Nachricht an uns war:",
                 quotedMessage(lead.message)
             ].join("\n");
             return "mailto:" + encodeURIComponent(lead.email) +
@@ -574,6 +584,7 @@
                     email: button.dataset.email || "",
                     phone: button.dataset.phone || "",
                     subject: button.dataset.subject || "",
+                    goal: button.dataset.goal || "",
                     message: button.dataset.message || ""
                 });
             });

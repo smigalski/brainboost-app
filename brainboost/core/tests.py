@@ -342,7 +342,7 @@ class LeadFormFlowTests(TestCase):
         self.assertTrue(lead.privacy_consent)
         self.assertEqual(len(mail.outbox), 2)
         self.assertIn("operator@example.com", mail.outbox[0].to)
-        self.assertEqual(mail.outbox[0].reply_to, ["maria@example.com"])
+        self.assertEqual(mail.outbox[0].reply_to, ["no-reply@nachhilfe-brainboost.de"])
         self.assertIn("maria@example.com", mail.outbox[1].to)
         self.assertEqual(mail.outbox[1].from_email, "BrainBoost <brainboost.nachhilfe@gmail.com>")
         self.assertEqual(mail.outbox[1].reply_to, ["brainboost.nachhilfe@gmail.com"])
@@ -419,15 +419,15 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(lead.utm_campaign, "new-campaign")
         self.assertEqual(lead.campaign, "new-campaign")
 
-    def test_invalid_form_without_email_is_not_saved(self):
+    def test_invalid_form_without_contact_detail_is_not_saved(self):
         response = self.client.post(
             reverse("contact"),
-            data=self._parent_data(email="", phone="0176 123456"),
+            data=self._parent_data(email="", phone=""),
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Lead.objects.count(), 0)
-        self.assertContains(response, "Bitte gib eine E-Mail-Adresse an.")
+        self.assertContains(response, "mindestens eine E-Mail-Adresse")
 
     def test_privacy_checkbox_is_required(self):
         data = self._parent_data()
@@ -456,7 +456,7 @@ class LeadFormFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Lead.objects.count(), 0)
-        self.assertContains(response, "Bitte gib eine E-Mail-Adresse an.")
+        self.assertContains(response, "Für TutorInnen-Bewerbungen ist eine E-Mail-Adresse erforderlich.")
 
     def test_contact_page_marks_tutor_tab_as_application_profile(self):
         response = self.client.get(reverse("contact") + "?role=tutor")
@@ -777,6 +777,12 @@ class LeadAdminToolsTests(TestCase):
         self.assertContains(response, "Entfernen")
         self.assertContains(response, 'data-email="tina@example.com"')
         self.assertContains(response, 'data-phone="+49 176 123456"')
+        self.assertContains(response, 'data-goal="Noten verbessern"')
+        self.assertContains(response, "Guten Tag")
+        self.assertContains(response, "Gerne helfen wir...")
+        self.assertContains(response, "Dein Ziel:")
+        self.assertContains(response, "Deine Nachricht an uns war:")
+        self.assertNotContains(response, "--- Nachricht der Anfrage ---")
         self.assertContains(response, "Zur TutorIn machen")
 
     def test_staff_user_can_mark_new_lead_as_contacted(self):

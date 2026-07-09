@@ -106,6 +106,11 @@ def _default_reply_to() -> list[str]:
     return [configured] if configured else []
 
 
+def _blocked_reply_to() -> list[str]:
+    configured = getattr(settings, "NO_REPLY_EMAIL", "no-reply@nachhilfe-brainboost.de")
+    return [configured] if configured else []
+
+
 def _send_templated_email(
     subject: str,
     template_base: str,
@@ -160,7 +165,7 @@ def notify_lead_created(lead: Lead) -> None:
         "lead_internal",
         context,
         _lead_operator_recipients(),
-        reply_to=[lead.email],
+        reply_to=_blocked_reply_to(),
     )
     if lead.email:
         public_subject = (
