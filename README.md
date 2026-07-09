@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://www.nachhilfe-brainboost.de"><img alt="Live" src="https://img.shields.io/badge/Live-Website-2ea44f?style=for-the-badge"></a>
   <a href="https://brainboost.pythonanywhere.com"><img alt="Deployment" src="https://img.shields.io/badge/Deploy-PythonAnywhere-1f6feb?style=for-the-badge"></a>
+  <a href="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Django 4.2" src="https://img.shields.io/badge/Django-4.2-0c4b33?style=for-the-badge">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge">
 </p>
@@ -124,6 +125,13 @@ python manage.py collectstatic --noinput #statische Dateien wie Bilder, PDFs, ..
 
 Danach Web-App in PythonAnywhere neu laden.
 
+## Continuous Integration
+
+GitHub Actions fuehrt bei jedem Push, Pull Request und manuellen Start den Workflow
+`.github/workflows/ci.yml` aus. Der Workflow startet PostgreSQL, installiert die
+Python-Abhaengigkeiten, prueft Django per `manage.py check` und fuehrt
+`python brainboost/manage.py test core` aus.
+
 ## Security-Hinweise
 
 - Keine Secrets in Git committen (`.env`, Credentials, API Keys).
@@ -133,7 +141,7 @@ Danach Web-App in PythonAnywhere neu laden.
 ## Roadmap
 
 - [ ] Testabdeckung ausbauen (Unit + Integration)
-- [ ] CI-Pipeline fuer Linting/Tests
+- [x] CI-Pipeline fuer Django-Checks und Tests
 - [ ] Monitoring/Alerting fuer Zahlungs- und E-Mail-Flows
 - [ ] Verbesserte Admin-Reports
 
