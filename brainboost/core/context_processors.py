@@ -19,6 +19,6 @@ def contact_settings(request):
         "public_contact_email": getattr(
             settings,
             "PUBLIC_CONTACT_EMAIL",
-            "kontakt@nachhilfe-brainboost.de",
+            "brainboost.nachhilfe@gmail.com",
         ),
     }

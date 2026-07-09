@@ -48,9 +48,9 @@ CSRF_COOKIE_SECURE = True
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "kontakt@nachhilfe-brainboost.de")
+PUBLIC_CONTACT_EMAIL = os.environ.get("PUBLIC_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
 INTERNAL_CONTACT_EMAIL = os.environ.get("INTERNAL_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "nachhilfe-brainboost-de.netcup-mail.de")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", PUBLIC_CONTACT_EMAIL)

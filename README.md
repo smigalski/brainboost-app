@@ -104,7 +104,7 @@ Beispielwerte siehe [`.env.example`](.env.example).
 - `DJANGO_DEV_SECRET_KEY`
 - `DJANGO_SECRET_KEY`
 - `POSTGRES_LOCAL_*` / `POSTGRES_*`
-- `PUBLIC_CONTACT_EMAIL`: öffentliche Kontaktadresse, aktuell `kontakt@nachhilfe-brainboost.de`
+- `PUBLIC_CONTACT_EMAIL`: öffentliche Kontaktadresse, aktuell `brainboost.nachhilfe@gmail.com`
 - `INTERNAL_CONTACT_EMAIL`: interne Fallback-Adresse, aktuell `brainboost.nachhilfe@gmail.com`
 - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: SMTP-Zugangsdaten, in Produktion ohne Passwort im Repo
 - `DEFAULT_FROM_EMAIL`, `SERVER_EMAIL`, `DEFAULT_REPLY_TO_EMAIL`: Absender-/Antwortadressen für Systemmails

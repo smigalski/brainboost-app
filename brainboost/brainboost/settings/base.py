@@ -137,9 +137,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-PUBLIC_CONTACT_EMAIL = os.getenv("PUBLIC_CONTACT_EMAIL", "kontakt@nachhilfe-brainboost.de")
+PUBLIC_CONTACT_EMAIL = os.getenv("PUBLIC_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
 INTERNAL_CONTACT_EMAIL = os.getenv("INTERNAL_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "nachhilfe-brainboost-de.netcup-mail.de")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", PUBLIC_CONTACT_EMAIL)
