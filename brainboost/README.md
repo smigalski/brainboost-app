@@ -3,7 +3,8 @@
 Einfache Django-Anwendung für BrainBoost: Login, Landing-Page und TutorIn-Workflows.
 
 ## Lokale Entwicklung
-- Python 3.11+ empfohlen.
+- Python 3.13 empfohlen.
+- Virtuelle Umgebung erstellen: `python3.13 -m venv .venv`
 - Abhängigkeiten installieren: `pip install -r requirements.txt`
 - Migrationen ausführen: `python manage.py migrate`
 - Dev-Server starten: `python manage.py runserver`

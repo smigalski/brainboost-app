@@ -12,7 +12,7 @@
   <a href="https://www.nachhilfe-brainboost.de"><img alt="Live" src="https://img.shields.io/badge/Live-Website-2ea44f?style=for-the-badge"></a>
   <a href="https://brainboost.pythonanywhere.com"><img alt="Deployment" src="https://img.shields.io/badge/Deploy-PythonAnywhere-1f6feb?style=for-the-badge"></a>
   <a href="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Django 4.2" src="https://img.shields.io/badge/Django-4.2-0c4b33?style=for-the-badge">
+  <img alt="Django 5.2 LTS" src="https://img.shields.io/badge/Django-5.2%20LTS-0c4b33?style=for-the-badge">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge">
 </p>
 
@@ -52,8 +52,8 @@ BrainBoost ist eine Django-Anwendung fuer den operativen Alltag eines Nachhilfe-
 
 ## Tech Stack
 
-- Python 3.11+
-- Django 4.2
+- Python 3.13
+- Django 5.2 LTS
 - PostgreSQL (lokal + Produktion)
 - Stripe API
 - WeasyPrint (PDF)
@@ -80,7 +80,7 @@ git clone <REPO_URL>
 cd brainboost-app
 
 # 2) Virtuelle Umgebung
-python3 -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 
 # 3) Dependencies
@@ -124,6 +124,11 @@ python manage.py collectstatic --noinput #statische Dateien wie Bilder, PDFs, ..
 ```
 
 Danach Web-App in PythonAnywhere neu laden.
+
+PythonAnywhere muss fuer diese Version mit Python 3.13 laufen. Nach dem
+Upgrade dort die virtuelle Umgebung mit Python 3.13 neu erstellen oder auf eine
+Python-3.13-venv umstellen und danach `pip install -r requirements.txt`
+ausfuehren.
 
 ## Continuous Integration
 

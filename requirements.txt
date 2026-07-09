@@ -1,10 +1,10 @@
 asgiref==3.11.0
-Django==4.2.26
+Django==5.2.16
 sqlparse==0.5.3
 typing_extensions==4.15.0
-psycopg[binary]==3.1.18
-Pillow==11.1.0
-qrcode==7.4.2
+psycopg[binary]==3.3.4
+Pillow==12.3.0
+qrcode==8.2
 openpyxl==3.1.5
-weasyprint==66.0
-stripe==14.4.1
+weasyprint==69.0
+stripe==15.3.0
