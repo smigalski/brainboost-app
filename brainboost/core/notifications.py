@@ -111,10 +111,12 @@ def _send_templated_email(
     template_base: str,
     context: dict,
     recipients: Iterable[str],
+    reply_to: Optional[Iterable[str]] = None,
 ) -> bool:
     to_list = _unique_emails(recipients)
     if not to_list:
         return False
+    reply_to_list = _unique_emails(reply_to) if reply_to is not None else _default_reply_to()
     try:
         text_body = render_to_string(f"emails/{template_base}.txt", context)
         html_body = render_to_string(f"emails/{template_base}.html", context)
@@ -130,7 +132,7 @@ def _send_templated_email(
                 text_body,
                 from_email,
                 [recipient],
-                reply_to=_default_reply_to(),
+                reply_to=reply_to_list,
             )
             if html_body.strip():
                 message.attach_alternative(html_body, "text/html")
@@ -158,6 +160,7 @@ def notify_lead_created(lead: Lead) -> None:
         "lead_internal",
         context,
         _lead_operator_recipients(),
+        reply_to=[lead.email],
     )
     if lead.email:
         public_subject = (
