@@ -107,7 +107,11 @@ def _default_reply_to() -> list[str]:
 
 
 def _blocked_reply_to() -> list[str]:
-    configured = getattr(settings, "NO_REPLY_EMAIL", "no-reply@nachhilfe-brainboost.de")
+    configured = getattr(
+        settings,
+        "NO_REPLY_EMAIL",
+        getattr(settings, "PUBLIC_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com"),
+    )
     return [configured] if configured else []
 
 

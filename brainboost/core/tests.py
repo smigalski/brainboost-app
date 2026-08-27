@@ -422,7 +422,7 @@ class LeadFormFlowTests(TestCase):
         self.assertTrue(lead.privacy_consent)
         self.assertEqual(len(mail.outbox), 2)
         self.assertIn("operator@example.com", mail.outbox[0].to)
-        self.assertEqual(mail.outbox[0].reply_to, ["no-reply@nachhilfe-brainboost.de"])
+        self.assertEqual(mail.outbox[0].reply_to, ["brainboost.nachhilfe@gmail.com"])
         self.assertIn("maria@example.com", mail.outbox[1].to)
         self.assertEqual(mail.outbox[1].from_email, "BrainBoost <brainboost.nachhilfe@gmail.com>")
         self.assertEqual(mail.outbox[1].reply_to, ["brainboost.nachhilfe@gmail.com"])
