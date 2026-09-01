@@ -204,9 +204,15 @@ def lesson_create(request):
             for lesson_item in lessons_to_create:
                 _assign_location_and_distance(lesson_item)
                 lesson_item.save()
-                notify_lesson_created(request, lesson_item)
             if recurrence_dates:
+                notify_lesson_series_created(
+                    request,
+                    lessons_to_create,
+                    repeat_interval_weeks=form.cleaned_data["repeat_interval_weeks"],
+                )
                 messages.success(request, f"{len(lessons_to_create)} Termine wurden angelegt.")
+            else:
+                notify_lesson_created(request, lesson)
             return redirect("lesson_list")
     else:
         form = LessonForm(tutor_profile=request.user.tutor_profile, is_edit=False)

@@ -202,6 +202,45 @@ def notify_lesson_created(request, lesson: Lesson) -> None:
     _send_templated_email(subject, "lesson_created", context, _student_recipients(lesson.student))
 
 
+def notify_lesson_series_created(
+    request,
+    lessons: list[Lesson],
+    *,
+    repeat_interval_weeks: int,
+) -> None:
+    """Send one summary notification for a newly created recurring series."""
+    if not _notifications_enabled("lesson_created") or not lessons:
+        return
+    first_lesson = lessons[0]
+    last_lesson = lessons[-1]
+    interval_label = (
+        "wöchentlich"
+        if repeat_interval_weeks == 1
+        else f"alle {repeat_interval_weeks} Wochen"
+    )
+    subject = (
+        f"Neue Terminserie: {first_lesson.student.user.username} "
+        f"{interval_label} ab {first_lesson.date.strftime('%d.%m.%Y')}"
+    )
+    context = {
+        "heading": "Neue Terminserie",
+        "lesson": first_lesson,
+        "student": first_lesson.student,
+        "tutor": first_lesson.tutor,
+        "first_lesson": first_lesson,
+        "last_lesson": last_lesson,
+        "lesson_count": len(lessons),
+        "interval_label": interval_label,
+        **_build_urls(request),
+    }
+    _send_templated_email(
+        subject,
+        "lesson_series_created",
+        context,
+        _student_recipients(first_lesson.student),
+    )
+
+
 def notify_lesson_changed(request, lesson: Lesson) -> None:
     if not _notifications_enabled("lesson_changed"):
         return

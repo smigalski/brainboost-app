@@ -1,0 +1,16 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Eine neue Terminserie wurde erstellt. Du erhältst für die beim Anlegen erzeugten Folgetermine keine einzelnen E-Mails.
+
+SchülerIn: {{ student.user.username }}
+TutorIn: {{ tutor.user.username }}
+Erster Termin: {{ first_lesson.date|date:"d.m.Y" }}
+Letzter Termin: {{ last_lesson.date|date:"d.m.Y" }}
+Wiederholung: {{ interval_label }}
+Anzahl: {{ lesson_count }} Termine
+Uhrzeit: {{ first_lesson.time|time:"H:i" }}
+Fach/Fächer: {{ first_lesson.subject_display }}
+Ort: {{ first_lesson.get_ort_display }}
+
+Alle Termine: {{ lesson_list_url }}
+{% endblock %}

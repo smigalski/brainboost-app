@@ -95,6 +95,7 @@ from ..notifications import (
     notify_lesson_cancelled,
     notify_lesson_changed,
     notify_lesson_created,
+    notify_lesson_series_created,
     notify_lesson_reschedule_requested,
     notify_material_uploaded,
     notify_lead_created,
