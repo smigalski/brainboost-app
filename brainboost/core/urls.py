@@ -3,8 +3,10 @@ from django.contrib.auth import views as auth_views
 
 from . import views
 from .forms import EmailOrUsernameAuthenticationForm
+from .maintenance import maintenance_view
 
 urlpatterns = [
+    path("wartung/", maintenance_view, name="maintenance"),
     path("", views.landing_page, name="landing_page"),
     path("nachhilfe-braunschweig/", views.nachhilfe_anfrage, name="nachhilfe_anfrage"),
     path("nachhilfe-braunschweig/eltern/", views.landing_eltern, name="landing_eltern"),
@@ -149,8 +151,7 @@ urlpatterns = [
     ),
     path(
         "login/",
-        auth_views.LoginView.as_view(
-            template_name="login.html",
+        views.AgreementAwareLoginView.as_view(
             authentication_form=EmailOrUsernameAuthenticationForm,
         ),
         name="login",

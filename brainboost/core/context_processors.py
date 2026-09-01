@@ -1,5 +1,7 @@
 from django.conf import settings
 
+from .maintenance import get_maintenance_status
+
 
 def google_maps(request):
     return {
@@ -22,3 +24,7 @@ def contact_settings(request):
             "brainboost.nachhilfe@gmail.com",
         ),
     }
+
+
+def maintenance_status(request):
+    return {"maintenance": get_maintenance_status()}

@@ -1,8 +1,16 @@
 from .base import *
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # Production: kein Debug
 DEBUG = False
+
+# Einmaliges Wartungsfenster; Banner und Sperre enden automatisch.
+_maintenance_timezone = ZoneInfo(TIME_ZONE)
+MAINTENANCE_MODE_ENABLED = True
+MAINTENANCE_START = datetime(2026, 9, 3, 9, 0, tzinfo=_maintenance_timezone)
+MAINTENANCE_END = datetime(2026, 9, 3, 18, 0, tzinfo=_maintenance_timezone)
 
 # Secret nur aus Env (z.B. in WSGI gesetzt)
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
@@ -62,4 +70,6 @@ NO_REPLY_EMAIL = os.environ.get("NO_REPLY_EMAIL", PUBLIC_CONTACT_EMAIL)
 EMAIL_RECIPIENT = os.environ.get("EMAIL_RECIPIENT", INTERNAL_CONTACT_EMAIL)
 LEAD_NOTIFICATION_EMAIL = os.environ.get("LEAD_NOTIFICATION_EMAIL", EMAIL_RECIPIENT)
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "https://www.nachhilfe-brainboost.de")
+STRIPE_PUBLIC_KEY = os.environ["STRIPE_PUBLIC_KEY"]
+STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
 STRIPE_WEBHOOK_SECRET = os.environ["STRIPE_WEBHOOK_SECRET"]

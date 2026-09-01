@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Wartungsarbeiten{% endblock %}
+{% block content %}
+<section class="card maintenance-page" aria-labelledby="maintenance-title">
+    <div class="maintenance-page__icon" aria-hidden="true">!</div>
+    <div>
+        <h1 id="maintenance-title">Wartungsarbeiten</h1>
+        {% if maintenance.active %}
+            <p class="tagline">Die BrainBoost-WebApp ist derzeit wegen Wartungsarbeiten nicht verfügbar.</p>
+            <p>Wir planen, die WebApp heute ab 18:00 Uhr wieder freizugeben.</p>
+        {% else %}
+            <p class="tagline">Am Donnerstag, 03.09.2026, ist die WebApp von 09:00 bis 18:00 Uhr wegen Wartungsarbeiten nicht verfügbar.</p>
+        {% endif %}
+        <p class="muted">Vielen Dank für dein Verständnis.</p>
+        {% if request.user.is_authenticated %}
+            <p><a class="button" href="{% url 'logout' %}">Ausloggen</a></p>
+        {% else %}
+            <p><a href="{% url 'landing_page' %}">Zur Startseite</a></p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

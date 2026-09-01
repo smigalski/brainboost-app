@@ -405,7 +405,6 @@ class LeadFormFlowTests(TestCase):
             "teaching_grades": "5-10",
             "weekly_availability": "4 Stunden",
             "experience_level": Lead.ExperienceLevel.SOME,
-            "motivation": "Ich arbeite gern mit SchülerInnen.",
             "privacy_consent": "on",
         }
         data.update(overrides)
@@ -444,6 +443,33 @@ class LeadFormFlowTests(TestCase):
         response = self.client.get(reverse("contact"))
 
         self.assertContains(response, "mailto:brainboost.nachhilfe@gmail.com")
+        self.assertContains(response, "Montag bis Freitag, 9:00 - 19:00 Uhr")
+        self.assertNotContains(response, "9:00 - 21:00 Uhr")
+
+    def test_all_shared_required_fields_have_visible_required_markers(self):
+        response = self.client.get(reverse("contact"))
+
+        self.assertContains(
+            response,
+            'Du bist ... <span class="lead-required">*</span>',
+            html=True,
+        )
+        self.assertContains(
+            response,
+            '<label class="lead-label" for="id_email">E-Mail <span class="lead-required">*</span></label>',
+            html=True,
+        )
+        self.assertNotContains(response, "data-tutor-email-required")
+
+    def test_all_urgency_buttons_share_one_single_choice_group(self):
+        response = self.client.get(reverse("contact"))
+
+        self.assertContains(
+            response,
+            '<input type="radio" name="urgency_option"',
+            count=4,
+        )
+        self.assertNotContains(response, 'name="urgency_reference_mode"')
 
     def test_utm_parameters_are_saved_from_query_string(self):
         response = self.client.post(
@@ -509,6 +535,41 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(Lead.objects.count(), 0)
         self.assertContains(response, "Bitte gib eine E-Mail-Adresse an.")
 
+    def test_urgency_now_is_saved_from_button_selection(self):
+        response = self.client.post(
+            reverse("contact"),
+            data=self._parent_data(urgency="", urgency_option="now"),
+        )
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        self.assertEqual(Lead.objects.get().urgency, "Ab jetzt")
+
+    def test_urgency_in_weeks_is_composed_from_number_input(self):
+        response = self.client.post(
+            reverse("contact"),
+            data=self._parent_data(
+                urgency="",
+                urgency_option="weeks",
+                urgency_weeks="3",
+            ),
+        )
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        self.assertEqual(Lead.objects.get().urgency, "In 3 Wochen")
+
+    def test_urgency_reference_is_composed_from_switch_and_text(self):
+        response = self.client.post(
+            reverse("contact"),
+            data=self._parent_data(
+                urgency="",
+                urgency_option="reference_nach",
+                urgency_reference="Herbstferien",
+            ),
+        )
+
+        self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+        self.assertEqual(Lead.objects.get().urgency, "Nach Herbstferien")
+
     def test_privacy_checkbox_is_required(self):
         data = self._parent_data()
         data.pop("privacy_consent")
@@ -545,8 +606,13 @@ class LeadFormFlowTests(TestCase):
         self.assertContains(response, "Das ist dein Bewerbungsprofil als TutorIn.")
         self.assertContains(response, "in ein TutorInnen-Profil um")
         self.assertContains(response, "SchülerIn/StudentIn")
-        self.assertContains(response, 'data-tutor-email-required')
-        self.assertContains(response, 'data-selected-role="tutor"')
+        self.assertNotContains(response, 'name="motivation"')
+        self.assertContains(
+            response,
+            '<label class="lead-label" for="id_email">E-Mail <span class="lead-required">*</span></label>',
+            html=True,
+        )
+        self.assertEqual(response.context["form"]["role"].value(), Lead.Role.TUTOR)
 
     def test_parent_landing_links_to_prefilled_contact_form(self):
         response = self.client.get(reverse("nachhilfe_anfrage"))

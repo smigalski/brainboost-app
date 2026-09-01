@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1020">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1021">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     <meta name="theme-color" content="#2c8a8a">
@@ -44,6 +44,20 @@
 </head>
 <body>
     <div class="hero-bg"></div>
+    {% if maintenance.announced %}
+        <div class="maintenance-banner{% if maintenance.active %} maintenance-banner--active{% endif %}" role="alert" aria-live="polite">
+            <div class="maintenance-banner__content">
+                <span class="maintenance-banner__icon" aria-hidden="true">!</span>
+                <p>
+                    {% if maintenance.active %}
+                        <strong>Wartungsarbeiten:</strong> Die WebApp ist derzeit nicht verfügbar. Voraussichtlich wieder ab 18:00 Uhr.
+                    {% else %}
+                        <strong>Wartungsankündigung:</strong> Wartungsarbeiten am Donnerstag, 03.09.2026, von 09:00 bis 18:00 Uhr. Die WebApp ist in diesem Zeitraum nicht verfügbar.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
     <div class="app-install-banner" data-app-install-banner>
         <div class="app-install-banner__content">
             <span class="app-install-banner__text">Jetzt BrainBoost als App zum Hauptbildschirm hinzufügen! (1,3 MB Download)</span>

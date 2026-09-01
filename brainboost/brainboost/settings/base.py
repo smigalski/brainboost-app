@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.MaintenanceModeMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -75,10 +76,16 @@ TEMPLATES = [
                 'core.context_processors.google_maps',
                 'core.context_processors.meta_tracking',
                 'core.context_processors.contact_settings',
+                'core.context_processors.maintenance_status',
             ],
         },
     },
 ]
+
+# One-off maintenance windows are enabled explicitly in production settings.
+MAINTENANCE_MODE_ENABLED = False
+MAINTENANCE_START = None
+MAINTENANCE_END = None
 
 WSGI_APPLICATION = 'brainboost.wsgi.application'
 
