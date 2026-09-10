@@ -189,7 +189,7 @@ def notify_lesson_created(request, lesson: Lesson) -> None:
     if not _notifications_enabled("lesson_created"):
         return
     subject = (
-        f"Neuer Termin: {lesson.student.user.username} "
+        f"Neuer Termin: {lesson.student.user.display_name} "
         f"am {lesson.date.strftime('%d.%m.%Y')} {lesson.time.strftime('%H:%M')}"
     )
     context = {
@@ -219,7 +219,7 @@ def notify_lesson_series_created(
         else f"alle {repeat_interval_weeks} Wochen"
     )
     subject = (
-        f"Neue Terminserie: {first_lesson.student.user.username} "
+        f"Neue Terminserie: {first_lesson.student.user.display_name} "
         f"{interval_label} ab {first_lesson.date.strftime('%d.%m.%Y')}"
     )
     context = {
@@ -245,7 +245,7 @@ def notify_lesson_changed(request, lesson: Lesson) -> None:
     if not _notifications_enabled("lesson_changed"):
         return
     subject = (
-        f"Termin geändert: {lesson.student.user.username} "
+        f"Termin geändert: {lesson.student.user.display_name} "
         f"am {lesson.date.strftime('%d.%m.%Y')} {lesson.time.strftime('%H:%M')}"
     )
     context = {
@@ -268,7 +268,7 @@ def notify_lesson_cancelled(
     if not _notifications_enabled("lesson_cancelled"):
         return
     subject = (
-        f"Termin storniert: {lesson.student.user.username} "
+        f"Termin storniert: {lesson.student.user.display_name} "
         f"am {lesson.date.strftime('%d.%m.%Y')} {lesson.time.strftime('%H:%M')}"
     )
     recipients = _student_recipients(lesson.student)
@@ -297,7 +297,7 @@ def notify_lesson_reschedule_requested(
     if not _notifications_enabled("lesson_reschedule_requested"):
         return
     subject = (
-        f"Terminverlegung angefragt: {lesson.student.user.username} "
+        f"Terminverlegung angefragt: {lesson.student.user.display_name} "
         f"am {lesson.date.strftime('%d.%m.%Y')} {lesson.time.strftime('%H:%M')}"
     )
     recipients = _student_recipients(lesson.student)
@@ -319,7 +319,7 @@ def notify_lesson_reschedule_requested(
 def notify_invoice_uploaded(request, invoice: Invoice) -> None:
     if not _notifications_enabled("invoice_uploaded"):
         return
-    subject = f"Neue Rechnung für {invoice.student.user.username}"
+    subject = f"Neue Rechnung für {invoice.student.user.display_name}"
     context = {
         "heading": "Neue Rechnung",
         "invoice": invoice,
@@ -342,7 +342,7 @@ def notify_invoice_parent(request, invoice: Invoice, parent: ParentProfile) -> N
     parent_user = getattr(parent, "user", None)
     if not parent_user or not parent_user.email:
         return
-    subject = f"Neue Rechnung für {invoice.student.user.username}"
+    subject = f"Neue Rechnung für {invoice.student.user.display_name}"
     context = {
         "heading": "Neue Rechnung",
         "invoice": invoice,
@@ -365,7 +365,7 @@ def notify_invoice_student(request, invoice: Invoice) -> None:
     student_user = getattr(invoice.student, "user", None)
     if not student_user or not student_user.email:
         return
-    subject = f"Neue Rechnung für {student_user.username}"
+    subject = f"Neue Rechnung für {student_user.display_name}"
     context = {
         "heading": "Neue Rechnung",
         "invoice": invoice,
@@ -389,7 +389,7 @@ def notify_invoice_pending_approval(request, invoice: Invoice) -> None:
     recipients = _tutor_recipients(supervisors)
     if not recipients:
         return
-    subject = f"Rechnung wartet auf Freigabe: {invoice.student.user.username}"
+    subject = f"Rechnung wartet auf Freigabe: {invoice.student.user.display_name}"
     context = {
         "heading": "Rechnung wartet auf Freigabe",
         "invoice": invoice,
@@ -413,15 +413,15 @@ def notify_invoice_payment_selected(
     if not _notifications_enabled("invoice_payment_selected"):
         return
     subject = (
-        f"Zahlungsart gewählt: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+        f"Zahlungsart gewählt: {invoice.student.user.display_name}"
     )
     tutor_user = getattr(invoice.uploaded_by, "user", None)
     if not tutor_user or not tutor_user.email:
         return
     payer_label = (
-        parent.user.get_full_name() or parent.user.username
+        parent.user.display_name
         if parent
-        else invoice.student.user.get_full_name() or invoice.student.user.username
+        else invoice.student.user.display_name
     )
     context = {
         "heading": "Zahlungsart gewählt",
@@ -453,12 +453,12 @@ def notify_invoice_payment_received_tutor(
     if not tutor_user or not tutor_user.email:
         return
     subject = (
-        f"Zahlung eingegangen: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+        f"Zahlung eingegangen: {invoice.student.user.display_name}"
     )
     payer_label = (
-        parent.user.get_full_name() or parent.user.username
+        parent.user.display_name
         if parent
-        else invoice.student.user.get_full_name() or invoice.student.user.username
+        else invoice.student.user.display_name
     )
     context = {
         "heading": "Zahlung eingegangen",
@@ -490,7 +490,7 @@ def notify_invoice_payment_confirmed(
     if not recipient_user or not recipient_user.email:
         return
     subject = (
-        f"Zahlung bestätigt: {invoice.student.user.get_full_name() or invoice.student.user.username}"
+        f"Zahlung bestätigt: {invoice.student.user.display_name}"
     )
     context = {
         "heading": "Zahlung bestätigt",
@@ -514,7 +514,7 @@ def notify_material_uploaded(request, material: LearningMaterial) -> None:
     if not _notifications_enabled("material_uploaded"):
         return
     kind_label = "Ergebnisse" if material.kind == material.Kind.SOLUTION else material.get_kind_display()
-    subject = f"Neues Material ({kind_label}) für {material.student.user.username}"
+    subject = f"Neues Material ({kind_label}) für {material.student.user.display_name}"
     context = {
         "heading": f"Neues Material: {kind_label}",
         "kind_label": kind_label,
@@ -537,7 +537,7 @@ def notify_holiday_survey_created(request, response: HolidaySurveyResponse) -> N
     recipients = _parent_recipients(student)
     if not recipients:
         return
-    subject = f"Neue Umfrage für {student.user.get_full_name() or student.user.username}"
+    subject = f"Neue Umfrage für {student.user.display_name}"
     context = {
         "heading": "Neue Umfrage",
         "survey": survey,

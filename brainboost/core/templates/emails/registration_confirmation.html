@@ -1,6 +1,6 @@
 {% extends "emails/base.html" %}
 {% block content %}
-  <p style="margin:0 0 12px 0;">Hallo {{ user.first_name|default:user.username }},</p>
+  <p style="margin:0 0 12px 0;">Hallo {{ user.display_name }},</p>
   <p style="margin:0 0 12px 0;">dein BrainBoost-Konto wurde erstellt.</p>
   <p style="margin:0 0 12px 0;">
     Bitte setze dein Passwort über folgenden Link:

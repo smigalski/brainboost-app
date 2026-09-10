@@ -3,6 +3,7 @@ from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
 import re
+import uuid
 from typing import Optional
 
 from django import forms
@@ -164,6 +165,29 @@ class CampaignLinkBuilderForm(forms.Form):
 
 
 class LeadForm(forms.ModelForm):
+    urgency_option = forms.ChoiceField(
+        choices=(
+            ("now", _("Ab jetzt")),
+            ("weeks", _("In ... Wochen")),
+            ("reference_ab", _("Ab einem Zeitpunkt")),
+            ("reference_nach", _("Nach einem Zeitpunkt")),
+        ),
+        required=False,
+        initial="now",
+        label=_("Dringlichkeit"),
+        widget=forms.RadioSelect,
+    )
+    urgency_weeks = forms.IntegerField(
+        required=False,
+        min_value=1,
+        label=_("Wochen"),
+        widget=forms.NumberInput(attrs={"min": 1, "inputmode": "numeric"}),
+    )
+    urgency_reference = forms.CharField(
+        required=False,
+        label=_("Zeitpunkt"),
+        widget=forms.TextInput(attrs={"placeholder": _("Herbstferien, 14.01.2027")}),
+    )
     privacy_consent = forms.BooleanField(
         label=_(
             "Ich stimme zu, dass meine Angaben zur Bearbeitung meiner Anfrage "
@@ -200,13 +224,12 @@ class LeadForm(forms.ModelForm):
             "teaching_grades",
             "weekly_availability",
             "experience_level",
-            "motivation",
         ]
         widgets = {
             "role": forms.RadioSelect,
             "phone": forms.TextInput(attrs={"type": "tel"}),
+            "urgency": forms.HiddenInput,
             "message": forms.Textarea(attrs={"rows": 4}),
-            "motivation": forms.Textarea(attrs={"rows": 4}),
             "source": forms.HiddenInput,
             "campaign": forms.HiddenInput,
             "utm_source": forms.HiddenInput,
@@ -232,7 +255,6 @@ class LeadForm(forms.ModelForm):
             "teaching_grades": _("Klassenstufen"),
             "weekly_availability": _("Verfügbarkeit pro Woche"),
             "experience_level": _("Erfahrung"),
-            "motivation": _("Motivation"),
         }
         help_texts = {
             "phone": _("Optional, falls du telefonisch oder per WhatsApp kontaktiert werden möchtest."),
@@ -310,7 +332,6 @@ class LeadForm(forms.ModelForm):
             "teaching_grades",
             "weekly_availability",
             "experience_level",
-            "motivation",
         }
         for field_name in optional_fields:
             self.fields[field_name].required = False
@@ -326,9 +347,32 @@ class LeadForm(forms.ModelForm):
             self.add_error("email", message)
 
         if role in {Lead.Role.PARENT, Lead.Role.STUDENT}:
-            for field_name in ["tutoring_type", "subject", "grade", "goal", "urgency"]:
+            for field_name in ["tutoring_type", "subject", "grade", "goal"]:
                 if not (cleaned.get(field_name) or "").strip():
                     self.add_error(field_name, _("Dieses Feld ist erforderlich."))
+
+            urgency_option = cleaned.get("urgency_option")
+            legacy_urgency = (cleaned.get("urgency") or "").strip()
+            if urgency_option == "now":
+                cleaned["urgency"] = _("Ab jetzt")
+            elif urgency_option == "weeks":
+                weeks = cleaned.get("urgency_weeks")
+                if weeks:
+                    cleaned["urgency"] = _("In %(weeks)s Wochen") % {"weeks": weeks}
+                else:
+                    self.add_error("urgency_weeks", _("Bitte gib die Anzahl der Wochen an."))
+            elif urgency_option in {"reference_ab", "reference_nach"}:
+                reference = (cleaned.get("urgency_reference") or "").strip()
+                if reference:
+                    prefix = _("Nach") if urgency_option == "reference_nach" else _("Ab")
+                    cleaned["urgency"] = f"{prefix} {reference}"
+                else:
+                    self.add_error("urgency_reference", _("Bitte gib einen Zeitpunkt an."))
+            elif legacy_urgency:
+                # Bestehende Clients dürfen das bisherige Freitextfeld weiter senden.
+                cleaned["urgency"] = legacy_urgency
+            else:
+                self.add_error("urgency_option", _("Bitte wähle eine Dringlichkeit aus."))
         elif role == Lead.Role.TUTOR:
             required_tutor_fields = [
                 "teaching_subjects",
@@ -1164,13 +1208,6 @@ class BrainBoostFeedbackForm(forms.ModelForm):
 
 
 class BaseUserCreateForm(forms.Form):
-    _username_field = CustomUser._meta.get_field("username")
-    username = forms.CharField(
-        max_length=_username_field.max_length,
-        help_text=_username_field.help_text,
-        validators=_username_field.validators,
-        label=_username_field.verbose_name,
-    )
     first_name = forms.CharField(max_length=150, required=False, label="Vorname")
     last_name = forms.CharField(max_length=150, required=False, label="Nachname")
     email = forms.EmailField(required=False, label="E-Mail")
@@ -1178,11 +1215,21 @@ class BaseUserCreateForm(forms.Form):
     password2 = forms.CharField(widget=forms.PasswordInput, label="Passwort bestätigen")
     is_active = forms.BooleanField(required=False, initial=True, label="Aktiv")
 
-    def clean_username(self):
-        username = self.cleaned_data["username"]
-        if CustomUser.objects.filter(username__iexact=username).exists():
-            raise ValidationError("Dieser Benutzername ist bereits vergeben.")
-        return username
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip()
+        if email and (
+            CustomUser.objects.filter(email__iexact=email).exists()
+            or CustomUser.objects.filter(pending_email__iexact=email).exists()
+        ):
+            raise ValidationError("Diese E-Mail-Adresse wird bereits verwendet.")
+        return email
+
+    @staticmethod
+    def _technical_username() -> str:
+        while True:
+            username = f"bb_{uuid.uuid4().hex}"
+            if not CustomUser.objects.filter(username=username).exists():
+                return username
 
     def clean(self):
         cleaned = super().clean()
@@ -1204,7 +1251,7 @@ class BaseUserCreateForm(forms.Form):
 
     def _build_user(self, role: str) -> CustomUser:
         return CustomUser(
-            username=self.cleaned_data["username"],
+            username=self._technical_username(),
             first_name=self.cleaned_data.get("first_name", ""),
             last_name=self.cleaned_data.get("last_name", ""),
             email=self.cleaned_data.get("email", ""),
@@ -1218,6 +1265,7 @@ class BaseUserCreateForm(forms.Form):
 class ParentCreateForm(BaseUserCreateForm):
     email = forms.EmailField(required=False, label="E-Mail")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    address = forms.CharField(max_length=255, required=False, label="Adresse")
     role_display = forms.CharField(
         initial=CustomUser.Roles.PARENT.label,
         required=False,
@@ -1233,11 +1281,11 @@ class ParentCreateForm(BaseUserCreateForm):
         self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
         self.order_fields(
             [
-                "username",
                 "first_name",
                 "last_name",
                 "email",
                 "phone_number",
+                "address",
                 "password1",
                 "password2",
                 "is_active",
@@ -1256,6 +1304,7 @@ class ParentCreateForm(BaseUserCreateForm):
             ParentProfile.objects.create(
                 user=user,
                 phone_number=self.cleaned_data.get("phone_number", ""),
+                address=self.cleaned_data.get("address", ""),
             )
         return user
 
@@ -1285,6 +1334,14 @@ class StudentCreateForm(BaseUserCreateForm):
         ),
     )
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    school = forms.CharField(max_length=255, required=False, label="Schule")
+    grade_level = forms.CharField(max_length=120, required=False, label="Klassenstufe")
+    birth_date = forms.DateField(
+        required=False,
+        label="Geburtsdatum",
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
     zoom_link = forms.URLField(required=False, label="BBB-Link")
     zumpad_link = forms.URLField(required=False, label="ZUMPad-Link")
     parents = forms.ModelMultipleChoiceField(
@@ -1302,7 +1359,6 @@ class StudentCreateForm(BaseUserCreateForm):
         self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
         self.order_fields(
             [
-                "username",
                 "first_name",
                 "last_name",
                 "email",
@@ -1345,6 +1401,9 @@ class StudentCreateForm(BaseUserCreateForm):
                 user=user,
                 address=self.cleaned_data.get("address", ""),
                 phone_number=self.cleaned_data.get("phone_number", ""),
+                school=self.cleaned_data.get("school", ""),
+                grade_level=self.cleaned_data.get("grade_level", ""),
+                birth_date=self.cleaned_data.get("birth_date"),
                 zoom_link=self.cleaned_data.get("zoom_link", ""),
                 zumpad_link=self.cleaned_data.get("zumpad_link", ""),
             )
@@ -1393,6 +1452,7 @@ class IndependentStudentCreateForm(StudentCreateForm):
                 "is_active",
                 "role_display",
                 "address",
+                "birth_date",
                 "degree_program",
                 "affected_courses",
                 "tutoring_goal",
@@ -1413,6 +1473,7 @@ class IndependentStudentCreateForm(StudentCreateForm):
                 user=user,
                 address=self.cleaned_data.get("address", ""),
                 phone_number=self.cleaned_data.get("phone_number", ""),
+                birth_date=self.cleaned_data.get("birth_date"),
                 degree_program=self.cleaned_data.get("degree_program", ""),
                 affected_courses=self.cleaned_data.get("affected_courses", ""),
                 tutoring_goal=self.cleaned_data.get("tutoring_goal", ""),
@@ -1489,7 +1550,6 @@ class TutorCreateForm(BaseUserCreateForm):
         super().__init__(*args, **kwargs)
         self.order_fields(
             [
-                "username",
                 "first_name",
                 "last_name",
                 "email",
@@ -1542,7 +1602,6 @@ class TutorCreateForm(BaseUserCreateForm):
 
 class BaseProfileUpdateForm(forms.Form):
     max_profile_image_size = 15 * 1024 * 1024
-    _username_field = CustomUser._meta.get_field("username")
     avatar_icon = forms.ChoiceField(
         required=False,
         label="Profil-Icon",
@@ -1560,12 +1619,6 @@ class BaseProfileUpdateForm(forms.Form):
         required=False,
         label="Eigenes Profilbild entfernen",
     )
-    username = forms.CharField(
-        max_length=_username_field.max_length,
-        help_text=_username_field.help_text,
-        validators=_username_field.validators,
-        label=_username_field.verbose_name,
-    )
     first_name = forms.CharField(max_length=150, required=False, label="Vorname")
     last_name = forms.CharField(max_length=150, required=False, label="Nachname")
     email = forms.EmailField(required=False, label="E-Mail")
@@ -1576,7 +1629,6 @@ class BaseProfileUpdateForm(forms.Form):
         self.pending_email_to_verify = ""
         super().__init__(*args, **kwargs)
         self.fields["avatar_icon"].initial = user.avatar_icon
-        self.fields["username"].initial = user.username
         self.fields["first_name"].initial = user.first_name
         self.fields["last_name"].initial = user.last_name
         self.fields["email"].initial = user.pending_email or user.email
@@ -1589,14 +1641,6 @@ class BaseProfileUpdateForm(forms.Form):
             "Optional. Maximal 15 MB. Das Bild wird beim Speichern komprimiert."
         )
         self.fields["remove_profile_image"].initial = False
-
-    def clean_username(self):
-        username = self.cleaned_data["username"]
-        if CustomUser.objects.filter(username__iexact=username).exclude(
-            pk=self.user_instance.pk
-        ).exists():
-            raise ValidationError("Dieser Benutzername ist bereits vergeben.")
-        return username
 
     def clean_email(self):
         email = (self.cleaned_data.get("email") or "").strip()
@@ -1680,7 +1724,6 @@ class BaseProfileUpdateForm(forms.Form):
         current_email = (user.email or "").strip()
         pending_email = (user.pending_email or "").strip()
         user.avatar_icon = self.cleaned_data.get("avatar_icon", "")
-        user.username = self.cleaned_data["username"]
         user.first_name = self.cleaned_data.get("first_name", "")
         user.last_name = self.cleaned_data.get("last_name", "")
         if requested_email and requested_email.lower() == pending_email.lower():
@@ -1702,10 +1745,12 @@ class BaseProfileUpdateForm(forms.Form):
 class ParentProfileForm(BaseProfileUpdateForm):
     customer_number = forms.CharField(required=False, disabled=True, label="Kundennummer")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    address = forms.CharField(max_length=255, required=False, label="Adresse")
 
     def __init__(self, *args, user: CustomUser, **kwargs):
         super().__init__(*args, user=user, **kwargs)
         self.fields["phone_number"].initial = user.parent_profile.phone_number
+        self.fields["address"].initial = user.parent_profile.address
         self.fields["customer_number"].initial = user.parent_profile.customer_number
         self.order_fields(
             [
@@ -1713,11 +1758,11 @@ class ParentProfileForm(BaseProfileUpdateForm):
                 "profile_image",
                 "remove_profile_image",
                 "customer_number",
-                "username",
                 "first_name",
                 "last_name",
                 "email",
                 "phone_number",
+                "address",
             ]
         )
 
@@ -1725,6 +1770,7 @@ class ParentProfileForm(BaseProfileUpdateForm):
         user = self._save_user()
         profile = user.parent_profile
         profile.phone_number = self.cleaned_data.get("phone_number", "")
+        profile.address = self.cleaned_data.get("address", "")
         profile.save()
         return user
 
@@ -1732,6 +1778,14 @@ class ParentProfileForm(BaseProfileUpdateForm):
 class StudentProfileForm(BaseProfileUpdateForm):
     profile_number = forms.CharField(required=False, disabled=True, label="Profilnummer")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
+    school = forms.CharField(max_length=255, required=False, label="Schule")
+    grade_level = forms.CharField(max_length=120, required=False, label="Klassenstufe")
+    birth_date = forms.DateField(
+        required=False,
+        label="Geburtsdatum",
+        widget=forms.DateInput(attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
     address = forms.CharField(
         max_length=255,
         required=False,
@@ -1762,6 +1816,9 @@ class StudentProfileForm(BaseProfileUpdateForm):
         profile = user.student_profile
         self.fields["profile_number"].initial = profile.profile_number
         self.fields["phone_number"].initial = profile.phone_number
+        self.fields["school"].initial = profile.school
+        self.fields["grade_level"].initial = profile.grade_level
+        self.fields["birth_date"].initial = profile.birth_date
         self.fields["address"].initial = profile.address
         self.fields["degree_program"].initial = profile.degree_program
         self.fields["affected_courses"].initial = profile.affected_courses
@@ -1776,12 +1833,14 @@ class StudentProfileForm(BaseProfileUpdateForm):
                 "profile_image",
                 "remove_profile_image",
                 "profile_number",
-                "username",
                 "first_name",
                 "last_name",
                 "email",
                 "phone_number",
                 "address",
+                "school",
+                "grade_level",
+                "birth_date",
                 "degree_program",
                 "affected_courses",
                 "tutoring_goal",
@@ -1793,6 +1852,9 @@ class StudentProfileForm(BaseProfileUpdateForm):
         profile = user.student_profile
         profile.phone_number = self.cleaned_data.get("phone_number", "")
         profile.address = self.cleaned_data.get("address", "")
+        profile.school = self.cleaned_data.get("school", "")
+        profile.grade_level = self.cleaned_data.get("grade_level", "")
+        profile.birth_date = self.cleaned_data.get("birth_date")
         if user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
             profile.degree_program = self.cleaned_data.get("degree_program", "")
             profile.affected_courses = self.cleaned_data.get("affected_courses", "")
@@ -1911,7 +1973,6 @@ class TutorProfileForm(BaseProfileUpdateForm):
                 "profile_image",
                 "remove_profile_image",
                 "tutor_number",
-                "username",
                 "first_name",
                 "last_name",
                 "email",

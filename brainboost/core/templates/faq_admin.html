@@ -55,7 +55,7 @@
                     <label>{{ form.show_on_landing }} {{ form.show_on_landing.label }}</label>
                 </div>
             </div>
-            <div class="muted" style="margin-bottom:10px;">Eingereicht von {{ item.created_by.get_full_name|default:item.created_by.username }} am {{ item.created_at|date:"d.m.Y H:i" }}</div>
+            <div class="muted" style="margin-bottom:10px;">Eingereicht von {{ item.created_by.display_name }} am {{ item.created_at|date:"d.m.Y H:i" }}</div>
             <button class="button" type="submit">Antwort speichern und veröffentlichen</button>
         </form>
     {% empty %}

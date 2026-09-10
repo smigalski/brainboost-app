@@ -2,7 +2,7 @@
 {% block content %}
   <p style="margin:0 0 12px 0;">{{ payer_type_label }} hat eine Zahlungsart für eine Rechnung gewählt.</p>
   <ul style="margin:0 0 12px 16px;padding:0;">
-    <li><strong>SchülerIn:</strong> {{ student.user.get_full_name|default:student.user.username }}</li>
+    <li><strong>SchülerIn:</strong> {{ student.user.display_name }}</li>
     <li><strong>{{ payer_type_label }}:</strong> {{ payer_label }}</li>
     <li><strong>Zahlungsart:</strong> {{ payment_method_label }}</li>
     <li><strong>Rechnung:</strong> {{ invoice.display_filename }}</li>

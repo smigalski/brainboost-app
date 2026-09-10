@@ -164,7 +164,7 @@
                     <div class="invoice-list-item">
                     <div>
                         <strong>{{ invoice.display_filename }}</strong>
-                        <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
+                        <div class="muted">Für: {{ invoice.student.user.display_name }}</div>
                         <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                         <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
                         {% if invoice.amount_total != None %}
@@ -176,10 +176,10 @@
                         <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                         <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
                         {% if invoice.payment_requested_by %}
-                            <div class="muted">Von {{ invoice.payment_requested_by.user.get_full_name|default:invoice.payment_requested_by.user.username }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
+                            <div class="muted">Von {{ invoice.payment_requested_by.user.display_name }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
                         {% endif %}
                         {% if invoice.is_approved %}
-                            <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                            <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.display_name }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                         {% else %}
                             <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                         {% endif %}
@@ -256,8 +256,8 @@
                         <div class="invoice-list-item">
                         <div>
                             <strong>{{ invoice.display_filename }}</strong>
-                            <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
-                            <div class="muted">Für: {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</div>
+                            <div class="muted">TutorIn: {{ invoice.uploaded_by.user.display_name }}</div>
+                            <div class="muted">Für: {{ invoice.student.user.display_name }}</div>
                             <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                             {% if invoice.amount_total != None %}
                                 <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
@@ -268,10 +268,10 @@
                             <div class="muted">Zahlungsstatus: {{ invoice.get_payment_status_display }}</div>
                             <div class="muted">Zahlungsart: {{ invoice.get_payment_method_display }}</div>
                             {% if invoice.payment_requested_by %}
-                                <div class="muted">Von {{ invoice.payment_requested_by.user.get_full_name|default:invoice.payment_requested_by.user.username }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
+                                <div class="muted">Von {{ invoice.payment_requested_by.user.display_name }} angekündigt am {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
                             {% endif %}
                             {% if invoice.is_approved %}
-                                <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
+                                <div class="muted" style="color:var(--teal-dark);">Freigegeben von {{ invoice.approved_by.user.display_name }} am {{ invoice.approved_at|date:"d.m.Y H:i" }}</div>
                             {% else %}
                                 <div class="muted" style="color:var(--red);">Wartet auf Freigabe</div>
                             {% endif %}

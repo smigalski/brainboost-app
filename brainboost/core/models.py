@@ -91,11 +91,12 @@ class ParentProfile(models.Model):
         related_name="parent_profile",
     )
     phone_number = models.CharField(max_length=50, blank=True)
+    address = models.CharField(max_length=255, blank=True)
     customer_number = models.CharField(max_length=12, unique=True, null=True, blank=True)
 
     def __str__(self) -> str:
         full_name = self.user.get_full_name().strip()
-        return full_name or self.user.username
+        return full_name or self.user.email or "Elternteil"
 
     def save(self, *args, **kwargs):
         if not self.customer_number:
@@ -106,6 +107,9 @@ class ParentProfile(models.Model):
 class StudentProfile(models.Model):
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
+    school = models.CharField(max_length=255, blank=True)
+    grade_level = models.CharField(max_length=120, blank=True)
+    birth_date = models.DateField(blank=True, null=True)
     profile_number = models.CharField(max_length=13, unique=True, null=True, blank=True)
     degree_program = models.CharField(max_length=255, blank=True)
     affected_courses = models.TextField(blank=True)
@@ -142,7 +146,7 @@ class StudentProfile(models.Model):
 
     def __str__(self) -> str:
         full_name = self.user.get_full_name().strip()
-        return full_name or self.user.username
+        return full_name or self.user.email or self.user.get_role_display()
 
     @property
     def profile_number_prefix(self) -> str:
@@ -201,7 +205,7 @@ class TutorProfile(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"TutorIn: {self.user.username}"
+        return f"TutorIn: {self.user.display_name}"
 
     def save(self, *args, **kwargs):
         if not self.tutor_number:
@@ -361,8 +365,8 @@ class Lesson(models.Model):
         formatted_date = self.date.strftime("%d.%m.%Y")
         formatted_time = self.time.strftime("%H:%M")
         return (
-            f"Lesson for {self.student.user.username} with "
-            f"{self.tutor.user.username} on {formatted_date} at {formatted_time}"
+            f"Lesson for {self.student.user.display_name} with "
+            f"{self.tutor.user.display_name} on {formatted_date} at {formatted_time}"
         )
 
     def clean(self):
@@ -431,13 +435,13 @@ class Lesson(models.Model):
 
     @property
     def calendar_title(self) -> str:
-        return f"Nachhilfe {self.subject_display} ({self.student.user.username})"
+        return f"Nachhilfe {self.subject_display} ({self.student.user.display_name})"
 
     @property
     def calendar_details(self) -> str:
         return (
-            f"TutorIn: {self.tutor.user.get_full_name().strip() or self.tutor.user.username}\n"
-            f"SchülerIn: {self.student.user.get_full_name().strip() or self.student.user.username}\n"
+            f"TutorIn: {self.tutor.user.display_name}\n"
+            f"SchülerIn: {self.student.user.display_name}\n"
             f"Ort: {self.get_ort_display()}"
         )
 
@@ -580,7 +584,7 @@ class HolidaySurvey(models.Model):
         verbose_name_plural = "Umfragen"
 
     def __str__(self) -> str:
-        return f"Umfrage von {self.tutor.user.username}: {self.question}"
+        return f"Umfrage von {self.tutor.user.display_name}: {self.question}"
 
 
 class HolidaySurveyResponse(models.Model):
@@ -621,7 +625,7 @@ class HolidaySurveyResponse(models.Model):
 
     def __str__(self) -> str:
         answer = self.get_answer_display() if self.answer else "offen"
-        return f"{self.student.user.username}: {answer}"
+        return f"{self.student.user.display_name}: {answer}"
 
 
 class FAQItem(models.Model):

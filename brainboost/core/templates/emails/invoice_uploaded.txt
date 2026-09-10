@@ -2,8 +2,8 @@
 {% block content %}
 Es wurde eine neue Rechnung hochgeladen.
 
-SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
-TutorIn: {{ tutor.user.get_full_name|default:tutor.user.username }}
+SchülerIn: {{ student.user.display_name }}
+TutorIn: {{ tutor.user.display_name }}
 Hochgeladen am: {{ invoice.uploaded_at|date:"d.m.Y H:i" }}
 Fällig am: {{ invoice.due_date|date:"d.m.Y" }}
 

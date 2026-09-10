@@ -264,7 +264,7 @@ class IndependentStudentAccountTests(TestCase):
                 "username": "studentin",
                 "first_name": "Sina",
                 "last_name": "Studiert",
-                "email": "",
+                "email": "sina.studiert@example.com",
                 "phone_number": "0176 123",
                 "is_active": "on",
                 "address": "Campus 1",
@@ -277,7 +277,7 @@ class IndependentStudentAccountTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("dashboard"))
-        user = CustomUser.objects.get(username="studentin")
+        user = CustomUser.objects.get(email="sina.studiert@example.com")
         self.assertEqual(user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
         self.assertEqual(user.student_profile.parents.count(), 0)
         self.assertEqual(user.student_profile.degree_program, "Informatik")
@@ -318,7 +318,7 @@ class IndependentStudentAccountTests(TestCase):
                 "username": "ohneeltern",
                 "first_name": "Sina",
                 "last_name": "Solo",
-                "email": "",
+                "email": "sina.solo@example.com",
                 "phone_number": "",
                 "is_active": "on",
                 "address": "",

@@ -2,8 +2,8 @@
 {% block content %}
 Eine neue Terminserie wurde erstellt. Du erhältst für die beim Anlegen erzeugten Folgetermine keine einzelnen E-Mails.
 
-SchülerIn: {{ student.user.username }}
-TutorIn: {{ tutor.user.username }}
+SchülerIn: {{ student.user.display_name }}
+TutorIn: {{ tutor.user.display_name }}
 Erster Termin: {{ first_lesson.date|date:"d.m.Y" }}
 Letzter Termin: {{ last_lesson.date|date:"d.m.Y" }}
 Wiederholung: {{ interval_label }}

@@ -310,14 +310,14 @@ def _assign_location_and_distance(lesson: Lesson):
 
 def _actor_label(user: CustomUser) -> str:
     if user.role == CustomUser.Roles.TUTOR:
-        return f"TutorIn {user.username}"
+        return f"TutorIn {user.display_name}"
     if user.role == CustomUser.Roles.PARENT:
-        return f"Elternteil {user.username}"
+        return f"Elternteil {user.display_name}"
     if user.role == CustomUser.Roles.INDEPENDENT_STUDENT:
-        return f"StudentIn {user.username}"
+        return f"StudentIn {user.display_name}"
     if user.role == CustomUser.Roles.STUDENT:
-        return f"SchülerIn {user.username}"
-    return user.username
+        return f"SchülerIn {user.display_name}"
+    return user.display_name
 
 
 def _is_learning_profile_user(user: CustomUser) -> bool:
@@ -333,7 +333,7 @@ def _is_independent_student_user(user: CustomUser) -> bool:
 
 def _display_name(user: CustomUser) -> str:
     full_name = user.get_full_name().strip()
-    return full_name or user.username
+    return full_name or user.email or user.get_role_display()
 
 
 def _missing_tutor_bank_field_labels(tutor_profile: TutorProfile) -> list[str]:

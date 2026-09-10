@@ -1,6 +1,6 @@
 {% extends "emails/base.txt" %}
 {% block content %}
-Hallo {{ user.first_name|default:user.username }},
+Hallo {{ user.display_name }},
 
 dein BrainBoost-Konto wurde erstellt.
 

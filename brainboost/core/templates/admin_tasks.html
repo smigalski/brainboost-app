@@ -939,7 +939,7 @@
                                 <select class="task-edit-field" name="owner" form="update-task-{{ item.task.id }}" required>
                                     {% for admin_user in admins %}
                                         <option value="{{ admin_user.id }}"{% if item.task.owner_id == admin_user.id %} selected{% endif %}>
-                                            {{ admin_user.get_full_name|default:admin_user.username }}
+                                            {{ admin_user.display_name }}
                                         </option>
                                     {% endfor %}
                                 </select>
@@ -1014,7 +1014,7 @@
                             <select name="owner" form="create-task-form" required>
                                 {% for admin_user in admins %}
                                     <option value="{{ admin_user.id }}"{% if create_form.owner.value|stringformat:"s" == admin_user.id|stringformat:"s" %} selected{% endif %}>
-                                        {{ admin_user.get_full_name|default:admin_user.username }}
+                                        {{ admin_user.display_name }}
                                     </option>
                                 {% endfor %}
                             </select>
@@ -1146,7 +1146,7 @@
                 <select name="owner" required>
                     {% for admin_user in admins %}
                         <option value="{{ admin_user.id }}"{% if admin_user.id == request.user.id %} selected{% endif %}>
-                            {{ admin_user.get_full_name|default:admin_user.username }}
+                            {{ admin_user.display_name }}
                         </option>
                     {% endfor %}
                 </select>

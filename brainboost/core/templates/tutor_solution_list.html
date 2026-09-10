@@ -9,7 +9,7 @@
             <li>
                 <div>
                     <strong>{{ material.file.name|cut:"materials/solution/" }}</strong>
-                    <div class="muted">Für: {{ material.student.user.username }}</div>
+                    <div class="muted">Für: {{ material.student.user.display_name }}</div>
                     {% if material.related_task %}
                         <div class="muted">Aufgabe: {{ material.related_task.file.name|cut:"materials/task/" }}</div>
                         <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px;">
@@ -24,7 +24,7 @@
                         </div>
                     {% endif %}
                     <div class="muted">Hochgeladen am {{ material.uploaded_at|date:"d.m.Y H:i" }}</div>
-                    <div class="muted">Hochgeladen von: {{ material.uploaded_by.user.username }}</div>
+                    <div class="muted">Hochgeladen von: {{ material.uploaded_by.user.display_name }}</div>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                     {% if request.user.is_staff or request.user.is_superuser or material.uploaded_by_id == request.user.tutor_profile.id %}

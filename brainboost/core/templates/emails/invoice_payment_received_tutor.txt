@@ -2,7 +2,7 @@
 {% block content %}
 Die Online-Zahlung zu einer Rechnung ist erfolgreich eingegangen.
 
-SchülerIn: {{ student.user.get_full_name|default:student.user.username }}
+SchülerIn: {{ student.user.display_name }}
 {{ payer_type_label }}: {{ payer_label }}
 Zahlungsart: {{ payment_method_label }}
 Bezahlt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}

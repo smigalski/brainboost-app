@@ -14,10 +14,10 @@
         {% for invoice in invoices %}
             <li>
                 <div>
-                    <strong>Rechnung für {{ invoice.student.user.get_full_name|default:invoice.student.user.username }}</strong>
+                    <strong>Rechnung für {{ invoice.student.user.display_name }}</strong>
                     <div class="muted">Hochgeladen am {{ invoice.uploaded_at|date:"d.m.Y H:i" }}</div>
                     <div class="muted">Fällig bis: {{ invoice.due_date|date:"d.m.Y" }}</div>
-                    <div class="muted">TutorIn: {{ invoice.uploaded_by.user.get_full_name|default:invoice.uploaded_by.user.username }}</div>
+                    <div class="muted">TutorIn: {{ invoice.uploaded_by.user.display_name }}</div>
                     {% if invoice.amount_total != None %}
                         <div class="muted">Betrag: {{ invoice.amount_total }} {{ invoice.currency }}</div>
                     {% endif %}
@@ -30,7 +30,7 @@
                         <div class="muted">Zahlung angekündigt am: {{ invoice.payment_requested_at|date:"d.m.Y H:i" }}</div>
                     {% endif %}
                     {% if invoice.approved_by %}
-                        <div class="muted">Freigegeben von: {{ invoice.approved_by.user.get_full_name|default:invoice.approved_by.user.username }}</div>
+                        <div class="muted">Freigegeben von: {{ invoice.approved_by.user.display_name }}</div>
                     {% endif %}
                     {% if invoice.paid_at %}
                         <div class="muted">Bezahlt am: {{ invoice.paid_at|date:"d.m.Y H:i" }}</div>

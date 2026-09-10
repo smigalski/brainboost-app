@@ -11,7 +11,7 @@
             <select id="assignment-source-tutor" name="source_tutor" onchange="this.form.submit();">
                 {% for tutor in assignment_source_tutors %}
                     <option value="{{ tutor.id }}"{% if tutor.id == assignment_source_tutor_id %} selected{% endif %}>
-                        {{ tutor.user.get_full_name|default:tutor.user.username }}
+                        {{ tutor.user.display_name }}
                     </option>
                 {% endfor %}
             </select>
@@ -51,7 +51,7 @@
                 <label for="assignment-available-students">Verfügbar</label>
                 <select id="assignment-available-students" multiple size="10">
                     {% for student in assignment_available_students %}
-                        <option value="{{ student.id }}">{{ student.user.get_full_name|default:student.user.username }}</option>
+                        <option value="{{ student.id }}">{{ student.user.display_name }}</option>
                     {% empty %}
                         <option value="" disabled>Keine SchülerInnen verfügbar.</option>
                     {% endfor %}

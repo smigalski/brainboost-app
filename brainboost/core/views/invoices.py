@@ -402,7 +402,7 @@ def invoice_checkout(request, invoice_id):
                     "currency": invoice.currency.lower(),
                     "unit_amount": unit_amount,
                     "product_data": {
-                        "name": f"Rechnung für {invoice.student.user.get_full_name() or invoice.student.user.username}",
+                        "name": f"Rechnung für {invoice.student.user.display_name}",
                         "description": f"BrainBoost Nachhilfe · Fällig bis {invoice.due_date.strftime('%d.%m.%Y')}",
                     },
                 },

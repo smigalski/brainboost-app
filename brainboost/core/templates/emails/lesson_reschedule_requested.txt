@@ -2,8 +2,8 @@
 {% block content %}
 Eine Terminverlegung wurde angefragt.
 
-SchülerIn: {{ student.user.username }}
-TutorIn: {{ tutor.user.username }}
+SchülerIn: {{ student.user.display_name }}
+TutorIn: {{ tutor.user.display_name }}
 Datum: {{ lesson.date|date:"d.m.Y" }}
 Uhrzeit: {{ lesson.time|time:"H:i" }}
 Von: {{ actor_label }}

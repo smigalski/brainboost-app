@@ -121,11 +121,62 @@
     .lead-required {
         color: var(--red);
     }
-    .lead-required[data-tutor-email-required] {
-        display: none;
+    .lead-urgency-options {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        border: 0;
     }
-    .lead-form[data-selected-role="tutor"] .lead-required[data-tutor-email-required] {
-        display: inline;
+    .lead-urgency-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .lead-urgency-button,
+    .lead-urgency-switch label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 9px 14px;
+        border: 1px solid rgba(31, 102, 102, 0.24);
+        border-radius: 10px;
+        background: rgba(31, 102, 102, 0.08);
+        color: var(--teal-dark);
+        font-weight: 800;
+        cursor: pointer;
+    }
+    .lead-urgency-row > input[type="radio"],
+    .lead-urgency-switch input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .lead-urgency-row > input[type="radio"]:focus-visible + .lead-urgency-button,
+    .lead-urgency-switch input[type="radio"]:focus-visible + label {
+        outline: 3px solid rgba(31, 102, 102, 0.35);
+        outline-offset: 2px;
+    }
+    .lead-urgency-row > input[type="radio"]:checked + .lead-urgency-button,
+    .lead-urgency-switch input[type="radio"]:checked + label {
+        border-color: #ffc928;
+        background: #ffc928;
+        color: #352500;
+    }
+    .lead-urgency-input {
+        width: min(220px, 100%);
+    }
+    .lead-urgency-input--weeks {
+        width: 90px;
+    }
+    .lead-urgency-switch {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 12px;
+        background: rgba(31, 102, 102, 0.08);
     }
     .lead-actions {
         display: flex;
@@ -168,7 +219,7 @@
             {% endif %}
 
             <section class="lead-section">
-                <h2 class="lead-section__title">{% trans "Du bist ..." %}</h2>
+                <h2 class="lead-section__title">{% trans "Du bist ..." %} <span class="lead-required">*</span></h2>
                 <div class="lead-role-tabs" role="tablist" aria-label="{% trans 'Du bist' %}">
                     <button class="lead-role-tab" type="button" role="tab" aria-selected="false" data-role-tab="parent" data-role-panel-target="learning">{% trans "Elternteil" %}</button>
                     <button class="lead-role-tab" type="button" role="tab" aria-selected="false" data-role-tab="student" data-role-panel-target="learning">{% trans "SchülerIn/StudentIn" %}</button>
@@ -189,7 +240,7 @@
                         {% if form.name.errors %}<p class="lead-error">{{ form.name.errors|join:", " }}</p>{% endif %}
                     </div>
                     <div class="lead-field">
-                        <label class="lead-label" for="{{ form.email.id_for_label }}">{{ form.email.label }} <span class="lead-required" data-tutor-email-required>*</span></label>
+                        <label class="lead-label" for="{{ form.email.id_for_label }}">{{ form.email.label }} <span class="lead-required">*</span></label>
                         {{ form.email }}
                         {% if form.email.errors %}<p class="lead-error">{{ form.email.errors|join:", " }}</p>{% endif %}
                     </div>
@@ -224,10 +275,33 @@
                         {{ form.grade }}
                         {% if form.grade.errors %}<p class="lead-error">{{ form.grade.errors|join:", " }}</p>{% endif %}
                     </div>
-                    <div class="lead-field">
-                        <label class="lead-label" for="{{ form.urgency.id_for_label }}">{{ form.urgency.label }} <span class="lead-required">*</span></label>
-                        {{ form.urgency }}
-                        {% if form.urgency.errors %}<p class="lead-error">{{ form.urgency.errors|join:", " }}</p>{% endif %}
+                    <div class="lead-field lead-field--full">
+                        <span class="lead-label">{{ form.urgency_option.label }} <span class="lead-required">*</span></span>
+                        <fieldset class="lead-urgency-options">
+                            <legend class="lead-role-field">{{ form.urgency_option.label }}</legend>
+                            <div class="lead-urgency-row">
+                                <input type="radio" name="{{ form.urgency_option.html_name }}" value="now" id="id_urgency_option_now" {% if form.urgency_option.value == "now" %}checked{% endif %}>
+                                <label class="lead-urgency-button" for="id_urgency_option_now">{% trans "Ab jetzt" %}</label>
+                            </div>
+                            <div class="lead-urgency-row">
+                                <input type="radio" name="{{ form.urgency_option.html_name }}" value="weeks" id="id_urgency_option_weeks" {% if form.urgency_option.value == "weeks" %}checked{% endif %}>
+                                <label class="lead-urgency-button" for="id_urgency_option_weeks">{% trans "In" %}</label>
+                                <div class="lead-urgency-input lead-urgency-input--weeks">{{ form.urgency_weeks }}</div>
+                                <span>{% trans "Wochen" %}</span>
+                            </div>
+                            <div class="lead-urgency-row">
+                                <div class="lead-urgency-switch" aria-label="{% trans 'Ab oder nach' %}">
+                                    <input type="radio" name="{{ form.urgency_option.html_name }}" value="reference_ab" id="id_urgency_option_reference_ab" {% if form.urgency_option.value == "reference_ab" %}checked{% endif %}>
+                                    <label for="id_urgency_option_reference_ab">{% trans "Ab" %}</label>
+                                    <input type="radio" name="{{ form.urgency_option.html_name }}" value="reference_nach" id="id_urgency_option_reference_nach" {% if form.urgency_option.value == "reference_nach" %}checked{% endif %}>
+                                    <label for="id_urgency_option_reference_nach">{% trans "Nach" %}</label>
+                                </div>
+                                <div class="lead-urgency-input">{{ form.urgency_reference }}</div>
+                            </div>
+                        </fieldset>
+                        {% if form.urgency_option.errors %}<p class="lead-error">{{ form.urgency_option.errors|join:", " }}</p>{% endif %}
+                        {% if form.urgency_weeks.errors %}<p class="lead-error">{{ form.urgency_weeks.errors|join:", " }}</p>{% endif %}
+                        {% if form.urgency_reference.errors %}<p class="lead-error">{{ form.urgency_reference.errors|join:", " }}</p>{% endif %}
                     </div>
                     <div class="lead-field lead-field--full">
                         <label class="lead-label" for="{{ form.goal.id_for_label }}">{{ form.goal.label }} <span class="lead-required">*</span></label>
@@ -269,11 +343,6 @@
                         {{ form.weekly_availability }}
                         {% if form.weekly_availability.errors %}<p class="lead-error">{{ form.weekly_availability.errors|join:", " }}</p>{% endif %}
                     </div>
-                    <div class="lead-field lead-field--full">
-                        <label class="lead-label" for="{{ form.motivation.id_for_label }}">{{ form.motivation.label }}</label>
-                        {{ form.motivation }}
-                        {% if form.motivation.errors %}<p class="lead-error">{{ form.motivation.errors|join:", " }}</p>{% endif %}
-                    </div>
                 </div>
             </section>
 
@@ -306,7 +375,7 @@
             <p><strong>{% trans "E-Mail:" %}</strong><br><a href="mailto:{{ public_contact_email }}">{{ public_contact_email }}</a></p>
             <p><strong>{% trans "Telefon:" %}</strong><br>+49 (0)175 9932553</p>
             <p><strong>{% trans "WhatsApp:" %}</strong><br><a href="https://wa.me/491759932553" target="_blank" rel="noreferrer noopener">{% trans "Nachricht schreiben" %}</a></p>
-            <p><strong>{% trans "Erreichbarkeit:" %}</strong><br>{% trans "Montag bis Freitag, 9:00 - 21:00 Uhr" %}</p>
+            <p><strong>{% trans "Erreichbarkeit:" %}</strong><br>{% trans "Montag bis Freitag, 9:00 - 19:00 Uhr" %}</p>
         </div>
     </aside>
 </div>
@@ -321,6 +390,10 @@
         var roleInputs = Array.from(form.querySelectorAll('input[name="role"]'));
         var roleTabs = Array.from(form.querySelectorAll("[data-role-tab]"));
         var rolePanels = Array.from(form.querySelectorAll("[data-role-fields]"));
+        var urgencyWeeksOption = form.querySelector("#id_urgency_option_weeks");
+        var urgencyReferenceAbOption = form.querySelector("#id_urgency_option_reference_ab");
+        var urgencyWeeks = form.querySelector("#id_urgency_weeks");
+        var urgencyReference = form.querySelector("#id_urgency_reference");
 
         function selectedRole() {
             var checked = roleInputs.find(function (input) { return input.checked; });
@@ -375,6 +448,28 @@
         roleInputs.forEach(function (input) {
             input.addEventListener("change", updateRoleSections);
         });
+        if (urgencyWeeks && urgencyWeeksOption) {
+            urgencyWeeks.addEventListener("focus", function () {
+                urgencyWeeksOption.checked = true;
+            });
+            urgencyWeeks.addEventListener("input", function () {
+                urgencyWeeksOption.checked = true;
+            });
+        }
+        if (urgencyReference && urgencyReferenceAbOption) {
+            urgencyReference.addEventListener("focus", function () {
+                var selectedReferenceOption = form.querySelector('input[name="urgency_option"]:checked');
+                if (!selectedReferenceOption || !selectedReferenceOption.value.startsWith("reference_")) {
+                    urgencyReferenceAbOption.checked = true;
+                }
+            });
+            urgencyReference.addEventListener("input", function () {
+                var selectedReferenceOption = form.querySelector('input[name="urgency_option"]:checked');
+                if (!selectedReferenceOption || !selectedReferenceOption.value.startsWith("reference_")) {
+                    urgencyReferenceAbOption.checked = true;
+                }
+            });
+        }
         updateRoleSections();
     })();
 </script>

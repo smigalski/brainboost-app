@@ -312,7 +312,7 @@ def resend_set_password_email(request, user_id):
     else:
         messages.success(
             request,
-            f"Die Passwort-Mail wurde erneut an {user.get_full_name() or user.username} versendet.",
+            f"Die Passwort-Mail wurde erneut an {user.display_name} versendet.",
         )
     return redirect(next_url)
 

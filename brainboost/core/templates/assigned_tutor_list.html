@@ -62,7 +62,7 @@
             {% for tutor in tutors %}
                 <tr style="border-bottom:1px solid rgba(0,0,0,0.06);">
                     <td data-label="TutorIn" style="padding:12px; vertical-align:top; font-weight:700;">
-                        {{ tutor.user.get_full_name|default:tutor.user.username }}
+                        {{ tutor.user.display_name }}
                         {% if can_resend_password_mail %}
                             <form method="post" action="{% url 'resend_set_password_email' tutor.user.id %}" style="margin-top:8px;">
                                 {% csrf_token %}
