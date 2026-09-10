@@ -295,6 +295,7 @@ class TutorProfileAdminAddressAutocompleteTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'class="address-autocomplete"')
         self.assertContains(response, "core/address_autocomplete.js")
+        self.assertContains(response, "core/admin_address_autocomplete.css")
         self.assertContains(response, "key=test-maps-key")
         self.assertContains(response, "libraries=places")
 

@@ -1,0 +1,14 @@
+/* Django admin form rows hide overflowing content by default. The Google
+   Places result panel must be able to extend beyond the address row. */
+.form-row.address-autocomplete-form-row {
+    overflow: visible;
+    position: relative;
+    z-index: 2;
+}
+
+.address-autocomplete-widget,
+.address-autocomplete-widget gmp-place-autocomplete {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+}

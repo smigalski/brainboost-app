@@ -111,6 +111,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
         if not api_key:
             return media
         return media + forms.Media(
+            css={"all": ("core/admin_address_autocomplete.css",)},
             js=(
                 "core/address_autocomplete.js",
                 "https://maps.googleapis.com/maps/api/js"

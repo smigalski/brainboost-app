@@ -21,6 +21,11 @@ async function initAddressAutocomplete() {
         const wrapper = document.createElement("div");
         wrapper.className = "address-autocomplete-widget";
 
+        const adminFormRow = originalInput.closest(".form-row");
+        if (adminFormRow) {
+            adminFormRow.classList.add("address-autocomplete-form-row");
+        }
+
         const placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
         placeAutocomplete.placeholder = originalInput.getAttribute("placeholder") || "Wohnadresse eingeben";
         placeAutocomplete.includedRegionCodes = ["de"];
