@@ -271,6 +271,33 @@ class AssignedTutorListTests(TestCase):
         self.assertEqual(str(self.subordinate), "TutorIn: Tina Tutorin")
 
 
+@override_settings(GOOGLE_MAPS_API_KEY="test-maps-key")
+class TutorProfileAdminAddressAutocompleteTests(TestCase):
+    def setUp(self):
+        self.admin_user = CustomUser.objects.create_superuser(
+            username="admin_address_autocomplete",
+            password="test12345",
+            email="admin@example.com",
+        )
+        tutor_user = CustomUser.objects.create_user(
+            username="admin_edited_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor = TutorProfile.objects.create(user=tutor_user)
+        self.client.force_login(self.admin_user)
+
+    def test_change_form_loads_google_address_autocomplete(self):
+        response = self.client.get(
+            reverse("admin:core_tutorprofile_change", args=[self.tutor.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="address-autocomplete"')
+        self.assertContains(response, "core/address_autocomplete.js")
+        self.assertContains(response, "key=test-maps-key")
+        self.assertContains(response, "libraries=places")
+
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     MEDIA_ROOT=tempfile.mkdtemp(),

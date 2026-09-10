@@ -1,5 +1,7 @@
 import csv
 
+from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponse
@@ -18,6 +20,21 @@ from .models import (
     AdminIdea,
     Lead,
 )
+
+
+class TutorProfileAdminForm(forms.ModelForm):
+    class Meta:
+        model = TutorProfile
+        fields = "__all__"
+        widgets = {
+            "address": forms.TextInput(
+                attrs={
+                    "class": "address-autocomplete",
+                    "autocomplete": "off",
+                    "placeholder": "Wohnadresse eingeben",
+                }
+            ),
+        }
 
 
 @admin.register(CustomUser)
@@ -81,10 +98,26 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(TutorProfile)
 class TutorProfileAdmin(admin.ModelAdmin):
+    form = TutorProfileAdminForm
     list_display = ("user", "tutor_number", "status", "tax_number_pending", "bbb_link")
     list_filter = ("status", "tax_number_pending")
     search_fields = ("tutor_number", "user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("assigned_tutors",)
+
+    @property
+    def media(self):
+        media = super().media
+        api_key = getattr(settings, "GOOGLE_MAPS_API_KEY", "")
+        if not api_key:
+            return media
+        return media + forms.Media(
+            js=(
+                "core/address_autocomplete.js",
+                "https://maps.googleapis.com/maps/api/js"
+                f"?key={api_key}&loading=async&libraries=places"
+                "&callback=initAddressAutocomplete",
+            )
+        )
 
 
 @admin.register(Lesson)
