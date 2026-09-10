@@ -32,6 +32,7 @@ class TutorProfileAdminForm(forms.ModelForm):
                     "class": "address-autocomplete",
                     "autocomplete": "off",
                     "placeholder": "Wohnadresse eingeben",
+                    "data-address-mode": "admin",
                 }
             ),
         }
