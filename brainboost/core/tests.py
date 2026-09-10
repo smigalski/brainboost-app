@@ -267,6 +267,9 @@ class AssignedTutorListTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Tina Tutorin")
 
+    def test_tutor_string_uses_display_name(self):
+        self.assertEqual(str(self.subordinate), "TutorIn: Tina Tutorin")
+
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
