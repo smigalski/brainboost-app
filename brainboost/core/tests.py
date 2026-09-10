@@ -242,6 +242,32 @@ class AccessPolicyTests(TestCase):
         self.assertFalse(can_view_invoice(self.tutor_user, self.invoice))
 
 
+class AssignedTutorListTests(TestCase):
+    def setUp(self):
+        self.tutor_user = CustomUser.objects.create_user(
+            username="supervising_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        subordinate_user = CustomUser.objects.create_user(
+            username="assigned_tutor",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutorin",
+        )
+        self.subordinate = TutorProfile.objects.create(user=subordinate_user)
+        self.tutor.assigned_tutors.add(self.subordinate)
+        self.client.login(username="supervising_tutor", password="test12345")
+
+    def test_assigned_tutor_first_and_last_name_are_displayed(self):
+        response = self.client.get(reverse("assigned_tutor_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Tina Tutorin")
+
+
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     MEDIA_ROOT=tempfile.mkdtemp(),
