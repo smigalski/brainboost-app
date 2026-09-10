@@ -270,6 +270,9 @@ class AssignedTutorListTests(TestCase):
     def test_tutor_string_uses_display_name(self):
         self.assertEqual(str(self.subordinate), "TutorIn: Tina Tutorin")
 
+    def test_user_string_uses_first_and_last_name(self):
+        self.assertEqual(str(self.subordinate.user), "Tina Tutorin")
+
 
 @override_settings(GOOGLE_MAPS_API_KEY="test-maps-key")
 class TutorProfileAdminAddressAutocompleteTests(TestCase):

@@ -68,12 +68,12 @@ class CustomUser(AbstractUser):
     pending_email_requested_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
-        return f"{self.username} ({self.get_role_display()})"
+        return self.display_name
 
     @property
     def display_name(self) -> str:
         full_name = self.get_full_name().strip()
-        return full_name or self.email or self.get_role_display()
+        return full_name or self.email or self.username or self.get_role_display()
 
     @property
     def avatar_symbol(self) -> str:

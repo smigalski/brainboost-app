@@ -41,8 +41,9 @@ class TutorProfileAdminForm(forms.ModelForm):
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
+    list_display = ("full_name", "email", "role", "is_staff")
     list_filter = ("role", "is_staff", "is_superuser", "is_active")
+    ordering = ("first_name", "last_name", "username")
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
@@ -77,6 +78,10 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+    @admin.display(description="Vor- und Nachname", ordering="first_name")
+    def full_name(self, obj):
+        return obj.display_name
 
 
 @admin.register(ParentProfile)
