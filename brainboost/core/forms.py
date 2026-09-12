@@ -30,8 +30,6 @@ from .models import (
     TutorTemplate,
     BrainBoostFeedback,
     CustomUser,
-    AdminTask,
-    AdminIdea,
     Lead,
 )
 
@@ -123,45 +121,59 @@ class CampaignLinkBuilderForm(forms.Form):
     ]
 
     base_url = forms.CharField(
-        label="Basis-URL",
+        label="Zielseite",
         initial="/nachhilfe-braunschweig/",
         max_length=500,
+        help_text="Die Seite, auf der Interessierte nach dem Klick landen.",
     )
     utm_source = forms.CharField(
-        label="utm_source (z. B. instagram, meta)",
+        label="Quelle",
         initial="meta",
         max_length=120,
+        help_text="Plattform oder Anbieter, zum Beispiel meta oder instagram.",
     )
     utm_medium = forms.CharField(
-        label="utm_medium (z. B. organic_social, paid_social)",
+        label="Medium",
         initial="paid_social",
         max_length=120,
+        help_text="Für bezahlte Social Ads normalerweise paid_social.",
     )
     utm_campaign = forms.CharField(
-        label="utm_campaign (z. B. braunschweig_nachhilfe_2026)",
+        label="Kampagnenname",
         max_length=120,
         required=False,
+        help_text="Eindeutiger Name ohne Leerzeichen, zum Beispiel eltern_mathe_braunschweig.",
     )
     utm_content = forms.CharField(
-        label="utm_content (z. B. post_pruefungsvorbereitung, story_ad_01)",
+        label="Anzeige oder Motiv (optional)",
         max_length=120,
         required=False,
+        help_text="Unterscheidet Anzeigen innerhalb derselben Kampagne, zum Beispiel video_1.",
     )
     utm_term = forms.CharField(
-        label="utm_term (z. B. mathe_nachhilfe, meist leer bei Social)",
+        label="Keyword (optional)",
         max_length=120,
         required=False,
+        help_text="Bei Social Ads meist leer; bei Suchanzeigen für das Keyword verwenden.",
     )
     role = forms.ChoiceField(
-        label="role (z. B. Eltern, SchülerInnen, TutorInnen)",
+        label="Rolle vorauswählen (optional)",
         choices=ROLE_CHOICES,
         required=False,
+        help_text="Öffnet das Kontaktformular direkt für die gewählte Zielgruppe.",
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.setdefault("class", "form-control")
+        self.fields["base_url"].widget.attrs.setdefault(
+            "placeholder", "https://www.nachhilfe-brainboost.de/nachhilfe-braunschweig/"
+        )
+        self.fields["utm_campaign"].widget.attrs.setdefault(
+            "placeholder", "eltern_mathe_braunschweig"
+        )
+        self.fields["utm_content"].widget.attrs.setdefault("placeholder", "video_1")
 
 
 class LeadForm(forms.ModelForm):
@@ -388,83 +400,6 @@ class LeadForm(forms.ModelForm):
             cleaned["tutoring_type"] = ""
         return cleaned
 
-
-def _admin_users_queryset():
-    return CustomUser.objects.filter(is_active=True).filter(
-        Q(is_staff=True) | Q(is_superuser=True)
-    ).order_by("first_name", "last_name", "username")
-
-
-class AdminTaskBaseForm(forms.ModelForm):
-    class Meta:
-        model = AdminTask
-        fields = ["title", "importance", "days", "owner"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["title"].label = "Aufgabe"
-        self.fields["title"].max_length = 1000
-        self.fields["title"].widget = forms.Textarea(
-            attrs={
-                "rows": 1,
-                "maxlength": 1000,
-                "data-auto-resize-textarea": "",
-            }
-        )
-        self.fields["importance"].label = "Wichtigkeit"
-        self.fields["days"].label = "Tage"
-        self.fields["owner"].label = "Verantwortlicher"
-        self.fields["owner"].queryset = _admin_users_queryset()
-
-    def clean(self):
-        cleaned = super().clean()
-        importance = cleaned.get("importance")
-        days = cleaned.get("days")
-        if importance and days is not None:
-            min_days, max_days = AdminTask.day_range_for_importance(importance)
-            if not (min_days <= days <= max_days):
-                self.add_error(
-                    "days",
-                    f"Für '{importance}' sind nur {min_days} bis {max_days} Tage erlaubt.",
-                )
-        return cleaned
-
-
-class AdminTaskCreateForm(AdminTaskBaseForm):
-    pass
-
-
-class AdminTaskUpdateForm(AdminTaskBaseForm):
-    pass
-
-
-class AdminIdeaCreateForm(forms.ModelForm):
-    class Meta:
-        model = AdminIdea
-        fields = ["title", "category", "image"]
-        widgets = {
-            "title": forms.Textarea(attrs={"rows": 2}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["title"].label = "Idee"
-        self.fields["category"].label = "Kategorie"
-        self.fields["image"].label = "Bild"
-        self.fields["image"].required = False
-
-
-class AdminIdeaUpdateForm(forms.ModelForm):
-    class Meta:
-        model = AdminIdea
-        fields = ["title"]
-        widgets = {
-            "title": forms.Textarea(attrs={"rows": 2}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["title"].label = "Idee"
 
 
 class TutorStudentAssignmentForm(forms.Form):

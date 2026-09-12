@@ -23,7 +23,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
-    AdminTaskCreateForm,
     BrainBoostFeedbackForm,
     InvoiceGenerateForm,
     LearningMaterialForm,
@@ -43,8 +42,6 @@ from .models import (
     TutorProfile,
     TemporaryTutorAssignment,
     Lead,
-    AdminTask,
-    AdminIdea,
 )
 from .views import (
     _auto_complete_past_lessons,
@@ -1298,247 +1295,82 @@ class LeadAdminToolsTests(TestCase):
         self.assertContains(response, "role=parent")
 
 
-class AdminTaskManagerTests(TestCase):
+class AdminHubTests(TestCase):
     def setUp(self):
         self.staff_user = CustomUser.objects.create_user(
-            username="staff-tasks",
+            username="staff-admin-hub",
             password="test12345",
             role=CustomUser.Roles.TUTOR,
             is_staff=True,
         )
+        self.regular_user = CustomUser.objects.create_user(
+            username="regular-admin-hub",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+        )
 
-    def _task(self, **overrides):
-        data = {
-            "title": "Eltern nachfassen",
-            "importance": AdminTask.Importance.NORMAL,
-            "days": 7,
-            "status": AdminTask.Status.TODO,
-            "owner": self.staff_user,
-            "created_by": self.staff_user,
+    def test_admin_hub_links_to_current_tools(self):
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("admin_tasks"))
+
+        self.assertEqual(response.status_code, 200)
+        expected_links = {
+            "Kampagnen-Link bauen": reverse("campaign_link_builder"),
+            "Meta-Ads-Struktur": reverse("meta_ads_guide"),
+            "Django-Admin": reverse("admin:index"),
+            "Leads": reverse("lead_dashboard"),
         }
-        data.update(overrides)
-        return AdminTask.objects.create(**data)
+        for label, url in expected_links.items():
+            with self.subTest(label=label):
+                self.assertContains(response, label)
+                self.assertContains(response, f'href="{url}"')
 
-    def test_admin_task_title_allows_up_to_1000_characters(self):
-        self.assertEqual(AdminTask._meta.get_field("title").max_length, 1000)
+        self.assertNotContains(response, ">Ideen<", html=False)
+        self.assertNotContains(response, ">Tasks<", html=False)
+        self.assertNotContains(response, ">Kanban<", html=False)
 
-        valid_form = AdminTaskCreateForm(
-            data={
-                "title": "x" * 1000,
-                "importance": AdminTask.Importance.NORMAL,
-                "days": 7,
-                "owner": self.staff_user.id,
-            }
-        )
-        self.assertTrue(valid_form.is_valid(), valid_form.errors)
-
-        invalid_form = AdminTaskCreateForm(
-            data={
-                "title": "x" * 1001,
-                "importance": AdminTask.Importance.NORMAL,
-                "days": 7,
-                "owner": self.staff_user.id,
-            }
-        )
-        self.assertFalse(invalid_form.is_valid())
-        self.assertIn("title", invalid_form.errors)
-
-    def test_task_create_field_is_resizing_textarea_with_1000_character_limit(self):
+    def test_leads_button_opens_lead_centre(self):
         self.client.force_login(self.staff_user)
 
         response = self.client.get(reverse("admin_tasks"))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "<textarea", html=False)
-        self.assertContains(response, 'form="create-task-form"')
-        self.assertContains(response, 'maxlength="1000"')
-        self.assertContains(response, "data-auto-resize-textarea")
-
-    def test_complete_button_marks_task_done_and_removes_it_from_task_rows(self):
-        task = self._task()
-        self.client.force_login(self.staff_user)
-
-        response = self.client.post(
-            reverse("admin_tasks"),
-            {"action": "complete", "task_id": task.id},
+        self.assertContains(
+            response,
+            f'class="admin-tool-card admin-tool-card--featured" href="{reverse("lead_dashboard")}"',
         )
 
-        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=tasks")
-        task.refresh_from_db()
-        self.assertEqual(task.status, AdminTask.Status.DONE)
+    def test_admin_tools_share_workspace_navigation(self):
+        self.client.force_login(self.staff_user)
+
+        for page_name in (
+            "admin_tasks",
+            "campaign_link_builder",
+            "meta_ads_guide",
+            "lead_dashboard",
+        ):
+            with self.subTest(page_name=page_name):
+                response = self.client.get(reverse(page_name))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, reverse("admin_tasks"))
+                self.assertContains(response, reverse("campaign_link_builder"))
+                self.assertContains(response, reverse("meta_ads_guide"))
+                self.assertContains(response, reverse("admin:index"))
+                self.assertContains(response, reverse("lead_dashboard"))
+
+    def test_admin_hub_remains_restricted_to_admins(self):
+        self.client.force_login(self.regular_user)
 
         response = self.client.get(reverse("admin_tasks"))
-        self.assertNotIn(task, [row["task"] for row in response.context["task_rows"]])
 
-    def test_done_task_can_move_directly_back_to_todo_in_kanban(self):
-        task = self._task(status=AdminTask.Status.DONE)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard"))
+
+    def test_removed_task_actions_are_unavailable(self):
         self.client.force_login(self.staff_user)
 
-        response = self.client.post(
-            reverse("admin_task_status_update", args=[task.id]),
-            data=json.dumps({"status": AdminTask.Status.TODO}),
-            content_type="application/json",
-        )
-
-        self.assertEqual(response.status_code, 200)
-        task.refresh_from_db()
-        self.assertEqual(task.status, AdminTask.Status.TODO)
-
-    def test_admin_page_has_leads_tab_with_lead_tool_links(self):
-        self.client.force_login(self.staff_user)
-
-        response = self.client.get(reverse("admin_tasks") + "?tab=leads")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["selected_tab"], "leads")
-        self.assertContains(response, "Lead-Zentrale")
-        self.assertContains(response, reverse("lead_dashboard"))
-        self.assertContains(response, reverse("campaign_link_builder"))
-        self.assertContains(response, reverse("meta_ads_guide"))
-
-    def test_admin_page_has_ideas_tab_with_idea_fields_and_todo_copy(self):
-        idea = AdminIdea.objects.create(
-            title="Landingpage stark vereinfachen",
-            category=AdminIdea.Category.IMPROVEMENT,
-            created_by=self.staff_user,
-        )
-        task = self._task(title="Lead anrufen", status=AdminTask.Status.TODO)
-        self.client.force_login(self.staff_user)
-
-        response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["selected_tab"], "ideas")
-        self.assertContains(response, "Ideen")
-        self.assertContains(response, "Große Ideen/Vision")
-        self.assertContains(response, "Kleine Ideen, Verbesserungen")
-        self.assertContains(response, idea.title)
-        self.assertContains(response, task.title)
-        self.assertContains(response, "Bearbeiten")
-        self.assertContains(response, "data-idea-edit-modal")
-        self.assertContains(response, "data-auto-resize-textarea")
-
-    def test_admin_idea_can_be_created(self):
-        self.client.force_login(self.staff_user)
-
-        response = self.client.post(
-            reverse("admin_tasks"),
-            {
-                "action": "create_idea",
-                "category": AdminIdea.Category.VISION,
-                "title": "BrainBoost Lernanalyse",
-            },
-        )
-
-        idea = AdminIdea.objects.get()
-        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
-        self.assertEqual(idea.category, AdminIdea.Category.VISION)
-        self.assertEqual(idea.created_by, self.staff_user)
-        self.assertEqual(idea.title, "BrainBoost Lernanalyse")
-
-    def test_admin_idea_can_be_updated_with_paragraphs(self):
-        idea = AdminIdea.objects.create(
-            title="Alte Idee",
-            category=AdminIdea.Category.VISION,
-            created_by=self.staff_user,
-        )
-        self.client.force_login(self.staff_user)
-
-        response = self.client.post(
-            reverse("admin_tasks"),
-            {
-                "action": "update_idea",
-                "idea_id": idea.id,
-                "title": "Erster Absatz\n\nZweiter Absatz",
-            },
-        )
-
-        self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
-        idea.refresh_from_db()
-        self.assertEqual(idea.title, "Erster Absatz\n\nZweiter Absatz")
-
-        response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
-        self.assertContains(response, "Erster Absatz")
-        self.assertContains(response, "<br>", html=False)
-        self.assertContains(response, "Zweiter Absatz")
-
-    def test_improvement_idea_can_be_created_with_image(self):
-        image = SimpleUploadedFile(
-            "idea.gif",
-            (
-                b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00"
-                b"\xff\xff\xff,\x00\x00\x00\x00\x01\x00\x01\x00"
-                b"\x00\x02\x02D\x01\x00;"
-            ),
-            content_type="image/gif",
-        )
-        self.client.force_login(self.staff_user)
-
-        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
-            response = self.client.post(
-                reverse("admin_tasks"),
-                {
-                    "action": "create_idea",
-                    "category": AdminIdea.Category.IMPROVEMENT,
-                    "title": "Screenshot vom Formular",
-                    "image": image,
-                },
-            )
-
-            idea = AdminIdea.objects.get()
-            self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
-            self.assertTrue(idea.image.name.startswith("admin_ideas/"))
-
-            response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
-            self.assertContains(response, idea.image.url)
-            self.assertContains(response, 'class="idea-card__image"')
-            self.assertContains(response, f'data-idea-image-preview="{idea.image.url}"')
-            self.assertContains(response, "data-idea-image-preview-modal")
-
-    def test_idea_task_modal_submission_creates_todo_task_and_removes_idea(self):
-        image = SimpleUploadedFile(
-            "idea.gif",
-            (
-                b"GIF87a\x01\x00\x01\x00\x80\x01\x00\x00\x00\x00"
-                b"\xff\xff\xff,\x00\x00\x00\x00\x01\x00\x01\x00"
-                b"\x00\x02\x02D\x01\x00;"
-            ),
-            content_type="image/gif",
-        )
-        self.client.force_login(self.staff_user)
-
-        with tempfile.TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
-            idea = AdminIdea.objects.create(
-                title="WhatsApp Follow-up Vorlage",
-                category=AdminIdea.Category.IMPROVEMENT,
-                created_by=self.staff_user,
-                image=image,
-            )
-            idea_image_name = idea.image.name
-
-            response = self.client.post(
-                reverse("admin_tasks"),
-                {
-                    "action": "create",
-                    "return_tab": "ideas",
-                    "source_idea_id": idea.id,
-                    "title": idea.title,
-                    "importance": AdminTask.Importance.IDEA,
-                    "days": 14,
-                    "owner": self.staff_user.id,
-                },
-            )
-
-            task = AdminTask.objects.get(title=idea.title)
-            self.assertRedirects(response, f"{reverse('admin_tasks')}?tab=ideas#task-{task.id}")
-            self.assertEqual(task.status, AdminTask.Status.TODO)
-            self.assertEqual(task.importance, AdminTask.Importance.IDEA)
-            self.assertEqual(task.image.name, idea_image_name)
-            self.assertFalse(AdminIdea.objects.filter(pk=idea.pk).exists())
-
-            response = self.client.get(reverse("admin_tasks") + "?tab=ideas")
-            self.assertContains(response, task.image.url)
-            self.assertContains(response, f'data-idea-image-preview="{task.image.url}"')
+        self.assertEqual(self.client.post(reverse("admin_tasks")).status_code, 405)
+        self.assertEqual(self.client.post("/admins/tasks/1/status/").status_code, 404)
 
 
 class LearningMaterialFormTests(TestCase):

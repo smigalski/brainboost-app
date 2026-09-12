@@ -75,10 +75,6 @@ from ..forms import (
     EmailOrUsernameAuthenticationForm,
     BroadcastEmailForm,
     TutorStudentAssignmentForm,
-    AdminTaskCreateForm,
-    AdminTaskUpdateForm,
-    AdminIdeaCreateForm,
-    AdminIdeaUpdateForm,
     CampaignLinkBuilderForm,
     LeadForm,
 )
@@ -115,8 +111,6 @@ from ..models import (
     TutorTemplate,
     BrainBoostFeedback,
     TemporaryTutorAssignment,
-    AdminTask,
-    AdminIdea,
     Lead,
 )
 
@@ -1743,41 +1737,6 @@ def _build_campaign_url(base_url: str, params: dict[str, str]) -> str:
             parsed.fragment,
         )
     )
-
-
-def _admin_users_queryset():
-    return CustomUser.objects.filter(is_active=True).filter(
-        Q(is_staff=True) | Q(is_superuser=True)
-    ).order_by("first_name", "last_name", "username")
-
-
-def _admin_task_days_by_importance() -> dict[str, tuple[int, int]]:
-    return {
-        AdminTask.Importance.PRIO: (1, 7),
-        AdminTask.Importance.NORMAL: (7, 14),
-        AdminTask.Importance.IDEA: (14, 28),
-    }
-
-
-def _admin_task_view_data(task: AdminTask, today: date) -> dict:
-    created_on = timezone.localtime(task.created_at).date() if task.created_at else today
-    due_date = created_on + timedelta(days=task.days)
-    days_left = (due_date - today).days
-
-    if days_left < 0:
-        deadline_label = f"ueberfaellig seit {abs(days_left)} Tag(en)"
-    elif days_left == 0:
-        deadline_label = "heute faellig"
-    else:
-        deadline_label = f"noch {days_left} Tag(e)"
-
-    return {
-        "task": task,
-        "owner_name": _display_name(task.owner),
-        "due_date": due_date,
-        "days_left": days_left,
-        "deadline_label": deadline_label,
-    }
 
 
 def _broadcast_recipient_emails(audience: str) -> list[str]:

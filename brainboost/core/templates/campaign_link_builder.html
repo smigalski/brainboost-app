@@ -1,59 +1,145 @@
 {% extends "base.html" %}
-{% block title %}Kampagnen-Link bauen{% endblock %}
+{% load static %}
+
+{% block title %}BrainBoost | Kampagnen-Link bauen{% endblock %}
+{% block page_class %}page--admin{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'core/admin_workspace.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <style>
-        .link-form {
-            display: grid;
-            gap: 12px;
-            max-width: 760px;
-            margin-top: 18px;
-        }
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div class="admin-page-header__copy">
+            <span class="admin-eyebrow">Kampagnenvorbereitung</span>
+            <h1>Kampagnen-Link bauen</h1>
+            <p>Erzeuge einen einheitlich benannten Tracking-Link. So lässt sich später in der Lead-Zentrale erkennen, welche Anzeige eine Anfrage ausgelöst hat.</p>
+        </div>
+    </header>
 
-        .link-form label {
-            display: grid;
-            gap: 5px;
-            font-weight: 700;
-            color: #25323a;
-        }
-
-        .link-form input,
-        .link-form select {
-            width: 100%;
-            padding: 10px 11px;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-        }
-
-        .generated-link {
-            margin-top: 18px;
-            padding: 12px;
-            border-radius: 8px;
-            background: rgba(31, 102, 102, 0.1);
-            overflow-wrap: anywhere;
-            font-weight: 700;
-        }
-    </style>
-
-    <p><a href="{% url 'lead_dashboard' %}">Zurück zur Lead-Zentrale</a></p>
-    <h1>Kampagnen-Link bauen</h1>
-    <p class="muted">Für Meta Ads nur UTM-Parameter und optional die Rolle in die URL schreiben.</p>
-
-    <form class="link-form" method="get">
-        {% for field in form %}
-            <label>
-                {{ field.label }}
-                {{ field }}
-                {% if field.errors %}
-                    <span class="muted">{{ field.errors|join:", " }}</span>
-                {% endif %}
-            </label>
-        {% endfor %}
-        <button class="button" type="submit">Link erzeugen</button>
-    </form>
+    {% include "partials/admin_workspace_nav.html" with active_admin_page="campaign_link" %}
 
     {% if generated_url %}
-        <div class="generated-link" data-generated-url>{{ generated_url }}</div>
+        <section class="admin-panel admin-result" aria-labelledby="generated-link-heading" data-generated-result>
+            <div>
+                <span class="admin-eyebrow">Fertig</span>
+                <h2 id="generated-link-heading">Dein Kampagnen-Link</h2>
+                <p>Du kannst diesen Link jetzt direkt in der Anzeige hinterlegen.</p>
+            </div>
+            <input class="admin-result__url" type="text" value="{{ generated_url }}" readonly data-generated-url aria-label="Generierter Kampagnen-Link">
+            <div class="admin-button-row">
+                <button class="admin-button" type="button" data-copy-generated-url>Link kopieren</button>
+                <a class="admin-button admin-button--secondary" href="{{ generated_url }}" target="_blank" rel="noopener">Ziel testen</a>
+                <a class="admin-button admin-button--secondary" href="{% url 'lead_dashboard' %}">Zur Lead-Zentrale</a>
+            </div>
+            <p class="admin-field__help" role="status" aria-live="polite" data-copy-status></p>
+        </section>
     {% endif %}
+
+    <div class="admin-form-layout">
+        <section class="admin-panel" aria-labelledby="campaign-form-heading">
+            <form class="admin-form" method="get">
+                <div class="admin-form-section">
+                    <div class="admin-form-section__heading">
+                        <span class="admin-form-section__number">1</span>
+                        <h2 id="campaign-form-heading">Ziel festlegen</h2>
+                    </div>
+                    <div class="admin-form-grid">
+                        <label class="admin-field admin-field--wide">
+                            {{ form.base_url.label }}
+                            {{ form.base_url }}
+                            <span class="admin-field__help">{{ form.base_url.help_text }}</span>
+                            {% if form.base_url.errors %}<span class="admin-field__error">{{ form.base_url.errors|join:", " }}</span>{% endif %}
+                        </label>
+                        <label class="admin-field admin-field--wide">
+                            {{ form.role.label }}
+                            {{ form.role }}
+                            <span class="admin-field__help">{{ form.role.help_text }}</span>
+                            {% if form.role.errors %}<span class="admin-field__error">{{ form.role.errors|join:", " }}</span>{% endif %}
+                        </label>
+                    </div>
+                </div>
+
+                <div class="admin-form-section">
+                    <div class="admin-form-section__heading">
+                        <span class="admin-form-section__number">2</span>
+                        <h2>Tracking einrichten</h2>
+                    </div>
+                    <div class="admin-form-grid">
+                        <label class="admin-field">
+                            {{ form.utm_source.label }}
+                            {{ form.utm_source }}
+                            <span class="admin-field__help">{{ form.utm_source.help_text }}</span>
+                            {% if form.utm_source.errors %}<span class="admin-field__error">{{ form.utm_source.errors|join:", " }}</span>{% endif %}
+                        </label>
+                        <label class="admin-field">
+                            {{ form.utm_medium.label }}
+                            {{ form.utm_medium }}
+                            <span class="admin-field__help">{{ form.utm_medium.help_text }}</span>
+                            {% if form.utm_medium.errors %}<span class="admin-field__error">{{ form.utm_medium.errors|join:", " }}</span>{% endif %}
+                        </label>
+                        <label class="admin-field admin-field--wide">
+                            {{ form.utm_campaign.label }}
+                            {{ form.utm_campaign }}
+                            <span class="admin-field__help">{{ form.utm_campaign.help_text }}</span>
+                            {% if form.utm_campaign.errors %}<span class="admin-field__error">{{ form.utm_campaign.errors|join:", " }}</span>{% endif %}
+                        </label>
+                        <label class="admin-field">
+                            {{ form.utm_content.label }}
+                            {{ form.utm_content }}
+                            <span class="admin-field__help">{{ form.utm_content.help_text }}</span>
+                            {% if form.utm_content.errors %}<span class="admin-field__error">{{ form.utm_content.errors|join:", " }}</span>{% endif %}
+                        </label>
+                        <label class="admin-field">
+                            {{ form.utm_term.label }}
+                            {{ form.utm_term }}
+                            <span class="admin-field__help">{{ form.utm_term.help_text }}</span>
+                            {% if form.utm_term.errors %}<span class="admin-field__error">{{ form.utm_term.errors|join:", " }}</span>{% endif %}
+                        </label>
+                    </div>
+                </div>
+
+                <button class="admin-button" type="submit">Kampagnen-Link erzeugen</button>
+            </form>
+        </section>
+
+        <aside class="admin-panel admin-help-card" aria-labelledby="campaign-help-heading">
+            <div>
+                <span class="admin-eyebrow">Kurz erklärt</span>
+                <h2 id="campaign-help-heading">Gute UTM-Namen</h2>
+            </div>
+            <ul class="admin-help-list">
+                <li>Verwende nur Kleinbuchstaben, Zahlen und Unterstriche.</li>
+                <li>Benenne Zielgruppe, Thema und Ort immer in derselben Reihenfolge.</li>
+                <li>Nutze „Anzeige oder Motiv“, um verschiedene Creatives zu vergleichen.</li>
+                <li>Ändere einen veröffentlichten Link später nicht mehr.</li>
+            </ul>
+            <a class="admin-button admin-button--secondary" href="{% url 'meta_ads_guide' %}">Namensbeispiele ansehen</a>
+        </aside>
+    </div>
 </div>
+
+<script>
+    (function () {
+        var copyButton = document.querySelector("[data-copy-generated-url]");
+        var urlInput = document.querySelector("[data-generated-url]");
+        var status = document.querySelector("[data-copy-status]");
+        if (!copyButton || !urlInput) return;
+
+        copyButton.addEventListener("click", function () {
+            var copy = navigator.clipboard && window.isSecureContext
+                ? navigator.clipboard.writeText(urlInput.value)
+                : Promise.reject();
+
+            copy.catch(function () {
+                urlInput.select();
+                document.execCommand("copy");
+            }).then(function () {
+                copyButton.textContent = "Kopiert";
+                if (status) status.textContent = "Der Link wurde in die Zwischenablage kopiert.";
+                window.setTimeout(function () { copyButton.textContent = "Link kopieren"; }, 1800);
+            });
+        });
+    }());
+</script>
 {% endblock %}

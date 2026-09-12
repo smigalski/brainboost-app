@@ -1,0 +1,35 @@
+<div class="lead-inline-actions">
+    <button
+        class="button"
+        type="button"
+        data-lead-contact-button
+        data-contact-url="{% url 'lead_mark_contacted' lead.id %}"
+        data-name="{{ lead.name }}"
+        data-email="{{ lead.email }}"
+        data-phone="{{ lead.phone }}"
+        data-subject="{{ lead.subject }}"
+        data-goal="{{ lead.goal }}"
+        data-message="{{ lead.message }}"
+    >Kontaktieren</button>
+    {% if lead.role == "tutor" %}
+        {% if lead.converted_tutor_id %}
+            <span class="lead-converted">TutorIn angelegt</span>
+            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="button admin-button--secondary" type="submit">Mail erneut senden</button>
+            </form>
+        {% else %}
+            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="button admin-button--secondary" type="submit">Zur TutorIn machen</button>
+            </form>
+        {% endif %}
+    {% endif %}
+    <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="button lead-delete-button" type="submit">Entfernen</button>
+    </form>
+</div>

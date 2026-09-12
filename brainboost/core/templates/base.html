@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1021">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
+    {% block extra_head %}{% endblock %}
     <meta name="theme-color" content="#2c8a8a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -182,7 +183,7 @@
             </div>
         </div>
     </header>
-<main class="page">
+<main class="page {% block page_class %}{% endblock %}">
     {% if messages %}
         <div class="card" style="border-left:4px solid var(--teal);background:linear-gradient(120deg, rgba(95,181,255,0.12), rgba(255,255,255,0.92));">
             {% for message in messages %}

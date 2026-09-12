@@ -1,329 +1,93 @@
 {% extends "base.html" %}
-{% block title %}Lead-Zentrale{% endblock %}
+{% load static %}
+
+{% block title %}BrainBoost | Lead-Zentrale{% endblock %}
+{% block page_class %}page--admin{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'core/admin_workspace.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <style>
-        .lead-toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: end;
-            margin: 18px 0;
-        }
-
-        .lead-toolbar label {
-            display: grid;
-            gap: 5px;
-            font-weight: 700;
-            color: #25323a;
-        }
-
-        .lead-toolbar input {
-            padding: 9px 10px;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-        }
-
-        .lead-kpis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin: 18px 0;
-        }
-
-        .lead-kpi {
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 8px;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.78);
-        }
-
-        .lead-kpi strong {
-            display: block;
-            font-size: 28px;
-            color: var(--teal-dark);
-            line-height: 1.1;
-        }
-
-        .lead-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 18px;
-            margin-top: 18px;
-        }
-
-        .lead-section {
-            margin-top: 22px;
-        }
-
-        .lead-table-wrap {
-            overflow-x: auto;
-            border-radius: 8px;
-        }
-
-        .lead-table {
-            width: 100%;
-            min-width: 420px;
-            border-collapse: collapse;
-        }
-
-        .lead-table th,
-        .lead-table td {
-            text-align: left;
-            padding: 9px 10px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            vertical-align: top;
-        }
-
-        .lead-table thead th {
-            background: rgba(31, 102, 102, 0.1);
-            color: #124444;
-        }
-
-        .lead-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .lead-inline-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .lead-inline-actions form {
-            margin: 0;
-        }
-
-        .lead-status-form {
-            min-width: 150px;
-        }
-
-        .lead-status-form select {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-            background: #ffffff;
-            color: #25323a;
-            font: inherit;
-        }
-
-        .lead-table .button {
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 0.86rem;
-            box-shadow: none;
-        }
-
-        .lead-table .button.lead-delete-button {
-            background: #fff2f2;
-            color: #8d1f1f;
-            border: 1px solid rgba(141, 31, 31, 0.25);
-        }
-
-        .lead-converted {
-            color: #246b3a;
-            font-weight: 800;
-        }
-
-        .lead-contact-modal[hidden] {
-            display: none;
-        }
-
-        .lead-contact-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: grid;
-            place-items: center;
-            padding: 20px;
-            background: rgba(13, 28, 34, 0.48);
-        }
-
-        .lead-contact-modal__dialog {
-            width: min(460px, 100%);
-            padding: 20px;
-            border-radius: 8px;
-            background: #ffffff;
-            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-        }
-
-        .lead-contact-modal__dialog h3 {
-            margin-top: 0;
-        }
-
-        .lead-contact-modal__actions {
-            display: grid;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .lead-contact-modal__actions .button[disabled] {
-            cursor: not-allowed;
-            opacity: 0.45;
-            filter: grayscale(1);
-            box-shadow: none;
-        }
-
-        .lead-contact-modal__close {
-            margin-top: 10px;
-            width: 100%;
-            background: #eef3f3;
-            color: #1f3838;
-        }
-    </style>
-
-    <h1>Lead-Zentrale</h1>
-    <p class="muted">Interne Auswertung für Meta-Ads-Tests und Lead-Nachverfolgung.</p>
-
-    <div class="lead-actions">
-        <a class="button" href="{% url 'campaign_link_builder' %}">Kampagnen-Link bauen</a>
-        <a class="button" href="{% url 'meta_ads_guide' %}">Meta-Ads-Struktur</a>
-        <a class="button" href="{% url 'lead_export_csv' %}?start_date={{ start_date }}&end_date={{ end_date }}">CSV exportieren</a>
-        <a class="button" href="{% url 'admin:core_lead_changelist' %}">Leads im Django-Admin</a>
-    </div>
-
-    <form class="lead-toolbar" method="get">
-        <label>
-            Von
-            <input type="date" name="start_date" value="{{ start_date }}">
-        </label>
-        <label>
-            Bis
-            <input type="date" name="end_date" value="{{ end_date }}">
-        </label>
-        <button class="button" type="submit">Zeitraum anwenden</button>
-    </form>
-
-    <div class="lead-kpis">
-        <div class="lead-kpi"><span>Leads gesamt</span><strong>{{ total_leads }}</strong></div>
-        <div class="lead-kpi"><span>Neue Leads</span><strong>{{ new_leads_count }}</strong></div>
-        <div class="lead-kpi"><span>Offene Follow-ups</span><strong>{{ open_leads_count }}</strong></div>
-    </div>
-
-    <div class="lead-grid">
-        <section>
-            <h2>Nach Rolle</h2>
-            <div class="lead-table-wrap">
-                <table class="lead-table">
-                    <thead><tr><th>Rolle</th><th>Anzahl</th></tr></thead>
-                    <tbody>
-                        {% for row in role_rows %}
-                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
-                        {% empty %}
-                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div class="admin-page-header__copy">
+            <span class="admin-eyebrow">Anfragen und Auswertung</span>
+            <h1>Lead-Zentrale</h1>
+            <p>Neue Kontakte priorisieren, nächste Schritte festhalten und den Erfolg deiner Kampagnen an einer Stelle überblicken.</p>
+        </div>
+        <div class="admin-header-status" aria-label="Aktueller Lead-Status">
+            <div class="admin-header-status__item">
+                <strong>{{ new_leads_count }}</strong>
+                <span>neue Leads</span>
             </div>
-        </section>
-
-        <section>
-            <h2>Nach Status</h2>
-            <div class="lead-table-wrap">
-                <table class="lead-table">
-                    <thead><tr><th>Status</th><th>Anzahl</th></tr></thead>
-                    <tbody>
-                        {% for row in status_rows %}
-                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
-                        {% empty %}
-                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="admin-header-status__item">
+                <strong>{{ open_leads_count }}</strong>
+                <span>offene Follow-ups</span>
             </div>
-        </section>
+        </div>
+    </header>
 
-        <section>
-            <h2>Nach Fach</h2>
-            <div class="lead-table-wrap">
-                <table class="lead-table">
-                    <thead><tr><th>Fach</th><th>Anzahl</th></tr></thead>
-                    <tbody>
-                        {% for row in subject_rows %}
-                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
-                        {% empty %}
-                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    {% include "partials/admin_workspace_nav.html" with active_admin_page="leads" %}
+
+    <section class="admin-panel admin-filter-panel" aria-labelledby="lead-period-heading">
+        <div>
+            <h2 id="lead-period-heading">Zeitraum und Daten</h2>
+            <p>Filter gilt für Kennzahlen, Auswertungen und Export.</p>
+        </div>
+        <form class="admin-filter-form" method="get">
+            <label class="admin-field">
+                Von
+                <input type="date" name="start_date" value="{{ start_date|default_if_none:'' }}">
+            </label>
+            <label class="admin-field">
+                Bis
+                <input type="date" name="end_date" value="{{ end_date|default_if_none:'' }}">
+            </label>
+            <button class="admin-button" type="submit">Zeitraum anwenden</button>
+        </form>
+        <div class="admin-button-row">
+            <a class="admin-button admin-button--secondary" href="{% url 'lead_export_csv' %}?start_date={{ start_date|default_if_none:'' }}&amp;end_date={{ end_date|default_if_none:'' }}">CSV exportieren</a>
+            <a class="admin-button admin-button--secondary" href="{% url 'admin:core_lead_changelist' %}">Leads im Django-Admin</a>
+        </div>
+    </section>
+
+    <section class="admin-kpis" aria-label="Lead-Kennzahlen">
+        <article class="admin-kpi">
+            <span class="admin-kpi__label">Leads gesamt</span>
+            <strong>{{ total_leads }}</strong>
+            <span class="admin-kpi__hint">im gewählten Zeitraum</span>
+        </article>
+        <article class="admin-kpi admin-kpi--attention">
+            <span class="admin-kpi__label">Neue Leads</span>
+            <strong>{{ new_leads_count }}</strong>
+            <span class="admin-kpi__hint">noch nicht kontaktiert</span>
+        </article>
+        <article class="admin-kpi">
+            <span class="admin-kpi__label">Offene Follow-ups</span>
+            <strong>{{ open_leads_count }}</strong>
+            <span class="admin-kpi__hint">benötigen einen nächsten Schritt</span>
+        </article>
+    </section>
+
+    <nav class="admin-subnav" aria-label="Bereiche der Lead-Zentrale">
+        <a href="#open-leads">Offene Leads</a>
+        <a href="#lead-analysis">Auswertung</a>
+        <a href="#campaign-performance">Kampagnen</a>
+        <a href="#recent-leads">Neueste Leads</a>
+    </nav>
+
+    <section class="admin-panel" id="open-leads" aria-labelledby="open-leads-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="open-leads-heading">Jetzt bearbeiten</h2>
+                <p>Neue und kontaktierte Leads ohne abgeschlossenes Follow-up.</p>
             </div>
-        </section>
-
-        <section>
-            <h2>Nach Klassenstufe</h2>
-            <div class="lead-table-wrap">
-                <table class="lead-table">
-                    <thead><tr><th>Klassenstufe</th><th>Anzahl</th></tr></thead>
-                    <tbody>
-                        {% for row in grade_rows %}
-                            <tr><td>{{ row.label }}</td><td>{{ row.total }}</td></tr>
-                        {% empty %}
-                            <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-    </div>
-
-    <section class="lead-section">
-        <h2>UTM-Kampagnen</h2>
-        <div class="lead-table-wrap">
-            <table class="lead-table">
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
                 <thead>
-                    <tr>
-                        <th>utm_campaign</th>
-                        <th>Leads</th>
-                        <th>Gewonnen</th>
-                        <th>Verloren</th>
-                        <th>Ungeeignet</th>
-                        <th>Conversion</th>
-                    </tr>
+                    <tr><th>Lead</th><th>Status</th><th>Follow-up</th><th>Kampagne</th><th>Aktionen</th></tr>
                 </thead>
-                <tbody>
-                    {% for row in campaign_rows %}
-                        <tr>
-                            <td>{{ row.campaign }}</td>
-                            <td>{{ row.total }}</td>
-                            <td>{{ row.won }}</td>
-                            <td>{{ row.lost }}</td>
-                            <td>{{ row.unsuitable }}</td>
-                            <td>{{ row.conversion_rate|floatformat:1 }}%</td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="6">Keine Kampagnendaten im Zeitraum.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="lead-section">
-        <h2>Nach Zeitraum</h2>
-        <div class="lead-table-wrap">
-            <table class="lead-table">
-                <thead><tr><th>Datum</th><th>Anzahl</th></tr></thead>
-                <tbody>
-                    {% for row in period_rows %}
-                        <tr><td>{{ row.day|date:"d.m.Y" }}</td><td>{{ row.total }}</td></tr>
-                    {% empty %}
-                        <tr><td colspan="2">Keine Leads im Zeitraum.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="lead-section">
-        <h2>Offene Leads</h2>
-        <div class="lead-table-wrap">
-            <table class="lead-table">
-                <thead><tr><th>Lead</th><th>Status</th><th>Follow-up</th><th>Kampagne</th><th>Aktion</th></tr></thead>
                 <tbody>
                     {% for lead in open_leads %}
                         <tr>
@@ -342,66 +106,126 @@
                                     </select>
                                 </form>
                             </td>
-                            <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"-" }}</td>
-                            <td>{{ lead.utm_campaign|default:"unknown" }}</td>
-                            <td>
-                                <div class="lead-inline-actions">
-                                    <button
-                                        class="button"
-                                        type="button"
-                                        data-lead-contact-button
-                                        data-contact-url="{% url 'lead_mark_contacted' lead.id %}"
-                                        data-name="{{ lead.name }}"
-                                        data-email="{{ lead.email }}"
-                                        data-phone="{{ lead.phone }}"
-                                        data-subject="{{ lead.subject }}"
-                                        data-goal="{{ lead.goal }}"
-                                        data-message="{{ lead.message }}"
-                                    >Kontaktieren</button>
-                                    {% if lead.role == "tutor" %}
-                                        {% if lead.converted_tutor_id %}
-                                            <span class="lead-converted">TutorIn angelegt</span>
-                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                                <button class="button" type="submit">Mail erneut senden</button>
-                                            </form>
-                                        {% else %}
-                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                                <button class="button" type="submit">Zur TutorIn machen</button>
-                                            </form>
-                                        {% endif %}
-                                    {% endif %}
-                                    <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                        <button class="button lead-delete-button" type="submit">Entfernen</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"–" }}</td>
+                            <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
+                            <td>{% include "partials/lead_admin_actions.html" with lead=lead %}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="5">Keine offenen Leads.</td></tr>
+                        <tr><td class="admin-empty-state" colspan="5">Aktuell gibt es keine offenen Leads.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </section>
 
-    <section class="lead-section">
-        <h2>Neueste Leads</h2>
-        <div class="lead-table-wrap">
-            <table class="lead-table">
-                <thead><tr><th>Datum</th><th>Name</th><th>Rolle</th><th>Fach</th><th>Status</th><th>UTM</th><th>Aktion</th></tr></thead>
+    <section class="admin-panel" id="lead-analysis" aria-labelledby="lead-analysis-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="lead-analysis-heading">Lead-Auswertung</h2>
+                <p>Verteilung im ausgewählten Zeitraum.</p>
+            </div>
+        </div>
+        <div class="admin-analytics-grid">
+            <article class="admin-mini-card">
+                <h3>Nach Status</h3>
+                <ul class="admin-stat-list">
+                    {% for row in status_rows %}<li><span>{{ row.label }}</span><strong>{{ row.total }}</strong></li>{% empty %}<li>Keine Daten</li>{% endfor %}
+                </ul>
+            </article>
+            <article class="admin-mini-card">
+                <h3>Nach Rolle</h3>
+                <ul class="admin-stat-list">
+                    {% for row in role_rows %}<li><span>{{ row.label }}</span><strong>{{ row.total }}</strong></li>{% empty %}<li>Keine Daten</li>{% endfor %}
+                </ul>
+            </article>
+            <article class="admin-mini-card">
+                <h3>Nach Fach</h3>
+                <ul class="admin-stat-list">
+                    {% for row in subject_rows %}<li><span>{{ row.label }}</span><strong>{{ row.total }}</strong></li>{% empty %}<li>Keine Daten</li>{% endfor %}
+                </ul>
+            </article>
+            <article class="admin-mini-card">
+                <h3>Nach Klassenstufe</h3>
+                <ul class="admin-stat-list">
+                    {% for row in grade_rows %}<li><span>{{ row.label }}</span><strong>{{ row.total }}</strong></li>{% empty %}<li>Keine Daten</li>{% endfor %}
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="admin-panel" id="campaign-performance" aria-labelledby="campaign-performance-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="campaign-performance-heading">Kampagnenleistung</h2>
+                <p>Conversion nach übermitteltem <code>utm_campaign</code>-Wert.</p>
+            </div>
+            <div class="admin-button-row">
+                <a class="admin-button admin-button--secondary" href="{% url 'campaign_link_builder' %}">Neuen Link bauen</a>
+                <a class="admin-button admin-button--secondary" href="{% url 'meta_ads_guide' %}">Struktur prüfen</a>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Kampagne</th><th>Leads</th><th>Gewonnen</th><th>Verloren</th><th>Ungeeignet</th><th>Conversion</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in campaign_rows %}
+                        <tr>
+                            <td><strong>{{ row.campaign }}</strong></td>
+                            <td>{{ row.total }}</td>
+                            <td>{{ row.won }}</td>
+                            <td>{{ row.lost }}</td>
+                            <td>{{ row.unsuitable }}</td>
+                            <td><strong>{{ row.conversion_rate|floatformat:1 }}%</strong></td>
+                        </tr>
+                    {% empty %}
+                        <tr><td class="admin-empty-state" colspan="6">Keine Kampagnendaten im gewählten Zeitraum.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="lead-timeline-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="lead-timeline-heading">Eingänge nach Tag</h2>
+                <p>Wann neue Anfragen eingegangen sind.</p>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Datum</th><th>Anzahl</th></tr></thead>
+                <tbody>
+                    {% for row in period_rows %}
+                        <tr><td>{{ row.day|date:"d.m.Y" }}</td><td><strong>{{ row.total }}</strong></td></tr>
+                    {% empty %}
+                        <tr><td class="admin-empty-state" colspan="2">Keine Leads im gewählten Zeitraum.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-panel" id="recent-leads" aria-labelledby="recent-leads-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="recent-leads-heading">Neueste Leads</h2>
+                <p>Die letzten 30 Anfragen im gewählten Zeitraum.</p>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Datum</th><th>Name</th><th>Rolle / Fach</th><th>Status</th><th>Kampagne</th><th>Aktionen</th></tr>
+                </thead>
                 <tbody>
                     {% for lead in recent_leads %}
                         <tr>
                             <td>{{ lead.created_at|date:"d.m.Y H:i" }}</td>
                             <td><a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a></td>
-                            <td>{{ lead.get_role_display }}</td>
-                            <td>{{ lead.subject|default:"-" }}</td>
+                            <td>{{ lead.get_role_display }}<br><span class="muted">{{ lead.subject|default:"Kein Fach" }}</span></td>
                             <td data-lead-status-cell="{{ lead.id }}">
                                 <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
                                     {% csrf_token %}
@@ -413,47 +237,11 @@
                                     </select>
                                 </form>
                             </td>
-                            <td>{{ lead.utm_campaign|default:"unknown" }}</td>
-                            <td>
-                                <div class="lead-inline-actions">
-                                    <button
-                                        class="button"
-                                        type="button"
-                                        data-lead-contact-button
-                                        data-contact-url="{% url 'lead_mark_contacted' lead.id %}"
-                                        data-name="{{ lead.name }}"
-                                        data-email="{{ lead.email }}"
-                                        data-phone="{{ lead.phone }}"
-                                        data-subject="{{ lead.subject }}"
-                                        data-goal="{{ lead.goal }}"
-                                        data-message="{{ lead.message }}"
-                                    >Kontaktieren</button>
-                                    {% if lead.role == "tutor" %}
-                                        {% if lead.converted_tutor_id %}
-                                            <span class="lead-converted">TutorIn angelegt</span>
-                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                                <button class="button" type="submit">Mail erneut senden</button>
-                                            </form>
-                                        {% else %}
-                                            <form method="post" action="{% url 'lead_convert_to_tutor' lead.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                                <button class="button" type="submit">Zur TutorIn machen</button>
-                                            </form>
-                                        {% endif %}
-                                    {% endif %}
-                                    <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                        <button class="button lead-delete-button" type="submit">Entfernen</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
+                            <td>{% include "partials/lead_admin_actions.html" with lead=lead %}</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="7">Keine Leads im Zeitraum.</td></tr>
+                        <tr><td class="admin-empty-state" colspan="6">Keine Leads im gewählten Zeitraum.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -463,13 +251,14 @@
 
 <div class="lead-contact-modal" data-lead-contact-modal hidden>
     <div class="lead-contact-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="lead-contact-title">
-        <h3 id="lead-contact-title">Kontaktieren</h3>
+        <span class="admin-eyebrow">Kontaktweg wählen</span>
+        <h3 id="lead-contact-title">Lead kontaktieren</h3>
         <p class="muted" data-lead-contact-name></p>
         <div class="lead-contact-modal__actions">
             <button class="button" type="button" data-lead-contact-method="whatsapp">Per WhatsApp</button>
             <button class="button" type="button" data-lead-contact-method="email">Per E-Mail</button>
         </div>
-        <button class="button lead-contact-modal__close" type="button" data-lead-contact-close>Abbrechen</button>
+        <button class="button admin-button--secondary lead-contact-modal__close" type="button" data-lead-contact-close>Abbrechen</button>
     </div>
 </div>
 
@@ -491,18 +280,13 @@
         function normalizeWhatsAppPhone(phone) {
             var value = (phone || "").trim();
             if (!value) return "";
-            if (value.indexOf("+") === 0) {
-                return value.replace(/[^\d]/g, "");
-            }
-            if (value.indexOf("00") === 0) {
-                return value.replace(/[^\d]/g, "").replace(/^00/, "");
-            }
+            if (value.indexOf("+") === 0) return value.replace(/[^\d]/g, "");
+            if (value.indexOf("00") === 0) return value.replace(/[^\d]/g, "").replace(/^00/, "");
             return value.replace(/[^\d]/g, "");
         }
 
         function quotedMessage(message) {
-            var value = (message || "-").trim() || "-";
-            return value;
+            return (message || "-").trim() || "-";
         }
 
         function firstName(name) {
@@ -529,8 +313,7 @@
         }
 
         function whatsappUrl(lead) {
-            var phone = normalizeWhatsAppPhone(lead.phone);
-            return "https://wa.me/" + phone;
+            return "https://wa.me/" + normalizeWhatsAppPhone(lead.phone);
         }
 
         function openModal(lead) {
@@ -538,8 +321,7 @@
             nameElement.textContent = lead.name;
             methodButtons.forEach(function (button) {
                 var method = button.dataset.leadContactMethod;
-                var disabled = method === "email" ? !lead.email : !normalizeWhatsAppPhone(lead.phone);
-                button.disabled = disabled;
+                button.disabled = method === "email" ? !lead.email : !normalizeWhatsAppPhone(lead.phone);
             });
             modal.hidden = false;
         }
@@ -563,10 +345,7 @@
         function markContacted(lead) {
             return fetch(lead.contactUrl, {
                 method: "POST",
-                headers: {
-                    "X-CSRFToken": csrfToken(),
-                    "X-Requested-With": "XMLHttpRequest"
-                }
+                headers: {"X-CSRFToken": csrfToken(), "X-Requested-With": "XMLHttpRequest"}
             }).then(function (response) {
                 if (!response.ok) throw new Error("contact_status_failed");
                 return response.json();

@@ -1,56 +1,116 @@
 {% extends "base.html" %}
-{% block title %}Meta-Ads-Struktur{% endblock %}
+{% load static %}
+
+{% block title %}BrainBoost | Meta-Ads-Struktur{% endblock %}
+{% block page_class %}page--admin{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'core/admin_workspace.css' %}?v=1">
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <style>
-        .campaign-guide {
-            display: grid;
-            gap: 18px;
-            margin-top: 18px;
-            max-width: 880px;
-        }
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div class="admin-page-header__copy">
+            <span class="admin-eyebrow">Kampagnenleitfaden</span>
+            <h1>Meta-Ads-Struktur</h1>
+            <p>Eine schlanke Teststruktur für Eltern- und TutorInnen-Kampagnen. Einheitliche Namen machen die spätere Auswertung in der Lead-Zentrale verlässlich.</p>
+        </div>
+    </header>
 
-        .campaign-guide article {
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-radius: 8px;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.78);
-        }
+    {% include "partials/admin_workspace_nav.html" with active_admin_page="meta_ads" %}
 
-        .campaign-guide code {
-            overflow-wrap: anywhere;
-        }
-    </style>
+    <section class="admin-panel" aria-labelledby="meta-process-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="meta-process-heading">Von der Idee zur Auswertung</h2>
+                <p>Pro Zielgruppe zunächst eine klar abgegrenzte Kampagne testen.</p>
+            </div>
+        </div>
+        <div class="campaign-steps">
+            <article class="campaign-step">
+                <span class="campaign-step__number">1</span>
+                <h3>Zielgruppe trennen</h3>
+                <p>Eltern und TutorInnen erhalten eigene Kampagnen, Botschaften und Zielseiten.</p>
+            </article>
+            <article class="campaign-step">
+                <span class="campaign-step__number">2</span>
+                <h3>Link einheitlich benennen</h3>
+                <p>UTM-Kampagne und Anzeigenmotiv folgen immer derselben Namenslogik.</p>
+            </article>
+            <article class="campaign-step">
+                <span class="campaign-step__number">3</span>
+                <h3>Leads vergleichen</h3>
+                <p>In der Lead-Zentrale Status, Conversion und Kampagnenquelle auswerten.</p>
+            </article>
+        </div>
+    </section>
 
-    <p><a href="{% url 'lead_dashboard' %}">Zurück zur Lead-Zentrale</a></p>
-    <h1>Empfohlene Meta-Ads-Teststruktur</h1>
+    <section aria-labelledby="campaign-blueprints-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="campaign-blueprints-heading">Vorlagen für den Start</h2>
+                <p>Die Links öffnen den Generator bereits mit den passenden Trackingwerten.</p>
+            </div>
+        </div>
 
-    <div class="campaign-guide">
-        <article>
-            <h2>Kampagne 1</h2>
-            <p><strong>Name:</strong><br><code>eltern_mathe_braunschweig</code></p>
-            <p><strong>Zielgruppe:</strong><br>Eltern in Braunschweig und Umgebung</p>
-            <p><strong>Landingpage:</strong><br><code>/nachhilfe-braunschweig/</code></p>
-            <p><strong>UTM:</strong></p>
-            <ul>
-                <li><code>utm_source=meta</code></li>
-                <li><code>utm_medium=paid_social</code></li>
-                <li><code>utm_campaign=eltern_mathe_braunschweig</code></li>
-            </ul>
-        </article>
+        <div class="campaign-blueprints">
+            <article class="campaign-blueprint">
+                <span class="campaign-blueprint__tag">Eltern-Kampagne</span>
+                <div>
+                    <h2>Mathe-Nachhilfe in Braunschweig</h2>
+                    <p>Lokale Kampagne für Eltern, die konkrete Unterstützung suchen.</p>
+                </div>
+                <dl>
+                    <dt>Zielgruppe</dt>
+                    <dd>Eltern in Braunschweig und Umgebung</dd>
+                    <dt>Zielseite</dt>
+                    <dd><code>/nachhilfe-braunschweig/</code></dd>
+                    <dt>Kampagne</dt>
+                    <dd><code>eltern_mathe_braunschweig</code></dd>
+                    <dt>Quelle</dt>
+                    <dd><code>meta</code></dd>
+                    <dt>Medium</dt>
+                    <dd><code>paid_social</code></dd>
+                </dl>
+                <a class="admin-button" href="{% url 'campaign_link_builder' %}?base_url=%2Fnachhilfe-braunschweig%2F&amp;utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=eltern_mathe_braunschweig&amp;role=parent">Diesen Link bauen</a>
+            </article>
 
-        <article>
-            <h2>Kampagne 2</h2>
-            <p><strong>Name:</strong><br><code>tutoren_studierende_braunschweig</code></p>
-            <p><strong>Zielgruppe:</strong><br>Studierende / potenzielle TutorInnen</p>
-            <p><strong>Landingpage:</strong><br><code>/tutor-werden/</code></p>
-            <p><strong>UTM:</strong></p>
-            <ul>
-                <li><code>utm_source=meta</code></li>
-                <li><code>utm_medium=paid_social</code></li>
-                <li><code>utm_campaign=tutoren_studierende_braunschweig</code></li>
-            </ul>
-        </article>
-    </div>
+            <article class="campaign-blueprint">
+                <span class="campaign-blueprint__tag">TutorInnen-Kampagne</span>
+                <div>
+                    <h2>Studierende als TutorInnen</h2>
+                    <p>Recruiting-Kampagne für potenzielle TutorInnen in der Region.</p>
+                </div>
+                <dl>
+                    <dt>Zielgruppe</dt>
+                    <dd>Studierende und potenzielle TutorInnen</dd>
+                    <dt>Zielseite</dt>
+                    <dd><code>/tutor-werden/</code></dd>
+                    <dt>Kampagne</dt>
+                    <dd><code>tutoren_studierende_braunschweig</code></dd>
+                    <dt>Quelle</dt>
+                    <dd><code>meta</code></dd>
+                    <dt>Medium</dt>
+                    <dd><code>paid_social</code></dd>
+                </dl>
+                <a class="admin-button" href="{% url 'campaign_link_builder' %}?base_url=%2Ftutor-werden%2F&amp;utm_source=meta&amp;utm_medium=paid_social&amp;utm_campaign=tutoren_studierende_braunschweig&amp;role=tutor">Diesen Link bauen</a>
+            </article>
+        </div>
+    </section>
+
+    <section class="admin-panel" aria-labelledby="naming-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="naming-heading">Namenskonvention</h2>
+                <p>Ein Format für alle Kampagnen verhindert uneinheitliche Auswertungen.</p>
+            </div>
+            <a class="admin-button admin-button--secondary" href="{% url 'lead_dashboard' %}#campaign-performance">Kampagnen auswerten</a>
+        </div>
+        <ol class="admin-flow">
+            <li><span class="admin-flow__number">1</span><strong>Zielgruppe</strong><code>eltern</code> oder <code>tutoren</code></li>
+            <li><span class="admin-flow__number">2</span><strong>Thema</strong><code>mathe</code> oder <code>studierende</code></li>
+            <li><span class="admin-flow__number">3</span><strong>Ort</strong><code>braunschweig</code></li>
+        </ol>
+    </section>
 </div>
 {% endblock %}

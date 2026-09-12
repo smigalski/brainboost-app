@@ -1,0 +1,26 @@
+<nav class="admin-workspace-nav" aria-label="Admin-Bereich">
+    <a
+        class="admin-workspace-nav__link"
+        href="{% url 'admin_tasks' %}"
+        {% if active_admin_page == "overview" %}aria-current="page"{% endif %}
+    >Übersicht</a>
+    <a
+        class="admin-workspace-nav__link"
+        href="{% url 'campaign_link_builder' %}"
+        {% if active_admin_page == "campaign_link" %}aria-current="page"{% endif %}
+    >Kampagnen-Link</a>
+    <a
+        class="admin-workspace-nav__link"
+        href="{% url 'meta_ads_guide' %}"
+        {% if active_admin_page == "meta_ads" %}aria-current="page"{% endif %}
+    >Meta-Ads-Struktur</a>
+    <a
+        class="admin-workspace-nav__link"
+        href="{% url 'admin:index' %}"
+    >Django-Admin</a>
+    <a
+        class="admin-workspace-nav__link"
+        href="{% url 'lead_dashboard' %}"
+        {% if active_admin_page == "leads" %}aria-current="page"{% endif %}
+    >Lead-Zentrale</a>
+</nav>

@@ -1,4 +1,5 @@
 from .common import *
+from django.views.decorators.http import require_GET
 
 
 @login_required
@@ -418,192 +419,20 @@ def faq_admin(request):
 
 
 @login_required
+@require_GET
 def admin_tasks(request):
     _ensure_profile_for_user(request.user)
     if not _has_admin_access(request.user):
         return redirect("dashboard")
-
-    selected_tab = request.GET.get("tab", "tasks")
-    if selected_tab not in {"ideas", "tasks", "kanban", "leads"}:
-        selected_tab = "tasks"
-
-    create_form = AdminTaskCreateForm()
-    idea_create_form = AdminIdeaCreateForm()
-    vision_create_form = AdminIdeaCreateForm(
-        initial={"category": AdminIdea.Category.VISION}
-    )
-    improvement_create_form = AdminIdeaCreateForm(
-        initial={"category": AdminIdea.Category.IMPROVEMENT}
-    )
-
-    if request.method == "POST":
-        action = (request.POST.get("action") or "").strip()
-        if action == "create":
-            create_form = AdminTaskCreateForm(request.POST)
-            if create_form.is_valid():
-                task = create_form.save(commit=False)
-                task.status = AdminTask.Status.TODO
-                task.created_by = request.user
-                source_idea_id = request.POST.get("source_idea_id")
-                source_idea = None
-                if source_idea_id:
-                    source_idea = AdminIdea.objects.filter(pk=source_idea_id).first()
-                    if source_idea and source_idea.image:
-                        task.image = source_idea.image.name
-                task.save()
-                if source_idea:
-                    source_idea.delete()
-                messages.success(request, "Aufgabe wurde hinzugefügt.")
-                return_tab = request.POST.get("return_tab")
-                if return_tab not in {"ideas", "tasks", "kanban"}:
-                    return_tab = "tasks"
-                return redirect(f"{reverse('admin_tasks')}?tab={return_tab}#task-{task.id}")
-            messages.error(request, "Aufgabe konnte nicht gespeichert werden. Bitte Eingaben prüfen.")
-            selected_tab = request.POST.get("return_tab") if request.POST.get("return_tab") in {"ideas", "tasks"} else "tasks"
-        elif action == "update":
-            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
-            update_form = AdminTaskUpdateForm(request.POST, instance=task)
-            if update_form.is_valid():
-                update_form.save()
-                messages.success(request, "Aufgabe wurde aktualisiert.")
-            else:
-                messages.error(request, "Aufgabe konnte nicht aktualisiert werden.")
-            return redirect(f"{reverse('admin_tasks')}?tab=tasks#task-{task.id}")
-        elif action == "delete":
-            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
-            task.delete()
-            messages.success(request, "Aufgabe wurde gelöscht.")
-            return redirect(f"{reverse('admin_tasks')}?tab=tasks")
-        elif action == "complete":
-            task = get_object_or_404(AdminTask, pk=request.POST.get("task_id"))
-            task.status = AdminTask.Status.DONE
-            task.save(update_fields=["status", "updated_at"])
-            messages.success(request, "Aufgabe wurde als erledigt markiert.")
-            return redirect(f"{reverse('admin_tasks')}?tab=tasks")
-        elif action == "create_idea":
-            idea_create_form = AdminIdeaCreateForm(request.POST, request.FILES)
-            selected_tab = "ideas"
-            if idea_create_form.is_valid():
-                idea = idea_create_form.save(commit=False)
-                idea.created_by = request.user
-                if idea.category != AdminIdea.Category.IMPROVEMENT:
-                    idea.image = None
-                idea.save()
-                messages.success(request, "Idee wurde hinzugefügt.")
-                return redirect(f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
-            messages.error(request, "Idee konnte nicht gespeichert werden. Bitte Eingabe prüfen.")
-            category = request.POST.get("category")
-            if category == AdminIdea.Category.VISION:
-                vision_create_form = idea_create_form
-            else:
-                improvement_create_form = idea_create_form
-        elif action == "update_idea":
-            idea = get_object_or_404(AdminIdea, pk=request.POST.get("idea_id"))
-            idea_update_form = AdminIdeaUpdateForm(request.POST, instance=idea)
-            if idea_update_form.is_valid():
-                idea_update_form.save()
-                messages.success(request, "Idee wurde aktualisiert.")
-            else:
-                messages.error(request, "Idee konnte nicht aktualisiert werden.")
-            return redirect(f"{reverse('admin_tasks')}?tab=ideas#idea-{idea.id}")
-
-    tasks = list(
-        AdminTask.objects.select_related("owner")
-        .order_by("status", "created_at", "id")
-    )
-    today = timezone.localdate()
-    all_task_rows = [_admin_task_view_data(task, today) for task in tasks]
-    task_rows = [
-        item for item in all_task_rows if item["task"].status != AdminTask.Status.DONE
-    ]
-    todo_task_rows = [
-        item for item in all_task_rows if item["task"].status == AdminTask.Status.TODO
-    ]
-    ideas = list(
-        AdminIdea.objects.select_related("created_by").order_by("category", "-created_at")
-    )
-
-    kanban_columns = [
-        {
-            "status": AdminTask.Status.TODO,
-            "label": dict(AdminTask.Status.choices)[AdminTask.Status.TODO],
-            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.TODO],
-        },
-        {
-            "status": AdminTask.Status.DOING,
-            "label": dict(AdminTask.Status.choices)[AdminTask.Status.DOING],
-            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.DOING],
-        },
-        {
-            "status": AdminTask.Status.DONE,
-            "label": dict(AdminTask.Status.choices)[AdminTask.Status.DONE],
-            "tasks": [item for item in all_task_rows if item["task"].status == AdminTask.Status.DONE],
-        },
-    ]
-
+    leads = Lead.objects.all()
     return render(
         request,
         "admin_tasks.html",
         {
-            "selected_tab": selected_tab,
-            "create_form": create_form,
-            "vision_create_form": vision_create_form,
-            "improvement_create_form": improvement_create_form,
-            "vision_ideas": [
-                idea for idea in ideas if idea.category == AdminIdea.Category.VISION
-            ],
-            "improvement_ideas": [
-                idea for idea in ideas if idea.category == AdminIdea.Category.IMPROVEMENT
-            ],
-            "task_rows": task_rows,
-            "todo_task_rows": todo_task_rows,
-            "kanban_columns": kanban_columns,
-            "admins": _admin_users_queryset(),
-            "importance_choices": AdminTask.Importance.choices,
-            "days_by_importance": _admin_task_days_by_importance(),
-            "status_choices": AdminTask.Status.choices,
+            "new_leads_count": leads.filter(status=Lead.Status.NEW).count(),
+            "open_leads_count": leads.filter(
+                status__in=[Lead.Status.NEW, Lead.Status.CONTACTED],
+                follow_up_done=False,
+            ).count(),
         },
-    )
-
-
-@login_required
-def admin_task_status_update(request, task_id: int):
-    if not _has_admin_access(request.user):
-        return JsonResponse({"ok": False, "error": "unauthorized"}, status=403)
-    if request.method != "POST":
-        return JsonResponse({"ok": False, "error": "method_not_allowed"}, status=405)
-
-    task = get_object_or_404(AdminTask, pk=task_id)
-    next_status = (request.POST.get("status") or "").strip()
-    if not next_status:
-        try:
-            payload = json.loads(request.body.decode("utf-8"))
-            next_status = str(payload.get("status", "")).strip()
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            next_status = ""
-
-    valid_statuses = {choice[0] for choice in AdminTask.Status.choices}
-    if next_status not in valid_statuses:
-        return JsonResponse({"ok": False, "error": "invalid_status"}, status=400)
-
-    allowed_moves = {
-        AdminTask.Status.TODO: {AdminTask.Status.DOING},
-        AdminTask.Status.DOING: {AdminTask.Status.TODO, AdminTask.Status.DONE},
-        AdminTask.Status.DONE: {AdminTask.Status.TODO, AdminTask.Status.DOING},
-    }
-    if next_status != task.status and next_status not in allowed_moves.get(task.status, set()):
-        return JsonResponse({"ok": False, "error": "move_not_allowed"}, status=400)
-
-    task.status = next_status
-    task.save(update_fields=["status", "updated_at"])
-    today = timezone.localdate()
-    task_data = _admin_task_view_data(task, today)
-    return JsonResponse(
-        {
-            "ok": True,
-            "task_id": task.id,
-            "status": task.status,
-            "status_label": task.get_status_display(),
-            "deadline_label": task_data["deadline_label"],
-        }
     )

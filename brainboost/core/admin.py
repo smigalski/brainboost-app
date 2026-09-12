@@ -16,10 +16,14 @@ from .models import (
     ProgressEntry,
     Invoice,
     TutorTemplate,
-    AdminTask,
-    AdminIdea,
     Lead,
 )
+
+
+admin.site.site_header = "BrainBoost Verwaltung"
+admin.site.site_title = "BrainBoost Admin"
+admin.site.index_title = "Konten, Unterricht und Systemdaten"
+admin.site.site_url = "/admins/"
 
 
 class TutorProfileAdminForm(forms.ModelForm):
@@ -153,20 +157,6 @@ class TutorTemplateAdmin(admin.ModelAdmin):
     list_display = ("file", "uploaded_by", "visibility", "uploaded_at")
     list_filter = ("uploaded_at",)
     search_fields = ("file", "uploaded_by__user__username")
-
-
-@admin.register(AdminTask)
-class AdminTaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "image", "importance", "days", "status", "owner", "created_at")
-    list_filter = ("importance", "status", "owner")
-    search_fields = ("title", "owner__username", "owner__first_name", "owner__last_name")
-
-
-@admin.register(AdminIdea)
-class AdminIdeaAdmin(admin.ModelAdmin):
-    list_display = ("title", "category", "image", "created_by", "created_at")
-    list_filter = ("category", "created_by")
-    search_fields = ("title", "created_by__username", "created_by__first_name", "created_by__last_name")
 
 
 @admin.register(Lead)
