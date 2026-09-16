@@ -165,6 +165,7 @@
                             {% endif %}
                             <a href="{% url 'lesson_list' %}" class="{% if current == 'lesson_list' %}active{% endif %}">{% trans "Termine" %}</a>
                             <a href="{% url 'progress' %}" class="{% if current == 'progress' %}active{% endif %}">{% trans "Lernfortschritt" %}</a>
+                            <a href="{% url 'agreement_list' %}" class="{% if current == 'agreement_list' or current == 'agreement_detail' %}active{% endif %}">{% trans "Vereinbarungen" %}</a>
                         {% endif %}
                         {% if not request.user.is_authenticated or request.user.role == 'parent' %}
                             <a href="{% url 'pricing' %}" class="{% if current == 'pricing' %}active{% endif %}">{% trans "Preise" %}</a>

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | {{ agreement.get_agreement_type_display }}{% endblock %}
+{% block content %}
+<div class="card">
+    <p class="muted"><a href="{% url 'agreement_list' %}">← Alle Vereinbarungen</a></p>
+    <h1>{{ agreement.get_agreement_type_display }}</h1>
+    <p><strong>{{ agreement.reference }}</strong> · Version {{ agreement.version }}</p>
+    <p>Status: <strong>{{ agreement.get_status_display }}</strong></p>
+    {% if agreement.status == "terminated" %}
+        <div style="padding:12px 14px;border-radius:10px;background:rgba(180,35,24,0.10);margin:16px 0;">
+            Gekündigt am {{ agreement.terminated_at|date:"d.m.Y H:i" }} Uhr.
+            {% if agreement.termination_effective_on %}
+                Vertragsende: {{ agreement.termination_effective_on|date:"d.m.Y" }}.
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if agreement.version|slice:":5" == "draft" %}
+        <div style="padding:12px 14px;border-radius:10px;background:rgba(255,201,40,0.18);margin:16px 0;">
+            Redaktioneller Entwurf – vor dem Produktivbetrieb ist eine rechtliche Freigabe erforderlich.
+        </div>
+    {% endif %}
+    <section style="margin-top:22px;">
+        <h2>Vertragsdaten</h2>
+        <dl style="display:grid;grid-template-columns:minmax(150px,0.4fr) 1fr;gap:8px 14px;">
+            <dt>VertragspartnerIn</dt><dd>{{ agreement.data_snapshot.participant.full_name }}</dd>
+            <dt>E-Mail</dt><dd>{{ agreement.data_snapshot.participant.email }}</dd>
+            {% if agreement.data_snapshot.participant.phone_number %}<dt>Telefon</dt><dd>{{ agreement.data_snapshot.participant.phone_number }}</dd>{% endif %}
+            {% if agreement.data_snapshot.participant.address %}<dt>Anschrift</dt><dd>{{ agreement.data_snapshot.participant.address }}</dd>{% endif %}
+            {% if agreement.effective_date %}<dt>Wirksam ab</dt><dd>{{ agreement.effective_date|date:"d.m.Y" }}</dd>{% endif %}
+            {% if agreement.data_snapshot.student %}<dt>SchülerIn/StudentIn</dt><dd>{{ agreement.data_snapshot.student.full_name }}</dd>{% endif %}
+            {% if agreement.data_snapshot.student.school %}<dt>Schule</dt><dd>{{ agreement.data_snapshot.student.school }}</dd>{% endif %}
+            {% if agreement.data_snapshot.student.grade_level %}<dt>Klassenstufe</dt><dd>{{ agreement.data_snapshot.student.grade_level }}</dd>{% endif %}
+            {% if agreement.data_snapshot.student.degree_program %}<dt>Studiengang</dt><dd>{{ agreement.data_snapshot.student.degree_program }}</dd>{% endif %}
+            {% if agreement.data_snapshot.tutor and agreement.agreement_type == "learning" %}<dt>TutorIn</dt><dd>{{ agreement.data_snapshot.tutor.full_name }}</dd>{% endif %}
+            {% if agreement.data_snapshot.lead.subject %}<dt>Unterrichtsfächer</dt><dd>{{ agreement.data_snapshot.lead.subject }}</dd>{% endif %}
+            {% if agreement.data_snapshot.lead.grade %}<dt>Klassenstufe</dt><dd>{{ agreement.data_snapshot.lead.grade }}</dd>{% endif %}
+        </dl>
+    </section>
+    <section style="margin-top:24px;">
+        <h2>Vereinbarungstext</h2>
+        <div style="white-space:pre-line;line-height:1.55;padding:18px;border:1px solid rgba(31,102,102,0.18);border-radius:12px;">{{ agreement.terms_snapshot }}</div>
+    </section>
+    {% if can_accept %}
+        <section style="margin-top:24px;">
+            <h2>Vereinbarung bestätigen</h2>
+            <div style="padding:14px;border:1px solid rgba(31,102,102,0.18);border-radius:12px;margin-bottom:18px;">
+                <strong>SEPA-Lastschrift</strong>
+                {% if agreement.stripe_mandate_status == "active" %}
+                    <p style="color:#176b4d;">✓ Das Stripe-SEPA-Mandat ist eingerichtet. BrainBoost speichert keine vollständigen Bankdaten.</p>
+                {% else %}
+                    <p>Wenn du per SEPA zahlst, richte zuerst das Mandat sicher bei Stripe ein. Deine Bankdaten werden direkt an Stripe übertragen.</p>
+                    <form method="post" action="{% url 'agreement_sepa_setup' agreement.id %}">
+                        {% csrf_token %}
+                        <button class="button" type="submit">SEPA-Mandat einrichten</button>
+                    </form>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'agreement_accept' agreement.id %}">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <p>{{ form.participant_name.label_tag }} {{ form.participant_name }} {{ form.participant_name.errors }}</p>
+                {% if not form.payment_method.is_hidden %}
+                    <fieldset><legend>{{ form.payment_method.label }}</legend>{{ form.payment_method }}{{ form.payment_method.errors }}</fieldset>
+                {% else %}
+                    {{ form.payment_method }}
+                    <p>Die monatliche WebApp-Gebühr wird per SEPA-Lastschrift über Stripe eingerichtet.</p>
+                {% endif %}
+                <label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ form.accepted }}<span>{{ form.accepted.label }}</span></label>
+                {{ form.accepted.errors }}
+                <label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ form.accepted_privacy }}<span>{{ form.accepted_privacy.label }}</span></label>
+                {{ form.accepted_privacy.errors }}
+                {% if form.accepted_webapp %}<label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ form.accepted_webapp }}<span>{{ form.accepted_webapp.label }}</span></label>{{ form.accepted_webapp.errors }}{% endif %}
+                {% if form.accepted_child_protection %}<label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ form.accepted_child_protection }}<span>{{ form.accepted_child_protection.label }}</span></label>{{ form.accepted_child_protection.errors }}{% endif %}
+                <button class="button" type="submit">Zustimmen und E-Mail senden</button>
+            </form>
+        </section>
+    {% elif agreement.status == "pending_email" %}
+        <p style="margin-top:22px;"><strong>Bitte bestätige jetzt den einmaligen Link in deiner E-Mail.</strong></p>
+    {% elif agreement.status == "pending_tutor" %}
+        <p style="margin-top:22px;"><strong>Die VertragspartnerIn hat bestätigt. Jetzt ist die TutorIn an der Reihe.</strong></p>
+    {% elif agreement.status == "pending_tutor_email" %}
+        <p style="margin-top:22px;"><strong>Die TutorInnen-Zustimmung wurde gespeichert. Der einmalige E-Mail-Link muss noch bestätigt werden.</strong></p>
+    {% elif agreement.status == "pending_brainboost" %}
+        <p style="margin-top:22px;"><strong>Deine Bestätigung ist vollständig. BrainBoost prüft die Gegenzeichnung.</strong></p>
+    {% endif %}
+    {% if can_tutor_accept %}
+        <section style="margin-top:24px;padding:18px;border:1px solid rgba(31,102,102,0.18);border-radius:12px;">
+            <h2>Als TutorIn bestätigen</h2>
+            <p>Die VertragspartnerIn hat diese unveränderte Vertragsfassung bereits bestätigt.</p>
+            <form method="post" action="{% url 'agreement_tutor_accept' agreement.id %}">
+                {% csrf_token %}
+                {{ tutor_form.non_field_errors }}
+                <p>{{ tutor_form.tutor_name.label_tag }} {{ tutor_form.tutor_name }} {{ tutor_form.tutor_name.errors }}</p>
+                <label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ tutor_form.accepted }}<span>{{ tutor_form.accepted.label }}</span></label>
+                {{ tutor_form.accepted.errors }}
+                <label style="display:flex;align-items:flex-start;gap:10px;margin:16px 0;">{{ tutor_form.accepted_privacy }}<span>{{ tutor_form.accepted_privacy.label }}</span></label>
+                {{ tutor_form.accepted_privacy.errors }}
+                <button class="button" type="submit">Als TutorIn zustimmen und E-Mail senden</button>
+            </form>
+        </section>
+    {% endif %}
+    {% if can_confirm_for_brainboost %}
+        <form method="post" action="{% url 'agreement_brainboost_confirm' agreement.id %}" style="margin-top:24px;">{% csrf_token %}<button class="button" type="submit">Für BrainBoost gegenzeichnen</button></form>
+    {% endif %}
+    {% if agreement.final_pdf %}
+        <p style="margin-top:24px;"><a class="button" href="{% url 'agreement_pdf_download' agreement.id %}">Finales PDF herunterladen</a></p>
+    {% endif %}
+</div>
+{% endblock %}

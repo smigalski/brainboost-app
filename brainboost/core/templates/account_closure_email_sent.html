@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | E-Mail gesendet{% endblock %}
+{% block content %}
+<div class="card" style="display:grid;gap:16px;max-width:760px;margin:0 auto;">
+    <h1>Bitte prüfe deine E-Mail</h1>
+    <p>
+        Wir haben den einmalig verwendbaren Bestätigungslink an <strong>{{ email }}</strong> gesendet.
+        Der Link ist 24 Stunden gültig. Bis du ihn öffnest, bleibt dein Konto unverändert aktiv.
+    </p>
+    <p class="muted">Falls du die Kündigung doch nicht möchtest, brauchst du nichts weiter zu tun.</p>
+    <div><a class="button" href="{% url 'profile' %}">Zurück zum Profil</a></div>
+</div>
+{% endblock %}

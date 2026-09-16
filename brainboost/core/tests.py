@@ -23,12 +23,20 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
+    AgreementAcceptanceForm,
     AdminTaskCreateForm,
     BrainBoostFeedbackForm,
+    EmailAuthenticationForm,
+    IndependentStudentCreateForm,
     InvoiceGenerateForm,
     LearningMaterialForm,
+    ParentCreateForm,
+    StudentCreateForm,
     TutorProfileForm,
 )
+from .agreement_services import create_learning_agreement, create_tutor_agreement
+from .account_closure import closure_scope_for
+from .maintenance import get_maintenance_status
 from .access import can_access_student, can_manage_lesson, can_view_invoice
 from .models import (
     BrainBoostFeedback,
@@ -45,6 +53,8 @@ from .models import (
     Lead,
     AdminTask,
     AdminIdea,
+    Agreement,
+    AgreementAuditEvent,
 )
 from .views import (
     _auto_complete_past_lessons,
@@ -216,7 +226,6 @@ class AccessPolicyTests(TestCase):
             amount_total=Decimal("25.00"),
             file=SimpleUploadedFile("rechnung.pdf", b"%PDF-1.4\n"),
         )
-
     def test_can_access_student_for_linked_users_only(self):
         self.assertTrue(can_access_student(self.tutor_user, self.student))
         self.assertTrue(can_access_student(self.parent_user, self.student))
@@ -329,10 +338,79 @@ class IndependentStudentAccountTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("dashboard"))
-        user = CustomUser.objects.get(username="ohneeltern")
+        user = CustomUser.objects.get(email="sina.solo@example.com")
         self.assertEqual(user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
         self.assertEqual(user.student_profile.parents.count(), 0)
         self.assertTrue(user.student_profile.assigned_tutors.filter(pk=self.tutor_profile.pk).exists())
+
+    def test_exactly_one_selected_parent_becomes_contracting_and_paying_party(self):
+        parent_one_user = CustomUser.objects.create_user(
+            username="parent_one",
+            email="parent-one@example.com",
+            role=CustomUser.Roles.PARENT,
+        )
+        parent_two_user = CustomUser.objects.create_user(
+            username="parent_two",
+            email="parent-two@example.com",
+            role=CustomUser.Roles.PARENT,
+        )
+        parent_one = ParentProfile.objects.create(user=parent_one_user, address="Erster Weg 1")
+        parent_two = ParentProfile.objects.create(user=parent_two_user, address="Zweiter Weg 2")
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.post(
+            reverse("student_create"),
+            data={
+                "username": "contract_student",
+                "first_name": "Sina",
+                "last_name": "Schule",
+                "email": "",
+                "phone_number": "",
+                "is_active": "on",
+                "address": "Schulweg 5",
+                "school": "Testschule",
+                "grade_level": "8. Klasse",
+                "zoom_link": "",
+                "zumpad_link": "",
+                "parents": [str(parent_one.pk), str(parent_two.pk)],
+                "contracting_parent": str(parent_two.pk),
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard"))
+        student = CustomUser.objects.get(first_name="Sina", last_name="Schule").student_profile
+        agreement = Agreement.objects.get(student=student)
+        self.assertEqual(student.parents.count(), 2)
+        self.assertEqual(agreement.participant, parent_two_user)
+        self.assertEqual(agreement.tutor, self.tutor_profile)
+        self.assertEqual(agreement.version, "draft-2026-02")
+        self.assertEqual(agreement.data_snapshot["participant"]["address"], "Zweiter Weg 2")
+        self.assertEqual(agreement.data_snapshot["student"]["school"], "Testschule")
+        self.assertEqual(agreement.data_snapshot["student"]["grade_level"], "8. Klasse")
+
+    def test_parent_student_creation_requires_contracting_party(self):
+        parent_user = CustomUser.objects.create_user(
+            username="parent_without_contract_selection",
+            email="parent@example.com",
+            role=CustomUser.Roles.PARENT,
+        )
+        parent = ParentProfile.objects.create(user=parent_user)
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.post(
+            reverse("student_create"),
+            data={
+                "username": "missing_contract_party",
+                "first_name": "Sina",
+                "last_name": "Schule",
+                "is_active": "on",
+                "parents": [str(parent.pk)],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bitte wähle die zahlungspflichtige VertragspartnerIn aus")
+        self.assertFalse(CustomUser.objects.filter(first_name="Sina", last_name="Schule").exists())
 
     def test_independent_student_can_access_and_announce_own_invoice(self):
         student_user = CustomUser.objects.create_user(
@@ -1611,7 +1689,7 @@ class InvoiceGenerateFormTests(TestCase):
         self.assertIn(("2026-03", "März 2026"), list(form.fields["period"].choices))
 
 
-class EmailOrUsernameLoginTests(TestCase):
+class EmailLoginTests(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
             username="login_user",
@@ -1629,6 +1707,574 @@ class EmailOrUsernameLoginTests(TestCase):
         auth_user = authenticate(username="login.user@example.com", password="test12345")
         self.assertIsNotNone(auth_user)
         self.assertEqual(auth_user.pk, self.user.pk)
+
+    def test_public_login_uses_email_field(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertContains(response, 'type="email"')
+        self.assertContains(response, 'autocomplete="email"')
+        self.assertContains(response, "Der Benutzername wird für den Login nicht mehr benötigt.")
+
+    def test_public_login_rejects_username_and_accepts_email(self):
+        username_response = self.client.post(
+            reverse("login"),
+            data={"username": "login_user", "password": "test12345"},
+        )
+        self.assertEqual(username_response.status_code, 200)
+        self.assertEqual(
+            username_response.context["form"].errors.as_data()["username"][0].code,
+            "invalid",
+        )
+
+        email_response = self.client.post(
+            reverse("login"),
+            data={"username": "login.user@example.com", "password": "test12345"},
+        )
+        self.assertRedirects(email_response, reverse("dashboard"))
+
+    def test_django_admin_still_accepts_username(self):
+        admin = CustomUser.objects.create_superuser(
+            username="django_admin_login",
+            email="django-admin@example.com",
+            password="test12345",
+        )
+
+        response = self.client.post(
+            reverse("admin:login"),
+            data={
+                "username": admin.username,
+                "password": "test12345",
+                "next": reverse("admin:index"),
+            },
+        )
+
+        self.assertRedirects(response, reverse("admin:index"))
+
+
+class MaintenanceModeTests(TestCase):
+    def setUp(self):
+        self.normal_user = CustomUser.objects.create_user(
+            username="maintenance_user",
+            email="maintenance.user@example.com",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.staff_user = CustomUser.objects.create_user(
+            username="maintenance_staff",
+            email="maintenance.staff@example.com",
+            password="test12345",
+            role=CustomUser.Roles.TUTOR,
+            is_staff=True,
+        )
+        now = timezone.now()
+        self.active_settings = override_settings(
+            MAINTENANCE_MODE_ENABLED=True,
+            MAINTENANCE_START=now - timedelta(hours=1),
+            MAINTENANCE_END=now + timedelta(hours=1),
+        )
+
+    @override_settings(
+        MAINTENANCE_MODE_ENABLED=False,
+        MAINTENANCE_START=None,
+        MAINTENANCE_END=None,
+    )
+    def test_banner_is_hidden_when_maintenance_is_disabled(self):
+        response = self.client.get(reverse("landing_page"))
+        self.assertNotContains(response, "Wartungsankündigung")
+
+    def test_banner_is_visible_before_and_during_window_but_not_afterwards(self):
+        now = timezone.now()
+        with override_settings(
+            MAINTENANCE_MODE_ENABLED=True,
+            MAINTENANCE_START=now + timedelta(hours=1),
+            MAINTENANCE_END=now + timedelta(hours=2),
+        ):
+            response = self.client.get(reverse("landing_page"))
+            self.assertContains(response, "Wartungsankündigung")
+
+        with self.active_settings:
+            response = self.client.get(reverse("landing_page"))
+            self.assertContains(response, "Die WebApp ist derzeit nicht verfügbar")
+
+        with override_settings(
+            MAINTENANCE_MODE_ENABLED=True,
+            MAINTENANCE_START=now - timedelta(hours=2),
+            MAINTENANCE_END=now - timedelta(hours=1),
+        ):
+            response = self.client.get(reverse("landing_page"))
+            self.assertNotContains(response, "maintenance-banner")
+
+    def test_time_boundaries_are_start_inclusive_and_end_exclusive(self):
+        start = timezone.now()
+        end = start + timedelta(hours=9)
+        with override_settings(
+            MAINTENANCE_MODE_ENABLED=True,
+            MAINTENANCE_START=start,
+            MAINTENANCE_END=end,
+        ):
+            self.assertTrue(get_maintenance_status(now=start).active)
+            self.assertTrue(get_maintenance_status(now=end - timedelta(microseconds=1)).active)
+            self.assertFalse(get_maintenance_status(now=end).active)
+            self.assertFalse(get_maintenance_status(now=start - timedelta(microseconds=1)).active)
+
+    def test_normal_login_is_blocked_but_staff_login_is_allowed(self):
+        with self.active_settings:
+            normal_response = self.client.post(
+                reverse("login"),
+                data={"username": self.normal_user.email, "password": "test12345"},
+            )
+            self.assertRedirects(
+                normal_response,
+                reverse("maintenance"),
+                fetch_redirect_response=False,
+            )
+            self.assertNotIn("_auth_user_id", self.client.session)
+
+            staff_response = self.client.post(
+                reverse("login"),
+                data={"username": self.staff_user.email, "password": "test12345"},
+            )
+            self.assertEqual(staff_response.status_code, 302)
+            self.assertIn("_auth_user_id", self.client.session)
+
+    def test_existing_normal_session_is_redirected_from_protected_app(self):
+        self.client.force_login(self.normal_user)
+        with self.active_settings:
+            response = self.client.get(reverse("dashboard"))
+            self.assertRedirects(
+                response,
+                reverse("maintenance"),
+                fetch_redirect_response=False,
+            )
+            maintenance_response = self.client.get(reverse("maintenance"))
+            self.assertEqual(maintenance_response.status_code, 503)
+
+    def test_staff_can_open_protected_app_during_maintenance(self):
+        self.client.force_login(self.staff_user)
+        with self.active_settings:
+            response = self.client.get(reverse("agreement_list"))
+            self.assertEqual(response.status_code, 200)
+
+    def test_public_pages_and_stripe_webhook_are_not_redirected(self):
+        with self.active_settings:
+            self.assertEqual(self.client.get(reverse("contact")).status_code, 200)
+            webhook_response = self.client.post(reverse("stripe_webhook"), data=b"{}", content_type="application/json")
+            self.assertNotEqual(webhook_response.status_code, 302)
+
+    def test_normal_login_works_again_after_window(self):
+        now = timezone.now()
+        with override_settings(
+            MAINTENANCE_MODE_ENABLED=True,
+            MAINTENANCE_START=now - timedelta(hours=2),
+            MAINTENANCE_END=now - timedelta(hours=1),
+        ):
+            response = self.client.post(
+                reverse("login"),
+                data={"username": self.normal_user.email, "password": "test12345"},
+            )
+            self.assertRedirects(response, reverse("dashboard"))
+
+
+class AccountCreationUsernamePlaceholderTests(TestCase):
+    def test_webapp_account_forms_do_not_expose_username(self):
+        for form_class in (ParentCreateForm, StudentCreateForm, IndependentStudentCreateForm):
+            with self.subTest(form=form_class.__name__):
+                form = form_class()
+                self.assertNotIn("username", form.fields)
+
+    def test_webapp_account_gets_opaque_internal_username(self):
+        form = ParentCreateForm(
+            data={
+                "first_name": "Paula",
+                "last_name": "Test",
+                "email": "paula.no-username@example.com",
+                "is_active": "on",
+            }
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        user = form.save()
+        self.assertTrue(user.username.startswith("bb_"))
+        self.assertNotContains(self.client.get(reverse("login")), user.username)
+
+    def test_duplicate_email_is_rejected_case_insensitively(self):
+        CustomUser.objects.create_user(
+            username="admin_internal_name",
+            email="existing@example.com",
+        )
+        form = ParentCreateForm(data={"email": "EXISTING@example.com"})
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("email", form.errors)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+    INTERNAL_CONTACT_EMAIL="brainboost@example.com",
+    MEDIA_ROOT=tempfile.mkdtemp(),
+)
+class AgreementWorkflowTests(TestCase):
+    def setUp(self):
+        self.participant = CustomUser.objects.create_user(
+            username="agreement_parent",
+            email="parent@example.com",
+            password="test12345",
+            first_name="Paula",
+            last_name="Partnerin",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.outsider = CustomUser.objects.create_user(
+            username="agreement_outsider",
+            email="outsider@example.com",
+            password="test12345",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.staff = CustomUser.objects.create_user(
+            username="agreement_staff",
+            email="staff@example.com",
+            password="test12345",
+            is_staff=True,
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.contract_tutor_user = CustomUser.objects.create_user(
+            username="agreement_contract_tutor",
+            email="contract-tutor@example.com",
+            password="test12345",
+            first_name="Tina",
+            last_name="Tutorin",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.contract_tutor = TutorProfile.objects.create(user=self.contract_tutor_user)
+        self.agreement = Agreement.objects.create(
+            agreement_type=Agreement.AgreementType.LEARNING,
+            status=Agreement.Status.PENDING_PARTICIPANT,
+            participant=self.participant,
+            tutor=self.contract_tutor,
+            version="draft-test",
+            terms_snapshot="Testbedingungen",
+            data_snapshot={
+                "participant": {
+                    "full_name": "Paula Partnerin",
+                    "email": "parent@example.com",
+                }
+            },
+        )
+
+    def test_only_parties_and_staff_can_view_agreement(self):
+        self.client.force_login(self.outsider)
+        response = self.client.get(reverse("agreement_detail", args=[self.agreement.pk]))
+        self.assertEqual(response.status_code, 404)
+
+        self.client.force_login(self.participant)
+        response = self.client.get(reverse("agreement_detail", args=[self.agreement.pk]))
+        self.assertContains(response, "Testbedingungen")
+        self.assertContains(response, self.agreement.reference)
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("agreement_detail", args=[self.agreement.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_redirects_participant_to_open_agreement(self):
+        response = self.client.post(
+            reverse("login"),
+            data={"username": "parent@example.com", "password": "test12345"},
+        )
+
+        self.assertRedirects(response, reverse("agreement_detail", args=[self.agreement.pk]))
+
+    def test_new_tutor_agreement_contains_full_terms_and_separate_consents(self):
+        tutor = TutorProfile.objects.create(
+            user=self.staff,
+            address="Musterweg 3, 38100 Braunschweig",
+            phone_number="0123456",
+        )
+        agreement = create_tutor_agreement(participant=self.staff, tutor=tutor)
+
+        self.assertEqual(agreement.version, "draft-2026-02")
+        self.assertIsNotNone(agreement.effective_date)
+        self.assertIn("19 Euro für 45 Minuten", agreement.terms_snapshot)
+        self.assertIn("sieben Tagen zum Monatsende", agreement.terms_snapshot)
+        self.assertIn("erweitertes Führungszeugnis", agreement.terms_snapshot)
+        self.assertIn("§ 19 UStG", agreement.terms_snapshot)
+        self.assertEqual(agreement.data_snapshot["participant"]["phone_number"], "0123456")
+
+        missing_child_protection = AgreementAcceptanceForm(
+            data={
+                "participant_name": "Agreement Staff",
+                "payment_method": Agreement.PaymentMethod.STRIPE_SEPA,
+                "accepted": "on",
+                "accepted_privacy": "on",
+            },
+            agreement=agreement,
+        )
+        self.assertFalse(missing_child_protection.is_valid())
+        self.assertIn("accepted_child_protection", missing_child_protection.errors)
+        self.assertNotIn("accepted_webapp", missing_child_protection.fields)
+
+    def test_acceptance_requires_checkbox_and_sends_one_time_email_link(self):
+        self.client.force_login(self.participant)
+        invalid_response = self.client.post(
+            reverse("agreement_accept", args=[self.agreement.pk]),
+            data={
+                "participant_name": "Paula Partnerin",
+                "payment_method": Agreement.PaymentMethod.CASH,
+            },
+        )
+        self.assertEqual(invalid_response.status_code, 400)
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_PARTICIPANT)
+
+        response = self.client.post(
+            reverse("agreement_accept", args=[self.agreement.pk]),
+            data={
+                "participant_name": "Paula Partnerin",
+                "payment_method": Agreement.PaymentMethod.CASH,
+                "accepted": "on",
+                "accepted_privacy": "on",
+                "accepted_webapp": "on",
+            },
+        )
+        self.assertRedirects(response, reverse("agreement_detail", args=[self.agreement.pk]))
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_EMAIL)
+        self.assertEqual(self.agreement.payment_method, Agreement.PaymentMethod.CASH)
+        self.assertEqual(
+            self.agreement.participant_consents,
+            {
+                "agreement": True,
+                "privacy": True,
+                "webapp": True,
+                "child_protection": False,
+                "version": "draft-test",
+                "accepted_at": self.agreement.participant_accepted_at.isoformat(),
+            },
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn(self.agreement.confirmation_token_digest, mail.outbox[0].body)
+        self.assertTrue(
+            AgreementAuditEvent.objects.filter(
+                agreement=self.agreement,
+                event_type="participant_accepted",
+            ).exists()
+        )
+
+        confirmation_url = re.search(r"https?://\S+", mail.outbox[0].body).group(0)
+        confirmation_path = urlsplit(confirmation_url).path
+        confirm_response = self.client.get(confirmation_path)
+        self.assertEqual(confirm_response.status_code, 200)
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_TUTOR)
+        self.assertIsNotNone(self.agreement.email_confirmed_at)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertEqual(mail.outbox[1].to, ["contract-tutor@example.com"])
+
+        reused_response = self.client.get(confirmation_path)
+        self.assertEqual(reused_response.status_code, 400)
+
+    def test_sepa_acceptance_requires_active_stripe_mandate(self):
+        self.client.force_login(self.participant)
+        response = self.client.post(
+            reverse("agreement_accept", args=[self.agreement.pk]),
+            data={
+                "participant_name": "Paula Partnerin",
+                "payment_method": Agreement.PaymentMethod.STRIPE_SEPA,
+                "accepted": "on",
+                "accepted_privacy": "on",
+                "accepted_webapp": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "Bitte richte zuerst das SEPA-Mandat", status_code=400)
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_PARTICIPANT)
+        self.assertEqual(self.agreement.stripe_payment_method_id, "")
+
+    @override_settings(STRIPE_PUBLIC_KEY="pk_test_123", STRIPE_SECRET_KEY="sk_test_123")
+    @patch("core.views.agreements._stripe_client")
+    def test_sepa_setup_and_verified_return_store_only_stripe_references(self, stripe_client):
+        stripe = SimpleNamespace(
+            Customer=SimpleNamespace(
+                create=Mock(return_value=SimpleNamespace(id="cus_123")),
+            ),
+            SetupIntent=SimpleNamespace(
+                create=Mock(
+                    return_value=SimpleNamespace(
+                        id="seti_123",
+                        client_secret="seti_secret_123",
+                    )
+                ),
+                retrieve=Mock(
+                    return_value={
+                        "id": "seti_123",
+                        "status": "succeeded",
+                        "payment_method": "pm_123",
+                    }
+                ),
+            ),
+        )
+        stripe_client.return_value = stripe
+        self.client.force_login(self.participant)
+
+        setup_response = self.client.post(
+            reverse("agreement_sepa_setup", args=[self.agreement.pk])
+        )
+        self.assertEqual(setup_response.status_code, 200)
+        self.assertContains(setup_response, "seti_secret_123")
+        self.assertContains(setup_response, "window.location.assign")
+        self.assertContains(setup_response, "setup_intent=")
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.stripe_customer_id, "cus_123")
+        self.assertEqual(self.agreement.stripe_setup_intent_id, "seti_123")
+        self.assertEqual(
+            self.agreement.stripe_mandate_status,
+            Agreement.StripeMandateStatus.PENDING,
+        )
+        create_kwargs = stripe.SetupIntent.create.call_args.kwargs
+        self.assertEqual(create_kwargs["payment_method_types"], ["sepa_debit"])
+        self.assertNotIn("iban", create_kwargs)
+
+        return_response = self.client.get(
+            reverse("agreement_sepa_return", args=[self.agreement.pk]),
+            {"setup_intent": "seti_123"},
+        )
+        self.assertRedirects(
+            return_response,
+            reverse("agreement_detail", args=[self.agreement.pk]),
+        )
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.stripe_payment_method_id, "pm_123")
+        self.assertEqual(
+            self.agreement.stripe_mandate_status,
+            Agreement.StripeMandateStatus.ACTIVE,
+        )
+        self.assertTrue(
+            AgreementAuditEvent.objects.filter(
+                agreement=self.agreement,
+                event_type="stripe_sepa_mandate_active",
+            ).exists()
+        )
+
+    def test_staff_can_counter_sign_only_after_email_confirmation(self):
+        self.agreement.agreement_type = Agreement.AgreementType.TUTOR
+        self.agreement.tutor = None
+        self.agreement.save(update_fields=["agreement_type", "tutor", "updated_at"])
+        self.client.force_login(self.staff)
+        early_response = self.client.post(
+            reverse("agreement_brainboost_confirm", args=[self.agreement.pk])
+        )
+        self.assertRedirects(early_response, reverse("agreement_detail", args=[self.agreement.pk]))
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_PARTICIPANT)
+
+        self.agreement.status = Agreement.Status.PENDING_BRAINBOOST
+        self.agreement.email_confirmed_at = timezone.now()
+        self.agreement.save(update_fields=["status", "email_confirmed_at", "updated_at"])
+        response = self.client.post(
+            reverse("agreement_brainboost_confirm", args=[self.agreement.pk])
+        )
+        self.assertRedirects(response, reverse("agreement_detail", args=[self.agreement.pk]))
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.COMPLETED)
+        self.assertEqual(self.agreement.brainboost_confirmed_by, self.staff)
+        self.assertIsNotNone(self.agreement.completed_at)
+        self.assertTrue(self.agreement.final_pdf.name.endswith(".pdf"))
+        self.assertEqual(len(self.agreement.final_pdf_sha256), 64)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["parent@example.com", "brainboost@example.com"])
+        self.assertEqual(mail.outbox[0].attachments[0][2], "application/pdf")
+
+    def test_learning_pdf_is_created_only_after_both_one_time_email_confirmations(self):
+        self.client.force_login(self.participant)
+        self.client.post(
+            reverse("agreement_accept", args=[self.agreement.pk]),
+            data={
+                "participant_name": "Paula Partnerin",
+                "payment_method": Agreement.PaymentMethod.CASH,
+                "accepted": "on",
+                "accepted_privacy": "on",
+                "accepted_webapp": "on",
+            },
+        )
+        participant_url = re.search(r"https?://\S+", mail.outbox[0].body).group(0)
+        self.client.get(urlsplit(participant_url).path)
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_TUTOR)
+        self.assertFalse(self.agreement.final_pdf)
+
+        self.client.force_login(self.contract_tutor_user)
+        invalid = self.client.post(
+            reverse("agreement_tutor_accept", args=[self.agreement.pk]),
+            data={"tutor_name": "Tina Tutorin", "accepted": "on"},
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+        accepted = self.client.post(
+            reverse("agreement_tutor_accept", args=[self.agreement.pk]),
+            data={
+                "tutor_name": "Tina Tutorin",
+                "accepted": "on",
+                "accepted_privacy": "on",
+            },
+        )
+        self.assertRedirects(
+            accepted,
+            reverse("agreement_detail", args=[self.agreement.pk]),
+        )
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.PENDING_TUTOR_EMAIL)
+        self.assertFalse(self.agreement.final_pdf)
+        tutor_url = re.search(r"https?://\S+", mail.outbox[2].body).group(0)
+
+        confirmed = self.client.get(urlsplit(tutor_url).path)
+        self.assertEqual(confirmed.status_code, 200)
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.COMPLETED)
+        self.assertIsNotNone(self.agreement.tutor_email_confirmed_at)
+        self.assertTrue(self.agreement.final_pdf.name.endswith(".pdf"))
+        self.assertEqual(len(self.agreement.final_pdf_sha256), 64)
+        self.assertIsNone(self.agreement.brainboost_confirmed_at)
+        self.assertEqual(mail.outbox[3].to, ["parent@example.com", "contract-tutor@example.com"])
+        self.assertEqual(mail.outbox[3].attachments[0][2], "application/pdf")
+
+        reused = self.client.get(urlsplit(tutor_url).path)
+        self.assertEqual(reused.status_code, 400)
+
+    def test_changed_learning_terms_supersede_open_version_and_require_new_confirmations(self):
+        replacement = create_learning_agreement(
+            participant=self.participant,
+            student=None,
+            tutor=self.contract_tutor,
+        )
+
+        self.agreement.refresh_from_db()
+        self.assertEqual(self.agreement.status, Agreement.Status.SUPERSEDED)
+        self.assertNotEqual(replacement.pk, self.agreement.pk)
+        self.assertEqual(replacement.version, "draft-2026-02")
+        self.assertEqual(replacement.status, Agreement.Status.PENDING_PARTICIPANT)
+        self.assertIsNone(replacement.participant_accepted_at)
+        self.assertIsNone(replacement.email_confirmed_at)
+        self.assertIsNone(replacement.tutor_accepted_at)
+        self.assertIsNone(replacement.tutor_email_confirmed_at)
+
+    def test_profile_changes_do_not_modify_frozen_agreement_snapshot(self):
+        replacement = create_learning_agreement(
+            participant=self.participant,
+            student=None,
+            tutor=self.contract_tutor,
+        )
+        original_snapshot = replacement.data_snapshot.copy()
+        original_terms = replacement.terms_snapshot
+
+        self.participant.first_name = "Geändert"
+        self.participant.email = "changed@example.com"
+        self.participant.save(update_fields=["first_name", "email"])
+        self.contract_tutor_user.first_name = "Andere"
+        self.contract_tutor_user.save(update_fields=["first_name"])
+
+        replacement.refresh_from_db()
+        self.assertEqual(replacement.data_snapshot, original_snapshot)
+        self.assertEqual(replacement.terms_snapshot, original_terms)
 
 
 class TutorBankDataReminderTests(TestCase):
@@ -1852,7 +2498,7 @@ class TutorProfileBankFieldValidationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "TutorInnennummer")
         self.assertContains(response, self.user.tutor_profile.tutor_number)
-        self.assertContains(response, 'class="required-marker"', count=9)
+        self.assertContains(response, 'class="required-marker"', count=8)
         self.assertContains(response, 'class="profile-field-info"')
         self.assertContains(response, 'title="betriebliche Steuernummer')
         self.assertContains(
@@ -2269,6 +2915,17 @@ class StripeWebhookSecurityTests(TestCase):
             amount_total=Decimal("25.00"),
             file=SimpleUploadedFile("rechnung.pdf", b"%PDF-1.4\n"),
         )
+        self.agreement = Agreement.objects.create(
+            agreement_type=Agreement.AgreementType.TUTOR,
+            status=Agreement.Status.PENDING_PARTICIPANT,
+            participant=self.tutor_user,
+            tutor=self.tutor,
+            terms_snapshot="Testbedingungen",
+            data_snapshot={},
+            payment_method=Agreement.PaymentMethod.STRIPE_SEPA,
+            stripe_setup_intent_id="seti_webhook_123",
+            stripe_mandate_status=Agreement.StripeMandateStatus.PENDING,
+        )
 
     @override_settings(STRIPE_SECRET_KEY="sk_test_123", STRIPE_WEBHOOK_SECRET="")
     @patch("core.views.invoices._stripe_client")
@@ -2338,6 +2995,42 @@ class StripeWebhookSecurityTests(TestCase):
         self.assertEqual(self.invoice.stripe_checkout_session_id, "cs_test_123")
         self.assertEqual(self.invoice.stripe_payment_intent_id, "pi_test_123")
         mocked_notify.assert_called_once()
+
+    @override_settings(
+        STRIPE_SECRET_KEY="sk_test_123",
+        STRIPE_WEBHOOK_SECRET="whsec_test_123",
+    )
+    @patch("core.views.invoices._stripe_client")
+    def test_signed_setup_intent_webhook_activates_matching_agreement(self, stripe_client):
+        event = {
+            "type": "setup_intent.succeeded",
+            "data": {
+                "object": {
+                    "id": "seti_webhook_123",
+                    "status": "succeeded",
+                    "payment_method": "pm_webhook_123",
+                    "metadata": {"agreement_id": str(self.agreement.pk)},
+                }
+            },
+        }
+        stripe_client.return_value = SimpleNamespace(
+            Webhook=SimpleNamespace(construct_event=Mock(return_value=event)),
+        )
+
+        response = self.client.post(
+            reverse("stripe_webhook"),
+            data=json.dumps(event),
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="signed-payload",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.agreement.refresh_from_db()
+        self.assertEqual(
+            self.agreement.stripe_mandate_status,
+            Agreement.StripeMandateStatus.ACTIVE,
+        )
+        self.assertEqual(self.agreement.stripe_payment_method_id, "pm_webhook_123")
 
 
 class InvoicePdfTemplateLayoutTests(TestCase):
@@ -2577,7 +3270,6 @@ class GoogleRoutesDistanceTests(TestCase):
             fach="mathe",
             status=Lesson.Status.PLANNED,
         )
-
         _assign_location_and_distance(lesson)
 
         self.assertEqual(lesson.location_address, "Schuelerstrasse 2, Braunschweig")
@@ -3672,3 +4364,202 @@ class TutorStudentAssignmentTests(TestCase):
         self.student.refresh_from_db()
         assigned_ids = set(self.student.assigned_tutors.values_list("id", flat=True))
         self.assertEqual(assigned_ids, {self.source_tutor.id})
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+    INTERNAL_CONTACT_EMAIL="brainboost@example.com",
+)
+class AccountClosureWorkflowTests(TestCase):
+    password = "test12345"
+
+    def setUp(self):
+        self.parent_user = CustomUser.objects.create_user(
+            username="closure_parent",
+            email="closure-parent@example.com",
+            password=self.password,
+            first_name="Paula",
+            last_name="Parent",
+            role=CustomUser.Roles.PARENT,
+        )
+        self.parent = ParentProfile.objects.create(user=self.parent_user)
+        self.student_user = CustomUser.objects.create_user(
+            username="closure_student",
+            email="closure-student@example.com",
+            password=self.password,
+            first_name="Sina",
+            last_name="Schuelerin",
+            role=CustomUser.Roles.STUDENT,
+        )
+        self.student = StudentProfile.objects.create(user=self.student_user)
+        self.student.parents.add(self.parent)
+        self.tutor_user = CustomUser.objects.create_user(
+            username="closure_tutor",
+            email="closure-tutor@example.com",
+            password=self.password,
+            first_name="Tina",
+            last_name="Tutorin",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.tutor = TutorProfile.objects.create(user=self.tutor_user)
+        self.agreement = Agreement.objects.create(
+            agreement_type=Agreement.AgreementType.LEARNING,
+            status=Agreement.Status.COMPLETED,
+            participant=self.parent_user,
+            student=self.student,
+            tutor=self.tutor,
+            version="test-closure",
+            terms_snapshot="Testbedingungen",
+            data_snapshot={
+                "participant": {"full_name": "Paula Parent", "email": self.parent_user.email},
+                "student": {"full_name": "Sina Schuelerin", "email": self.student_user.email},
+                "tutor": {"full_name": "Tina Tutorin", "email": self.tutor_user.email},
+            },
+            stripe_mandate_status=Agreement.StripeMandateStatus.ACTIVE,
+        )
+        self.lesson = Lesson.objects.create(
+            date=timezone.localdate() + timedelta(days=2),
+            time=time(15, 0),
+            duration_minutes=60,
+            student=self.student,
+            tutor=self.tutor,
+            status=Lesson.Status.PLANNED,
+        )
+        self.past_lesson = Lesson.objects.create(
+            date=timezone.localdate() - timedelta(days=2),
+            time=time(15, 0),
+            duration_minutes=60,
+            student=self.student,
+            tutor=self.tutor,
+            status=Lesson.Status.PLANNED,
+        )
+
+    def _request_and_confirm_closure(self, user):
+        self.client.force_login(user)
+        response = self.client.post(
+            reverse("account_closure"),
+            {"current_password": self.password, "confirmed": "on"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Bitte prüfe deine E-Mail")
+        confirmation_url = re.search(r"https?://\S+", mail.outbox[0].body).group(0)
+        confirmation_path = urlsplit(confirmation_url).path
+        response = self.client.get(confirmation_path)
+        return response, confirmation_path
+
+    def test_parent_closure_archives_parent_and_children_and_terminates_agreement(self):
+        response, confirmation_path = self._request_and_confirm_closure(self.parent_user)
+
+        self.assertEqual(response.status_code, 200)
+        self.parent_user.refresh_from_db()
+        self.student_user.refresh_from_db()
+        self.agreement.refresh_from_db()
+        self.lesson.refresh_from_db()
+        self.past_lesson.refresh_from_db()
+        self.assertFalse(self.parent_user.is_active)
+        self.assertFalse(self.student_user.is_active)
+        self.assertIsNotNone(self.parent_user.archived_at)
+        self.assertIsNotNone(self.student_user.scheduled_deletion_at)
+        self.assertEqual(self.agreement.status, Agreement.Status.TERMINATED)
+        self.assertEqual(
+            self.agreement.stripe_mandate_status,
+            Agreement.StripeMandateStatus.INACTIVE,
+        )
+        self.assertEqual(self.agreement.termination_effective_on, timezone.localdate())
+        self.assertEqual(self.lesson.status, Lesson.Status.CANCELLED)
+        self.assertFalse(self.lesson.cancellation_chargeable)
+        self.assertEqual(self.past_lesson.status, Lesson.Status.PLANNED)
+        self.assertTrue(
+            AgreementAuditEvent.objects.filter(
+                agreement=self.agreement,
+                event_type="agreement_terminated_by_account_closure",
+            ).exists()
+        )
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(self.client.get(confirmation_path).status_code, 400)
+
+    def test_wrong_password_does_not_request_or_execute_closure(self):
+        self.client.force_login(self.parent_user)
+        response = self.client.post(
+            reverse("account_closure"),
+            {"current_password": "wrong-password", "confirmed": "on"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Das aktuelle Passwort ist nicht korrekt")
+        self.parent_user.refresh_from_db()
+        self.assertTrue(self.parent_user.is_active)
+        self.assertEqual(self.parent_user.account_closure_token_digest, "")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_student_with_parent_cannot_cancel_separately(self):
+        self.client.force_login(self.student_user)
+        response = self.client.get(reverse("account_closure"))
+
+        self.assertRedirects(response, reverse("profile"))
+        self.student_user.refresh_from_db()
+        self.assertTrue(self.student_user.is_active)
+
+    def test_tutor_closure_does_not_archive_student(self):
+        tutor_agreement = Agreement.objects.create(
+            agreement_type=Agreement.AgreementType.TUTOR,
+            status=Agreement.Status.COMPLETED,
+            participant=self.tutor_user,
+            tutor=self.tutor,
+            version="test-closure",
+            terms_snapshot="TutorInnenbedingungen",
+            data_snapshot={
+                "participant": {
+                    "full_name": "Tina Tutorin",
+                    "email": self.tutor_user.email,
+                }
+            },
+        )
+
+        response, _ = self._request_and_confirm_closure(self.tutor_user)
+
+        self.assertEqual(response.status_code, 200)
+        self.tutor_user.refresh_from_db()
+        self.student_user.refresh_from_db()
+        self.tutor.refresh_from_db()
+        self.agreement.refresh_from_db()
+        tutor_agreement.refresh_from_db()
+        self.assertFalse(self.tutor_user.is_active)
+        self.assertTrue(self.student_user.is_active)
+        self.assertEqual(self.tutor.status, TutorProfile.Status.PAUSED)
+        self.assertEqual(self.agreement.status, Agreement.Status.TERMINATED)
+        self.assertEqual(tutor_agreement.status, Agreement.Status.TERMINATED)
+        self.assertGreaterEqual(tutor_agreement.termination_effective_on, timezone.localdate())
+
+    def test_independent_student_without_parent_can_request_closure(self):
+        independent_user = CustomUser.objects.create_user(
+            username="closure_independent",
+            email="closure-independent@example.com",
+            password=self.password,
+            role=CustomUser.Roles.INDEPENDENT_STUDENT,
+        )
+        StudentProfile.objects.create(user=independent_user)
+
+        self.assertEqual(closure_scope_for(independent_user), [independent_user])
+        self.client.force_login(independent_user)
+        self.assertEqual(self.client.get(reverse("account_closure")).status_code, 200)
+
+    def test_purge_command_deletes_due_profiles_but_keeps_agreement_evidence(self):
+        self.parent_user.is_active = False
+        self.parent_user.archived_at = timezone.now() - timedelta(days=100)
+        self.parent_user.scheduled_deletion_at = timezone.now() - timedelta(seconds=1)
+        self.parent_user.save(
+            update_fields=["is_active", "archived_at", "scheduled_deletion_at"]
+        )
+
+        dry_run_output = StringIO()
+        call_command("purge_archived_accounts", "--dry-run", stdout=dry_run_output)
+        self.assertTrue(CustomUser.objects.filter(pk=self.parent_user.pk).exists())
+        self.assertIn("wären zu löschen", dry_run_output.getvalue())
+
+        call_command("purge_archived_accounts", stdout=StringIO())
+        self.assertFalse(CustomUser.objects.filter(pk=self.parent_user.pk).exists())
+        self.agreement.refresh_from_db()
+        self.assertIsNone(self.agreement.participant)
+        self.assertEqual(self.agreement.data_snapshot["participant"]["email"], "closure-parent@example.com")

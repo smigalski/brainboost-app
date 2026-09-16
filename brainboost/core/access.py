@@ -30,19 +30,21 @@ def is_parent_user(user: CustomUser) -> bool:
 
 def assigned_students_qs(tutor_profile: TutorProfile) -> QuerySet[StudentProfile]:
     return (
-        StudentProfile.objects.filter(assigned_tutors=tutor_profile)
+        StudentProfile.objects.filter(assigned_tutors=tutor_profile, user__is_active=True)
         .select_related("user")
         .distinct()
     )
 
 
 def assigned_tutors_qs(tutor_profile: TutorProfile) -> QuerySet[TutorProfile]:
-    return tutor_profile.assigned_tutors.select_related("user").distinct()
+    return tutor_profile.assigned_tutors.filter(user__is_active=True).select_related("user").distinct()
 
 
 def can_access_student(user: CustomUser, student: StudentProfile) -> bool:
     if has_admin_access(user):
         return True
+    if not student.user.is_active:
+        return False
     if is_learning_profile_user(user) and hasattr(user, "student_profile"):
         return student.pk == user.student_profile.pk
     if is_parent_user(user):
@@ -58,13 +60,15 @@ def accessible_students_qs(user: CustomUser) -> QuerySet[StudentProfile]:
     if is_learning_profile_user(user) and hasattr(user, "student_profile"):
         return StudentProfile.objects.filter(pk=user.student_profile.pk).select_related("user")
     if is_parent_user(user):
-        return user.parent_profile.students.select_related("user").distinct()
+        return user.parent_profile.students.filter(user__is_active=True).select_related("user").distinct()
     if is_tutor_user(user):
         return assigned_students_qs(user.tutor_profile)
     return StudentProfile.objects.none()
 
 
 def can_view_lesson(user: CustomUser, lesson: Lesson) -> bool:
+    if not lesson.student.user.is_active:
+        return False
     if is_tutor_user(user) and lesson.tutor_id == user.tutor_profile.pk:
         return True
     if is_learning_profile_user(user) and hasattr(user, "student_profile"):
@@ -79,6 +83,8 @@ def can_cancel_lesson(user: CustomUser, lesson: Lesson) -> bool:
 
 
 def can_request_lesson_reschedule(user: CustomUser, lesson: Lesson) -> bool:
+    if not lesson.student.user.is_active:
+        return False
     if is_learning_profile_user(user) and hasattr(user, "student_profile"):
         return lesson.student_id == user.student_profile.pk
     if is_parent_user(user):
@@ -93,6 +99,8 @@ def can_manage_lesson(user: CustomUser, lesson: Lesson) -> bool:
 def can_access_material(user: CustomUser, material: LearningMaterial) -> bool:
     if has_admin_access(user):
         return True
+    if not material.student.user.is_active:
+        return False
     if is_tutor_user(user):
         if material.uploaded_by_id == user.tutor_profile.pk:
             return True
@@ -133,7 +141,7 @@ def can_delete_invoice(user: CustomUser, invoice: Invoice) -> bool:
 
 
 def can_view_invoice(user: CustomUser, invoice: Invoice) -> bool:
-    if not invoice.is_approved:
+    if not invoice.is_approved or not invoice.student.user.is_active:
         return False
     if is_parent_user(user):
         return invoice.student.parents.filter(pk=user.parent_profile.pk).exists()
@@ -145,7 +153,7 @@ def can_view_invoice(user: CustomUser, invoice: Invoice) -> bool:
 def payer_invoice_qs(user: CustomUser) -> QuerySet[Invoice]:
     queryset = Invoice.objects.filter(approved_at__isnull=False)
     if is_parent_user(user):
-        return queryset.filter(student__parents=user.parent_profile)
+        return queryset.filter(student__parents=user.parent_profile, student__user__is_active=True)
     if is_independent_student_user(user) and hasattr(user, "student_profile"):
         return queryset.filter(student=user.student_profile)
     return Invoice.objects.none()

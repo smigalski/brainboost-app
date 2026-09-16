@@ -16,6 +16,8 @@ from .models import (
     TutorTemplate,
     AdminTask,
     AdminIdea,
+    Agreement,
+    AgreementAuditEvent,
     Lead,
 )
 
@@ -23,8 +25,21 @@ from .models import (
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ("username", "email", "first_name", "last_name", "role", "is_staff")
-    list_filter = ("role", "is_staff", "is_superuser", "is_active")
+    readonly_fields = (
+        "account_closure_requested_at",
+        "archived_at",
+        "scheduled_deletion_at",
+    )
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_active",
+        "scheduled_deletion_at",
+    )
+    list_filter = ("role", "is_staff", "is_superuser", "is_active", "archived_at")
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
@@ -41,7 +56,18 @@ class CustomUserAdmin(UserAdmin):
                 )
             },
         ),
-        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+        (
+            _("Important dates"),
+            {
+                "fields": (
+                    "last_login",
+                    "date_joined",
+                    "account_closure_requested_at",
+                    "archived_at",
+                    "scheduled_deletion_at",
+                )
+            },
+        ),
     )
     add_fieldsets = (
         (
@@ -85,6 +111,39 @@ class TutorProfileAdmin(admin.ModelAdmin):
     list_filter = ("status", "tax_number_pending")
     search_fields = ("tutor_number", "user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("assigned_tutors",)
+
+
+@admin.register(Agreement)
+class AgreementAdmin(admin.ModelAdmin):
+    list_display = ("reference", "agreement_type", "participant", "status", "version", "created_at")
+    list_filter = ("agreement_type", "status", "version")
+    search_fields = (
+        "participant__username",
+        "participant__email",
+        "participant__first_name",
+        "participant__last_name",
+    )
+    readonly_fields = (
+        "data_snapshot",
+        "participant_accepted_at",
+        "email_confirmed_at",
+        "tutor_accepted_at",
+        "tutor_email_confirmed_at",
+        "brainboost_confirmed_at",
+        "terminated_at",
+        "termination_effective_on",
+        "terminated_by",
+        "final_pdf_sha256",
+        "created_at",
+        "updated_at",
+    )
+
+
+@admin.register(AgreementAuditEvent)
+class AgreementAuditEventAdmin(admin.ModelAdmin):
+    list_display = ("agreement", "event_type", "actor", "created_at")
+    list_filter = ("event_type", "created_at")
+    readonly_fields = ("agreement", "event_type", "actor", "metadata", "created_at")
 
 
 @admin.register(Lesson)

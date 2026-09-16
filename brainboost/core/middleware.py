@@ -5,6 +5,7 @@ UTM_KEYS = ("utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term
 class MaintenanceModeMiddleware:
     PUBLIC_URL_NAMES = {
         "agbs",
+        "account_closure_confirm",
         "contact",
         "impressum",
         "landing_eltern",

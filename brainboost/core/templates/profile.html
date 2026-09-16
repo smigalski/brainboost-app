@@ -107,6 +107,28 @@
         </div>
     </form>
 </div>
+{% if not request.user.is_staff and not request.user.is_superuser %}
+    <div class="card" style="display:grid;gap:14px;margin-top:22px;border-color:rgba(180,35,24,0.35);">
+        <div>
+            <h2 style="margin-bottom:6px;">Konto und Vereinbarungen</h2>
+            {% if closure_block_reason %}
+                <p class="muted">{{ closure_block_reason }}</p>
+            {% else %}
+                <p class="muted">
+                    Hier kannst du dein Konto kündigen. Nach der E-Mail-Bestätigung werden die betroffenen
+                    Profile sofort gesperrt, drei Monate archiviert und anschließend gelöscht.
+                </p>
+            {% endif %}
+        </div>
+        {% if not closure_block_reason %}
+            <div>
+                <a class="button" style="background:#b42318;color:#fff;" href="{% url 'account_closure' %}">
+                    Konto und Vereinbarungen kündigen
+                </a>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
     {% if uses_address_autocomplete and google_maps_api_key %}

@@ -35,6 +35,11 @@ def _next_profile_number(model, field_name: str, prefix: str) -> str:
     return _format_profile_number(prefix, max_number + 1)
 
 
+def agreement_upload_path(instance, filename: str) -> str:
+    agreement_type = instance.agreement_type or "vereinbarung"
+    return f"agreements/{agreement_type}/{instance.pk or 'draft'}/{filename}"
+
+
 class CustomUser(AbstractUser):
     class Roles(models.TextChoices):
         STUDENT = "student", "SchülerIn"
@@ -66,9 +71,18 @@ class CustomUser(AbstractUser):
     )
     pending_email = models.EmailField(blank=True)
     pending_email_requested_at = models.DateTimeField(null=True, blank=True)
+    account_closure_requested_at = models.DateTimeField(null=True, blank=True)
+    account_closure_token_digest = models.CharField(max_length=64, blank=True)
+    account_closure_token_expires_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    scheduled_deletion_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def __str__(self) -> str:
         return f"{self.username} ({self.get_role_display()})"
+
+    @property
+    def display_name(self) -> str:
+        return self.get_full_name().strip() or self.email or self.get_role_display()
 
     @property
     def avatar_symbol(self) -> str:
@@ -973,6 +987,190 @@ class Lead(models.Model):
         super().save(*args, **kwargs)
 
 
+class Agreement(models.Model):
+    class AgreementType(models.TextChoices):
+        LEARNING = "learning", "Lernvereinbarung"
+        TUTOR = "tutor", "TutorInnenvereinbarung"
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Entwurf"
+        PENDING_PARTICIPANT = "pending_participant", "Wartet auf VertragspartnerIn"
+        PENDING_EMAIL = "pending_email", "Wartet auf E-Mail-Bestätigung"
+        PENDING_TUTOR = "pending_tutor", "Wartet auf TutorIn"
+        PENDING_TUTOR_EMAIL = "pending_tutor_email", "Wartet auf TutorInnen-E-Mail"
+        PENDING_BRAINBOOST = "pending_brainboost", "Wartet auf BrainBoost"
+        COMPLETED = "completed", "Abgeschlossen"
+        TERMINATED = "terminated", "Gekündigt"
+        DECLINED = "declined", "Abgelehnt"
+        REVOKED = "revoked", "Widerrufen"
+        SUPERSEDED = "superseded", "Ersetzt"
+
+    class PaymentMethod(models.TextChoices):
+        NONE = "", "Noch nicht gewählt"
+        CASH = "cash", "Bargeld"
+        STRIPE_SEPA = "stripe_sepa", "SEPA-Lastschrift über Stripe"
+
+    class StripeMandateStatus(models.TextChoices):
+        NONE = "", "Nicht eingerichtet"
+        PENDING = "pending", "Einrichtung läuft"
+        ACTIVE = "active", "Aktiv"
+        INACTIVE = "inactive", "Beendet"
+        FAILED = "failed", "Fehlgeschlagen"
+
+    agreement_type = models.CharField(max_length=20, choices=AgreementType.choices)
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
+    participant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="agreements",
+        blank=True,
+        null=True,
+    )
+    student = models.ForeignKey(
+        StudentProfile,
+        on_delete=models.SET_NULL,
+        related_name="agreements",
+        blank=True,
+        null=True,
+    )
+    tutor = models.ForeignKey(
+        TutorProfile,
+        on_delete=models.SET_NULL,
+        related_name="counterparty_agreements",
+        blank=True,
+        null=True,
+    )
+    source_lead = models.ForeignKey(
+        Lead,
+        on_delete=models.SET_NULL,
+        related_name="agreements",
+        blank=True,
+        null=True,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="created_agreements",
+        blank=True,
+        null=True,
+    )
+    brainboost_confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="brainboost_confirmed_agreements",
+        blank=True,
+        null=True,
+    )
+    version = models.CharField(max_length=30, default="draft-1")
+    effective_date = models.DateField(blank=True, null=True)
+    terms_snapshot = models.TextField()
+    data_snapshot = models.JSONField(default=dict)
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        blank=True,
+        default=PaymentMethod.NONE,
+    )
+    stripe_customer_id = models.CharField(max_length=255, blank=True)
+    stripe_setup_intent_id = models.CharField(max_length=255, blank=True)
+    stripe_payment_method_id = models.CharField(max_length=255, blank=True)
+    stripe_mandate_status = models.CharField(
+        max_length=20,
+        choices=StripeMandateStatus.choices,
+        blank=True,
+        default=StripeMandateStatus.NONE,
+    )
+    participant_name = models.CharField(max_length=255, blank=True)
+    participant_consents = models.JSONField(default=dict, blank=True)
+    participant_accepted_at = models.DateTimeField(blank=True, null=True)
+    email_confirmed_at = models.DateTimeField(blank=True, null=True)
+    tutor_name = models.CharField(max_length=255, blank=True)
+    tutor_consents = models.JSONField(default=dict, blank=True)
+    tutor_accepted_at = models.DateTimeField(blank=True, null=True)
+    tutor_email_confirmed_at = models.DateTimeField(blank=True, null=True)
+    tutor_confirmation_token_digest = models.CharField(max_length=64, blank=True)
+    tutor_confirmation_token_expires_at = models.DateTimeField(blank=True, null=True)
+    brainboost_confirmed_at = models.DateTimeField(blank=True, null=True)
+    confirmation_token_digest = models.CharField(max_length=64, blank=True)
+    confirmation_token_expires_at = models.DateTimeField(blank=True, null=True)
+    final_pdf = models.FileField(
+        upload_to=agreement_upload_path,
+        validators=[FileExtensionValidator(allowed_extensions=["pdf"])],
+        blank=True,
+    )
+    final_pdf_sha256 = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    terminated_at = models.DateTimeField(blank=True, null=True)
+    termination_effective_on = models.DateField(blank=True, null=True)
+    terminated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="terminated_agreements",
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["participant", "status"]),
+            models.Index(fields=["agreement_type", "status"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=Q(agreement_type="tutor", student__isnull=True)
+                | Q(agreement_type="learning"),
+                name="tutor_agreement_has_no_student",
+            ),
+        ]
+        verbose_name = "Vereinbarung"
+        verbose_name_plural = "Vereinbarungen"
+
+    def __str__(self) -> str:
+        return f"{self.reference} · {self.get_agreement_type_display()}"
+
+    @property
+    def reference(self) -> str:
+        prefix = "LV" if self.agreement_type == self.AgreementType.LEARNING else "TV"
+        return f"BB-{prefix}-{self.pk:06d}" if self.pk else f"BB-{prefix}-ENTWURF"
+
+    @property
+    def is_final(self) -> bool:
+        return self.status in {
+            self.Status.COMPLETED,
+            self.Status.TERMINATED,
+            self.Status.DECLINED,
+            self.Status.REVOKED,
+            self.Status.SUPERSEDED,
+        }
+
+
+class AgreementAuditEvent(models.Model):
+    agreement = models.ForeignKey(
+        Agreement,
+        on_delete=models.CASCADE,
+        related_name="audit_events",
+    )
+    event_type = models.CharField(max_length=80)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="agreement_audit_events",
+        blank=True,
+        null=True,
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+
+    def __str__(self) -> str:
+        return f"{self.agreement.reference}: {self.event_type}"
+
+
 class Invoice(models.Model):
     class DiscountType(models.TextChoices):
         FIXED = "fixed", "EUR"
@@ -1128,4 +1326,4 @@ class TutorTemplate(models.Model):
         verbose_name_plural = "Vorlagen"
 
     def __str__(self):
-        return f"Vorlage von {self.uploaded_by.user.username} ({self.file.name})"
+        return f"Vorlage von {self.uploaded_by.user.display_name} ({self.file.name})"

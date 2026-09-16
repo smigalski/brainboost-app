@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Vereinbarungen{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Vereinbarungen</h1>
+    <p class="muted">Hier findest du offene und abgeschlossene Lern- und TutorInnenvereinbarungen.</p>
+    {% if agreements %}
+        <div style="display:grid;gap:12px;margin-top:18px;">
+            {% for agreement in agreements %}
+                <a href="{% url 'agreement_detail' agreement.id %}" style="display:grid;gap:5px;padding:14px 16px;border:1px solid rgba(31,102,102,0.2);border-radius:12px;text-decoration:none;color:inherit;">
+                    <strong>{{ agreement.get_agreement_type_display }} · {{ agreement.reference }}</strong>
+                    <span>{{ agreement.data_snapshot.participant.full_name|default:"Archiviertes Profil" }}</span>
+                    <span class="muted">Status: {{ agreement.get_status_display }} · Version {{ agreement.version }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aktuell liegen keine Vereinbarungen für dich vor.</p>
+    {% endif %}
+</div>
+{% endblock %}

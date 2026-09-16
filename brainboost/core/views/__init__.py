@@ -31,6 +31,8 @@ from .dashboard import (
     tutor_student_assignment,
 )
 from .profiles import (
+    account_closure,
+    account_closure_confirm,
     assigned_student_list,
     assigned_tutor_list,
     holiday_surveys,
@@ -88,4 +90,17 @@ from .common import (
     _invoice_filename,
     _lead_campaign_stats,
     _sync_temporary_tutor_assignments,
+)
+from .agreements import (
+    AgreementAwareLoginView,
+    agreement_accept,
+    agreement_brainboost_confirm,
+    agreement_detail,
+    agreement_email_confirm,
+    agreement_list,
+    agreement_pdf_download,
+    agreement_sepa_return,
+    agreement_sepa_setup,
+    agreement_tutor_accept,
+    agreement_tutor_email_confirm,
 )

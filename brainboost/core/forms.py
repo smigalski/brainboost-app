@@ -32,14 +32,126 @@ from .models import (
     CustomUser,
     AdminTask,
     AdminIdea,
+    Agreement,
     Lead,
 )
 
 
-class EmailOrUsernameAuthenticationForm(AuthenticationForm):
-    def __init__(self, request=None, *args, **kwargs):
-        super().__init__(request=request, *args, **kwargs)
-        self.fields["username"].label = "E-Mail oder Benutzername"
+class EmailAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(
+        label="E-Mail",
+        widget=forms.EmailInput(
+            attrs={
+                "autofocus": True,
+                "autocomplete": "email",
+                "placeholder": "name@example.com",
+            }
+        ),
+    )
+
+
+class AccountClosureForm(forms.Form):
+    current_password = forms.CharField(
+        label="Aktuelles Passwort",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
+    )
+    confirmed = forms.BooleanField(
+        required=True,
+        label=(
+            "Ich möchte mein Konto und die betroffenen Vereinbarungen kündigen. "
+            "Die genannten Profile werden sofort gesperrt, drei Monate archiviert "
+            "und anschließend gelöscht."
+        ),
+        error_messages={"required": "Bitte bestätige die Folgen der Kündigung."},
+    )
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_current_password(self):
+        password = self.cleaned_data["current_password"]
+        if not self.user.check_password(password):
+            raise ValidationError("Das aktuelle Passwort ist nicht korrekt.")
+        return password
+
+
+class AgreementAcceptanceForm(forms.Form):
+    participant_name = forms.CharField(max_length=255, label="Vollständiger Name")
+    payment_method = forms.ChoiceField(
+        choices=(
+            (Agreement.PaymentMethod.STRIPE_SEPA, "SEPA-Lastschrift über Stripe"),
+            (Agreement.PaymentMethod.CASH, "Bargeld"),
+        ),
+        required=False,
+        label="Zahlungsart",
+        widget=forms.RadioSelect,
+    )
+    accepted = forms.BooleanField(
+        required=True,
+        label="Ich habe die Vereinbarung gelesen und stimme ihr zu.",
+        error_messages={"required": "Bitte bestätige die Vereinbarung."},
+    )
+    accepted_privacy = forms.BooleanField(
+        required=True,
+        label="Ich habe die Datenschutzbestimmungen gelesen und stimme der beschriebenen Verarbeitung zu.",
+        error_messages={"required": "Bitte bestätige die Datenschutzbestimmungen."},
+    )
+    accepted_webapp = forms.BooleanField(
+        required=True,
+        label="Ich stimme der Nutzung der BrainBoost-WebApp im beschriebenen Umfang zu.",
+        error_messages={"required": "Bitte bestätige die WebApp-Nutzung."},
+    )
+    accepted_child_protection = forms.BooleanField(
+        required=True,
+        label="Ich habe die Kinderschutzbestimmungen gelesen und verpflichte mich zu ihrer Einhaltung.",
+        error_messages={"required": "Bitte bestätige die Kinderschutzbestimmungen."},
+    )
+
+    def __init__(self, *args, agreement: Agreement, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agreement = agreement
+        full_name = agreement.participant.get_full_name().strip()
+        self.fields["participant_name"].initial = full_name
+        if agreement.agreement_type == Agreement.AgreementType.TUTOR:
+            self.fields["payment_method"].widget = forms.HiddenInput()
+            self.fields["payment_method"].initial = Agreement.PaymentMethod.STRIPE_SEPA
+            self.fields.pop("accepted_webapp")
+        else:
+            self.fields["payment_method"].required = True
+            self.fields.pop("accepted_child_protection")
+
+    def clean_participant_name(self):
+        value = self.cleaned_data["participant_name"].strip()
+        if len(value.split()) < 2:
+            raise ValidationError("Bitte gib deinen vollständigen Vor- und Nachnamen an.")
+        return value
+
+
+class AgreementTutorAcceptanceForm(forms.Form):
+    tutor_name = forms.CharField(max_length=255, label="Vollständiger Name")
+    accepted = forms.BooleanField(
+        required=True,
+        label="Ich habe die Lernvereinbarung gelesen und stimme ihr als TutorIn zu.",
+        error_messages={"required": "Bitte bestätige die Lernvereinbarung."},
+    )
+    accepted_privacy = forms.BooleanField(
+        required=True,
+        label="Ich bestätige die Datenschutzregelungen und meine Pflichten als TutorIn.",
+        error_messages={"required": "Bitte bestätige die Datenschutzregelungen."},
+    )
+
+    def __init__(self, *args, agreement: Agreement, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.agreement = agreement
+        self.fields["tutor_name"].initial = agreement.tutor.user.get_full_name().strip()
+
+    def clean_tutor_name(self):
+        value = self.cleaned_data["tutor_name"].strip()
+        if len(value.split()) < 2:
+            raise ValidationError("Bitte gib deinen vollständigen Vor- und Nachnamen an.")
+        return value
 
 
 def _normalize_iban(raw_iban: str) -> str:
@@ -1350,6 +1462,12 @@ class StudentCreateForm(BaseUserCreateForm):
         label="Eltern",
         widget=forms.SelectMultiple(attrs={"size": 6}),
     )
+    contracting_parent = forms.ModelChoiceField(
+        queryset=ParentProfile.objects.all(),
+        required=False,
+        label="Zahlungspflichtige VertragspartnerIn",
+        help_text="Genau dieses Elternteil bestätigt die Lernvereinbarung und richtet gegebenenfalls das SEPA-Mandat ein.",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1368,19 +1486,33 @@ class StudentCreateForm(BaseUserCreateForm):
                 "is_active",
                 "role_display",
                 "address",
+                "school",
+                "grade_level",
+                "birth_date",
                 "zoom_link",
                 "zumpad_link",
                 "create_without_parents",
                 "parents",
+                "contracting_parent",
             ]
         )
 
     def clean(self):
         cleaned = super().clean()
         create_without_parents = cleaned.get("create_without_parents")
+        if create_without_parents and not cleaned.get("email"):
+            self.add_error("email", "StudentInnen mit eigenem Login benötigen eine E-Mail-Adresse.")
         parents = cleaned.get("parents")
         if "parents" in self.fields and not create_without_parents and not parents:
             self.add_error("parents", "Bitte wähle mindestens ein Elternteil aus oder nutze „ohne Eltern anlegen“.")
+        contracting_parent = cleaned.get("contracting_parent")
+        if "contracting_parent" in self.fields and not create_without_parents:
+            if not contracting_parent:
+                self.add_error("contracting_parent", "Bitte wähle die zahlungspflichtige VertragspartnerIn aus.")
+            elif parents and contracting_parent not in parents:
+                self.add_error("contracting_parent", "Die VertragspartnerIn muss auch als Elternteil ausgewählt sein.")
+            elif contracting_parent and not contracting_parent.user.email:
+                self.add_error("contracting_parent", "Die VertragspartnerIn benötigt eine E-Mail-Adresse für die Bestätigung.")
         return cleaned
 
     def save(self) -> CustomUser:
@@ -1438,11 +1570,13 @@ class IndependentStudentCreateForm(StudentCreateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["email"].required = True
+        self.fields["email"].help_text = "Diese E-Mail-Adresse wird für Anmeldung und Vertragsbestätigung verwendet."
         self.fields.pop("parents", None)
+        self.fields.pop("contracting_parent", None)
         self.fields.pop("create_without_parents", None)
         self.order_fields(
             [
-                "username",
                 "first_name",
                 "last_name",
                 "email",

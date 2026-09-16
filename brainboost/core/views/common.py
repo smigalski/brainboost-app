@@ -72,7 +72,7 @@ from ..forms import (
     StudentProfileForm,
     TutorProfileForm,
     BrainBoostFeedbackForm,
-    EmailOrUsernameAuthenticationForm,
+    EmailAuthenticationForm,
     BroadcastEmailForm,
     TutorStudentAssignmentForm,
     AdminTaskCreateForm,
@@ -119,7 +119,6 @@ from ..models import (
     AdminIdea,
     Lead,
 )
-
 logger = logging.getLogger(__name__)
 GOOGLE_REVIEWS_CACHE_KEY = "landing_google_reviews_v1"
 GOOGLE_REVIEWS_CACHE_SECONDS = 60 * 60 * 12
@@ -1291,7 +1290,7 @@ def _student_news_items(student_profile: StudentProfile) -> list[dict]:
 
 def _parent_news_items(parent_profile: ParentProfile) -> list[dict]:
     items = [_monthly_brainboost_feedback_news_item(BrainBoostFeedback.Audience.PARENT)]
-    students = parent_profile.students.all()
+    students = parent_profile.students.filter(user__is_active=True)
     lesson_items = (
         Lesson.objects.filter(student__in=students)
         .select_related("student__user")

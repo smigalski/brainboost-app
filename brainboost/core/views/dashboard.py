@@ -60,14 +60,16 @@ def dashboard(request):
         template = "dashboard_parent.html"
         if hasattr(request.user, "parent_profile"):
             _auto_complete_past_lessons(
-                Lesson.objects.filter(student__in=request.user.parent_profile.students.all())
+                Lesson.objects.filter(
+                    student__in=request.user.parent_profile.students.filter(user__is_active=True)
+                )
             )
             context["news_items"] = _parent_news_items(request.user.parent_profile)
             context["faq_items"] = _faq_items_for_target("parent")
             context["faq_submission_form"] = FAQSubmissionForm(
                 initial={"show_for_parents": True}
             )
-            students = request.user.parent_profile.students.all()
+            students = request.user.parent_profile.students.filter(user__is_active=True)
             context["upcoming_lessons"] = (
                 Lesson.upcoming_qs()
                 .filter(student__in=students)
@@ -75,7 +77,10 @@ def dashboard(request):
                 .order_by("date", "time")[:5]
             )
             context["assigned_tutors"] = (
-                TutorProfile.objects.filter(assigned_students__in=students)
+                TutorProfile.objects.filter(
+                    assigned_students__in=students,
+                    user__is_active=True,
+                )
                 .select_related("user")
                 .distinct()
             )

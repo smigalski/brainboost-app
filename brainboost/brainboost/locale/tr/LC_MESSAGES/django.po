@@ -392,8 +392,8 @@ msgid "Erreichbarkeit:"
 msgstr "Ulaşılabilirlik:"
 
 #: brainboost/core/templates/contact.html:279
-msgid "Montag bis Freitag, 9:00 - 21:00 Uhr"
-msgstr "Pazartesi-Cuma, 09:00-21:00"
+msgid "Montag bis Freitag, 9:00 - 19:00 Uhr"
+msgstr "Pazartesi-Cuma, 09:00-19:00"
 
 #: brainboost/core/templates/landing.html:3
 #, fuzzy

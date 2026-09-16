@@ -2,7 +2,7 @@ from .common import *
 
 
 def landing_page(request):
-    form = EmailOrUsernameAuthenticationForm(request)
+    form = EmailAuthenticationForm(request)
     return render(
         request,
         "landing.html",
@@ -36,6 +36,10 @@ def contact(request):
             if lead.role == Lead.Role.TUTOR:
                 try:
                     user = _create_tutor_from_lead(lead, mark_lead_won=False)
+                    lead.refresh_from_db(fields=["converted_tutor"])
+                    from ..agreement_services import create_tutor_agreement_for_lead
+
+                    create_tutor_agreement_for_lead(lead)
                     _send_set_password_email(request, user)
                 except Exception:
                     logger.exception(
@@ -300,6 +304,10 @@ def lead_convert_to_tutor(request, lead_id):
 
     try:
         user = _create_tutor_from_lead(lead)
+        lead.refresh_from_db(fields=["converted_tutor"])
+        from ..agreement_services import create_tutor_agreement_for_lead
+
+        create_tutor_agreement_for_lead(lead, created_by=request.user)
         _send_set_password_email(request, user)
     except ValueError:
         messages.error(

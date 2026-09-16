@@ -2,7 +2,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 
 from . import views
-from .forms import EmailOrUsernameAuthenticationForm
+from .forms import EmailAuthenticationForm
 from .maintenance import maintenance_view
 
 urlpatterns = [
@@ -25,6 +25,44 @@ urlpatterns = [
     path("agbs/", views.agbs, name="agbs"),
     path("preise/", views.pricing, name="pricing"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("vereinbarungen/", views.agreement_list, name="agreement_list"),
+    path("vereinbarungen/<int:agreement_id>/", views.agreement_detail, name="agreement_detail"),
+    path("vereinbarungen/<int:agreement_id>/zustimmen/", views.agreement_accept, name="agreement_accept"),
+    path(
+        "vereinbarungen/<int:agreement_id>/sepa/einrichten/",
+        views.agreement_sepa_setup,
+        name="agreement_sepa_setup",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/sepa/rueckmeldung/",
+        views.agreement_sepa_return,
+        name="agreement_sepa_return",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/tutorin-zustimmen/",
+        views.agreement_tutor_accept,
+        name="agreement_tutor_accept",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/tutorin-email/<str:token>/",
+        views.agreement_tutor_email_confirm,
+        name="agreement_tutor_email_confirm",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/email/<str:token>/",
+        views.agreement_email_confirm,
+        name="agreement_email_confirm",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/brainboost-bestaetigen/",
+        views.agreement_brainboost_confirm,
+        name="agreement_brainboost_confirm",
+    ),
+    path(
+        "vereinbarungen/<int:agreement_id>/pdf/",
+        views.agreement_pdf_download,
+        name="agreement_pdf_download",
+    ),
     path("admins/", views.admin_tasks, name="admin_tasks"),
     path("admins/leads/", views.lead_dashboard, name="lead_dashboard"),
     path("admins/leads/<int:lead_id>/kontaktieren/", views.lead_mark_contacted, name="lead_mark_contacted"),
@@ -44,6 +82,12 @@ urlpatterns = [
         name="tutor_student_assignment",
     ),
     path("profil/", views.profile_view, name="profile"),
+    path("profil/kuendigen/", views.account_closure, name="account_closure"),
+    path(
+        "profil/kuendigen/bestaetigen/<int:user_id>/<str:token>/",
+        views.account_closure_confirm,
+        name="account_closure_confirm",
+    ),
     path("profil/email/bestaetigen/<path:token>/", views.profile_email_confirm, name="profile_email_confirm"),
     path(
         "profil/passwort/",
@@ -151,13 +195,10 @@ urlpatterns = [
     ),
     path(
         "login/",
-        auth_views.LoginView.as_view(
-            template_name="login.html",
-            authentication_form=EmailOrUsernameAuthenticationForm,
+        views.AgreementAwareLoginView.as_view(
+            authentication_form=EmailAuthenticationForm,
         ),
         name="login",
     ),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 ]

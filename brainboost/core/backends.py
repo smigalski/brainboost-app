@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 
 
-class EmailOrUsernameModelBackend(ModelBackend):
+class EmailModelBackend(ModelBackend):
     """Use email in the WebApp and retain username only for Django admin."""
 
     def authenticate(self, request, username=None, password=None, **kwargs):

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 17mm 18mm;
+            @bottom-left { content: "BrainBoost Nachhilfe · " string(reference); color: #547070; font-size: 9pt; text-align: left; }
+            @bottom-right { content: "Seite " counter(page) " von " counter(pages); color: #547070; font-size: 9pt; text-align: right; }
+        }
+        body { font-family: Arial, sans-serif; color: #193333; font-size: 10.5pt; line-height: 1.45; }
+        header { border-bottom: 2px solid #2c8a8a; padding-bottom: 7mm; margin-bottom: 8mm; }
+        .header-table { width: 100%; border-collapse: collapse; }
+        .header-table td { vertical-align: top; }
+        .header-logo { width: 34mm; text-align: right; }
+        .header-logo img { width: 28mm; height: auto; }
+        h1 { color: #2c8a8a; font-size: 23pt; margin: 0 0 3mm; }
+        h2 { color: #1f6666; font-size: 14pt; margin: 8mm 0 3mm; }
+        .reference { string-set: reference content(); font-weight: bold; }
+        .meta { border-collapse: collapse; width: 100%; margin-bottom: 7mm; }
+        .meta th, .meta td { border-bottom: 1px solid #c9dada; padding: 2.5mm; text-align: left; vertical-align: top; }
+        .meta th { width: 35%; color: #1f6666; }
+        .terms { white-space: pre-line; }
+        .confirmation { margin-top: 4mm; padding: 4mm; background: #eef7f7; border-left: 4px solid #2c8a8a; }
+        .hash { font-family: monospace; font-size: 8pt; overflow-wrap: anywhere; }
+        .draft { padding: 3mm 4mm; background: #fff3c4; border: 1px solid #ffc928; margin-bottom: 6mm; }
+    </style>
+</head>
+<body>
+    <header>
+        <table class="header-table"><tr>
+            <td>
+                <h1>{{ agreement.get_agreement_type_display }}</h1>
+                <div class="reference">{{ agreement.reference }}</div>
+                <div>Version {{ agreement.version }}</div>
+            </td>
+            <td class="header-logo">{% if logo_url %}<img src="{{ logo_url }}" alt="BrainBoost Nachhilfe">{% endif %}</td>
+        </tr></table>
+    </header>
+
+    {% if agreement.version|slice:":5" == "draft" %}<div class="draft">Redaktioneller Vertragsentwurf – rechtliche Freigabe ausstehend.</div>{% endif %}
+
+    <h2>Vertragsdaten</h2>
+    <table class="meta">
+        <tr><th>VereinbarungspartnerIn</th><td>{{ agreement.data_snapshot.participant.full_name }}</td></tr>
+        <tr><th>E-Mail</th><td>{{ agreement.data_snapshot.participant.email }}</td></tr>
+        {% if agreement.data_snapshot.participant.phone_number %}<tr><th>Telefon</th><td>{{ agreement.data_snapshot.participant.phone_number }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.participant.address %}<tr><th>Anschrift</th><td>{{ agreement.data_snapshot.participant.address }}</td></tr>{% endif %}
+        {% if agreement.effective_date %}<tr><th>Wirksam ab</th><td>{{ agreement.effective_date|date:"d.m.Y" }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.student %}<tr><th>SchülerIn/StudentIn</th><td>{{ agreement.data_snapshot.student.full_name }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.student.school %}<tr><th>Schule</th><td>{{ agreement.data_snapshot.student.school }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.student.grade_level %}<tr><th>Klassenstufe</th><td>{{ agreement.data_snapshot.student.grade_level }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.student.degree_program %}<tr><th>Studiengang</th><td>{{ agreement.data_snapshot.student.degree_program }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.tutor and agreement.agreement_type == "learning" %}<tr><th>TutorIn</th><td>{{ agreement.data_snapshot.tutor.full_name }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.lead.subject %}<tr><th>Unterrichtsfächer</th><td>{{ agreement.data_snapshot.lead.subject }}</td></tr>{% endif %}
+        {% if agreement.data_snapshot.lead.grade %}<tr><th>Klassenstufe</th><td>{{ agreement.data_snapshot.lead.grade }}</td></tr>{% endif %}
+        <tr><th>Zahlungsart</th><td>{{ agreement.get_payment_method_display }}</td></tr>
+    </table>
+
+    <h2>Vereinbarung</h2>
+    <div class="terms">{{ agreement.terms_snapshot }}</div>
+
+    <div class="confirmation">
+        <strong>Elektronische Bestätigungen</strong><br>
+        {{ agreement.participant_name }} bestätigte die Vereinbarung und den einmaligen E-Mail-Link am {{ agreement.email_confirmed_at|date:"d.m.Y H:i" }} Uhr.<br>
+        Datenschutz bestätigt: {% if agreement.participant_consents.privacy %}Ja{% else %}Nein{% endif %}. 
+        {% if agreement.agreement_type == "learning" %}WebApp-Nutzung bestätigt: {% if agreement.participant_consents.webapp %}Ja{% else %}Nein{% endif %}.{% endif %}
+        {% if agreement.agreement_type == "tutor" %}Kinderschutz bestätigt: {% if agreement.participant_consents.child_protection %}Ja{% else %}Nein{% endif %}.{% endif %}<br>
+        {% if agreement.agreement_type == "learning" %}
+            {{ agreement.tutor_name }} bestätigte dieselbe Vertragsfassung und den eigenen einmaligen E-Mail-Link am {{ agreement.tutor_email_confirmed_at|date:"d.m.Y H:i" }} Uhr.<br>
+            Datenschutzpflichten der TutorIn bestätigt: {% if agreement.tutor_consents.privacy %}Ja{% else %}Nein{% endif %}.<br>
+            BrainBoost dokumentierte und versandte die von beiden Vertragsparteien bestätigte Fassung, ohne selbst Vertragspartei zu werden.
+        {% else %}
+            BrainBoost wurde durch {{ agreement.brainboost_confirmed_by.display_name }} am {{ agreement.brainboost_confirmed_at|date:"d.m.Y H:i" }} Uhr bestätigt.
+        {% endif %}
+    </div>
+</body>
+</html>

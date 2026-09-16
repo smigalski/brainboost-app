@@ -481,6 +481,21 @@ def stripe_webhook(request):
                     invoice.payment_requested_by,
                 )
 
+    if event["type"] in {
+        "setup_intent.succeeded",
+        "setup_intent.canceled",
+        "setup_intent.setup_failed",
+    }:
+        setup_intent = event["data"]["object"]
+        agreement_id = setup_intent.get("metadata", {}).get("agreement_id")
+        if agreement_id:
+            from ..models import Agreement
+            from .agreements import _sync_setup_intent
+
+            agreement = Agreement.objects.filter(pk=agreement_id).first()
+            if agreement and setup_intent.get("id") == agreement.stripe_setup_intent_id:
+                _sync_setup_intent(agreement, setup_intent)
+
     return HttpResponse(status=200)
 
 

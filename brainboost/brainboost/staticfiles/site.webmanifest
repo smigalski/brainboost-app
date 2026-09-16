@@ -1,0 +1,24 @@
+{
+  "name": "BrainBoost",
+  "short_name": "BrainBoost",
+  "description": "BrainBoost Nachhilfe",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7fffd",
+  "theme_color": "#2c8a8a",
+  "icons": [
+    {
+      "src": "/static/design/app-icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/design/app-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

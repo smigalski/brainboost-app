@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Kündigung bestätigt{% endblock %}
+{% block content %}
+<div class="card" style="display:grid;gap:16px;max-width:760px;margin:0 auto;">
+    <h1>Kündigung bestätigt</h1>
+    <p>Dein Konto und die zugehörigen Vereinbarungen wurden gekündigt.</p>
+    <ul style="display:grid;gap:8px;">
+        <li>Archivierte und gesperrte Profile: {{ affected_user_count }}</li>
+        <li>Gekündigte Vereinbarungen: {{ agreement_count }}</li>
+        <li>Kostenfrei stornierte künftige Termine: {{ lesson_count }}</li>
+        <li>Die Profillöschung ist für den {{ scheduled_deletion_at|date:"d.m.Y" }} vorgesehen.</li>
+    </ul>
+    <p class="muted">
+        Vertrags- und Abrechnungsnachweise können aufgrund gesetzlicher Aufbewahrungspflichten über diesen Termin hinaus gespeichert bleiben.
+    </p>
+    <div><a class="button" href="{% url 'landing_page' %}">Zur Startseite</a></div>
+</div>
+{% endblock %}

@@ -17,7 +17,7 @@ def lesson_list(request):
         request.user, "parent_profile"
     ):
         base_qs = Lesson.objects.filter(
-            student__in=request.user.parent_profile.students.all()
+            student__in=request.user.parent_profile.students.filter(user__is_active=True)
         )
     elif request.user.role == CustomUser.Roles.TUTOR and hasattr(
         request.user, "tutor_profile"
@@ -596,7 +596,7 @@ def progress_view(request, student_id=None):
     elif request.user.role == CustomUser.Roles.PARENT and hasattr(
         request.user, "parent_profile"
     ):
-        students = request.user.parent_profile.students.all()
+        students = request.user.parent_profile.students.filter(user__is_active=True)
         student_list = students
         if student_id:
             viewed_student = get_object_or_404(students, pk=student_id)

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Link ungültig{% endblock %}
+{% block content %}
+<div class="card" style="display:grid;gap:14px;max-width:720px;margin:0 auto;">
+    <h1>Bestätigungslink nicht gültig</h1>
+    <p>Der Link ist abgelaufen, wurde bereits verwendet oder die Kündigung wurde schon verarbeitet.</p>
+    <div><a class="button" href="{% url 'login' %}">Zur Anmeldung</a></div>
+</div>
+{% endblock %}

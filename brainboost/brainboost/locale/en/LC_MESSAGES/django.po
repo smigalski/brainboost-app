@@ -391,8 +391,8 @@ msgid "Erreichbarkeit:"
 msgstr "Accessibility:"
 
 #: brainboost/core/templates/contact.html:279
-msgid "Montag bis Freitag, 9:00 - 21:00 Uhr"
-msgstr "Monday through Friday, 9:00 a.m. – 9:00 p.m."
+msgid "Montag bis Freitag, 9:00 - 19:00 Uhr"
+msgstr "Monday through Friday, 9:00 a.m. – 7:00 p.m."
 
 #: brainboost/core/templates/landing.html:3
 #, fuzzy

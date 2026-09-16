@@ -381,8 +381,8 @@ msgid "Erreichbarkeit:"
 msgstr "Accesibilidad:"
 
 #: brainboost/core/templates/contact.html:279
-msgid "Montag bis Freitag, 9:00 - 21:00 Uhr"
-msgstr "De lunes a viernes, de 9:00 a 21:00 horas"
+msgid "Montag bis Freitag, 9:00 - 19:00 Uhr"
+msgstr "De lunes a viernes, de 9:00 a 19:00 horas"
 
 #: brainboost/core/templates/landing.html:3
 msgid "Nachhilfe Braunschweig – fair & persönlich | BrainBoost"

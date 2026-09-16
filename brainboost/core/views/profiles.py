@@ -1,4 +1,16 @@
 from .common import *
+from django.contrib.auth import SESSION_KEY, logout
+from django.views.decorators.http import require_http_methods
+
+from ..account_closure import (
+    AccountClosureNotAllowed,
+    closure_preview,
+    complete_account_closure,
+    issue_account_closure_token,
+    send_account_closed_notifications,
+    send_account_closure_confirmation_email,
+)
+from ..forms import AccountClosureForm
 
 
 @login_required
@@ -52,7 +64,7 @@ def holiday_surveys(request):
     if request.user.role == CustomUser.Roles.PARENT and hasattr(request.user, "parent_profile"):
         parent_profile = request.user.parent_profile
         responses = HolidaySurveyResponse.objects.filter(
-            student__in=parent_profile.students.all(),
+            student__in=parent_profile.students.filter(user__is_active=True),
         ).select_related(
             "student__user",
             "survey__tutor__user",
@@ -174,6 +186,12 @@ def profile_view(request):
     else:
         form = form_class(**form_kwargs)
 
+    closure_block_reason = ""
+    try:
+        closure_preview(request.user)
+    except AccountClosureNotAllowed as exc:
+        closure_block_reason = str(exc)
+
     return render(
         request,
         "profile.html",
@@ -181,8 +199,70 @@ def profile_view(request):
             "form": form,
             "uses_address_autocomplete": uses_address_autocomplete,
             "is_tutor_profile_form": request.user.role == CustomUser.Roles.TUTOR,
+            "closure_block_reason": closure_block_reason,
         },
     )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def account_closure(request):
+    try:
+        preview = closure_preview(request.user)
+    except AccountClosureNotAllowed as exc:
+        messages.error(request, str(exc))
+        return redirect("profile")
+
+    if request.method == "POST":
+        form = AccountClosureForm(request.POST, user=request.user)
+        if form.is_valid():
+            if not request.user.email:
+                form.add_error(None, "Für die Bestätigung fehlt eine E-Mail-Adresse im Profil.")
+            else:
+                token = issue_account_closure_token(request.user)
+                try:
+                    send_account_closure_confirmation_email(request, request.user, token)
+                except Exception:
+                    logger.exception("Kündigungsbestätigung konnte nicht versendet werden.")
+                    form.add_error(
+                        None,
+                        "Die Bestätigungs-E-Mail konnte nicht versendet werden. Bitte versuche es erneut.",
+                    )
+                else:
+                    return render(
+                        request,
+                        "account_closure_email_sent.html",
+                        {"email": request.user.email},
+                    )
+    else:
+        form = AccountClosureForm(user=request.user)
+
+    return render(
+        request,
+        "account_closure.html",
+        {"form": form, **preview},
+    )
+
+
+def account_closure_confirm(request, user_id, token):
+    try:
+        result = complete_account_closure(user_id, token)
+    except (CustomUser.DoesNotExist, AccountClosureNotAllowed):
+        return render(request, "account_closure_invalid.html", status=400)
+
+    if str(request.session.get(SESSION_KEY, "")) == str(user_id):
+        logout(request)
+    try:
+        failed_recipients = send_account_closed_notifications(result)
+    except Exception:
+        logger.exception("Kündigungsbestätigung konnte nicht vollständig versendet werden.")
+        failed_recipients = result["recipients"]
+    if failed_recipients:
+        logger.error(
+            "Kündigungsbestätigung fehlgeschlagen für Empfänger: %s",
+            ", ".join(failed_recipients),
+        )
+    return render(request, "account_closure_success.html", result)
 
 
 def profile_email_confirm(request, token):
@@ -373,6 +453,13 @@ def tutor_create(request):
         if form.is_valid():
             user = form.save()
             request.user.tutor_profile.assigned_tutors.add(user.tutor_profile)
+            from ..agreement_services import create_tutor_agreement
+
+            create_tutor_agreement(
+                participant=user,
+                tutor=user.tutor_profile,
+                created_by=request.user,
+            )
             try:
                 _send_set_password_email(request, user)
             except ValueError:
@@ -414,6 +501,21 @@ def student_create(request):
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
             user.student_profile.created_by_tutor = request.user.tutor_profile
             user.student_profile.save(update_fields=["created_by_tutor"])
+            from ..agreement_services import create_learning_agreement
+
+            contracting_parent = form.cleaned_data.get("contracting_parent")
+            participant = contracting_parent.user if contracting_parent else user
+            source_lead = Lead.objects.filter(
+                email__iexact=participant.email or user.email,
+                role__in=[Lead.Role.PARENT, Lead.Role.STUDENT],
+            ).first()
+            create_learning_agreement(
+                participant=participant,
+                student=user.student_profile,
+                tutor=request.user.tutor_profile,
+                source_lead=source_lead,
+                created_by=request.user,
+            )
             account_label = (
                 "StudentIn"
                 if user.role == CustomUser.Roles.INDEPENDENT_STUDENT
@@ -461,6 +563,19 @@ def independent_student_create(request):
             user.student_profile.assigned_tutors.add(request.user.tutor_profile)
             user.student_profile.created_by_tutor = request.user.tutor_profile
             user.student_profile.save(update_fields=["created_by_tutor"])
+            from ..agreement_services import create_learning_agreement
+
+            source_lead = Lead.objects.filter(
+                email__iexact=user.email,
+                role=Lead.Role.STUDENT,
+            ).first()
+            create_learning_agreement(
+                participant=user,
+                student=user.student_profile,
+                tutor=request.user.tutor_profile,
+                source_lead=source_lead,
+                created_by=request.user,
+            )
             if not user.email:
                 messages.success(
                     request,
