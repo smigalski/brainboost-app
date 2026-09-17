@@ -1200,7 +1200,18 @@ class BaseUserCreateForm(forms.Form):
 class ParentCreateForm(BaseUserCreateForm):
     email = forms.EmailField(required=False, label="E-Mail")
     phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
-    address = forms.CharField(max_length=255, required=False, label="Adresse")
+    address = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Adresse",
+        widget=forms.TextInput(
+            attrs={
+                "class": "address-autocomplete",
+                "autocomplete": "off",
+                "placeholder": "Wohnadresse eingeben",
+            }
+        ),
+    )
     role_display = forms.CharField(
         initial=CustomUser.Roles.PARENT.label,
         required=False,

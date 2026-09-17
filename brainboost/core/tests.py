@@ -313,6 +313,18 @@ class IndependentStudentAccountTests(TestCase):
         )
         self.tutor_profile = TutorProfile.objects.create(user=self.tutor_user)
 
+    @override_settings(GOOGLE_MAPS_API_KEY="test-maps-key")
+    def test_parent_create_loads_google_address_autocomplete(self):
+        self.client.login(username="tutor", password="pw")
+
+        response = self.client.get(reverse("parent_create"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="address-autocomplete"')
+        self.assertContains(response, "core/address_autocomplete.js")
+        self.assertContains(response, "key=test-maps-key")
+        self.assertContains(response, "libraries=places")
+
     def test_tutor_can_create_independent_student_without_parent(self):
         self.client.login(username="tutor", password="pw")
 
