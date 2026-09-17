@@ -77,6 +77,7 @@ from ..forms import (
     TutorStudentAssignmentForm,
     CampaignLinkBuilderForm,
     LeadForm,
+    LeadFamilyConversionForm,
 )
 from ..middleware import UTM_KEYS, UTM_SESSION_KEY
 from ..notifications import (

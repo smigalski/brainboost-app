@@ -31,6 +31,7 @@ urlpatterns = [
     path("admins/leads/<int:lead_id>/status/", views.lead_update_status, name="lead_update_status"),
     path("admins/leads/<int:lead_id>/entfernen/", views.lead_delete, name="lead_delete"),
     path("admins/leads/<int:lead_id>/zur-tutorin-machen/", views.lead_convert_to_tutor, name="lead_convert_to_tutor"),
+    path("admins/leads/<int:lead_id>/uebernehmen/", views.lead_convert_to_family, name="lead_convert_to_family"),
     path("admins/leads/export/", views.lead_export_csv, name="lead_export_csv"),
     path("admins/meta-ads/link-generator/", views.campaign_link_builder, name="campaign_link_builder"),
     path("admins/meta-ads/guide/", views.meta_ads_guide, name="meta_ads_guide"),

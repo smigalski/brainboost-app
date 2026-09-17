@@ -8,6 +8,7 @@ from .leads import (
     landing_page,
     landing_schuelerinnen,
     lead_convert_to_tutor,
+    lead_convert_to_family,
     lead_dashboard,
     lead_delete,
     lead_export_csv,

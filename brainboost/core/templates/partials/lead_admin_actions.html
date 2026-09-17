@@ -26,6 +26,26 @@
                 <button class="button admin-button--secondary" type="submit">Zur TutorIn machen</button>
             </form>
         {% endif %}
+    {% elif lead.role == "parent" or lead.role == "student" %}
+        {% if lead.converted_student_id %}
+            <span class="lead-converted">SchülerIn angelegt</span>
+        {% else %}
+            <a class="button admin-button--secondary" href="{% url 'lead_convert_to_family' lead.id %}?next={{ request.get_full_path|urlencode }}">
+                {% if lead.role == "parent" %}Elternteil + SchülerIn übernehmen{% else %}Als SchülerIn übernehmen{% endif %}
+            </a>
+        {% endif %}
+    {% endif %}
+    {% if lead.status == "appointment_planned" %}
+        <button
+            class="button admin-button--secondary"
+            type="button"
+            data-lead-meeting-edit
+            data-update-url="{% url 'lead_update_status' lead.id %}"
+            data-next="{{ request.get_full_path }}"
+            data-name="{{ lead.name }}"
+            data-appointment-date="{{ lead.appointment_at|date:'Y-m-d' }}"
+            data-appointment-time="{{ lead.appointment_at|date:'H:i' }}"
+        >Termin ändern</button>
     {% endif %}
     <form method="post" action="{% url 'lead_delete' lead.id %}" onsubmit="return confirm('Diesen Lead wirklich entfernen?');">
         {% csrf_token %}

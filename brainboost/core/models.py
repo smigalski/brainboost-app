@@ -905,6 +905,7 @@ class Lead(models.Model):
     )
     internal_notes = models.TextField(blank=True)
     contacted_at = models.DateTimeField(blank=True, null=True)
+    appointment_at = models.DateTimeField(blank=True, null=True)
     last_status_change_at = models.DateTimeField(blank=True, null=True)
     follow_up_date = models.DateField(blank=True, null=True)
     follow_up_done = models.BooleanField(default=False)
@@ -935,6 +936,20 @@ class Lead(models.Model):
     motivation = models.TextField(blank=True)
     converted_tutor = models.OneToOneField(
         "TutorProfile",
+        on_delete=models.SET_NULL,
+        related_name="source_lead",
+        blank=True,
+        null=True,
+    )
+    converted_parent = models.ForeignKey(
+        "ParentProfile",
+        on_delete=models.SET_NULL,
+        related_name="converted_leads",
+        blank=True,
+        null=True,
+    )
+    converted_student = models.OneToOneField(
+        "StudentProfile",
         on_delete=models.SET_NULL,
         related_name="source_lead",
         blank=True,

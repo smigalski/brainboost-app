@@ -399,7 +399,7 @@ class IndependentStudentAccountTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("dashboard"))
-        user = CustomUser.objects.get(username="ohneeltern")
+        user = CustomUser.objects.get(email="sina.solo@example.com")
         self.assertEqual(user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
         self.assertEqual(user.student_profile.parents.count(), 0)
         self.assertTrue(user.student_profile.assigned_tutors.filter(pk=self.tutor_profile.pk).exists())
@@ -1002,6 +1002,22 @@ class LeadAdminToolsTests(TestCase):
         self.assertNotContains(response, "--- Nachricht der Anfrage ---")
         self.assertContains(response, "Zur TutorIn machen")
 
+    def test_parent_and_student_leads_offer_guided_account_conversion(self):
+        parent_lead = self._lead(role=Lead.Role.PARENT)
+        student_lead = self._lead(
+            role=Lead.Role.STUDENT,
+            name="Sina Schule",
+            email="sina@example.com",
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("lead_dashboard"))
+
+        self.assertContains(response, reverse("lead_convert_to_family", args=[parent_lead.pk]))
+        self.assertContains(response, "Elternteil + SchülerIn übernehmen")
+        self.assertContains(response, reverse("lead_convert_to_family", args=[student_lead.pk]))
+        self.assertContains(response, "Als SchülerIn übernehmen")
+
     def test_staff_user_can_mark_new_lead_as_contacted(self):
         lead = self._lead()
         self.client.force_login(self.staff_user)
@@ -1044,12 +1060,12 @@ class LeadAdminToolsTests(TestCase):
 
         response = self.client.post(
             reverse("lead_update_status", args=[lead.id]),
-            data={"status": Lead.Status.APPOINTMENT_PLANNED, "next": reverse("lead_dashboard")},
+            data={"status": Lead.Status.WON, "next": reverse("lead_dashboard")},
         )
 
         self.assertRedirects(response, reverse("lead_dashboard"))
         lead.refresh_from_db()
-        self.assertEqual(lead.status, Lead.Status.APPOINTMENT_PLANNED)
+        self.assertEqual(lead.status, Lead.Status.WON)
         self.assertIsNotNone(lead.last_status_change_at)
 
     def test_staff_user_status_update_to_contacted_sets_contacted_at(self):
@@ -1065,6 +1081,306 @@ class LeadAdminToolsTests(TestCase):
         lead.refresh_from_db()
         self.assertEqual(lead.status, Lead.Status.CONTACTED)
         self.assertIsNotNone(lead.contacted_at)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+        DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
+        LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
+    )
+    def test_contacted_tutor_is_invited_when_appointment_is_planned(self):
+        tutor_user = CustomUser.objects.create_user(
+            username="tina_meeting",
+            email="tina.meeting@example.com",
+            role=CustomUser.Roles.TUTOR,
+        )
+        tutor_profile = TutorProfile.objects.create(
+            user=tutor_user,
+            status=TutorProfile.Status.APPLIED,
+        )
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Tina Meeting",
+            email="tina.meeting@example.com",
+            status=Lead.Status.CONTACTED,
+            converted_tutor=tutor_profile,
+        )
+        self.client.force_login(self.staff_user)
+        meeting_at = timezone.localtime(timezone.now() + timedelta(days=2)).replace(
+            second=0,
+            microsecond=0,
+        )
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.id]),
+            data={
+                "status": Lead.Status.APPOINTMENT_PLANNED,
+                "appointment_at": meeting_at.strftime("%Y-%m-%dT%H:%M"),
+                "next": reverse("lead_dashboard"),
+            },
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        tutor_profile.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.APPOINTMENT_PLANNED)
+        self.assertEqual(lead.appointment_at, meeting_at)
+        self.assertEqual(tutor_profile.status, TutorProfile.Status.INVITED)
+        self.assertEqual(
+            tutor_profile.bbb_link,
+            "https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["tina.meeting@example.com"])
+        self.assertIn("Einladung zum Kennenlerngespräch", mail.outbox[0].subject)
+        self.assertIn("https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join", mail.outbox[0].body)
+        self.assertIn(meeting_at.strftime("%d.%m.%Y"), mail.outbox[0].body)
+        self.assertIn(meeting_at.strftime("%H:%M"), mail.outbox[0].body)
+
+    @override_settings(LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join")
+    @patch(
+        "core.views.leads._send_lead_meeting_invitation",
+        side_effect=RuntimeError("mail unavailable"),
+    )
+    def test_failed_meeting_invitation_keeps_lead_contacted_for_retry(self, mocked_send):
+        tutor_user = CustomUser.objects.create_user(
+            username="tina_retry_meeting",
+            email="tina.retry.meeting@example.com",
+            role=CustomUser.Roles.TUTOR,
+        )
+        tutor_profile = TutorProfile.objects.create(
+            user=tutor_user,
+            status=TutorProfile.Status.APPLIED,
+        )
+        lead = self._lead(
+            role=Lead.Role.TUTOR,
+            name="Tina Retry",
+            email="tina.retry.meeting@example.com",
+            status=Lead.Status.CONTACTED,
+            converted_tutor=tutor_profile,
+        )
+        self.client.force_login(self.staff_user)
+        meeting_at = timezone.localtime(timezone.now() + timedelta(days=2)).replace(
+            second=0,
+            microsecond=0,
+        )
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.id]),
+            data={
+                "status": Lead.Status.APPOINTMENT_PLANNED,
+                "appointment_at": meeting_at.strftime("%Y-%m-%dT%H:%M"),
+                "next": reverse("lead_dashboard"),
+            },
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        tutor_profile.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.CONTACTED)
+        self.assertEqual(tutor_profile.status, TutorProfile.Status.APPLIED)
+        self.assertEqual(tutor_profile.bbb_link, "")
+        mocked_send.assert_called_once_with(lead, meeting_at, is_rescheduled=False)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+        DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
+        LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
+    )
+    def test_parent_and_student_leads_receive_automatic_meeting_invitation(self):
+        self.client.force_login(self.staff_user)
+        meeting_at = timezone.localtime(timezone.now() + timedelta(days=2)).replace(
+            second=0,
+            microsecond=0,
+        )
+
+        for index, role in enumerate((Lead.Role.PARENT, Lead.Role.STUDENT), start=1):
+            with self.subTest(role=role):
+                lead = self._lead(
+                    role=role,
+                    name=f"Meeting Lead {index}",
+                    email=f"meeting-{index}@example.com",
+                    status=Lead.Status.CONTACTED,
+                )
+                response = self.client.post(
+                    reverse("lead_update_status", args=[lead.pk]),
+                    data={
+                        "status": Lead.Status.APPOINTMENT_PLANNED,
+                        "appointment_at": meeting_at.strftime("%Y-%m-%dT%H:%M"),
+                        "next": reverse("lead_dashboard"),
+                    },
+                )
+
+                self.assertRedirects(response, reverse("lead_dashboard"))
+                lead.refresh_from_db()
+                self.assertEqual(lead.status, Lead.Status.APPOINTMENT_PLANNED)
+                self.assertEqual(lead.appointment_at, meeting_at)
+                self.assertEqual(mail.outbox[-1].to, [lead.email])
+                self.assertIn(meeting_at.strftime("%d.%m.%Y"), mail.outbox[-1].body)
+        self.assertEqual(len(mail.outbox), 2)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+        DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
+        LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
+    )
+    def test_planned_meeting_can_be_rescheduled_and_sends_updated_invitation(self):
+        old_meeting_at = timezone.localtime(timezone.now() + timedelta(days=2)).replace(
+            second=0,
+            microsecond=0,
+        )
+        new_meeting_at = old_meeting_at + timedelta(days=1, hours=2)
+        lead = self._lead(
+            role=Lead.Role.PARENT,
+            email="reschedule@example.com",
+            status=Lead.Status.APPOINTMENT_PLANNED,
+            appointment_at=old_meeting_at,
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.pk]),
+            data={
+                "status": Lead.Status.APPOINTMENT_PLANNED,
+                "appointment_at": new_meeting_at.strftime("%Y-%m-%dT%H:%M"),
+                "reschedule": "1",
+                "next": reverse("lead_dashboard"),
+            },
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.appointment_at, new_meeting_at)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Neuer Termin", mail.outbox[0].subject)
+        self.assertIn(new_meeting_at.strftime("%d.%m.%Y"), mail.outbox[0].body)
+        self.assertIn(new_meeting_at.strftime("%H:%M"), mail.outbox[0].body)
+
+    @override_settings(LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join")
+    def test_meeting_status_requires_date_and_time(self):
+        lead = self._lead(status=Lead.Status.CONTACTED)
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_update_status", args=[lead.pk]),
+            data={"status": Lead.Status.APPOINTMENT_PLANNED, "next": reverse("lead_dashboard")},
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.CONTACTED)
+        self.assertIsNone(lead.appointment_at)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+        DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
+    )
+    def test_parent_lead_conversion_creates_family_and_assigns_tutor(self):
+        assigned_user = CustomUser.objects.create_user(
+            username="assigned_family_tutor",
+            email="assigned-tutor@example.com",
+            role=CustomUser.Roles.TUTOR,
+            first_name="Tina",
+            last_name="Tutorin",
+        )
+        assigned_tutor = TutorProfile.objects.create(
+            user=assigned_user,
+            status=TutorProfile.Status.ACTIVE,
+        )
+        lead = self._lead(
+            role=Lead.Role.PARENT,
+            name="Maria Muster",
+            email="maria.family@example.com",
+            phone="0176 123456",
+            grade="8. Klasse",
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_convert_to_family", args=[lead.pk]),
+            data={
+                "next": reverse("lead_dashboard"),
+                "student_kind": "with_parent",
+                "student_first_name": "Sina",
+                "student_last_name": "Muster",
+                "student_email": "sina.family@example.com",
+                "student_phone": "",
+                "student_address": "Kindweg 1",
+                "birth_date": "2012-05-04",
+                "school": "Testschule",
+                "grade_level": "8. Klasse",
+                "degree_program": "",
+                "existing_parent": "",
+                "parent_first_name": "Maria",
+                "parent_last_name": "Muster",
+                "parent_email": "maria.family@example.com",
+                "parent_phone": "0176 123456",
+                "parent_address": "Elternweg 2",
+                "assigned_tutor": str(assigned_tutor.pk),
+            },
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, Lead.Status.WON)
+        self.assertTrue(lead.follow_up_done)
+        self.assertIsNotNone(lead.converted_parent)
+        self.assertIsNotNone(lead.converted_student)
+        self.assertEqual(lead.converted_parent.user.email, "maria.family@example.com")
+        self.assertEqual(lead.converted_student.user.email, "sina.family@example.com")
+        self.assertEqual(lead.converted_student.grade_level, "8. Klasse")
+        self.assertEqual(lead.converted_student.created_by_tutor, assigned_tutor)
+        self.assertTrue(lead.converted_student.parents.filter(pk=lead.converted_parent_id).exists())
+        self.assertTrue(lead.converted_student.assigned_tutors.filter(pk=assigned_tutor.pk).exists())
+        self.assertEqual(len(mail.outbox), 2)
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
+        DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
+    )
+    def test_student_lead_can_become_independent_student(self):
+        assigned_user = CustomUser.objects.create_user(
+            username="assigned_independent_tutor",
+            role=CustomUser.Roles.TUTOR,
+        )
+        assigned_tutor = TutorProfile.objects.create(
+            user=assigned_user,
+            status=TutorProfile.Status.ACTIVE,
+        )
+        lead = self._lead(
+            role=Lead.Role.STUDENT,
+            name="Sam Studium",
+            email="sam.studium@example.com",
+            phone="0176 987654",
+        )
+        self.client.force_login(self.staff_user)
+
+        response = self.client.post(
+            reverse("lead_convert_to_family", args=[lead.pk]),
+            data={
+                "next": reverse("lead_dashboard"),
+                "student_kind": "independent",
+                "student_first_name": "Sam",
+                "student_last_name": "Studium",
+                "student_email": "sam.studium@example.com",
+                "student_phone": "0176 987654",
+                "student_address": "Campus 1",
+                "degree_program": "Informatik",
+                "assigned_tutor": str(assigned_tutor.pk),
+            },
+        )
+
+        self.assertRedirects(response, reverse("lead_dashboard"))
+        lead.refresh_from_db()
+        self.assertIsNone(lead.converted_parent)
+        self.assertEqual(lead.converted_student.user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
+        self.assertEqual(lead.converted_student.degree_program, "Informatik")
+        self.assertEqual(lead.converted_student.parents.count(), 0)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_non_staff_users_cannot_update_lead_status(self):
         lead = self._lead()
@@ -1757,7 +2073,7 @@ class TutorProfileBankFieldValidationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "TutorInnennummer")
         self.assertContains(response, self.user.tutor_profile.tutor_number)
-        self.assertContains(response, 'class="required-marker"', count=9)
+        self.assertContains(response, 'class="required-marker"', count=8)
         self.assertContains(response, 'class="profile-field-info"')
         self.assertContains(response, 'title="betriebliche Steuernummer')
         self.assertContains(

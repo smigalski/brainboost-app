@@ -1,4 +1,60 @@
 from .common import *
+from django.utils.dateparse import parse_datetime
+
+
+MEETING_INVITATION_SUBJECT = "BrainBoost: Einladung zum Kennenlerngespräch"
+
+
+def _send_lead_meeting_invitation(
+    lead: Lead,
+    meeting_at,
+    *,
+    is_rescheduled: bool = False,
+) -> None:
+    tutor_email = ""
+    if lead.converted_tutor_id:
+        tutor_email = lead.converted_tutor.user.email
+    recipient = (tutor_email or lead.email).strip()
+    if not recipient:
+        raise ValueError("missing_email")
+
+    meeting_url = settings.LEAD_MEETING_BBB_URL
+    local_meeting_at = timezone.localtime(meeting_at)
+    subject = (
+        "BrainBoost: Neuer Termin für dein Kennenlerngespräch"
+        if is_rescheduled
+        else MEETING_INVITATION_SUBJECT
+    )
+    context = {
+        "heading": subject,
+        "lead_name": lead.name,
+        "meeting_url": meeting_url,
+        "meeting_date": local_meeting_at.strftime("%d.%m.%Y"),
+        "meeting_time": local_meeting_at.strftime("%H:%M"),
+        "is_rescheduled": is_rescheduled,
+    }
+    text_body = render_to_string("emails/tutor_meeting_invitation.txt", context)
+    html_body = render_to_string("emails/tutor_meeting_invitation.html", context)
+    message = EmailMultiAlternatives(
+        subject,
+        text_body,
+        getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@brainboost.local"),
+        [recipient],
+        reply_to=_default_mail_reply_to(),
+    )
+    message.attach_alternative(html_body, "text/html")
+    if message.send() == 0:
+        raise RuntimeError("email_send_failed")
+
+
+def _meeting_at_from_request(request):
+    raw_value = (request.POST.get("appointment_at") or "").strip()
+    parsed = parse_datetime(raw_value)
+    if parsed is None:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
 
 
 def landing_page(request):
@@ -161,7 +217,11 @@ def lead_dashboard(request):
     start_date = _valid_iso_date(request.GET.get("start_date", ""))
     end_date = _valid_iso_date(request.GET.get("end_date", ""))
     leads = _filter_leads_by_period(
-        Lead.objects.select_related("converted_tutor__user"),
+        Lead.objects.select_related(
+            "converted_tutor__user",
+            "converted_parent__user",
+            "converted_student__user",
+        ),
         start_date,
         end_date,
     )
@@ -218,7 +278,10 @@ def lead_mark_contacted(request, lead_id):
     if request.method != "POST":
         return JsonResponse({"ok": False, "error": "method_not_allowed"}, status=405)
 
-    lead = get_object_or_404(Lead, pk=lead_id)
+    lead = get_object_or_404(
+        Lead.objects.select_related("converted_tutor__user"),
+        pk=lead_id,
+    )
     if lead.status == Lead.Status.NEW:
         lead.status = Lead.Status.CONTACTED
         if not lead.contacted_at:
@@ -248,20 +311,114 @@ def lead_update_status(request, lead_id):
     if request.method != "POST":
         return redirect(next_url)
 
-    lead = get_object_or_404(Lead, pk=lead_id)
+    lead = get_object_or_404(
+        Lead.objects.select_related("converted_tutor__user"),
+        pk=lead_id,
+    )
     next_status = (request.POST.get("status") or "").strip()
     valid_statuses = {choice[0] for choice in Lead.Status.choices}
     if next_status not in valid_statuses:
         messages.error(request, "Ungültiger Lead-Status.")
         return redirect(next_url)
 
-    update_fields = ["status", "updated_at"]
-    lead.status = next_status
-    if next_status == Lead.Status.CONTACTED and not lead.contacted_at:
-        lead.contacted_at = timezone.now()
-        update_fields.append("contacted_at")
-    lead.save(update_fields=update_fields)
-    messages.success(request, f"Status von {lead.name} wurde auf {lead.get_status_display()} gesetzt.")
+    is_rescheduled = (
+        lead.status == Lead.Status.APPOINTMENT_PLANNED
+        and next_status == Lead.Status.APPOINTMENT_PLANNED
+        and request.POST.get("reschedule") == "1"
+    )
+    invite_to_meeting = next_status == Lead.Status.APPOINTMENT_PLANNED and (
+        lead.status != Lead.Status.APPOINTMENT_PLANNED or is_rescheduled
+    )
+    tutor_profile = lead.converted_tutor if lead.converted_tutor_id else None
+    meeting_url = getattr(settings, "LEAD_MEETING_BBB_URL", "").strip()
+    meeting_at = _meeting_at_from_request(request) if invite_to_meeting else None
+
+    if invite_to_meeting:
+        if lead.role == Lead.Role.TUTOR and tutor_profile is None:
+            messages.error(
+                request,
+                "Die Einladung wurde nicht versendet. Bitte lege für diesen Lead zuerst das TutorInnenkonto an.",
+            )
+            return redirect(next_url)
+        if meeting_at is None:
+            messages.error(request, "Bitte gib Datum und Uhrzeit des Kennenlerngesprächs an.")
+            return redirect(next_url)
+        if meeting_at <= timezone.now():
+            messages.error(request, "Der Termin für das Kennenlerngespräch muss in der Zukunft liegen.")
+            return redirect(next_url)
+        if not meeting_url:
+            messages.error(
+                request,
+                "Die Einladung wurde nicht versendet, weil kein BBB-Raum konfiguriert ist.",
+            )
+            return redirect(next_url)
+        try:
+            _send_lead_meeting_invitation(
+                lead,
+                meeting_at,
+                is_rescheduled=is_rescheduled,
+            )
+        except ValueError:
+            messages.error(
+                request,
+                "Die Einladung wurde nicht versendet, weil keine E-Mail-Adresse hinterlegt ist.",
+            )
+            return redirect(next_url)
+        except SMTPAuthenticationError:
+            logger.exception("SMTP-Anmeldung beim Versand der Kennenlern-Einladung fehlgeschlagen.")
+            messages.error(
+                request,
+                "Die Einladung wurde nicht versendet: SMTP-Anmeldung fehlgeschlagen. "
+                "Der Lead bleibt auf Kontaktiert und der Versand kann erneut versucht werden.",
+            )
+            return redirect(next_url)
+        except Exception:
+            logger.exception("Kennenlern-Einladung konnte nicht versendet werden.")
+            messages.error(
+                request,
+                "Die Einladung konnte nicht versendet werden. Der Lead bleibt auf Kontaktiert "
+                "und der Versand kann erneut versucht werden.",
+            )
+            return redirect(next_url)
+
+    with transaction.atomic():
+        update_fields = ["status", "updated_at"]
+        lead.status = next_status
+        if invite_to_meeting:
+            lead.appointment_at = meeting_at
+            update_fields.append("appointment_at")
+        if next_status == Lead.Status.CONTACTED and not lead.contacted_at:
+            lead.contacted_at = timezone.now()
+            update_fields.append("contacted_at")
+        lead.save(update_fields=update_fields)
+
+        if invite_to_meeting and tutor_profile is not None:
+            tutor_update_fields = []
+            if tutor_profile.bbb_link != meeting_url:
+                tutor_profile.bbb_link = meeting_url
+                tutor_update_fields.append("bbb_link")
+            if tutor_profile.status == TutorProfile.Status.APPLIED:
+                tutor_profile.status = TutorProfile.Status.INVITED
+                tutor_update_fields.append("status")
+            if tutor_update_fields:
+                tutor_profile.save(update_fields=tutor_update_fields)
+
+    if invite_to_meeting:
+        local_meeting_at = timezone.localtime(meeting_at)
+        if is_rescheduled:
+            messages.success(
+                request,
+                f"Der Termin mit {lead.name} wurde auf den {local_meeting_at:%d.%m.%Y} "
+                f"um {local_meeting_at:%H:%M} Uhr geändert. Die aktualisierte Einladung wurde versendet.",
+            )
+        else:
+            messages.success(
+                request,
+                f"{lead.name} wurde für den {local_meeting_at:%d.%m.%Y} um "
+                f"{local_meeting_at:%H:%M} Uhr zum Kennenlerngespräch eingeladen.",
+            )
+    else:
+        messages.success(request, f"Status von {lead.name} wurde auf {lead.get_status_display()} gesetzt.")
     return redirect(next_url)
 
 
@@ -328,6 +485,81 @@ def lead_convert_to_tutor(request, lead_id):
             f"{lead.name} wurde als TutorIn angelegt. Die Mail zum Passwortsetzen und Profilausfüllen wurde {action_label}.",
         )
     return redirect(next_url)
+
+
+@login_required
+def lead_convert_to_family(request, lead_id):
+    _ensure_profile_for_user(request.user)
+    if not _has_admin_access(request.user):
+        messages.error(request, "Du darfst Eltern- und SchülerInnen-Leads nicht umwandeln.")
+        return redirect("dashboard")
+
+    lead = get_object_or_404(
+        Lead.objects.select_related(
+            "converted_parent__user",
+            "converted_student__user",
+        ),
+        pk=lead_id,
+    )
+    next_url = _safe_admin_next_url(request)
+    if lead.role not in {Lead.Role.PARENT, Lead.Role.STUDENT}:
+        messages.error(request, "Dieser Übernahmeprozess ist nur für Eltern- und SchülerInnen-Leads verfügbar.")
+        return redirect(next_url)
+    if lead.converted_student_id:
+        messages.info(request, "Dieser Lead wurde bereits als SchülerIn/StudentIn übernommen.")
+        return redirect(next_url)
+
+    form = LeadFamilyConversionForm(
+        request.POST or None,
+        lead=lead,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            result = form.save()
+        except (IntegrityError, ValueError):
+            logger.exception("Eltern-/SchülerInnen-Lead konnte nicht übernommen werden.")
+            messages.error(
+                request,
+                "Der Lead konnte nicht übernommen werden. Bitte prüfe, ob die E-Mail-Adressen bereits verwendet werden.",
+            )
+        else:
+            failed_recipients = []
+            if result["parent_created"] and result["parent"].user.email:
+                try:
+                    _send_set_password_email(request, result["parent"].user)
+                except Exception:
+                    logger.exception("Passwort-Mail an neues Elternkonto fehlgeschlagen.")
+                    failed_recipients.append(result["parent"].user.email)
+            if result["student_user"].email:
+                try:
+                    _send_set_password_email(request, result["student_user"])
+                except Exception:
+                    logger.exception("Passwort-Mail an neues SchülerInnenkonto fehlgeschlagen.")
+                    failed_recipients.append(result["student_user"].email)
+
+            if failed_recipients:
+                messages.warning(
+                    request,
+                    "Die Konten wurden angelegt, aber nicht alle Passwort-Mails konnten versendet werden: "
+                    + ", ".join(failed_recipients),
+                )
+            else:
+                messages.success(
+                    request,
+                    f"{result['student_user'].display_name} wurde angelegt und "
+                    f"{result['tutor'].user.display_name} zugewiesen. Die benötigten Passwort-Mails wurden versendet.",
+                )
+            return redirect(next_url)
+
+    return render(
+        request,
+        "lead_family_convert.html",
+        {
+            "lead": lead,
+            "form": form,
+            "next_url": next_url,
+        },
+    )
 
 
 @login_required

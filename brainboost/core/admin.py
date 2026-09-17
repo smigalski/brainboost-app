@@ -168,6 +168,7 @@ class LeadAdmin(admin.ModelAdmin):
         "subject",
         "grade",
         "status",
+        "appointment_at",
         "follow_up_date",
         "follow_up_done",
         "preferred_contact",

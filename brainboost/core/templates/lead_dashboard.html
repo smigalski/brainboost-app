@@ -81,6 +81,7 @@
             <div>
                 <h2 id="open-leads-heading">Jetzt bearbeiten</h2>
                 <p>Neue und kontaktierte Leads ohne abgeschlossenes Follow-up.</p>
+                <p>Bei TutorInnen versendet der Wechsel von <strong>Kontaktiert</strong> auf <strong>Termin geplant</strong> automatisch die Einladung und hinterlegt den gemeinsamen BBB-Raum.</p>
             </div>
         </div>
         <div class="admin-table-wrap">
@@ -99,12 +100,13 @@
                                 <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" onchange="this.form.submit()">
+                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" data-lead-status-select data-current-status="{{ lead.status }}" data-lead-name="{{ lead.name }}">
                                         {% for value, label in lead_status_choices %}
                                             <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>
                                 </form>
+                                {% if lead.appointment_at %}<span class="muted">{{ lead.appointment_at|date:"d.m.Y H:i" }} Uhr</span>{% endif %}
                             </td>
                             <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"–" }}</td>
                             <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
@@ -230,12 +232,13 @@
                                 <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" onchange="this.form.submit()">
+                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" data-lead-status-select data-current-status="{{ lead.status }}" data-lead-name="{{ lead.name }}">
                                         {% for value, label in lead_status_choices %}
                                             <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>
                                 </form>
+                                {% if lead.appointment_at %}<span class="muted">{{ lead.appointment_at|date:"d.m.Y H:i" }} Uhr</span>{% endif %}
                             </td>
                             <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
                             <td>{% include "partials/lead_admin_actions.html" with lead=lead %}</td>
@@ -259,6 +262,28 @@
             <button class="button" type="button" data-lead-contact-method="email">Per E-Mail</button>
         </div>
         <button class="button admin-button--secondary lead-contact-modal__close" type="button" data-lead-contact-close>Abbrechen</button>
+    </div>
+</div>
+
+<div class="lead-contact-modal" data-lead-meeting-modal hidden>
+    <div class="lead-contact-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="lead-meeting-title">
+        <span class="admin-eyebrow">Kennenlerngespräch</span>
+        <h3 id="lead-meeting-title" data-lead-meeting-title>Termin festlegen</h3>
+        <p class="muted" data-lead-meeting-description>Lege Datum und Uhrzeit fest. Danach wird die BBB-Einladung automatisch versendet.</p>
+        <form method="post" data-lead-meeting-form>
+            {% csrf_token %}
+            <input type="hidden" name="next" data-lead-meeting-next>
+            <input type="hidden" name="status" value="appointment_planned">
+            <input type="hidden" name="reschedule" value="0" data-lead-meeting-reschedule>
+            <label class="admin-field">
+                Datum und Uhrzeit
+                <input type="datetime-local" name="appointment_at" required step="300" data-lead-meeting-at>
+            </label>
+            <div class="lead-contact-modal__actions">
+                <button class="button" type="submit" data-lead-meeting-submit>Termin speichern und Einladung senden</button>
+                <button class="button admin-button--secondary" type="button" data-lead-meeting-close>Abbrechen</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -388,6 +413,100 @@
         });
         document.addEventListener("keydown", function (event) {
             if (event.key === "Escape" && !modal.hidden) closeModal();
+        });
+    }());
+
+    (function () {
+        var modal = document.querySelector("[data-lead-meeting-modal]");
+        if (!modal) return;
+        var meetingForm = modal.querySelector("[data-lead-meeting-form]");
+        var meetingAt = modal.querySelector("[data-lead-meeting-at]");
+        var nextInput = modal.querySelector("[data-lead-meeting-next]");
+        var rescheduleInput = modal.querySelector("[data-lead-meeting-reschedule]");
+        var title = modal.querySelector("[data-lead-meeting-title]");
+        var description = modal.querySelector("[data-lead-meeting-description]");
+        var submitButton = modal.querySelector("[data-lead-meeting-submit]");
+        var activeSelect = null;
+
+        function pad(value) {
+            return String(value).padStart(2, "0");
+        }
+
+        function localInputValue(date) {
+            return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate()) +
+                "T" + pad(date.getHours()) + ":" + pad(date.getMinutes());
+        }
+
+        function suggestedMeeting() {
+            var value = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            value.setSeconds(0, 0);
+            value.setMinutes(value.getMinutes() < 30 ? 30 : 0);
+            if (value.getMinutes() === 0) value.setHours(value.getHours() + 1);
+            return localInputValue(value);
+        }
+
+        function openMeeting(options) {
+            activeSelect = options.select || null;
+            meetingForm.action = options.action;
+            nextInput.value = options.next || window.location.pathname + window.location.search;
+            rescheduleInput.value = options.reschedule ? "1" : "0";
+            meetingAt.value = options.appointment || suggestedMeeting();
+            title.textContent = options.reschedule ? "Termin ändern" : "Termin festlegen";
+            description.textContent = options.reschedule
+                ? "Lege den neuen Termin mit " + options.name + " fest. Danach wird automatisch eine aktualisierte BBB-Einladung versendet."
+                : "Lege Datum und Uhrzeit für das Kennenlerngespräch mit " + options.name + " fest. Danach wird automatisch die BBB-Einladung versendet.";
+            submitButton.textContent = options.reschedule
+                ? "Termin ändern und Einladung senden"
+                : "Termin speichern und Einladung senden";
+            modal.hidden = false;
+            meetingAt.focus();
+        }
+
+        function closeMeeting() {
+            modal.hidden = true;
+            if (activeSelect) activeSelect.value = activeSelect.dataset.currentStatus;
+            activeSelect = null;
+        }
+
+        document.querySelectorAll("[data-lead-status-select]").forEach(function (select) {
+            select.addEventListener("change", function () {
+                var statusForm = select.form;
+                if (select.value === "appointment_planned") {
+                    openMeeting({
+                        select: select,
+                        action: statusForm.action,
+                        next: statusForm.querySelector('[name="next"]').value,
+                        name: select.dataset.leadName || "diesem Lead",
+                        reschedule: false
+                    });
+                    return;
+                }
+                statusForm.submit();
+            });
+        });
+
+        document.querySelectorAll("[data-lead-meeting-edit]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var appointment = "";
+                if (button.dataset.appointmentDate && button.dataset.appointmentTime) {
+                    appointment = button.dataset.appointmentDate + "T" + button.dataset.appointmentTime;
+                }
+                openMeeting({
+                    action: button.dataset.updateUrl,
+                    next: button.dataset.next,
+                    name: button.dataset.name || "diesem Lead",
+                    appointment: appointment,
+                    reschedule: true
+                });
+            });
+        });
+
+        modal.querySelector("[data-lead-meeting-close]").addEventListener("click", closeMeeting);
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) closeMeeting();
+        });
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !modal.hidden) closeMeeting();
         });
     }());
 </script>

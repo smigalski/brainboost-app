@@ -1,0 +1,21 @@
+{% extends "emails/base.html" %}
+{% block content %}
+  <p style="margin:0 0 12px 0;">Hallo {{ lead_name }},</p>
+  <p style="margin:0 0 12px 0;">
+    {% if is_rescheduled %}
+      der Termin für dein Kennenlerngespräch mit BrainBoost wurde auf deinen Wunsch geändert.
+    {% else %}
+      dein Kennenlerngespräch mit BrainBoost ist geplant. Wir freuen uns darauf, dich persönlich kennenzulernen.
+    {% endif %}
+  </p>
+  <p style="margin:0 0 18px 0;"><strong>Datum:</strong> {{ meeting_date }}<br><strong>Uhrzeit:</strong> {{ meeting_time }} Uhr</p>
+  <p style="margin:0 0 18px 0;">Zum vereinbarten Termin kannst du über unseren BigBlueButton-Raum teilnehmen:</p>
+  <p style="margin:0 0 18px 0;">
+    <a href="{{ meeting_url }}" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#176b68;color:#ffffff;font-weight:700;text-decoration:none;">Kennenlerngespräch beitreten</a>
+  </p>
+  <p style="margin:0 0 12px 0;word-break:break-all;">
+    Falls die Schaltfläche nicht funktioniert:<br>
+    <a href="{{ meeting_url }}">{{ meeting_url }}</a>
+  </p>
+  <p style="margin:0;">Viele Grüße<br>Dein BrainBoost-Team</p>
+{% endblock %}

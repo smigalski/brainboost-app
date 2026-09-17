@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lead übernehmen | BrainBoost{% endblock %}
+{% block page_class %}page--admin{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'core/admin_workspace.css' %}?v=1">
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <header class="admin-page-header">
+        <div class="admin-page-header__copy">
+            <span class="admin-eyebrow">Geführte Kontoanlage</span>
+            <h1>Lead übernehmen</h1>
+            <p>Prüfe die übernommenen Kontaktdaten, lege die beteiligten Konten an und weise direkt die zuständige TutorIn zu.</p>
+        </div>
+    </header>
+
+    <section class="admin-panel">
+        <div class="admin-section-heading">
+            <div>
+                <h2>{{ lead.name }}</h2>
+                <p>{{ lead.get_role_display }} · {{ lead.email }}{% if lead.phone %} · {{ lead.phone }}{% endif %}</p>
+            </div>
+            <span class="admin-eyebrow">{{ lead.get_status_display }}</span>
+        </div>
+        <div class="admin-form-grid">
+            <div><strong>Fach</strong><br>{{ lead.subject|default:"–" }}</div>
+            <div><strong>Klassenstufe</strong><br>{{ lead.grade|default:"–" }}</div>
+            <div><strong>Ziel</strong><br>{{ lead.goal|default:"–" }}</div>
+            <div><strong>Unterrichtsform</strong><br>{{ lead.get_tutoring_type_display|default:"–" }}</div>
+        </div>
+    </section>
+
+    <form class="admin-form" method="post" novalidate data-family-conversion-form>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+
+        {% if form.non_field_errors %}
+            <section class="admin-panel">
+                {% for error in form.non_field_errors %}<p class="admin-field__error">{{ error }}</p>{% endfor %}
+            </section>
+        {% endif %}
+
+        <section class="admin-panel admin-form-section">
+            <div class="admin-form-section__heading">
+                <span class="admin-form-section__number">1</span>
+                <h2>Kontotyp festlegen</h2>
+            </div>
+            <label class="admin-field admin-field--wide">
+                {{ form.student_kind.label }}
+                {{ form.student_kind }}
+                {% for error in form.student_kind.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}
+            </label>
+        </section>
+
+        <section class="admin-panel admin-form-section">
+            <div class="admin-form-section__heading">
+                <span class="admin-form-section__number">2</span>
+                <h2>SchülerIn/StudentIn prüfen</h2>
+            </div>
+            <div class="admin-form-grid">
+                {% for field in form %}
+                    {% if field.name == "student_first_name" or field.name == "student_last_name" or field.name == "student_email" or field.name == "student_phone" or field.name == "student_address" or field.name == "birth_date" or field.name == "school" or field.name == "grade_level" or field.name == "degree_program" %}
+                        <label class="admin-field{% if field.name == 'student_address' %} admin-field--wide{% endif %}">
+                            {{ field.label }}
+                            {{ field }}
+                            {% if field.help_text %}<span class="admin-field__help">{{ field.help_text }}</span>{% endif %}
+                            {% for error in field.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}
+                        </label>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="admin-panel admin-form-section" data-parent-section>
+            <div class="admin-form-section__heading">
+                <span class="admin-form-section__number">3</span>
+                <h2>Elternkonto festlegen</h2>
+            </div>
+            <div class="admin-form-grid">
+                <label class="admin-field admin-field--wide">
+                    {{ form.existing_parent.label }}
+                    {{ form.existing_parent }}
+                    <span class="admin-field__help">{{ form.existing_parent.help_text }}</span>
+                    {% for error in form.existing_parent.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}
+                </label>
+            </div>
+            <div class="admin-form-grid" data-new-parent-fields>
+                {% for field in form %}
+                    {% if field.name == "parent_first_name" or field.name == "parent_last_name" or field.name == "parent_email" or field.name == "parent_phone" or field.name == "parent_address" %}
+                        <label class="admin-field{% if field.name == 'parent_address' %} admin-field--wide{% endif %}">
+                            {{ field.label }}
+                            {{ field }}
+                            {% for error in field.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}
+                        </label>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="admin-panel admin-form-section">
+            <div class="admin-form-section__heading">
+                <span class="admin-form-section__number">4</span>
+                <h2>TutorIn zuweisen und übernehmen</h2>
+            </div>
+            <div class="admin-form-grid">
+                <label class="admin-field admin-field--wide">
+                    {{ form.assigned_tutor.label }}
+                    {{ form.assigned_tutor }}
+                    <span class="admin-field__help">{{ form.assigned_tutor.help_text }}</span>
+                    {% for error in form.assigned_tutor.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}
+                </label>
+            </div>
+            <p class="admin-field__help">Beim Speichern werden die Konten angelegt, die TutorIn zugewiesen, Passwort-Mails versendet und der Lead als „Gewonnen“ abgeschlossen.</p>
+            <div class="admin-button-row">
+                <button class="admin-button" type="submit">Konten verbindlich anlegen</button>
+                <a class="admin-button admin-button--secondary" href="{{ next_url }}">Abbrechen</a>
+            </div>
+        </section>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        (function () {
+            const form = document.querySelector("[data-family-conversion-form]");
+            if (!form) return;
+            const parentSection = form.querySelector("[data-parent-section]");
+            const newParentFields = form.querySelector("[data-new-parent-fields]");
+            const existingParent = form.querySelector("[name='existing_parent']");
+            const kindInputs = form.querySelectorAll("[name='student_kind']");
+
+            function selectedKind() {
+                const selected = form.querySelector("[name='student_kind']:checked");
+                return selected ? selected.value : "with_parent";
+            }
+
+            function refresh() {
+                const needsParent = selectedKind() === "with_parent";
+                parentSection.hidden = !needsParent;
+                newParentFields.hidden = !needsParent || Boolean(existingParent.value);
+            }
+
+            kindInputs.forEach((input) => input.addEventListener("change", refresh));
+            existingParent.addEventListener("change", refresh);
+            refresh();
+        }());
+    </script>
+    {% if google_maps_api_key %}
+        <script src="{% static 'core/address_autocomplete.js' %}"></script>
+        <script async src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&loading=async&libraries=places&callback=initAddressAutocomplete"></script>
+    {% endif %}
+{% endblock %}

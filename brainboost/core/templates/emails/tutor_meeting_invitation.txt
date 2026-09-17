@@ -1,0 +1,15 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Hallo {{ lead_name }},
+
+{% if is_rescheduled %}der Termin für dein Kennenlerngespräch mit BrainBoost wurde auf deinen Wunsch geändert.{% else %}dein Kennenlerngespräch mit BrainBoost ist geplant. Wir freuen uns darauf, dich persönlich kennenzulernen.{% endif %}
+
+Datum: {{ meeting_date }}
+Uhrzeit: {{ meeting_time }} Uhr
+
+Zum vereinbarten Termin kannst du über unseren BigBlueButton-Raum teilnehmen:
+{{ meeting_url }}
+
+Viele Grüße
+Dein BrainBoost-Team
+{% endblock %}
