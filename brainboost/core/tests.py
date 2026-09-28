@@ -2031,7 +2031,7 @@ class ProfileNumberTests(TestCase):
         self.assertEqual(parent.customer_number, "ELT-000-001")
         self.assertEqual(student.profile_number, "SCHU-000-001")
         self.assertEqual(independent_student.profile_number, "STUD-000-001")
-        self.assertEqual(tutor.tutor_number, "TUT-000-001")
+        self.assertEqual(tutor.tutor_number, "TUT2")
 
     def test_profile_page_shows_tutor_number(self):
         user = CustomUser.objects.create_user(

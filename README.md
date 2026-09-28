@@ -221,3 +221,36 @@ prüft die Python-Abhängigkeiten, Django, fehlende Migrationen und PDF-Erzeugun
 ## Lizenz
 
 Copyright © 2025-2026 BrainBoost Nachhilfe. Alle Rechte vorbehalten.
+
+### Hierarchische TutorInnenbezeichnungen
+
+Die Migration `0070_hierarchical_tutor_numbers` ersetzt bestehende TutorInnennummern.
+Kiara Puppe wird bei dieser Erstumstellung anhand ihres Vor- und Nachnamens eindeutig
+ermittelt und erhält `TUT1`. Direkt zugeordnete TutorInnen erhalten `TUT1-1`,
+`TUT1-2` usw.; deren TutorInnen beispielsweise `TUT1-1-1`. Die Zählung beginnt
+auf jeder Unterebene bei 1. Andere TutorInnen ohne übergeordnete Person erhalten
+`TUT2`, `TUT3` usw.; `TUT1` bleibt für Kiara reserviert. Bei der Erstumstellung
+bestimmt die aufsteigende Datenbank-ID die Reihenfolge unter Geschwistern.
+
+Zuordnungen werden im TutorInnenprofil unter **Assigned tutors** gepflegt: Dort
+stehen die untergeordneten TutorInnen. Eine Person darf genau eine übergeordnete
+TutorIn haben; Selbstzuordnungen und Kreise werden abgewiesen. Bei einer Umordnung
+werden die Bezeichnungen der betroffenen Person und ihrer untergeordneten
+TutorInnen angepasst. Bereits vergebene Nummern werden niemals erneut vergeben.
+Das gilt auch für die vor einer Umordnung verwendeten Nummern.
+
+Im Django-Admin zeigt **TutorInnenbezeichnungen (Archiv)** die aktuellen und
+archivierten Nummern einschließlich der ursprünglichen Profil-ID. Löschen eines
+Profils oder Benutzerkontos erhält diese Reservierungen. Untergeordnete Personen
+behalten nach dem Löschen ihrer übergeordneten Person zunächst ihre Nummer;
+erst eine ausdrückliche neue Zuordnung ändert diese. Bezeichnungen sind nicht
+manuell editierbar. Änderungen der Hierarchie müssen über den Admin oder den
+Django-Many-to-many-Manager erfolgen, nicht per SQL oder direktem Schreiben in
+die Zwischentabelle; `bulk_create` für TutorInnen umgeht ebenfalls die Vergabe.
+
+Deployment: Datenbank sichern, Schreibzugriffe während der Umstellung pausieren,
+Code aktualisieren, `python manage.py migrate` ausführen und Web-App neu laden.
+Die Migration bricht bei mehrdeutiger Kiara-Zuordnung, mehreren übergeordneten
+Personen oder Kreisen ab, ohne diese Beziehungen selbst zu verändern. Diese
+Datenfehler müssen zuerst bereinigt werden. Die Datenmigration ist absichtlich
+nicht rückwärts ausführbar; für einen Rollback das vorherige Backup verwenden.

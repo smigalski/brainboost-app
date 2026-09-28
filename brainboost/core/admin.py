@@ -12,6 +12,7 @@ from .models import (
     ParentProfile,
     StudentProfile,
     TutorProfile,
+    TutorNumberReservation,
     Lesson,
     ProgressEntry,
     Invoice,
@@ -33,6 +34,17 @@ class TutorProfileAdminForm(forms.ModelForm):
             "Bewerbungsabsagen und Warteliste über den zugehörigen Lead verwalten. "
             "Dort werden Status und E-Mail-Benachrichtigung zusammen aktualisiert."
         )
+
+    def clean_assigned_tutors(self):
+        from .tutor_numbers import hierarchy_edges, root_ids, validate_hierarchy
+
+        tutors = self.cleaned_data["assigned_tutors"]
+        using = self.instance._state.db or "default"
+        parent_id = self.instance.pk or -1
+        edges = {(parent, child) for parent, child in hierarchy_edges(using) if parent != parent_id}
+        edges.update((parent_id, tutor.pk) for tutor in tutors)
+        validate_hierarchy(edges, root_ids(using))
+        return tutors
 
     class Meta:
         model = TutorProfile
@@ -139,6 +151,7 @@ class TutorProfileAdmin(admin.ModelAdmin):
     list_filter = ("status", "tax_number_pending")
     search_fields = ("tutor_number", "user__username", "user__first_name", "user__last_name", "user__email")
     filter_horizontal = ("assigned_tutors",)
+    readonly_fields = ("tutor_number",)
 
     @property
     def media(self):
@@ -337,3 +350,19 @@ class LeadAdmin(admin.ModelAdmin):
         for lead in queryset.order_by("-created_at"):
             writer.writerow([getattr(lead, field) for field in fields])
         return response
+
+
+@admin.register(TutorNumberReservation)
+class TutorNumberReservationAdmin(admin.ModelAdmin):
+    list_display = ("number", "tutor", "original_tutor_id", "created_at", "archived_at")
+    search_fields = ("number",)
+    readonly_fields = ("number", "tutor", "original_tutor_id", "created_at", "archived_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

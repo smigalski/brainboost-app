@@ -212,7 +212,7 @@ class TutorProfile(models.Model):
 
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
-    tutor_number = models.CharField(max_length=12, unique=True, null=True, blank=True)
+    tutor_number = models.CharField(max_length=255, unique=True, null=True, blank=True, editable=False)
     account_holder = models.CharField(max_length=255, blank=True)
     bank_name = models.CharField(max_length=255, blank=True)
     iban = models.CharField(max_length=34, blank=True)
@@ -246,9 +246,20 @@ class TutorProfile(models.Model):
         return f"TutorIn: {self.user.display_name}"
 
     def save(self, *args, **kwargs):
-        if not self.tutor_number:
-            self.tutor_number = _next_profile_number(TutorProfile, "tutor_number", "TUT")
-        super().save(*args, **kwargs)
+        from django.db import router
+        from .tutor_numbers import assign_initial_number, lock_numbers
+
+        using = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=using):
+            lock_numbers(using)
+            if self.pk:
+                # Do not overwrite a number changed by a hierarchy update on another instance.
+                self.tutor_number = type(self).objects.using(using).get(pk=self.pk).tutor_number
+            else:
+                self.tutor_number = None
+            super().save(*args, **kwargs)
+            if not self.tutor_number:
+                assign_initial_number(self, using)
 
     @property
     def is_active_tutor(self) -> bool:
@@ -265,6 +276,25 @@ class TutorProfile(models.Model):
                 (self.tax_number or "").strip() or self.tax_number_pending,
             ]
         )
+
+
+class TutorNumberLock(models.Model):
+    """Singleton row used to serialize number allocation and hierarchy updates."""
+
+
+class TutorNumberReservation(models.Model):
+    number = models.CharField(max_length=255, unique=True)
+    tutor = models.ForeignKey(TutorProfile, null=True, blank=True, on_delete=models.SET_NULL)
+    original_tutor_id = models.PositiveBigIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "TutorInnenbezeichnung (Reservierung)"
+        verbose_name_plural = "TutorInnenbezeichnungen (Archiv)"
+
+    def __str__(self):
+        return self.number
 
 
 class TemporaryTutorAssignment(models.Model):
