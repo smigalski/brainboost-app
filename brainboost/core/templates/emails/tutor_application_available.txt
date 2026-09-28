@@ -1,0 +1,18 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Hallo {{ lead_name }},
+
+wir haben wieder SchülerInnen zu vergeben und möchten mit dir besprechen, ob ein passender Einsatz für dich möglich ist.
+
+Hast du weiterhin Interesse und Zeit, bei BrainBoost Nachhilfe zu geben? Melde dich bitte in deinem Dashboard an und bestätige dort dein Interesse:
+{{ dashboard_url }}#bewerbung
+
+Wenn du aktuell keine Zeit hast, kannst du dort auch auswählen, auf der Warteliste zu bleiben.
+
+Nach deiner Rückmeldung stimmen wir die nächsten Schritte und gegebenenfalls das Kennenlernen oder Onboarding mit dir ab. Die konkrete Zuordnung der SchülerInnen erfolgt anschließend gemeinsam.
+
+Bei Fragen antworte gern auf diese E-Mail.
+
+Viele Grüße
+Dein BrainBoost-Team
+{% endblock %}

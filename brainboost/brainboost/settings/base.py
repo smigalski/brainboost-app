@@ -202,6 +202,7 @@ EMAIL_NOTIFICATIONS = {
     "material_uploaded": True,
     "monthly_brainboost_feedback": True,
     "lead_created": True,
+    "tutor_application_status": True,
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

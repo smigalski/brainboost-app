@@ -88,6 +88,28 @@
     </style>
     <div class="tutor-dashboard-grid">
         <div style="display:flex; flex-direction:column; gap:14px;">
+            {% if application_lead.status == "waitlisted" or application_lead.status == "availability_requested" or application_lead.status == "interested" %}
+                <section class="card" id="bewerbung">
+                    <h3>Deine Bewerbung</h3>
+                    {% if application_lead.status == "availability_requested" %}
+                        <p>Wir haben wieder SchülerInnen zu vergeben. Hast du weiterhin Interesse und Zeit für Nachhilfe?</p>
+                        {% with invitation=application_lead.application_email %}
+                            <form method="post" action="{% url 'tutor_application_respond' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="request_id" value="{{ invitation.pk }}">
+                                <button class="button" name="answer" value="interested" type="submit">Ja, ich habe Interesse</button>
+                                <button class="button" name="answer" value="wait" type="submit">Aktuell keine Zeit – auf Warteliste bleiben</button>
+                            </form>
+                        {% endwith %}
+                        <p class="muted">Die konkrete Zuordnung und den Start stimmen wir anschließend mit dir ab.</p>
+                    {% elif application_lead.status == "interested" %}
+                        <p>Danke für deine Interessenbestätigung! Wir prüfen passende SchülerInnen und melden uns zu den nächsten Schritten.</p>
+                    {% else %}
+                        <p>Du stehst auf unserer Warteliste. Aktuell sind alle SchülerInnen vergeben. Sobald wieder Bedarf besteht, melden wir uns per E-Mail bei dir.</p>
+                        <p class="muted">Wenn sich deine Verfügbarkeit ändert oder du nicht mehr auf der Warteliste bleiben möchtest, antworte bitte auf unsere E-Mail.</p>
+                    {% endif %}
+                </section>
+            {% endif %}
             <details class="tutor-onboarding-disclosure" style="padding:14px 16px; border-radius:16px; background:rgba(31,102,102,0.08); border:1px solid rgba(31,102,102,0.16);">
                 <summary style="display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; list-style:none;">
                     <div>

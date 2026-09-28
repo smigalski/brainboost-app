@@ -118,6 +118,7 @@ def dashboard(request):
             context["is_admin_tutor"] = request.user.is_superuser
             context["tutor_profile"] = tutor_profile
             context["tutor_status_label"] = tutor_profile.get_status_display()
+            context["application_lead"] = Lead.objects.filter(converted_tutor=tutor_profile).first()
             context["tutor_can_create_accounts"] = can_create_accounts
             context["tutor_onboarding_steps"] = _tutor_onboarding_steps(tutor_profile)
             context["can_send_broadcast_email"] = _has_admin_access(request.user)

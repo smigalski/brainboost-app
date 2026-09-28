@@ -417,6 +417,7 @@ def _tutor_onboarding_steps(tutor_profile: TutorProfile) -> list[dict]:
         TutorProfile.Status.MET,
         TutorProfile.Status.ACCEPTED,
         TutorProfile.Status.REJECTED,
+        TutorProfile.Status.WAITLISTED,
     } else TutorProfile.Status.ACCEPTED
     successful_meeting_done = status in {
         TutorProfile.Status.ACCEPTED,
@@ -440,11 +441,12 @@ def _tutor_onboarding_steps(tutor_profile: TutorProfile) -> list[dict]:
             "done": successful_meeting_done,
             "status_label": meeting_status,
             "description": (
-                "Dein Profil wird innerhalb von 7 Tagen gelöscht."
+                "Leider können wir deine Bewerbung derzeit nicht weiter berücksichtigen. Bei Fragen melde dich gern bei uns."
                 if rejected
-                else ""
+                else "Du stehst auf der Warteliste. Wir melden uns, sobald wieder SchülerInnen zu vergeben sind."
+                if status == TutorProfile.Status.WAITLISTED else ""
             ),
-            "show_bbb_button": bool(tutor_profile.bbb_link) and not rejected,
+            "show_bbb_button": bool(tutor_profile.bbb_link) and not rejected and status != TutorProfile.Status.WAITLISTED,
             "bbb_link": tutor_profile.bbb_link,
         },
         {

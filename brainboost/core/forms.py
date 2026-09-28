@@ -507,6 +507,14 @@ class TutorStudentAssignmentForm(forms.Form):
             self.add_error("source_tutor", "Bitte wähle eine Quell-TutorIn aus.")
             return cleaned
         target_tutor = cleaned.get("target_tutor")
+        if target_tutor and (
+            target_tutor.status == TutorProfile.Status.WAITLISTED
+            or Lead.objects.filter(
+                converted_tutor=target_tutor,
+                status__in=[Lead.Status.WAITLISTED, Lead.Status.AVAILABILITY_REQUESTED, Lead.Status.INTERESTED],
+            ).exists()
+        ):
+            self.add_error("target_tutor", "Bitte zuerst das Interesse bestätigen lassen und die Bewerbung in der Lead-Zentrale weiterführen.")
         if source_tutor and target_tutor and source_tutor.pk == target_tutor.pk:
             self.add_error("target_tutor", "Quell- und Ziel-TutorIn dürfen nicht identisch sein.")
 

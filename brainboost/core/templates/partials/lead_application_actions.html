@@ -1,0 +1,33 @@
+{% if lead.role == "tutor" %}
+    {% with email=lead.application_email %}
+        {% if email %}
+            {% if email.sent_at %}
+                <span class="muted">Bewerbungs-E-Mail versendet: {{ email.sent_at|date:"d.m.Y H:i" }}</span>
+            {% else %}
+                <span class="muted">{{ email.error|default:"Bewerbungs-E-Mail noch nicht versendet." }}</span>
+                <form method="post" action="{% url 'lead_retry_application_email' lead.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button class="button admin-button--secondary" type="submit">Bewerbungs-E-Mail erneut versuchen</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    {% endwith %}
+    {% if lead.status == "waitlisted" and lead.converted_tutor_id %}
+        <form method="post" action="{% url 'lead_update_status' lead.id %}" onsubmit="return confirm('Verfügbarkeit bei dieser TutorIn per E-Mail anfragen?');">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" name="status" value="availability_requested">
+            <button class="button" type="submit">Verfügbarkeit anfragen</button>
+        </form>
+    {% elif lead.status == "interested" %}
+        <form method="post" action="{% url 'lead_resume_application' lead.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="button" type="submit">Bewerbung weiterführen</button>
+        </form>
+    {% endif %}
+    {% if lead.converted_tutor_id %}
+        <a class="button admin-button--secondary" href="{% url 'admin:core_tutorprofile_change' lead.converted_tutor_id %}">Profil / Onboarding</a>
+    {% endif %}
+{% endif %}

@@ -1,0 +1,12 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p>Hallo {{ lead_name }},</p>
+<p>wir haben wieder SchülerInnen zu vergeben und möchten mit dir besprechen, ob ein passender Einsatz für dich möglich ist.</p>
+<p>Hast du weiterhin Interesse und Zeit, bei BrainBoost Nachhilfe zu geben? Melde dich bitte in deinem Dashboard an und bestätige dort dein Interesse:</p>
+<p><a href="{{ dashboard_url }}#bewerbung" style="display:inline-block;padding:12px 18px;border-radius:8px;background:#176b68;color:#fff;font-weight:700;text-decoration:none;">Verfügbarkeit im Dashboard rückmelden</a></p>
+<p>Falls die Schaltfläche nicht funktioniert: <a href="{{ dashboard_url }}#bewerbung">{{ dashboard_url }}#bewerbung</a></p>
+<p>Wenn du aktuell keine Zeit hast, kannst du dort auch auswählen, auf der Warteliste zu bleiben.</p>
+<p>Nach deiner Rückmeldung stimmen wir die nächsten Schritte und gegebenenfalls das Kennenlernen oder Onboarding mit dir ab. Die konkrete Zuordnung der SchülerInnen erfolgt anschließend gemeinsam.</p>
+<p>Bei Fragen antworte gern auf diese E-Mail.</p>
+<p>Viele Grüße<br>Dein BrainBoost-Team</p>
+{% endblock %}

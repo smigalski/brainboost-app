@@ -162,6 +162,42 @@ Danach Web-App in PythonAnywhere neu laden.
 PythonAnywhere muss für diese Version mit Python 3.13 und PostgreSQL 16 laufen.
 Web-App, virtuelle Umgebung und Tasks müssen dieselbe Python-Version verwenden.
 
+## Bewerbungen, Absagen und TutorInnen-Warteliste
+
+In der **Lead-Zentrale** (oder im Django-Admin beim zugehörigen **Lead**) steuert
+der Bewerbungsstatus die folgenden E-Mails:
+
+- **Unpassend:** wertschätzende Absage an die TutorIn. Das verknüpfte Tutorprofil
+  erhält den Status „abgelehnt“. Eltern-/SchülerInnen-Leads erhalten keine
+  TutorInnen-Absage.
+- **Warteliste:** E-Mail, dass aktuell keine SchülerInnen verfügbar sind. Das
+  Tutorprofil bleibt auf „Warteliste“; es wird nicht automatisch aktiviert.
+- **Verfügbarkeit anfragen:** In der Warteliste gezielt passende TutorInnen
+  auswählen. Die E-Mail führt zum persönlichen Dashboard. Dort kann die TutorIn
+  ihr Interesse bestätigen oder auf der Warteliste bleiben.
+- **Interesse bestätigt:** Das Team wird an `LEAD_NOTIFICATION_EMAIL` informiert.
+  Mit **Bewerbung weiterführen** wird der frühere Bewerbungs-/Onboardingstand
+  wiederhergestellt. Danach Kennenlernen bzw. Onboarding abschließen und unter
+  **SchülerInnen und Zuweisungen verwalten** passende Lernprofile zuweisen.
+
+Die Warteliste bleibt unabhängig vom Zeitraumfilter sichtbar. Fächer, Klassen
+und Verfügbarkeit helfen bei der manuellen Auswahl; freie Kapazitäten werden
+nicht automatisch aus bestehenden Zuweisungen abgeleitet. Vor der Wiederaufnahme
+verhindern die Zuweisungsformulare neue SchülerInnen-Zuweisungen.
+
+Die E-Mails werden erst nach erfolgreichem Speichern versendet. Fehler erscheinen
+unter **Ausstehende Bewerbungs-E-Mails** und können dort erneut versucht werden.
+Das erneute Speichern desselben Status versendet keine weitere Nachricht. Für
+ältere Bewerbungen ohne Konto zunächst **Zur TutorIn machen** verwenden; die
+Warteliste bleibt dabei erhalten. **Mail erneut senden** verschickt weiterhin
+die Passwort-Mail, nicht die Bewerbungsentscheidung.
+
+`EMAIL_NOTIFICATIONS["tutor_application_status"]` steuert diese Benachrichtigungen.
+SMTP, Absender und Reply-To verwenden die bestehende `MAILERS`-Konfiguration.
+Interne Notizen und SchülerInnendaten werden nicht an BewerberInnen versendet.
+Migration `0069_tutor_application_waitlist` legt Status und Versandprotokoll an;
+sie versendet keine E-Mails für bestehende Bewerbungen.
+
 ## Continuous Integration
 
 GitHub Actions fuehrt bei jedem Push, Pull Request und manuellen Start den Workflow

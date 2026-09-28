@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block content %}
+<p><strong>{{ lead_name }}</strong> hat die Anfrage von der Warteliste beantwortet und weiterhin Interesse an Nachhilfe bei BrainBoost bestätigt.</p>
+<p><strong>Fächer:</strong> {{ subjects|default:"Noch nicht angegeben" }}<br><strong>Bisher angegebene Verfügbarkeit:</strong> {{ availability|default:"Noch nicht angegeben" }}</p>
+<p>Bitte die Bewerbung weiterführen, die aktuelle Verfügbarkeit abstimmen und das Kennenlernen bzw. Onboarding prüfen. Danach können passende SchülerInnen zugewiesen werden.</p>
+<p><a href="{{ admin_url }}">Bewerbung in der Warteliste öffnen</a></p>
+{% endblock %}

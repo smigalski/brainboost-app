@@ -1,5 +1,8 @@
 from .common import *
 from django.utils.dateparse import parse_datetime
+from django.core.exceptions import ValidationError
+from ..models import LeadStatusEmail
+from ..tutor_applications import WAITLIST_STATUSES, deliver_application_email, validate_application_transition
 
 
 MEETING_INVITATION_SUBJECT = "BrainBoost: Einladung zum Kennenlerngespräch"
@@ -255,6 +258,14 @@ def lead_dashboard(request):
         "open_leads": open_leads,
         "recent_leads": leads.order_by("-created_at")[:30],
         "lead_status_choices": Lead.Status.choices,
+        # Keep older applicants visible independently of the acquisition period.
+        "waitlisted_leads": Lead.objects.filter(
+            role=Lead.Role.TUTOR, status__in=WAITLIST_STATUSES,
+        ).select_related("converted_tutor__user").order_by("waitlisted_at", "created_at"),
+        "application_email_issues": LeadStatusEmail.objects.filter(
+            sent_at__isnull=True, status=F("lead__status"),
+            status_changed_at=F("lead__last_status_change_at"),
+        ).select_related("lead"),
     }
     return render(request, "lead_dashboard.html", context)
 
@@ -320,6 +331,18 @@ def lead_update_status(request, lead_id):
     if next_status not in valid_statuses:
         messages.error(request, "Ungültiger Lead-Status.")
         return redirect(next_url)
+
+    if next_status == Lead.Status.INTERESTED and lead.status != next_status:
+        messages.error(request, "Das Interesse bestätigt die TutorIn selbst im eigenen Dashboard.")
+        return redirect(next_url)
+    previous_status = lead.status
+    lead.status = next_status
+    try:
+        validate_application_transition(lead, previous_status)
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+        return redirect(next_url)
+    lead.status = previous_status
 
     is_rescheduled = (
         lead.status == Lead.Status.APPOINTMENT_PLANNED
@@ -393,6 +416,7 @@ def lead_update_status(request, lead_id):
         lead.save(update_fields=update_fields)
 
         if invite_to_meeting and tutor_profile is not None:
+            tutor_profile.refresh_from_db()
             tutor_update_fields = []
             if tutor_profile.bbb_link != meeting_url:
                 tutor_profile.bbb_link = meeting_url
@@ -419,7 +443,80 @@ def lead_update_status(request, lead_id):
             )
     else:
         messages.success(request, f"Status von {lead.name} wurde auf {lead.get_status_display()} gesetzt.")
+        _application_email_feedback(request, lead)
     return redirect(next_url)
+
+
+def _application_email_feedback(request, lead):
+    record = lead.application_email
+    if record:
+        if record.sent_at:
+            messages.success(request, "Die Bewerbungs-E-Mail wurde versendet.")
+        elif record.error:
+            messages.warning(request, f"Der Status wurde gespeichert, die E-Mail jedoch nicht versendet: {record.error}")
+        else:
+            messages.info(request, "Die Bewerbungs-E-Mail ist zum Versand vorgemerkt.")
+
+
+@login_required
+def lead_retry_application_email(request, lead_id):
+    if not _has_admin_access(request.user):
+        return HttpResponse(status=403)
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    lead = get_object_or_404(Lead, pk=lead_id, role=Lead.Role.TUTOR)
+    record = lead.application_email
+    if record:
+        deliver_application_email(record.pk)
+        _application_email_feedback(request, lead)
+    else:
+        messages.info(request, "Für den aktuellen Status liegt keine versendbare Bewerbungs-E-Mail vor.")
+    return redirect(_safe_admin_next_url(request))
+
+
+@login_required
+def tutor_application_respond(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
+        return HttpResponse(status=403)
+    answer = request.POST.get("answer")
+    if answer not in {"interested", "wait"}:
+        return HttpResponse(status=400)
+    with transaction.atomic():
+        lead = get_object_or_404(
+            Lead.objects.select_for_update(), converted_tutor=request.user.tutor_profile,
+        )
+        record = lead.application_email
+        if (
+            lead.status != Lead.Status.AVAILABILITY_REQUESTED or not record
+            or str(record.pk) != request.POST.get("request_id")
+        ):
+            messages.info(request, "Diese Anfrage ist bereits beantwortet oder nicht mehr aktuell.")
+            return redirect("dashboard")
+        lead.status = Lead.Status.INTERESTED if answer == "interested" else Lead.Status.WAITLISTED
+        lead._interest_confirmed = answer == "interested"
+        lead.save(update_fields=["status", "updated_at"])
+    messages.success(request, "Danke! Dein Interesse ist bestätigt. Wir melden uns zu den nächsten Schritten."
+                     if answer == "interested" else "Danke für deine Rückmeldung. Du bleibst auf der Warteliste.")
+    return redirect("dashboard")
+
+
+@login_required
+def lead_resume_application(request, lead_id):
+    if not _has_admin_access(request.user):
+        return HttpResponse(status=403)
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    with transaction.atomic():
+        lead = get_object_or_404(Lead.objects.select_for_update(), pk=lead_id, role=Lead.Role.TUTOR)
+        if lead.status != Lead.Status.INTERESTED:
+            messages.error(request, "Die TutorIn muss zuerst ihr Interesse bestätigen.")
+            return redirect(_safe_admin_next_url(request))
+        lead.status = Lead.Status.CONTACTED
+        lead.save(update_fields=["status", "updated_at"])
+    messages.success(request, "Bewerbung wieder aufgenommen. Bitte Kennenlernen bzw. Onboarding fortführen und passende SchülerInnen zuweisen.")
+    return redirect(_safe_admin_next_url(request))
 
 
 @login_required
@@ -456,7 +553,15 @@ def lead_convert_to_tutor(request, lead_id):
         return redirect(next_url)
 
     try:
-        user = _create_tutor_from_lead(lead)
+        preserve_status = lead.status in WAITLIST_STATUSES or lead.status == Lead.Status.UNSUITABLE
+        user = _create_tutor_from_lead(lead, mark_lead_won=not preserve_status)
+        if preserve_status:
+            # Older applications may not have a linked account yet.
+            user.tutor_profile.status = (
+                TutorProfile.Status.REJECTED if lead.status == Lead.Status.UNSUITABLE
+                else TutorProfile.Status.WAITLISTED
+            )
+            user.tutor_profile.save(update_fields=["status"])
         _send_set_password_email(request, user)
     except ValueError:
         messages.error(

@@ -1,0 +1,13 @@
+<form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <select name="status" aria-label="Status von {{ lead.name }} ändern" data-lead-status-select data-current-status="{{ lead.status }}" data-lead-name="{{ lead.name }}" data-lead-role="{{ lead.role }}">
+        {% for value, label in lead_status_choices %}
+            {% if lead.role == "tutor" or value != "waitlisted" and value != "availability_requested" and value != "interested" %}
+                <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}{% if value == "interested" and lead.status != value %} disabled{% endif %}>{{ label }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <noscript><button class="button" type="submit">Status speichern und ggf. E-Mail senden</button></noscript>
+</form>
+{% if lead.appointment_at and lead.status == "appointment_planned" %}<span class="muted">{{ lead.appointment_at|date:"d.m.Y H:i" }} Uhr</span>{% endif %}

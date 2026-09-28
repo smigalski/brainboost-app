@@ -71,6 +71,7 @@
 
     <nav class="admin-subnav" aria-label="Bereiche der Lead-Zentrale">
         <a href="#open-leads">Offene Leads</a>
+        <a href="#tutor-waitlist">TutorInnen-Warteliste</a>
         <a href="#lead-analysis">Auswertung</a>
         <a href="#campaign-performance">Kampagnen</a>
         <a href="#recent-leads">Neueste Leads</a>
@@ -82,6 +83,7 @@
                 <h2 id="open-leads-heading">Jetzt bearbeiten</h2>
                 <p>Neue und kontaktierte Leads ohne abgeschlossenes Follow-up.</p>
                 <p>Bei TutorInnen versendet der Wechsel von <strong>Kontaktiert</strong> auf <strong>Termin geplant</strong> automatisch die Einladung und hinterlegt den gemeinsamen BBB-Raum.</p>
+                <p><strong>Unpassend</strong> sendet eine Absage. <strong>Warteliste</strong> informiert über fehlende SchülerInnen. Das gilt ausschließlich für TutorInnen-Bewerbungen.</p>
             </div>
         </div>
         <div class="admin-table-wrap">
@@ -97,16 +99,7 @@
                                 <span class="muted">{{ lead.email|default:lead.phone }}</span>
                             </td>
                             <td data-lead-status-cell="{{ lead.id }}">
-                                <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" data-lead-status-select data-current-status="{{ lead.status }}" data-lead-name="{{ lead.name }}">
-                                        {% for value, label in lead_status_choices %}
-                                            <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </form>
-                                {% if lead.appointment_at %}<span class="muted">{{ lead.appointment_at|date:"d.m.Y H:i" }} Uhr</span>{% endif %}
+                                {% include "partials/lead_status_form.html" with lead=lead %}
                             </td>
                             <td>{{ lead.follow_up_date|date:"d.m.Y"|default:"–" }}</td>
                             <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
@@ -119,6 +112,53 @@
             </table>
         </div>
     </section>
+
+    <section class="admin-panel" id="tutor-waitlist" aria-labelledby="tutor-waitlist-heading">
+        <div class="admin-section-heading">
+            <div>
+                <h2 id="tutor-waitlist-heading">TutorInnen-Warteliste</h2>
+                <p>Alle wartenden Bewerbungen, unabhängig vom Zeitraumfilter. Wählt bei neuem Bedarf passende TutorInnen aus und fragt ihre Verfügbarkeit an.</p>
+                <p>Nach der Interessenbestätigung: Bewerbung weiterführen, Kennenlernen oder Onboarding abschließen und die SchülerInnen im Lernprofil zuweisen.</p>
+                <a class="admin-button admin-button--secondary" href="{% url 'admin:core_studentprofile_changelist' %}">SchülerInnen und Zuweisungen verwalten</a>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>TutorIn</th><th>Fächer / Klassen</th><th>Verfügbarkeit</th><th>Status</th><th>Aktionen</th></tr></thead>
+                <tbody>
+                    {% for lead in waitlisted_leads %}
+                        <tr>
+                            <td><a href="{% url 'admin:core_lead_change' lead.pk %}">{{ lead.name }}</a><br><span class="muted">Seit {{ lead.waitlisted_at|date:"d.m.Y" }}</span></td>
+                            <td>{{ lead.teaching_subjects|default:lead.subject }}<br>{{ lead.teaching_grades|default:lead.grade }}<br>{{ lead.get_tutoring_type_display }}</td>
+                            <td>{{ lead.weekly_availability|default:"Noch nicht angegeben" }}</td>
+                            <td>{% include "partials/lead_status_form.html" with lead=lead %}</td>
+                            <td>{% include "partials/lead_admin_actions.html" with lead=lead %}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5">Aktuell stehen keine Bewerbungen auf der Warteliste.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {% if application_email_issues %}
+        <section class="admin-panel" aria-labelledby="application-email-issues-heading">
+            <h2 id="application-email-issues-heading">Ausstehende Bewerbungs-E-Mails</h2>
+            <p>Diese Benachrichtigungen wurden noch nicht versendet. Der gespeicherte Bewerbungsstatus bleibt erhalten.</p>
+            {% for email in application_email_issues %}
+                <div class="lead-inline-actions">
+                    <strong>{{ email.lead.name }} · {{ email.get_status_display }}</strong>
+                    <span>{{ email.error|default:"Versand ausstehend." }}</span>
+                    <form method="post" action="{% url 'lead_retry_application_email' email.lead_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button class="button" type="submit">Bewerbungs-E-Mail erneut versuchen</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </section>
+    {% endif %}
 
     <section class="admin-panel" id="lead-analysis" aria-labelledby="lead-analysis-heading">
         <div class="admin-section-heading">
@@ -229,16 +269,7 @@
                             <td><a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a></td>
                             <td>{{ lead.get_role_display }}<br><span class="muted">{{ lead.subject|default:"Kein Fach" }}</span></td>
                             <td data-lead-status-cell="{{ lead.id }}">
-                                <form class="lead-status-form" method="post" action="{% url 'lead_update_status' lead.id %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <select name="status" aria-label="Status von {{ lead.name }} ändern" data-lead-status-select data-current-status="{{ lead.status }}" data-lead-name="{{ lead.name }}">
-                                        {% for value, label in lead_status_choices %}
-                                            <option value="{{ value }}"{% if lead.status == value %} selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </form>
-                                {% if lead.appointment_at %}<span class="muted">{{ lead.appointment_at|date:"d.m.Y H:i" }} Uhr</span>{% endif %}
+                                {% include "partials/lead_status_form.html" with lead=lead %}
                             </td>
                             <td>{{ lead.utm_campaign|default:"Ohne Kampagne" }}</td>
                             <td>{% include "partials/lead_admin_actions.html" with lead=lead %}</td>
@@ -471,6 +502,17 @@
         document.querySelectorAll("[data-lead-status-select]").forEach(function (select) {
             select.addEventListener("change", function () {
                 var statusForm = select.form;
+                if (select.dataset.leadRole === "tutor" && select.value !== select.dataset.currentStatus) {
+                    var mailActions = {
+                        unsuitable: "Eine Absage per E-Mail senden?",
+                        waitlisted: "Auf die Warteliste setzen und darüber per E-Mail informieren?",
+                        availability_requested: "Verfügbarkeit per E-Mail anfragen?"
+                    };
+                    if (mailActions[select.value] && !window.confirm(mailActions[select.value])) {
+                        select.value = select.dataset.currentStatus;
+                        return;
+                    }
+                }
                 if (select.value === "appointment_planned") {
                     openMeeting({
                         select: select,

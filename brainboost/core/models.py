@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, FileExtensionValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import get_language
@@ -205,6 +205,7 @@ class TutorProfile(models.Model):
         MET = "kennengelernt", "kennengelernt"
         ACCEPTED = "akzeptiert", "akzeptiert"
         REJECTED = "abgelehnt", "abgelehnt"
+        WAITLISTED = "warteliste", "Warteliste"
         ONBOARDING = "onboarding", "onboarding"
         ACTIVE = "aktiv", "aktiv"
         PAUSED = "pausiert", "pausiert"
@@ -902,6 +903,9 @@ class Lead(models.Model):
         WON = "won", "Gewonnen"
         LOST = "lost", "Verloren"
         UNSUITABLE = "unsuitable", "Unpassend"
+        WAITLISTED = "waitlisted", "Warteliste"
+        AVAILABILITY_REQUESTED = "availability_requested", "Verfügbarkeit angefragt"
+        INTERESTED = "interested", "Interesse bestätigt"
 
     class EducationStatus(models.TextChoices):
         UPPER_SCHOOL = "upper_school", "SchülerIn Oberstufe"
@@ -939,6 +943,8 @@ class Lead(models.Model):
     contacted_at = models.DateTimeField(blank=True, null=True)
     appointment_at = models.DateTimeField(blank=True, null=True)
     last_status_change_at = models.DateTimeField(blank=True, null=True)
+    waitlisted_at = models.DateTimeField(blank=True, null=True)
+    waitlist_previous_tutor_status = models.CharField(max_length=20, blank=True)
     follow_up_date = models.DateField(blank=True, null=True)
     follow_up_done = models.BooleanField(default=False)
     source = models.CharField(max_length=120, blank=True)
@@ -1000,29 +1006,62 @@ class Lead(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.get_role_display()})"
 
-    def save(self, *args, **kwargs):
-        old_status = None
-        if self.pk:
-            old_status = (
-                type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first()
-            )
+    @property
+    def application_email(self):
+        if not self.pk:
+            return None
+        return self.status_emails.filter(status_changed_at=self.last_status_change_at).first()
 
-        status_changed = old_status != self.status
-        if status_changed or not self.last_status_change_at:
-            self.last_status_change_at = timezone.now()
-        if self.status == self.Status.CONTACTED and status_changed and not self.contacted_at:
-            self.contacted_at = timezone.now()
+    def clean(self):
+        super().clean()
+        from .tutor_applications import validate_application_transition
+
+        old_status = type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first()
+        validate_application_transition(self, old_status)
+
+    def save(self, *args, **kwargs):
+        from .tutor_applications import prepare_application_transition, queue_application_email
 
         update_fields = kwargs.get("update_fields")
-        if update_fields is not None:
-            update_fields = set(update_fields)
-            if status_changed or "status" in update_fields:
-                update_fields.add("last_status_change_at")
+        if update_fields is not None and not update_fields:
+            return
+        with transaction.atomic():
+            previous = type(self).objects.select_for_update().filter(pk=self.pk).first() if self.pk else None
+            old_status = previous.status if previous else None
+            writes_status = update_fields is None or "status" in update_fields
+            status_changed = writes_status and old_status != self.status
+            extra_fields = set()
+            if status_changed:
+                extra_fields = prepare_application_transition(self, old_status)
+                self.last_status_change_at = timezone.now()
+                extra_fields.add("last_status_change_at")
                 if self.status == self.Status.CONTACTED and not self.contacted_at:
-                    update_fields.add("contacted_at")
-            kwargs["update_fields"] = update_fields
+                    self.contacted_at = timezone.now()
+                    extra_fields.add("contacted_at")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | extra_fields
+            super().save(*args, **kwargs)
+            if status_changed:
+                queue_application_email(self)
 
-        super().save(*args, **kwargs)
+
+class LeadStatusEmail(models.Model):
+    """Delivery record for an application decision; retries reuse the same record."""
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="status_emails")
+    status = models.CharField(max_length=30, choices=Lead.Status.choices)
+    status_changed_at = models.DateTimeField()
+    recipient = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(blank=True, null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    error = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["lead", "status_changed_at"], name="unique_lead_status_email"),
+        ]
 
 
 class Invoice(models.Model):

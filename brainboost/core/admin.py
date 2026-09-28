@@ -27,6 +27,13 @@ admin.site.site_url = "/admins/"
 
 
 class TutorProfileAdminForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["status"].help_text = (
+            "Bewerbungsabsagen und Warteliste über den zugehörigen Lead verwalten. "
+            "Dort werden Status und E-Mail-Benachrichtigung zusammen aktualisiert."
+        )
+
     class Meta:
         model = TutorProfile
         fields = "__all__"
@@ -94,8 +101,27 @@ class ParentProfileAdmin(admin.ModelAdmin):
     search_fields = ("customer_number", "user__username", "user__first_name", "user__last_name", "user__email")
 
 
+class StudentProfileAdminForm(forms.ModelForm):
+    class Meta:
+        model = StudentProfile
+        fields = "__all__"
+
+    def clean_assigned_tutors(self):
+        tutors = self.cleaned_data["assigned_tutors"]
+        for tutor in tutors:
+            waiting = tutor.status == TutorProfile.Status.WAITLISTED or Lead.objects.filter(
+                converted_tutor=tutor,
+                status__in=[Lead.Status.WAITLISTED, Lead.Status.AVAILABILITY_REQUESTED, Lead.Status.INTERESTED],
+            ).exists()
+            already_assigned = self.instance.pk and self.instance.assigned_tutors.filter(pk=tutor.pk).exists()
+            if waiting and not already_assigned:
+                raise forms.ValidationError("Bitte zuerst das Interesse der TutorIn bestätigen lassen und die Bewerbung in der Lead-Zentrale weiterführen.")
+        return tutors
+
+
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
+    form = StudentProfileAdminForm
     list_display = ("user", "profile_number", "bbb_link", "created_by_tutor")
     list_filter = ("created_by_tutor",)
     search_fields = ("profile_number", "user__username", "user__first_name", "user__last_name", "user__email")
@@ -195,7 +221,7 @@ class LeadAdmin(admin.ModelAdmin):
         "message",
         "internal_notes",
     )
-    readonly_fields = ("created_at", "updated_at", "last_status_change_at")
+    readonly_fields = ("created_at", "updated_at", "last_status_change_at", "waitlisted_at", "application_mail_summary")
     fieldsets = (
         (
             "Kontakt",
@@ -217,6 +243,8 @@ class LeadAdmin(admin.ModelAdmin):
                 "fields": (
                     "contacted_at",
                     "last_status_change_at",
+                    "waitlisted_at",
+                    "application_mail_summary",
                     "follow_up_date",
                     "follow_up_done",
                     "internal_notes",
@@ -268,6 +296,15 @@ class LeadAdmin(admin.ModelAdmin):
         ),
         ("Zeitpunkte", {"fields": ("created_at", "updated_at")}),
     )
+
+    @admin.display(description="Bewerbungs-E-Mail")
+    def application_mail_summary(self, obj):
+        record = obj.application_email
+        if not record:
+            return "Keine E-Mail für diesen Status. Absagen und Wartelisten-E-Mails werden bei einem Statuswechsel automatisch versendet."
+        if record.sent_at:
+            return f"Versendet an {record.recipient} am {record.sent_at:%d.%m.%Y %H:%M}."
+        return (record.error or "Versand ausstehend.") + " Erneuter Versand in der Lead-Zentrale möglich."
 
     @admin.action(description="Ausgewählte Leads als CSV exportieren")
     def export_leads_csv(self, request, queryset):

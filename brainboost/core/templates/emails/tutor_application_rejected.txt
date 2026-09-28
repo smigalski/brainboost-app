@@ -1,0 +1,13 @@
+{% extends "emails/base.txt" %}
+{% block content %}
+Hallo {{ lead_name }},
+
+vielen Dank für dein Interesse an BrainBoost und die Zeit, die du in deine Bewerbung investiert hast.
+
+Nach sorgfältiger Prüfung haben wir uns entschieden, deine Bewerbung derzeit nicht weiterzuverfolgen. Dein Profil passt aktuell leider nicht zu den Anforderungen, für die wir Unterstützung suchen.
+
+Wir wissen dein Interesse sehr zu schätzen und wünschen dir für deinen weiteren Weg alles Gute. Wenn du Fragen zu unserer Rückmeldung hast, kannst du auf diese E-Mail antworten.
+
+Viele Grüße
+Dein BrainBoost-Team
+{% endblock %}
