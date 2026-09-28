@@ -12,8 +12,8 @@
   <a href="https://www.nachhilfe-brainboost.de"><img alt="Live" src="https://img.shields.io/badge/Live-Website-2ea44f?style=for-the-badge"></a>
   <a href="https://brainboost.pythonanywhere.com"><img alt="Deployment" src="https://img.shields.io/badge/Deploy-PythonAnywhere-1f6feb?style=for-the-badge"></a>
   <a href="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/smigalski/brainboost-app/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Django 5.2 LTS" src="https://img.shields.io/badge/Django-5.2%20LTS-0c4b33?style=for-the-badge">
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge">
+  <img alt="Django 6.1" src="https://img.shields.io/badge/Django-6.1-0c4b33?style=for-the-badge">
+  <img alt="PostgreSQL 16" src="https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge">
 </p>
 
 ## Produktueberblick
@@ -52,9 +52,9 @@ BrainBoost ist eine Django-Anwendung fuer den operativen Alltag eines Nachhilfe-
 
 ## Tech Stack
 
-- Python 3.13
-- Django 5.2 LTS
-- PostgreSQL (lokal + Produktion)
+- Python 3.13 (lokaler Patchstand in `.python-version`)
+- Django 6.1.1 (aktuelle stabile Version am 28.09.2026)
+- PostgreSQL 16 (lokal + Produktion)
 - Stripe API
 - WeasyPrint (PDF)
 - Pillow, openpyxl, qrcode
@@ -80,11 +80,13 @@ git clone <REPO_URL>
 cd brainboost-app
 
 # 2) Virtuelle Umgebung
+# Bei einem Python-Wechsel eine neue venv erstellen, die alte vorher sichern.
 python3.13 -m venv .venv
 source .venv/bin/activate
 
 # 3) Dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pip check
 
 # 4) Umgebungsvariablen
 cp .env.example .env
@@ -98,6 +100,25 @@ python manage.py runserver
 
 App lokal: `http://127.0.0.1:8000`
 
+PostgreSQL 16 muss laufen und Datenbank/User müssen zu `POSTGRES_LOCAL_*`
+passen. Auf macOS können die Systemabhängigkeiten mit
+`brew install python@3.13 postgresql@16 pango` und
+`brew services start postgresql@16` eingerichtet werden. Vorhandene Datenbanken
+bei einem Major-Upgrade zuerst sichern; ein neues PostgreSQL-Paket übernimmt
+keinen alten Datenbestand automatisch.
+
+Nach dem Wechsel von Python 3.9 ein neues Terminal öffnen oder die Umgebung
+erneut aktivieren. In VS Code den Interpreter `.venv/bin/python` auswählen.
+`python --version` muss 3.13 anzeigen.
+
+Prüfungen aus dem Repository-Root:
+
+```bash
+python brainboost/manage.py check
+python brainboost/manage.py makemigrations --check --dry-run
+python brainboost/manage.py test core --noinput
+```
+
 ## Wichtige Env-Variablen
 
 Beispielwerte siehe [`.env.example`](.env.example).
@@ -108,6 +129,10 @@ Beispielwerte siehe [`.env.example`](.env.example).
 - `PUBLIC_CONTACT_EMAIL`: öffentliche Kontaktadresse, aktuell `brainboost.nachhilfe@gmail.com`
 - `INTERNAL_CONTACT_EMAIL`: interne Fallback-Adresse, aktuell `brainboost.nachhilfe@gmail.com`
 - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`: SMTP-Zugangsdaten, in Produktion ohne Passwort im Repo
+- `EMAIL_BACKEND`: optionaler Backend-Pfad (Standard: SMTP). Diese Env-Variablen
+  werden in Django 6.1 auf `MAILERS["default"]` abgebildet; bestehende `.env`- und
+  PythonAnywhere-Werte können unverändert bleiben. Für lokale Mail-Vorschauen
+  `django.core.mail.backends.console.EmailBackend` verwenden.
 - `DEFAULT_FROM_EMAIL`, `SERVER_EMAIL`, `DEFAULT_REPLY_TO_EMAIL`: Absender-/Antwortadressen für Systemmails
 - `EMAIL_RECIPIENT` / `LEAD_NOTIFICATION_EMAIL`: Empfänger für Kontaktformular-/Lead-Benachrichtigungen; kann intern weiter auf Gmail zeigen
 - `STRIPE_PUBLIC_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
@@ -115,26 +140,33 @@ Beispielwerte siehe [`.env.example`](.env.example).
 
 ## Deployment (PythonAnywhere)
 
-Typischer Ablauf für einen Branch: `staging`:
+Die erstmalige Umstellung von Python 3.9/Django 4.2 auf den neuen Stack ist in
+[deploy/README.md](deploy/README.md) beschrieben, inklusive Backup, neuer venv,
+Versionsprüfung und Rückweg.
+
+Für spätere Updates nach der Umstellung (im Repository-Root und mit aktivierter
+Python-3.13-venv):
 
 ```bash
 git pull --ff-only origin staging #oder einfach git pull, wenn remote gesetzt ist
-python manage.py migrate #Datenbankmigration in Django
-python manage.py collectstatic --noinput #statische Dateien wie Bilder, PDFs, ...
+python -m pip install -r requirements.txt
+python -m pip check
+export DJANGO_SETTINGS_MODULE=brainboost.settings.production
+python brainboost/manage.py check
+python brainboost/manage.py migrate
+python brainboost/manage.py collectstatic --noinput
 ```
 
 Danach Web-App in PythonAnywhere neu laden.
 
-PythonAnywhere muss fuer diese Version mit Python 3.13 laufen. Nach dem
-Upgrade dort die virtuelle Umgebung mit Python 3.13 neu erstellen oder auf eine
-Python-3.13-venv umstellen und danach `pip install -r requirements.txt`
-ausfuehren.
+PythonAnywhere muss für diese Version mit Python 3.13 und PostgreSQL 16 laufen.
+Web-App, virtuelle Umgebung und Tasks müssen dieselbe Python-Version verwenden.
 
 ## Continuous Integration
 
 GitHub Actions fuehrt bei jedem Push, Pull Request und manuellen Start den Workflow
-`.github/workflows/ci.yml` aus. Der Workflow startet PostgreSQL, installiert die
-Python-Abhaengigkeiten, prueft Django per `manage.py check` und fuehrt
+`.github/workflows/ci.yml` aus. Der Workflow verwendet Python 3.13 und PostgreSQL 16,
+prüft die Python-Abhängigkeiten, Django, fehlende Migrationen und PDF-Erzeugung und führt
 `python brainboost/manage.py test core` aus.
 
 ## Security-Hinweise

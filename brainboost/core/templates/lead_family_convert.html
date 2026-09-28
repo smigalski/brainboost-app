@@ -62,7 +62,7 @@
             </div>
             <div class="admin-form-grid">
                 {% for field in form %}
-                    {% if field.name == "student_first_name" or field.name == "student_last_name" or field.name == "student_email" or field.name == "student_phone" or field.name == "student_address" or field.name == "birth_date" or field.name == "school" or field.name == "grade_level" or field.name == "degree_program" %}
+                    {% if field.name == "student_first_name" or field.name == "student_last_name" or field.name == "student_email" or field.name == "student_phone" or field.name == "student_address" or field.name == "birth_year" or field.name == "school_type" or field.name == "school_state" or field.name == "grade_level" or field.name == "degree_program" %}
                         <label class="admin-field{% if field.name == 'student_address' %} admin-field--wide{% endif %}">
                             {{ field.label }}
                             {{ field }}

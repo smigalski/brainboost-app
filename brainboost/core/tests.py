@@ -25,6 +25,7 @@ from django.utils import timezone
 from .forms import (
     BrainBoostFeedbackForm,
     InvoiceGenerateForm,
+    LeadFamilyConversionForm,
     LearningMaterialForm,
     TutorProfileForm,
 )
@@ -301,7 +302,7 @@ class TutorProfileAdminAddressAutocompleteTests(TestCase):
         self.assertContains(response, "libraries=places")
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     MEDIA_ROOT=tempfile.mkdtemp(),
 )
 class IndependentStudentAccountTests(TestCase):
@@ -438,7 +439,7 @@ class IndependentStudentAccountTests(TestCase):
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     LEAD_NOTIFICATION_EMAIL="operator@example.com",
     DEFAULT_FROM_EMAIL="BrainBoost <brainboost.nachhilfe@gmail.com>",
     DEFAULT_REPLY_TO_EMAIL="brainboost.nachhilfe@gmail.com",
@@ -1083,7 +1084,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertIsNotNone(lead.contacted_at)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
         LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
@@ -1183,7 +1184,7 @@ class LeadAdminToolsTests(TestCase):
         mocked_send.assert_called_once_with(lead, meeting_at, is_rescheduled=False)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
         LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
@@ -1221,7 +1222,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertEqual(len(mail.outbox), 2)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
         LEAD_MEETING_BBB_URL="https://bbb.hawk.de/rooms/tex-roa-yer-dj4/join",
@@ -1274,7 +1275,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertIsNone(lead.appointment_at)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
     )
@@ -1309,8 +1310,9 @@ class LeadAdminToolsTests(TestCase):
                 "student_email": "sina.family@example.com",
                 "student_phone": "",
                 "student_address": "Kindweg 1",
-                "birth_date": "2012-05-04",
-                "school": "Testschule",
+                "birth_year": "2012",
+                "school_type": "Gymnasium",
+                "school_state": "NI",
                 "grade_level": "8. Klasse",
                 "degree_program": "",
                 "existing_parent": "",
@@ -1332,13 +1334,79 @@ class LeadAdminToolsTests(TestCase):
         self.assertEqual(lead.converted_parent.user.email, "maria.family@example.com")
         self.assertEqual(lead.converted_student.user.email, "sina.family@example.com")
         self.assertEqual(lead.converted_student.grade_level, "8. Klasse")
+        self.assertEqual(lead.converted_student.birth_year, 2012)
+        self.assertEqual(lead.converted_student.school_type, "Gymnasium")
+        self.assertEqual(lead.converted_student.school_state, "NI")
+        self.assertIsNone(lead.converted_student.birth_date)
+        self.assertEqual(lead.converted_student.school, "")
         self.assertEqual(lead.converted_student.created_by_tutor, assigned_tutor)
         self.assertTrue(lead.converted_student.parents.filter(pk=lead.converted_parent_id).exists())
         self.assertTrue(lead.converted_student.assigned_tutors.filter(pk=assigned_tutor.pk).exists())
         self.assertEqual(len(mail.outbox), 2)
 
+    def test_family_conversion_renders_year_school_type_and_all_states(self):
+        lead = self._lead()
+        self.client.force_login(self.staff_user)
+
+        response = self.client.get(reverse("lead_convert_to_family", args=[lead.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="birth_year"')
+        self.assertContains(response, 'name="school_type"')
+        self.assertContains(response, 'name="school_state"')
+        self.assertContains(response, 'name="grade_level"')
+        self.assertNotContains(response, 'name="birth_date"')
+        self.assertNotContains(response, 'name="school"')
+        for code, label in StudentProfile.SchoolState.choices:
+            self.assertContains(response, f'<option value="{code}">{label}</option>', html=True)
+
+    def test_family_conversion_rejects_invalid_school_details_without_creating_accounts(self):
+        tutor_user = CustomUser.objects.create_user(
+            username="school_details_tutor", role=CustomUser.Roles.TUTOR
+        )
+        tutor = TutorProfile.objects.create(user=tutor_user, status=TutorProfile.Status.ACTIVE)
+        lead = self._lead()
+        data = {
+            "student_kind": "with_parent",
+            "student_first_name": "Sina",
+            "student_last_name": "Muster",
+            "parent_first_name": "Maria",
+            "parent_last_name": "Muster",
+            "parent_email": lead.email,
+            "assigned_tutor": str(tutor.pk),
+            "birth_year": "2012",
+            "school_type": "Gesamtschule",
+            "school_state": "NI",
+        }
+        self.client.force_login(self.staff_user)
+        user_count = CustomUser.objects.count()
+        invalid_values = (
+            ("birth_year", "1899"),
+            ("birth_year", str(timezone.now().year + 1)),
+            ("birth_year", "2012-05-04"),
+            ("birth_year", "2012.5"),
+            ("school_state", "XX"),
+        )
+        for field, value in invalid_values:
+            with self.subTest(field=field, value=value):
+                response = self.client.post(
+                    reverse("lead_convert_to_family", args=[lead.pk]),
+                    data={**data, field: value},
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(field, response.context["form"].errors)
+                self.assertEqual(CustomUser.objects.count(), user_count)
+                lead.refresh_from_db()
+                self.assertEqual(lead.status, Lead.Status.NEW)
+                self.assertIsNone(lead.converted_student_id)
+
+        for year in ("", "1900", str(timezone.now().year)):
+            with self.subTest(valid_year=year):
+                form = LeadFamilyConversionForm(data={**data, "birth_year": year}, lead=lead)
+                self.assertTrue(form.is_valid(), form.errors)
+
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost@example.com",
     )
@@ -1379,6 +1447,9 @@ class LeadAdminToolsTests(TestCase):
         self.assertIsNone(lead.converted_parent)
         self.assertEqual(lead.converted_student.user.role, CustomUser.Roles.INDEPENDENT_STUDENT)
         self.assertEqual(lead.converted_student.degree_program, "Informatik")
+        self.assertIsNone(lead.converted_student.birth_year)
+        self.assertEqual(lead.converted_student.school_type, "")
+        self.assertEqual(lead.converted_student.school_state, "")
         self.assertEqual(lead.converted_student.parents.count(), 0)
         self.assertEqual(len(mail.outbox), 1)
 
@@ -1417,9 +1488,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertTrue(Lead.objects.filter(pk=lead.pk).exists())
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-        EMAIL_HOST_USER="smtp-user",
-        EMAIL_HOST_PASSWORD="smtp-password",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost.nachhilfe@gmail.com>",
         DEFAULT_REPLY_TO_EMAIL="brainboost.nachhilfe@gmail.com",
     )
@@ -1461,9 +1530,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertIn("Profil vervollständigen", mail.outbox[0].body)
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-        EMAIL_HOST_USER="smtp-user",
-        EMAIL_HOST_PASSWORD="smtp-password",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     )
     @patch(
         "core.views.leads._send_set_password_email",
@@ -1501,9 +1568,7 @@ class LeadAdminToolsTests(TestCase):
         self.assertContains(dashboard_response, "Mail erneut senden")
 
     @override_settings(
-        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-        EMAIL_HOST_USER="smtp-user",
-        EMAIL_HOST_PASSWORD="smtp-password",
+        MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
         DEFAULT_FROM_EMAIL="BrainBoost <brainboost.nachhilfe@gmail.com>",
     )
     def test_converted_tutor_lead_can_resend_password_mail(self):
@@ -1984,7 +2049,7 @@ class ProfileNumberTests(TestCase):
         self.assertContains(response, tutor.tutor_number)
 
 
-@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+@override_settings(MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}})
 class ProfileEmailChangeTests(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
@@ -2147,7 +2212,7 @@ class TutorProfileBankFieldValidationTests(TestCase):
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     DEFAULT_FROM_EMAIL="BrainBoost <brainboost.nachhilfe@gmail.com>",
     DEFAULT_REPLY_TO_EMAIL="brainboost.nachhilfe@gmail.com",
 )
@@ -2357,7 +2422,7 @@ class InvoiceDiscountContextTests(TestCase):
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     MEDIA_ROOT=tempfile.mkdtemp(),
 )
 class InvoiceNumberingTests(TestCase):
@@ -2465,7 +2530,7 @@ class InvoiceNumberingTests(TestCase):
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     MEDIA_ROOT=tempfile.mkdtemp(),
 )
 class StripeWebhookSecurityTests(TestCase):
@@ -3125,7 +3190,7 @@ class InvoiceGenerationChargeableCancellationTests(TestCase):
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     MEDIA_ROOT=tempfile.mkdtemp(),
 )
 class InvoiceUploadListFilterTests(TestCase):

@@ -109,12 +109,44 @@ class ParentProfile(models.Model):
         super().save(*args, **kwargs)
 
 
+def current_year():
+    return timezone.now().year
+
+
 class StudentProfile(models.Model):
+    class SchoolState(models.TextChoices):
+        BW = "BW", "Baden-Württemberg"
+        BY = "BY", "Bayern"
+        BE = "BE", "Berlin"
+        BB = "BB", "Brandenburg"
+        HB = "HB", "Bremen"
+        HH = "HH", "Hamburg"
+        HE = "HE", "Hessen"
+        MV = "MV", "Mecklenburg-Vorpommern"
+        NI = "NI", "Niedersachsen"
+        NW = "NW", "Nordrhein-Westfalen"
+        RP = "RP", "Rheinland-Pfalz"
+        SL = "SL", "Saarland"
+        SN = "SN", "Sachsen"
+        ST = "ST", "Sachsen-Anhalt"
+        SH = "SH", "Schleswig-Holstein"
+        TH = "TH", "Thüringen"
+
     address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=50, blank=True)
     school = models.CharField(max_length=255, blank=True)
+    school_type = models.CharField("Schulform", max_length=120, blank=True)
+    school_state = models.CharField(
+        "Bundesland der Schule", max_length=2, choices=SchoolState.choices, blank=True
+    )
     grade_level = models.CharField(max_length=120, blank=True)
     birth_date = models.DateField(blank=True, null=True)
+    birth_year = models.PositiveSmallIntegerField(
+        "Geburtsjahr",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(1900), MaxValueValidator(current_year)],
+    )
     profile_number = models.CharField(max_length=13, unique=True, null=True, blank=True)
     degree_program = models.CharField(max_length=255, blank=True)
     affected_courses = models.TextField(blank=True)

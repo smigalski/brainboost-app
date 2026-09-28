@@ -10,7 +10,7 @@ from .notifications import notify_lesson_series_created
 
 
 @override_settings(
-    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    MAILERS={"default": {"BACKEND": "django.core.mail.backends.locmem.EmailBackend"}},
     DEFAULT_FROM_EMAIL="BrainBoost <brainboost@example.com>",
 )
 class LessonSeriesNotificationTests(TestCase):

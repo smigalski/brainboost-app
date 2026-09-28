@@ -61,9 +61,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+          python -m pip check
 
       - name: Run Django checks
         run: python brainboost/manage.py check
 
+      - name: Check for missing migrations
+        run: python brainboost/manage.py makemigrations --check --dry-run
+
+      - name: Check PDF rendering
+        run: |
+          python - <<'PY'
+          from weasyprint import HTML
+          pdf = HTML(string="<h1>BrainBoost PDF check</h1>").write_pdf()
+          assert pdf.startswith(b"%PDF-"), "WeasyPrint did not produce a PDF"
+          PY
+
       - name: Run tests
-        run: python brainboost/manage.py test core
+        run: python -W error::DeprecationWarning brainboost/manage.py test core --noinput

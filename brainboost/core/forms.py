@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.validators import MaxValueValidator
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -31,6 +32,7 @@ from .models import (
     BrainBoostFeedback,
     CustomUser,
     Lead,
+    current_year,
 )
 
 
@@ -1458,13 +1460,24 @@ class LeadFamilyConversionForm(forms.Form):
             }
         ),
     )
-    birth_date = forms.DateField(
+    birth_year = forms.IntegerField(
         required=False,
-        label="Geburtsdatum",
-        widget=forms.DateInput(attrs={"type": "date"}),
-        input_formats=["%Y-%m-%d"],
+        label="Geburtsjahr",
+        min_value=1900,
+        validators=[MaxValueValidator(current_year)],
+        widget=forms.NumberInput(attrs={"placeholder": "z. B. 2012"}),
     )
-    school = forms.CharField(max_length=255, required=False, label="Schule")
+    school_type = forms.CharField(
+        max_length=120,
+        required=False,
+        label="Schulform",
+        widget=forms.TextInput(attrs={"placeholder": "z. B. Gymnasium, Gesamtschule"}),
+    )
+    school_state = forms.ChoiceField(
+        required=False,
+        label="Bundesland der Schule",
+        choices=[("", "Bitte auswählen"), *StudentProfile.SchoolState.choices],
+    )
     grade_level = forms.CharField(max_length=120, required=False, label="Klassenstufe")
     degree_program = forms.CharField(max_length=255, required=False, label="Studiengang")
     existing_parent = forms.ModelChoiceField(
@@ -1513,6 +1526,7 @@ class LeadFamilyConversionForm(forms.Form):
             initial.setdefault("student_email", lead.email)
             initial.setdefault("student_phone", lead.phone)
         super().__init__(*args, **kwargs)
+        self.fields["birth_year"].widget.attrs["max"] = current_year()
         if lead.role == Lead.Role.PARENT:
             self.fields["student_kind"].choices = (
                 (self.WITH_PARENT, "SchülerIn mit Elternkonto"),
@@ -1631,9 +1645,10 @@ class LeadFamilyConversionForm(forms.Form):
                 user=student_user,
                 address=(self.cleaned_data.get("student_address") or "").strip(),
                 phone_number=(self.cleaned_data.get("student_phone") or "").strip(),
-                school=(self.cleaned_data.get("school") or "").strip(),
+                school_type=(self.cleaned_data.get("school_type") or "").strip(),
+                school_state=self.cleaned_data.get("school_state", ""),
                 grade_level=(self.cleaned_data.get("grade_level") or "").strip(),
-                birth_date=self.cleaned_data.get("birth_date"),
+                birth_year=self.cleaned_data.get("birth_year"),
                 degree_program=(self.cleaned_data.get("degree_program") or "").strip(),
                 affected_courses=(lead.subject or "").strip(),
                 tutoring_goal=(lead.goal or "").strip(),

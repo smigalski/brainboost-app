@@ -97,7 +97,9 @@ def _lead_operator_recipients() -> list[str]:
     configured = getattr(settings, "LEAD_NOTIFICATION_EMAIL", "")
     if configured:
         return [email.strip() for email in configured.split(",") if email.strip()]
-    fallback = getattr(settings, "DEFAULT_FROM_EMAIL", "") or getattr(settings, "EMAIL_HOST_USER", "")
+    fallback = getattr(settings, "DEFAULT_FROM_EMAIL", "") or (
+        settings.MAILERS.get("default", {}).get("OPTIONS", {}).get("username", "")
+    )
     return [fallback] if fallback else []
 
 

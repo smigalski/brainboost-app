@@ -1474,10 +1474,11 @@ def _default_mail_reply_to() -> list[str]:
 def _send_set_password_email(request, user: CustomUser) -> None:
     if not user.email:
         raise ValueError("missing_email")
-    if not getattr(settings, "EMAIL_HOST_USER", "") or not getattr(
-        settings, "EMAIL_HOST_PASSWORD", ""
-    ):
-        raise RuntimeError("smtp_config_missing")
+    mailer = settings.MAILERS.get("default", {})
+    if mailer.get("BACKEND") == "django.core.mail.backends.smtp.EmailBackend":
+        smtp_options = mailer.get("OPTIONS", {})
+        if not smtp_options.get("username") or not smtp_options.get("password"):
+            raise RuntimeError("smtp_config_missing")
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     reset_path = reverse(

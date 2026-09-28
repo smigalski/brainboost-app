@@ -143,14 +143,23 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 PUBLIC_CONTACT_EMAIL = os.getenv("PUBLIC_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
 INTERNAL_CONTACT_EMAIL = os.getenv("INTERNAL_CONTACT_EMAIL", "brainboost.nachhilfe@gmail.com")
-EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", PUBLIC_CONTACT_EMAIL)
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+# Keep the existing environment-variable names for PythonAnywhere deployments.
+# Django 6.1 reads transport settings exclusively from MAILERS.
+MAILERS = {
+    "default": {
+        "BACKEND": os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend"),
+    },
+}
+if MAILERS["default"]["BACKEND"] == "django.core.mail.backends.smtp.EmailBackend":
+    MAILERS["default"]["OPTIONS"] = {
+        "host": os.getenv("EMAIL_HOST", "smtp.gmail.com"),
+        "port": int(os.getenv("EMAIL_PORT", "587")),
+        "use_tls": os.getenv("EMAIL_USE_TLS", "true").lower() in {"1", "true", "yes", "on"},
+        "username": os.getenv("EMAIL_HOST_USER", PUBLIC_CONTACT_EMAIL),
+        "password": os.getenv("EMAIL_HOST_PASSWORD", ""),
+    }
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", f"BrainBoost <{PUBLIC_CONTACT_EMAIL}>")
 SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 DEFAULT_REPLY_TO_EMAIL = os.getenv("DEFAULT_REPLY_TO_EMAIL", PUBLIC_CONTACT_EMAIL)
