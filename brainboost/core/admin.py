@@ -13,6 +13,7 @@ from .models import (
     StudentProfile,
     TutorProfile,
     TutorNumberReservation,
+    CancellationRequest,
     Lesson,
     ProgressEntry,
     Invoice,
@@ -362,6 +363,91 @@ class TutorNumberReservationAdmin(admin.ModelAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CancellationRequest)
+class CancellationRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "name_snapshot",
+        "email_snapshot",
+        "role_snapshot",
+        "requested_actions",
+        "status",
+        "requested_at",
+        "confirmed_at",
+    )
+    list_filter = ("status", "role_snapshot", "delete_account", "terminate_agreement")
+    search_fields = ("name_snapshot", "email_snapshot")
+    readonly_fields = (
+        "user",
+        "name_snapshot",
+        "email_snapshot",
+        "role_snapshot",
+        "delete_account",
+        "terminate_agreement",
+        "reason",
+        "requested_at",
+        "confirmed_at",
+        "confirmed_by",
+        "completed_at",
+        "internal_email_sent_at",
+        "receipt_email_sent_at",
+        "confirmation_email_sent_at",
+        "email_error",
+    )
+    actions = ("confirm_requests", "complete_requests", "resend_confirmation_emails")
+
+    @admin.action(description="Ausgewählte Anträge bestätigen und E-Mail senden")
+    def confirm_requests(self, request, queryset):
+        from .cancellation_requests import confirm_cancellation_request, send_confirmation_email
+
+        confirmed = 0
+        failed = 0
+        for cancellation in queryset.order_by("pk"):
+            cancellation, changed = confirm_cancellation_request(cancellation.pk, request.user)
+            if not changed:
+                continue
+            confirmed += 1
+            if not send_confirmation_email(cancellation):
+                failed += 1
+        self.message_user(
+            request,
+            f"{confirmed} Antrag/Anträge bestätigt. {failed} Bestätigungsmail(s) fehlgeschlagen.",
+            level="warning" if failed else "success",
+        )
+
+    @admin.action(description="Ausgewählte bestätigte Anträge als abgeschlossen markieren")
+    def complete_requests(self, request, queryset):
+        from django.utils import timezone
+
+        completed = queryset.filter(status=CancellationRequest.Status.CONFIRMED).update(
+            status=CancellationRequest.Status.COMPLETED,
+            completed_at=timezone.now(),
+        )
+        self.message_user(request, f"{completed} Antrag/Anträge als abgeschlossen markiert.")
+
+    @admin.action(description="Bestätigungsmail für ausgewählte bestätigte Anträge erneut senden")
+    def resend_confirmation_emails(self, request, queryset):
+        from .cancellation_requests import send_confirmation_email
+
+        sent = 0
+        failed = 0
+        for cancellation in queryset.filter(status=CancellationRequest.Status.CONFIRMED):
+            if send_confirmation_email(cancellation):
+                sent += 1
+            else:
+                failed += 1
+        self.message_user(
+            request,
+            f"{sent} Bestätigungsmail(s) versendet. {failed} fehlgeschlagen.",
+            level="warning" if failed else "success",
+        )
+
+    def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):

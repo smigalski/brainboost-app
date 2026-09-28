@@ -30,6 +30,7 @@ from .models import (
     FAQItem,
     TutorTemplate,
     BrainBoostFeedback,
+    CancellationRequest,
     CustomUser,
     Lead,
     current_year,
@@ -40,6 +41,48 @@ class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request=request, *args, **kwargs)
         self.fields["username"].label = "E-Mail oder Benutzername"
+
+
+class CancellationRequestForm(forms.ModelForm):
+    current_password = forms.CharField(
+        label="Aktuelles Passwort",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password"}),
+    )
+    acknowledged = forms.BooleanField(
+        required=True,
+        label=(
+            "Ich bestätige, dass BrainBoost meinen Antrag prüfen und mir die "
+            "Kontolöschung beziehungsweise Vereinbarungskündigung bestätigen soll."
+        ),
+        error_messages={"required": "Bitte bestätige deinen Antrag."},
+    )
+
+    class Meta:
+        model = CancellationRequest
+        fields = ("delete_account", "terminate_agreement", "reason")
+        labels = {
+            "delete_account": "Nutzerkonto löschen lassen",
+            "terminate_agreement": "Vereinbarung/Vertrag kündigen",
+            "reason": "Anmerkung (optional)",
+        }
+        widgets = {"reason": forms.Textarea(attrs={"rows": 4})}
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_current_password(self):
+        password = self.cleaned_data["current_password"]
+        if not self.user.check_password(password):
+            raise ValidationError("Das aktuelle Passwort ist nicht korrekt.")
+        return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get("delete_account") and not cleaned_data.get("terminate_agreement"):
+            raise ValidationError("Bitte wähle mindestens eine der beiden Optionen aus.")
+        return cleaned_data
 
 
 def _normalize_iban(raw_iban: str) -> str:

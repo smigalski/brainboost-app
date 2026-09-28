@@ -85,6 +85,75 @@ class CustomUser(AbstractUser):
         }.get(self.avatar_icon, "")
 
 
+class CancellationRequest(models.Model):
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Beantragt"
+        CONFIRMED = "confirmed", "Von BrainBoost bestätigt"
+        COMPLETED = "completed", "Abgeschlossen"
+        REJECTED = "rejected", "Abgelehnt"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="cancellation_requests",
+        null=True,
+        blank=True,
+    )
+    name_snapshot = models.CharField(max_length=255)
+    email_snapshot = models.EmailField()
+    role_snapshot = models.CharField(max_length=20, choices=CustomUser.Roles.choices)
+    delete_account = models.BooleanField(default=False)
+    terminate_agreement = models.BooleanField(default=False)
+    reason = models.TextField(blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.REQUESTED,
+    )
+    requested_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="confirmed_cancellation_requests",
+        null=True,
+        blank=True,
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+    internal_email_sent_at = models.DateTimeField(null=True, blank=True)
+    receipt_email_sent_at = models.DateTimeField(null=True, blank=True)
+    confirmation_email_sent_at = models.DateTimeField(null=True, blank=True)
+    email_error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-requested_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(status__in=["requested", "confirmed"]),
+                name="one_open_cancellation_request_per_user",
+            ),
+            models.CheckConstraint(
+                condition=Q(delete_account=True) | Q(terminate_agreement=True),
+                name="cancellation_request_has_action",
+            ),
+        ]
+        verbose_name = "Kündigungs-/Löschantrag"
+        verbose_name_plural = "Kündigungs-/Löschanträge"
+
+    def __str__(self) -> str:
+        return f"{self.name_snapshot} · {self.get_status_display()}"
+
+    @property
+    def requested_actions(self) -> str:
+        actions = []
+        if self.delete_account:
+            actions.append("Nutzerkonto löschen")
+        if self.terminate_agreement:
+            actions.append("Vereinbarung kündigen")
+        return " und ".join(actions)
+
+
 class ParentProfile(models.Model):
     class Meta:
         verbose_name = "Elternteil"

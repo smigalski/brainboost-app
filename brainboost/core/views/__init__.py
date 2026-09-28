@@ -39,6 +39,7 @@ from .profiles import (
     holiday_surveys,
     independent_student_create,
     parent_create,
+    cancellation_request,
     profile_email_confirm,
     profile_view,
     resend_set_password_email,

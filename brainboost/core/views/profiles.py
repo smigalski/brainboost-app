@@ -1,4 +1,16 @@
 from .common import *
+from ..cancellation_requests import send_request_notifications
+
+
+SELF_SERVICE_CANCELLATION_ROLES = {
+    CustomUser.Roles.PARENT,
+    CustomUser.Roles.INDEPENDENT_STUDENT,
+    CustomUser.Roles.TUTOR,
+}
+OPEN_CANCELLATION_STATUSES = {
+    CancellationRequest.Status.REQUESTED,
+    CancellationRequest.Status.CONFIRMED,
+}
 
 
 @login_required
@@ -174,6 +186,12 @@ def profile_view(request):
     else:
         form = form_class(**form_kwargs)
 
+    open_cancellation_request = None
+    if request.user.role in SELF_SERVICE_CANCELLATION_ROLES:
+        open_cancellation_request = request.user.cancellation_requests.filter(
+            status__in=OPEN_CANCELLATION_STATUSES
+        ).first()
+
     return render(
         request,
         "profile.html",
@@ -181,7 +199,54 @@ def profile_view(request):
             "form": form,
             "uses_address_autocomplete": uses_address_autocomplete,
             "is_tutor_profile_form": request.user.role == CustomUser.Roles.TUTOR,
+            "can_request_cancellation": request.user.role in SELF_SERVICE_CANCELLATION_ROLES,
+            "open_cancellation_request": open_cancellation_request,
         },
+    )
+
+
+@login_required
+def cancellation_request(request):
+    if request.user.role not in SELF_SERVICE_CANCELLATION_ROLES:
+        messages.error(request, "Für dieses Profil kann hier kein Antrag gestellt werden.")
+        return redirect("profile")
+
+    open_request = request.user.cancellation_requests.filter(
+        status__in=OPEN_CANCELLATION_STATUSES
+    ).first()
+    if request.method == "POST" and open_request is None:
+        form = CancellationRequestForm(request.POST, user=request.user)
+        if form.is_valid():
+            if not request.user.email.strip():
+                form.add_error(None, "Für den Antrag fehlt eine E-Mail-Adresse in deinem Profil.")
+            else:
+                cancellation = form.save(commit=False)
+                cancellation.user = request.user
+                cancellation.name_snapshot = request.user.display_name
+                cancellation.email_snapshot = request.user.email.strip()
+                cancellation.role_snapshot = request.user.role
+                try:
+                    with transaction.atomic():
+                        cancellation.save()
+                except IntegrityError:
+                    messages.info(request, "Für dein Profil liegt bereits ein offener Antrag vor.")
+                    return redirect("cancellation_request")
+                errors = send_request_notifications(cancellation)
+                if errors:
+                    messages.warning(
+                        request,
+                        "Dein Antrag wurde gespeichert. Mindestens eine Benachrichtigung konnte nicht versendet werden; der Fehler ist für BrainBoost im Admin sichtbar.",
+                    )
+                else:
+                    messages.success(request, "Dein Antrag wurde übermittelt.")
+                return redirect("cancellation_request")
+    else:
+        form = CancellationRequestForm(user=request.user)
+
+    return render(
+        request,
+        "cancellation_request.html",
+        {"form": form, "open_cancellation_request": open_request},
     )
 
 

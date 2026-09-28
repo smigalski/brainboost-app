@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}BrainBoost | Löschung oder Kündigung beantragen{% endblock %}
+{% block content %}
+<div class="card" style="display:grid;gap:22px;max-width:820px;margin:0 auto;">
+    <div>
+        <p class="muted"><a href="{% url 'profile' %}">← Zurück zum Profil</a></p>
+        <h1>Löschung oder Kündigung beantragen</h1>
+        <p>
+            Wähle aus, was BrainBoost für dich prüfen soll. Durch das Absenden wird noch nichts gelöscht
+            oder gekündigt. Du erhältst eine weitere E-Mail, sobald BrainBoost den Antrag bestätigt hat.
+        </p>
+    </div>
+
+    {% if open_cancellation_request %}
+        <section style="padding:18px;border-radius:14px;background:rgba(31,102,102,0.08);border:1px solid rgba(31,102,102,0.25);">
+            <h2 style="margin-top:0;">Dein offener Antrag</h2>
+            <p><strong>{{ open_cancellation_request.requested_actions }}</strong></p>
+            <p>Status: <strong>{{ open_cancellation_request.get_status_display }}</strong></p>
+            <p class="muted" style="margin-bottom:0;">
+                Eingereicht am {{ open_cancellation_request.requested_at|date:"d.m.Y H:i" }} Uhr.
+                {% if open_cancellation_request.status == "confirmed" %}
+                    BrainBoost hat den Antrag bestätigt und bearbeitet die nächsten Schritte.
+                {% else %}
+                    BrainBoost prüft den Antrag und meldet sich per E-Mail.
+                {% endif %}
+            </p>
+        </section>
+    {% else %}
+        <form method="post" style="display:grid;gap:18px;">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label style="display:flex;align-items:flex-start;gap:10px;">
+                {{ form.delete_account }}
+                <span>
+                    <strong>{{ form.delete_account.label }}</strong><br>
+                    <span class="muted">BrainBoost prüft, welche Daten gelöscht werden können und welche gesetzlichen Aufbewahrungsfristen gelten.</span>
+                </span>
+            </label>
+            {{ form.delete_account.errors }}
+            <label style="display:flex;align-items:flex-start;gap:10px;">
+                {{ form.terminate_agreement }}
+                <span>
+                    <strong>{{ form.terminate_agreement.label }}</strong><br>
+                    <span class="muted">BrainBoost prüft die betroffene Vereinbarung und die geltende Kündigungsfrist.</span>
+                </span>
+            </label>
+            {{ form.terminate_agreement.errors }}
+            <div>
+                <label for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+                {{ form.reason }}
+                {{ form.reason.errors }}
+            </div>
+            <div>
+                <label for="{{ form.current_password.id_for_label }}">{{ form.current_password.label }} <span class="required-marker">*</span></label>
+                {{ form.current_password }}
+                {{ form.current_password.errors }}
+            </div>
+            <label style="display:flex;align-items:flex-start;gap:10px;">
+                {{ form.acknowledged }}
+                <span>{{ form.acknowledged.label }}</span>
+            </label>
+            {{ form.acknowledged.errors }}
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="button" style="background:#b42318;color:#fff;" type="submit">Antrag verbindlich absenden</button>
+                <a class="button" style="background:#d7dde4;color:#364152;" href="{% url 'profile' %}">Abbrechen</a>
+            </div>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

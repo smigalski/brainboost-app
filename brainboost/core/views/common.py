@@ -71,6 +71,7 @@ from ..forms import (
     ParentProfileForm,
     StudentProfileForm,
     TutorProfileForm,
+    CancellationRequestForm,
     BrainBoostFeedbackForm,
     EmailOrUsernameAuthenticationForm,
     BroadcastEmailForm,
@@ -113,6 +114,7 @@ from ..models import (
     BrainBoostFeedback,
     TemporaryTutorAssignment,
     Lead,
+    CancellationRequest,
 )
 
 logger = logging.getLogger(__name__)

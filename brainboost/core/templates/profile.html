@@ -106,6 +106,30 @@
             <a class="button" style="background:#d7dde4; color:#364152;" href="{% url 'dashboard' %}">Abbrechen</a>
         </div>
     </form>
+
+    {% if can_request_cancellation %}
+        <section style="display:grid;gap:12px;padding-top:22px;border-top:1px solid rgba(180,35,24,0.25);">
+            <div>
+                <h2 style="margin-bottom:6px;">Konto und Vereinbarung</h2>
+                {% if open_cancellation_request %}
+                    <p class="muted">
+                        Dein Antrag „{{ open_cancellation_request.requested_actions }}“ hat den Status
+                        <strong>{{ open_cancellation_request.get_status_display }}</strong>.
+                    </p>
+                {% else %}
+                    <p class="muted">
+                        Hier kannst du die Löschung deines Nutzerkontos, die Kündigung deiner Vereinbarung
+                        oder beides beantragen. BrainBoost prüft und bestätigt deinen Antrag.
+                    </p>
+                {% endif %}
+            </div>
+            <div>
+                <a class="button" style="background:#b42318;color:#fff;" href="{% url 'cancellation_request' %}">
+                    {% if open_cancellation_request %}Antrag ansehen{% else %}Löschung oder Kündigung beantragen{% endif %}
+                </a>
+            </div>
+        </section>
+    {% endif %}
 </div>
 {% endblock %}
 {% block scripts %}

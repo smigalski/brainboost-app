@@ -47,6 +47,7 @@ urlpatterns = [
         name="tutor_student_assignment",
     ),
     path("profil/", views.profile_view, name="profile"),
+    path("profil/kuendigung-loeschung/", views.cancellation_request, name="cancellation_request"),
     path("profil/email/bestaetigen/<path:token>/", views.profile_email_confirm, name="profile_email_confirm"),
     path(
         "profil/passwort/",
