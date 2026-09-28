@@ -17,17 +17,24 @@ def migrate_numbers(apps, schema_editor):
               (t.user.first_name.strip().casefold(), t.user.last_name.strip().casefold())
               == ("kiara", "puppe")]
     if len(kiaras) > 1:
-        raise RuntimeError("Mehrere Konten für Kiara Puppe gefunden. Vor der Migration eindeutig zuordnen.")
+        raise RuntimeError(
+            "Mehrere Konten für Kiara Puppe gefunden. Vor der Migration eindeutig zuordnen."
+        )
     kiara = kiaras[0] if kiaras else None
+    through = Tutor.assigned_tutors.through
+
+    # Legacy data allowed Kiara to be selected as somebody else's subordinate.
+    # The new hierarchy defines her as its root, so those incoming edges cannot
+    # be retained. Outgoing assignments from Kiara remain untouched.
+    if kiara is not None:
+        through.objects.using(using).filter(to_tutorprofile_id=kiara).delete()
     parents = {}
-    for parent, child in Tutor.assigned_tutors.through.objects.using(using).values_list(
+    for parent, child in through.objects.using(using).values_list(
         "from_tutorprofile_id", "to_tutorprofile_id"
     ):
         if child in parents:
             raise RuntimeError(f"TutorIn {child} hat mehrere übergeordnete TutorInnen. Zuordnung zuerst bereinigen.")
         parents[child] = parent
-    if kiara in parents:
-        raise RuntimeError("Kiara Puppe muss vor der Migration als übergeordnete TutorIn eingerichtet werden.")
     for child in parents:
         seen = set()
         node = child

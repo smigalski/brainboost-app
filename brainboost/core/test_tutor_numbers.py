@@ -107,6 +107,38 @@ class TutorNumberTests(TestCase):
         self.assertEqual(self.number(one), "TUT1-1")
         self.assertIsNotNone(TutorNumberReservation.objects.get(number="TUT-000-002").archived_at)
 
+    def test_migration_removes_legacy_supervisors_of_kiara(self):
+        kiara = self.tutor("Kiara", "Puppe")
+        supervisor_one, supervisor_two, subordinate = self.tutor(), self.tutor(), self.tutor()
+        through = TutorProfile.assigned_tutors.through
+        through.objects.create(
+            from_tutorprofile_id=supervisor_one.pk,
+            to_tutorprofile_id=kiara.pk,
+        )
+        through.objects.create(
+            from_tutorprofile_id=supervisor_two.pk,
+            to_tutorprofile_id=kiara.pk,
+        )
+        through.objects.create(
+            from_tutorprofile_id=kiara.pk,
+            to_tutorprofile_id=subordinate.pk,
+        )
+        TutorNumberReservation.objects.all().delete()
+        for sequence, tutor in enumerate(
+            [kiara, supervisor_one, supervisor_two, subordinate], start=1
+        ):
+            TutorProfile.objects.filter(pk=tutor.pk).update(
+                tutor_number=f"TUT-000-{sequence:03d}"
+            )
+
+        migration = import_module("core.migrations.0070_hierarchical_tutor_numbers")
+        with connection.schema_editor() as editor:
+            migration.migrate_numbers(apps, editor)
+
+        self.assertFalse(kiara.supervising_tutors.exists())
+        self.assertEqual(self.number(kiara), "TUT1")
+        self.assertEqual(self.number(subordinate), "TUT1-1")
+
     def test_admin_rejects_second_supervisor(self):
         parent, other, child = self.tutor(), self.tutor(), self.tutor()
         parent.assigned_tutors.add(child)
