@@ -269,6 +269,9 @@ class LeadAdmin(admin.ModelAdmin):
             "Nachhilfe",
             {
                 "fields": (
+                    "postal_code",
+                    "street",
+                    "preferred_weekdays",
                     "subject",
                     "grade",
                     "tutoring_type",
@@ -343,6 +346,9 @@ class LeadAdmin(admin.ModelAdmin):
             "source",
             "campaign",
             "internal_notes",
+            "postal_code",
+            "street",
+            "preferred_weekdays_display",
         ]
         response = HttpResponse(content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = 'attachment; filename="brainboost-leads.csv"'

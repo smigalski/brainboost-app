@@ -995,6 +995,15 @@ class Lead(models.Model):
         IN_PERSON = "in_person", "Vor Ort"
         BOTH = "both", "Beides"
 
+    class Weekday(models.TextChoices):
+        MONDAY = "monday", "Montag"
+        TUESDAY = "tuesday", "Dienstag"
+        WEDNESDAY = "wednesday", "Mittwoch"
+        THURSDAY = "thursday", "Donnerstag"
+        FRIDAY = "friday", "Freitag"
+        SATURDAY = "saturday", "Samstag"
+        SUNDAY = "sunday", "Sonntag"
+
     class Status(models.TextChoices):
         NEW = "new", "Neu"
         CONTACTED = "contacted", "Kontaktiert"
@@ -1027,6 +1036,9 @@ class Lead(models.Model):
         max_length=20,
         choices=PreferredContact.choices,
     )
+    postal_code = models.CharField("PLZ", max_length=5, blank=True)
+    street = models.CharField("Straße (ohne Hausnummer)", max_length=255, blank=True)
+    preferred_weekdays = models.JSONField("Bevorzugte Wochentage", default=list, blank=True)
     subject = models.CharField(max_length=255, blank=True)
     grade = models.CharField(max_length=120, blank=True)
     tutoring_type = models.CharField(max_length=20, choices=TutoringType.choices)
@@ -1104,6 +1116,11 @@ class Lead(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.get_role_display()})"
+
+    @property
+    def preferred_weekdays_display(self):
+        labels = dict(self.Weekday.choices)
+        return ", ".join(labels[day] for day in self.preferred_weekdays if day in labels)
 
     @property
     def application_email(self):

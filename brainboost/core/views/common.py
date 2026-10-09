@@ -1640,6 +1640,9 @@ LEAD_EXPORT_FIELDS = [
     "source",
     "campaign",
     "internal_notes",
+    "postal_code",
+    "street",
+    "preferred_weekdays_display",
 ]
 
 

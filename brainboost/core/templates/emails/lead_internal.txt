@@ -8,7 +8,10 @@ Name: {{ lead.name }}
 E-Mail: {{ lead.email|default:"-" }}
 Telefon: {{ lead.phone|default:"-" }}
 Bevorzugter Kontakt: {{ lead.get_preferred_contact_display }}
-Unterrichtsform: {{ lead.get_tutoring_type_display }}
+{% if lead.role != "tutor" %}PLZ: {{ lead.postal_code|default:"-" }}
+Straße (ohne Hausnummer): {{ lead.street|default:"-" }}
+Bevorzugte Wochentage: {{ lead.preferred_weekdays_display|default:"-" }}
+{% endif %}Unterrichtsform: {{ lead.get_tutoring_type_display }}
 Fach/Fächer: {{ lead.subject|default:"-" }}
 Klassenstufe: {{ lead.grade|default:"-" }}
 Ziel: {{ lead.goal|default:"-" }}

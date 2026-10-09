@@ -222,6 +222,19 @@ class CampaignLinkBuilderForm(forms.Form):
 
 
 class LeadForm(forms.ModelForm):
+    postal_code = forms.RegexField(
+        regex=r"^[0-9]{5}$",
+        required=False,
+        label=_("PLZ"),
+        error_messages={"invalid": _("Bitte gib eine fünfstellige Postleitzahl an.")},
+        widget=forms.TextInput(attrs={"inputmode": "numeric", "autocomplete": "postal-code", "maxlength": 5}),
+    )
+    preferred_weekdays = forms.MultipleChoiceField(
+        choices=[(value, _(label)) for value, label in Lead.Weekday.choices],
+        required=False,
+        label=_("Bevorzugte Wochentage"),
+        widget=forms.CheckboxSelectMultiple,
+    )
     urgency_option = forms.ChoiceField(
         choices=(
             ("now", _("Ab jetzt")),
@@ -262,6 +275,9 @@ class LeadForm(forms.ModelForm):
             "email",
             "phone",
             "preferred_contact",
+            "postal_code",
+            "street",
+            "preferred_weekdays",
             "subject",
             "grade",
             "tutoring_type",
@@ -301,6 +317,7 @@ class LeadForm(forms.ModelForm):
             "email": _("E-Mail"),
             "phone": _("Telefonnummer"),
             "preferred_contact": _("Bevorzugte Kontaktart"),
+            "street": _("Straße (ohne Hausnummer)"),
             "subject": _("Fach/Fächer"),
             "grade": _("Klassenstufe"),
             "tutoring_type": _("Unterrichtsform"),
@@ -357,6 +374,8 @@ class LeadForm(forms.ModelForm):
             "name": _("Vor- und Nachname"),
             "email": "name@example.com",
             "phone": "+49 ...",
+            "postal_code": "38100",
+            "street": _("Straßenname ohne Hausnummer"),
             "subject": _("z. B. Mathe, Englisch"),
             "grade": _("z. B. 8. Klasse"),
             "goal": _("z. B. Noten verbessern, Prüfung vorbereiten"),
@@ -443,6 +462,9 @@ class LeadForm(forms.ModelForm):
             cleaned["subject"] = cleaned.get("teaching_subjects", "")
             cleaned["grade"] = cleaned.get("teaching_grades", "")
             cleaned["tutoring_type"] = ""
+            cleaned["postal_code"] = ""
+            cleaned["street"] = ""
+            cleaned["preferred_weekdays"] = []
         return cleaned
 
 

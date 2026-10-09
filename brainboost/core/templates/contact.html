@@ -112,6 +112,32 @@
     .lead-checkbox input {
         margin-top: 3px;
     }
+    .lead-weekdays {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+    .lead-weekdays-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .lead-weekdays input[type="checkbox"] {
+        width: auto;
+        flex-shrink: 0;
+    }
+    .lead-weekend-notice {
+        margin: 12px 0 0;
+        padding: 12px;
+        border-left: 4px solid #ffc928;
+        border-radius: 8px;
+        background: rgba(255, 201, 40, 0.15);
+        color: var(--accent);
+    }
+    .lead-weekend-notice[hidden] {
+        display: none;
+    }
     .lead-error {
         color: #b3261e;
         font-weight: 700;
@@ -260,6 +286,28 @@
             <section class="lead-section" data-role-fields="learning" role="tabpanel">
                 <h2 class="lead-section__title">{% trans "Nachhilfe" %}</h2>
                 <div class="lead-field-grid">
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.postal_code.id_for_label }}">{{ form.postal_code.label }}</label>
+                        {{ form.postal_code }}
+                        {% if form.postal_code.errors %}<p class="lead-error">{{ form.postal_code.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="lead-field">
+                        <label class="lead-label" for="{{ form.street.id_for_label }}">{{ form.street.label }}</label>
+                        {{ form.street }}
+                        {% if form.street.errors %}<p class="lead-error">{{ form.street.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <fieldset class="lead-weekdays lead-field--full">
+                        <legend class="lead-label">{{ form.preferred_weekdays.label }}</legend>
+                        <p class="muted">{% trans "Mehrfachauswahl möglich (optional)." %}</p>
+                        <div class="lead-weekdays-options">
+                            {% for checkbox in form.preferred_weekdays %}
+                                <label class="lead-checkbox" for="{{ checkbox.id_for_label }}">{{ checkbox.tag }} <span>{{ checkbox.choice_label }}</span></label>
+                            {% endfor %}
+                        </div>
+                        <p class="lead-weekend-notice" data-weekend-notice role="status"{% if 'saturday' not in form.preferred_weekdays.value and 'sunday' not in form.preferred_weekdays.value %} hidden{% endif %}>{% trans "Bitte beachte: Unterricht am Samstag und/oder Sonntag ist mit Zuschlägen verbunden." %}</p>
+                        {% if form.preferred_weekdays.errors %}<p class="lead-error">{{ form.preferred_weekdays.errors|join:", " }}</p>{% endif %}
+                    </fieldset>
+
                     <div class="lead-field lead-field--full">
                         <label class="lead-label" for="{{ form.tutoring_type.id_for_label }}">{{ form.tutoring_type.label }} <span class="lead-required">*</span></label>
                         {{ form.tutoring_type }}
@@ -394,6 +442,21 @@
         var urgencyReferenceAbOption = form.querySelector("#id_urgency_option_reference_ab");
         var urgencyWeeks = form.querySelector("#id_urgency_weeks");
         var urgencyReference = form.querySelector("#id_urgency_reference");
+
+        var weekdayInputs = Array.from(form.querySelectorAll('input[name="preferred_weekdays"]'));
+        var weekendNotice = form.querySelector("[data-weekend-notice]");
+
+        function updateWeekendNotice() {
+            if (weekendNotice) {
+                weekendNotice.hidden = !weekdayInputs.some(function (input) {
+                    return input.checked && (input.value === "saturday" || input.value === "sunday");
+                });
+            }
+        }
+        weekdayInputs.forEach(function (input) {
+            input.addEventListener("change", updateWeekendNotice);
+        });
+        updateWeekendNotice();
 
         function selectedRole() {
             var checked = roleInputs.find(function (input) { return input.checked; });

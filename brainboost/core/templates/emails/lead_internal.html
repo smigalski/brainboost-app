@@ -12,6 +12,11 @@
     <tr><td><strong>E-Mail</strong></td><td>{{ lead.email|default:"-" }}</td></tr>
     <tr><td><strong>Telefon</strong></td><td>{{ lead.phone|default:"-" }}</td></tr>
     <tr><td><strong>Kontaktart</strong></td><td>{{ lead.get_preferred_contact_display }}</td></tr>
+    {% if lead.role != "tutor" %}
+    <tr><td><strong>PLZ</strong></td><td>{{ lead.postal_code|default:"-" }}</td></tr>
+    <tr><td><strong>Straße (ohne Hausnummer)</strong></td><td>{{ lead.street|default:"-" }}</td></tr>
+    <tr><td><strong>Bevorzugte Wochentage</strong></td><td>{{ lead.preferred_weekdays_display|default:"-" }}</td></tr>
+    {% endif %}
     <tr><td><strong>Unterrichtsform</strong></td><td>{{ lead.get_tutoring_type_display }}</td></tr>
     <tr><td><strong>Fach/Fächer</strong></td><td>{{ lead.subject|default:"-" }}</td></tr>
     <tr><td><strong>Klassenstufe</strong></td><td>{{ lead.grade|default:"-" }}</td></tr>

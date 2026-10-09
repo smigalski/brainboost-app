@@ -497,6 +497,49 @@ class LeadFormFlowTests(TestCase):
         self.assertEqual(mail.outbox[1].from_email, "BrainBoost <brainboost.nachhilfe@gmail.com>")
         self.assertEqual(mail.outbox[1].reply_to, ["brainboost.nachhilfe@gmail.com"])
 
+    def test_family_preferences_are_saved_and_included_in_notifications(self):
+        for role in (Lead.Role.PARENT, Lead.Role.STUDENT):
+            with self.subTest(role=role):
+                response = self.client.post(reverse("contact"), data=self._parent_data(
+                    role=role,
+                    postal_code="01067",
+                    street="Straße des 17. Juni",
+                    preferred_weekdays=["monday", "saturday"],
+                ))
+                self.assertRedirects(response, reverse("lead_thanks_tutoring"))
+                lead = Lead.objects.latest("id")
+                self.assertEqual(lead.postal_code, "01067")
+                self.assertEqual(lead.street, "Straße des 17. Juni")
+                self.assertEqual(lead.preferred_weekdays, ["monday", "saturday"])
+                self.assertEqual(lead.preferred_weekdays_display, "Montag, Samstag")
+                for body in (mail.outbox[-2].body, mail.outbox[-2].alternatives[0][0]):
+                    self.assertIn("01067", body)
+                    self.assertIn("Straße des 17. Juni", body)
+                    self.assertIn("Montag, Samstag", body)
+
+    def test_family_preferences_reject_invalid_input_and_keep_valid_selections(self):
+        for invalid in ({"postal_code": "1234"}, {"preferred_weekdays": ["funday"]}):
+            with self.subTest(invalid=invalid):
+                response = self.client.post(reverse("contact"), data=self._parent_data(
+                    **({"postal_code": "38100", "preferred_weekdays": ["tuesday", "friday"]} | invalid)
+                ))
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(Lead.objects.exists())
+                self.assertIn(next(iter(invalid)), response.context["form"].errors)
+                if "postal_code" in invalid:
+                    self.assertContains(response, 'value="tuesday" id="id_preferred_weekdays_1" checked')
+                    self.assertContains(response, 'value="friday" id="id_preferred_weekdays_4" checked')
+
+    def test_tutor_lead_does_not_store_family_preferences(self):
+        response = self.client.post(reverse("contact"), data=self._tutor_data(
+            postal_code="38100", street="Teststraße", preferred_weekdays=["monday"],
+        ))
+        self.assertRedirects(response, reverse("lead_thanks_tutor"))
+        lead = Lead.objects.get()
+        self.assertEqual(lead.postal_code, "")
+        self.assertEqual(lead.street, "")
+        self.assertEqual(lead.preferred_weekdays, [])
+
     @override_settings(APP_BASE_URL="https://www.nachhilfe-brainboost.de")
     def test_internal_lead_email_links_to_contact_action(self):
         response = self.client.post(reverse("contact"), data=self._parent_data())
@@ -1609,8 +1652,18 @@ class LeadAdminToolsTests(TestCase):
         lead.refresh_from_db()
         self.assertIsNone(lead.converted_tutor)
 
+    def test_family_preferences_are_visible_in_lead_dashboard(self):
+        self._lead(postal_code="01067", street="Teststraße", preferred_weekdays=["monday", "friday"])
+        self.client.force_login(self.staff_user)
+        response = self.client.get(reverse("lead_dashboard"))
+        self.assertContains(response, "01067 Teststraße")
+        self.assertContains(response, "Montag, Freitag")
+
     def test_csv_export_is_staff_only_and_contains_expected_fields(self):
-        self._lead(utm_campaign="eltern_mathe_braunschweig", internal_notes="Anrufen")
+        self._lead(
+            utm_campaign="eltern_mathe_braunschweig", internal_notes="Anrufen",
+            postal_code="01067", street="Teststraße", preferred_weekdays=["monday", "friday"],
+        )
 
         anonymous_response = self.client.get(reverse("lead_export_csv"))
         self.assertEqual(anonymous_response.status_code, 302)
@@ -1628,6 +1681,8 @@ class LeadAdminToolsTests(TestCase):
         self.assertIn("created_at,role,name,email,phone,preferred_contact", csv_body)
         self.assertIn("eltern_mathe_braunschweig", csv_body)
         self.assertIn("Anrufen", csv_body)
+        self.assertIn("postal_code,street,preferred_weekdays_display", csv_body)
+        self.assertIn('01067,Teststraße,"Montag, Freitag"', csv_body)
 
     def test_utm_campaign_grouping_uses_unknown_and_counts_statuses(self):
         self._lead(utm_campaign="eltern_mathe_braunschweig", status=Lead.Status.WON)

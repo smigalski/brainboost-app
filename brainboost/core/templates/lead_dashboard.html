@@ -267,7 +267,12 @@
                         <tr>
                             <td>{{ lead.created_at|date:"d.m.Y H:i" }}</td>
                             <td><a href="{% url 'admin:core_lead_change' lead.id %}">{{ lead.name }}</a></td>
-                            <td>{{ lead.get_role_display }}<br><span class="muted">{{ lead.subject|default:"Kein Fach" }}</span></td>
+                            <td>{{ lead.get_role_display }}<br><span class="muted">{{ lead.subject|default:"Kein Fach" }}</span>
+                                {% if lead.role != "tutor" %}
+                                    {% if lead.postal_code or lead.street %}<br><span class="muted">{{ lead.postal_code }} {{ lead.street }}</span>{% endif %}
+                                    {% if lead.preferred_weekdays %}<br><span class="muted">{{ lead.preferred_weekdays_display }}</span>{% endif %}
+                                {% endif %}
+                            </td>
                             <td data-lead-status-cell="{{ lead.id }}">
                                 {% include "partials/lead_status_form.html" with lead=lead %}
                             </td>
