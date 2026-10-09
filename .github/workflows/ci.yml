@@ -63,6 +63,9 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip check
 
+      - name: Run address suggestion tests
+        run: node --test scripts/tests/lead_address_autocomplete.test.cjs
+
       - name: Run Django checks
         run: python brainboost/manage.py check
 

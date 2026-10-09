@@ -553,6 +553,25 @@ class LeadFormFlowTests(TestCase):
         self.assertIn("Kontaktieren", internal_mail.alternatives[0][0])
         self.assertIn(lead_url, internal_mail.alternatives[0][0])
 
+    @override_settings(GOOGLE_MAPS_API_KEY="browser-test-key")
+    def test_contact_loads_places_and_compact_accessible_weekdays(self):
+        response = self.client.get(reverse("contact"))
+        self.assertContains(response, "core/lead_address_autocomplete.js")
+        self.assertContains(response, "key=browser-test-key")
+        self.assertContains(response, "callback=initLeadAddressAutocomplete")
+        self.assertContains(response, 'id="postal_code_suggestions"')
+        self.assertContains(response, 'id="street_suggestions"')
+        self.assertContains(response, '<span aria-hidden="true">Mo</span>', html=True)
+        self.assertContains(response, '<span class="lead-role-field">Montag</span>', html=True)
+        self.assertContains(response, '<span aria-hidden="true">So</span>', html=True)
+
+    @override_settings(GOOGLE_MAPS_API_KEY="")
+    def test_contact_without_google_key_keeps_manual_address_fields(self):
+        response = self.client.get(reverse("contact"))
+        self.assertNotContains(response, "maps.googleapis.com/maps/api/js")
+        self.assertContains(response, 'name="postal_code"')
+        self.assertContains(response, 'name="street"')
+
     def test_public_contact_email_is_rendered_with_gmail_address(self):
         response = self.client.get(reverse("contact"))
 

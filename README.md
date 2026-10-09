@@ -254,3 +254,41 @@ Die Migration bricht bei mehrdeutiger Kiara-Zuordnung, mehreren übergeordneten
 Personen oder Kreisen ab, ohne diese Beziehungen selbst zu verändern. Diese
 Datenfehler müssen zuerst bereinigt werden. Die Datenmigration ist absichtlich
 nicht rückwärts ausführbar; für einen Rollback das vorherige Backup verwenden.
+
+## Adressvorschläge im Kontaktformular
+
+PLZ und Straße verwenden die Places Autocomplete Data API (New) über den
+**Browser-Key `GOOGLE_MAPS_API_KEY`**. In dessen Google-Cloud-Projekt müssen
+**Maps JavaScript API**, **Places API (New)** und Abrechnung aktiviert sein.
+Den Browser-Key auf die tatsächlichen Website-Referrer (einschließlich Staging
+und gegebenenfalls localhost) und diese APIs beschränken. Der separate
+serverseitige `GOOGLE_PLACES_API_KEY` für Bewertungen wird nicht veröffentlicht.
+
+PLZ-Vorschläge sind auf deutsche Postleitzahlen beschränkt und übernehmen nur
+die fünfstellige PLZ. Straßen werden anhand strukturierter `addressComponents`
+vor der Anzeige auf Land `DE` und die **exakte eingegebene PLZ** geprüft; übernommen
+wird nur `route`, niemals eine Hausnummer. Textsuche oder geografische Nähe allein
+zählen nicht als PLZ-Nachweis. Straßen ohne eindeutige PLZ-Zuordnung bei Google
+werden deshalb nicht angeboten, auch wenn sie tatsächlich im Gebiet liegen.
+Das ist eine Eingabehilfe, keine verbindliche Adressprüfung: Freitext bleibt möglich.
+
+350 ms Verzögerung, mindestens zwei Zeichen, maximal fünf Kandidaten und die
+Prüfung auf überholte Antworten begrenzen Anfragen. Zur strikten Filterung wird
+pro Kandidat ein Place-Details-Aufruf (`addressComponents`) vor der Anzeige
+benötigt. Diese Aufrufe können zusätzlich kostenpflichtig sein; es wird keine
+Autocomplete-Session-Abrechnung unterstellt, da nicht erst die Nutzerauswahl
+Details lädt. Keine dauerhafte Speicherung von Google-Vorschlägen oder Place-IDs.
+Bei Timeout, fehlendem Key, fehlenden Treffern oder API-Fehlern bleibt das Formular
+manuell nutzbar. Ein PLZ-Wechsel entfernt die bisherige Straße.
+
+Prüfungen (keine echten Google-Aufrufe):
+
+```bash
+node --test scripts/tests/lead_address_autocomplete.test.cjs
+python brainboost/manage.py test core.tests.LeadFormFlowTests --noinput
+```
+
+Vor Bereitstellung mit dem echten, eingeschränkten Browser-Key auf Staging prüfen:
+PLZ-Vorschläge, Straßen in derselben und einer anderen PLZ, PLZ-Wechsel während
+der Suche, Tastaturbedienung sowie blockierte Google-Anfragen. Lokale Tests können
+die Freischaltung, Abrechnung und tatsächliche Google-Datenabdeckung nicht prüfen.

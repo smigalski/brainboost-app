@@ -123,10 +123,64 @@
         flex-wrap: wrap;
         gap: 8px;
     }
-    .lead-weekdays input[type="checkbox"] {
-        width: auto;
-        flex-shrink: 0;
+    .lead-weekday {
+        position: relative;
+        cursor: pointer;
     }
+    .lead-weekday input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+    }
+    .lead-weekday > span[aria-hidden="true"] {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(31, 102, 102, 0.2);
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .lead-weekday input:checked + span {
+        background: var(--teal-dark);
+        border-color: var(--teal-dark);
+        color: white;
+    }
+    .lead-weekday input:focus-visible + span {
+        outline: 2px solid var(--teal-dark);
+        outline-offset: 3px;
+    }
+    .lead-address-field { position: relative; }
+    .lead-address-list {
+        position: absolute;
+        z-index: 20;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 280px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #d5dfe0;
+        border-radius: 8px;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+    .lead-address-list[hidden] { display: none; }
+    .lead-address-option {
+        padding: 12px;
+        color: #1f3337;
+        cursor: pointer;
+    }
+    .lead-address-option[aria-selected="true"], .lead-address-option:hover {
+        background: #e9f2f2;
+    }
+    .lead-address-attribution {
+        padding: 8px 12px;
+        color: #5e5e5e;
+        font: 400 12px sans-serif;
+        white-space: nowrap;
+    }
+    .lead-address-status { margin: 4px 0 0; font-size: 13px; }
     .lead-weekend-notice {
         margin: 12px 0 0;
         padding: 12px;
@@ -286,14 +340,18 @@
             <section class="lead-section" data-role-fields="learning" role="tabpanel">
                 <h2 class="lead-section__title">{% trans "Nachhilfe" %}</h2>
                 <div class="lead-field-grid">
-                    <div class="lead-field">
+                    <div class="lead-field lead-address-field">
                         <label class="lead-label" for="{{ form.postal_code.id_for_label }}">{{ form.postal_code.label }}</label>
                         {{ form.postal_code }}
+                        <div class="lead-address-list" id="postal_code_suggestions" role="listbox" aria-label="{% trans 'Adressvorschläge' %}" hidden></div>
+                        <p class="muted lead-address-status" id="postal_code_status" role="status" aria-live="polite"></p>
                         {% if form.postal_code.errors %}<p class="lead-error">{{ form.postal_code.errors|join:", " }}</p>{% endif %}
                     </div>
-                    <div class="lead-field">
+                    <div class="lead-field lead-address-field">
                         <label class="lead-label" for="{{ form.street.id_for_label }}">{{ form.street.label }}</label>
                         {{ form.street }}
+                        <div class="lead-address-list" id="street_suggestions" role="listbox" aria-label="{% trans 'Adressvorschläge' %}" hidden></div>
+                        <p class="muted lead-address-status" id="street_status" role="status" aria-live="polite"></p>
                         {% if form.street.errors %}<p class="lead-error">{{ form.street.errors|join:", " }}</p>{% endif %}
                     </div>
                     <fieldset class="lead-weekdays lead-field--full">
@@ -301,7 +359,11 @@
                         <p class="muted">{% trans "Mehrfachauswahl möglich (optional)." %}</p>
                         <div class="lead-weekdays-options">
                             {% for checkbox in form.preferred_weekdays %}
-                                <label class="lead-checkbox" for="{{ checkbox.id_for_label }}">{{ checkbox.tag }} <span>{{ checkbox.choice_label }}</span></label>
+                                <label class="lead-weekday" for="{{ checkbox.id_for_label }}" title="{{ checkbox.choice_label }}">
+                                    {{ checkbox.tag }}
+                                    <span aria-hidden="true">{% if checkbox.data.value == 'monday' %}{% trans "Mo" %}{% elif checkbox.data.value == 'tuesday' %}{% trans "Di" %}{% elif checkbox.data.value == 'wednesday' %}{% trans "Mi" %}{% elif checkbox.data.value == 'thursday' %}{% trans "Do" %}{% elif checkbox.data.value == 'friday' %}{% trans "Fr" %}{% elif checkbox.data.value == 'saturday' %}{% trans "Sa" %}{% elif checkbox.data.value == 'sunday' %}{% trans "So" %}{% endif %}</span>
+                                    <span class="lead-role-field">{{ checkbox.choice_label }}</span>
+                                </label>
                             {% endfor %}
                         </div>
                         <p class="lead-weekend-notice" data-weekend-notice role="status"{% if 'saturday' not in form.preferred_weekdays.value and 'sunday' not in form.preferred_weekdays.value %} hidden{% endif %}>{% trans "Bitte beachte: Unterricht am Samstag und/oder Sonntag ist mit Zuschlägen verbunden." %}</p>
@@ -536,4 +598,11 @@
         updateRoleSections();
     })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'core/lead_address_autocomplete.js' %}"></script>
+    {% if google_maps_api_key %}
+        <script async src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|urlencode }}&amp;loading=async&amp;libraries=places&amp;language=de&amp;region=DE&amp;callback=initLeadAddressAutocomplete" onerror="leadAddressAutocompleteUnavailable()"></script>
+    {% endif %}
 {% endblock %}
