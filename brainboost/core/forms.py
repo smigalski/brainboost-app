@@ -40,7 +40,7 @@ from .models import (
 class EmailOrUsernameAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request=request, *args, **kwargs)
-        self.fields["username"].label = "E-Mail oder Benutzername"
+        self.fields["username"].label = "E-Mail"
 
 
 class CancellationRequestForm(forms.ModelForm):

@@ -12,6 +12,7 @@ from xml.etree import ElementTree
 
 from django import forms
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Permission
 from django.contrib.messages import get_messages
 from django.core import mail
 from django.core.management import call_command
@@ -2037,6 +2038,84 @@ class EmailOrUsernameLoginTests(TestCase):
         auth_user = authenticate(username="login.user@example.com", password="test12345")
         self.assertIsNotNone(auth_user)
         self.assertEqual(auth_user.pk, self.user.pk)
+
+    def test_webapp_login_with_email(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": " LOGIN.USER@example.com ", "password": "test12345"},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.pk)
+
+    def test_webapp_login_does_not_accept_username(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": self.user.username, "password": "test12345"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_staff_password_reset_allows_admin_and_email_login_with_shared_email(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        CustomUser.objects.create_user(
+            username="shared_email_user",
+            email=self.user.email.upper(),
+            password="DifferentPassword123!",
+        )
+        administrator = CustomUser.objects.create_user(
+            username="password_manager", is_staff=True,
+        )
+        administrator.user_permissions.add(
+            Permission.objects.get(content_type__app_label="core", codename="change_customuser")
+        )
+        self.client.force_login(administrator)
+        new_password = "NewStaffPassword456!"
+        response = self.client.post(
+            reverse("admin:auth_user_password_change", args=[self.user.pk]),
+            {"password1": new_password, "password2": new_password, "usable_password": "true"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_password))
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("admin:login"),
+            {"username": self.user.username, "password": new_password, "next": reverse("admin:index")},
+        )
+        self.assertRedirects(response, reverse("admin:index"), fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.pk)
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("login"), {"username": self.user.email, "password": new_password},
+        )
+        self.assertRedirects(response, reverse("dashboard"), fetch_redirect_response=False)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), self.user.pk)
+
+    def test_shared_email_and_password_is_rejected_as_ambiguous(self):
+        CustomUser.objects.create_user(
+            username="ambiguous_user", email=self.user.email, password="test12345",
+        )
+        response = self.client.post(
+            reverse("login"), {"username": self.user.email, "password": "test12345"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_inactive_account_does_not_block_active_account_with_same_email(self):
+        CustomUser.objects.create_user(
+            username="inactive_user", email=self.user.email, password="test12345", is_active=False,
+        )
+        self.test_webapp_login_with_email()
+
+    def test_wrong_password_is_rejected(self):
+        response = self.client.post(
+            reverse("login"), {"username": self.user.email, "password": "WrongPassword123!"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("_auth_user_id", self.client.session)
 
 
 class TutorBankDataReminderTests(TestCase):

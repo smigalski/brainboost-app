@@ -480,11 +480,14 @@ strong.logo { color: var(--logo-turquoise); }
 }
 
 .nav-links__logout button {
+    appearance: none;
+    background: transparent;
     border: 0;
     cursor: pointer;
 }
 
-.nav-links a:hover { background: rgba(44,138,138,0.1); }
+.nav-links a:hover,
+.nav-links__logout button:hover { background: rgba(44,138,138,0.1); }
 .nav-links a.active {
     background: rgba(44,138,138,0.18);
     color: var(--teal-dark);
