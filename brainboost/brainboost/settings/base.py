@@ -213,7 +213,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'landing_page'
+LOGOUT_REDIRECT_URL = 'login'
 
 # Auth sessions should not survive a browser session and should expire after
 # 30 minutes without requests. SESSION_SAVE_EVERY_REQUEST makes active use

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta_description %}{% endblock %}
     <title>{% block title %}BrainBoost{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1021">
+    <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=1022">
     <link rel="stylesheet" href="{% static 'core/cookie_notice.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'css/price_banner.css' %}?v=1">
     {% block extra_head %}{% endblock %}
@@ -175,7 +175,10 @@
                         {% endif %}
                     {% endwith %}
                     {% if request.user.is_authenticated %}
-                        <a class="pill{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}" href="{% url 'logout' %}">{% trans "Ausloggen" %}</a>
+                        <form method="post" action="{% url 'logout' %}" class="nav-links__logout{% if request.user.role == 'tutor' %} nav-links__logout--tutor{% endif %}">
+                            {% csrf_token %}
+                            <button class="pill" type="submit">{% trans "Ausloggen" %}</button>
+                        </form>
                     {% else %}
                         <a class="pill" href="{% url 'login' %}">{% trans "Einloggen" %}</a>
                     {% endif %}

@@ -465,13 +465,23 @@ strong.logo { color: var(--logo-turquoise); }
     max-width: 100%;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-links__logout button {
     text-decoration: none;
     color: var(--accent);
     font-weight: 600;
     padding: 8px 12px;
     border-radius: 10px;
     transition: all 0.2s ease;
+}
+
+.nav-links__logout {
+    margin: 0;
+}
+
+.nav-links__logout button {
+    border: 0;
+    cursor: pointer;
 }
 
 .nav-links a:hover { background: rgba(44,138,138,0.1); }
@@ -1799,7 +1809,8 @@ input[type="file"] {
         align-items: stretch;
     }
 
-    .nav-links a {
+    .nav-links a,
+    .nav-links__logout button {
         display: flex;
         align-items: center;
         justify-content: center;

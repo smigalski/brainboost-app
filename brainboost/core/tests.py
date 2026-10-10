@@ -17,7 +17,7 @@ from django.core import mail
 from django.core.management import call_command
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
-from django.test import SimpleTestCase, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1969,6 +1969,54 @@ class InvoiceGenerateFormTests(TestCase):
 
         self.assertIsInstance(form.fields["period"].widget, forms.Select)
         self.assertIn(("2026-03", "März 2026"), list(form.fields["period"].choices))
+
+
+@override_settings(DEBUG=False)
+class LogoutTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="logout_user",
+            role=CustomUser.Roles.TUTOR,
+        )
+        self.client = Client(enforce_csrf_checks=True)
+        self.client.force_login(self.user)
+
+    def test_logout_form_ends_session_and_displays_login(self):
+        page = self.client.get(reverse("login"))
+        self.assertContains(
+            page,
+            '<form method="post" action="%s" class="nav-links__logout nav-links__logout--tutor">'
+            % reverse("logout"),
+        )
+        self.assertNotContains(page, 'href="%s"' % reverse("logout"))
+        response = self.client.post(
+            reverse("logout"),
+            {"csrfmiddlewaretoken": self.client.cookies["csrftoken"].value},
+            follow=True,
+        )
+
+        self.assertRedirects(response, reverse("login"))
+        self.assertTemplateUsed(response, "login.html")
+        self.assertContains(response, "Einloggen")
+        self.assertNotContains(response, "Ausloggen")
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertFalse(response.wsgi_request.user.is_authenticated)
+        self.assertRedirects(
+            self.client.get(reverse("dashboard")),
+            "%s?next=%s" % (reverse("login"), reverse("dashboard")),
+        )
+
+    def test_logout_requires_csrf_token(self):
+        response = self.client.post(reverse("logout"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_get_does_not_log_out_user(self):
+        response = self.client.get(reverse("logout"))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
 
 
 class EmailOrUsernameLoginTests(TestCase):
