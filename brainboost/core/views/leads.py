@@ -623,24 +623,9 @@ def lead_convert_to_family(request, lead_id):
             result = form.save()
         except (IntegrityError, ValueError):
             logger.exception("Eltern-/SchülerInnen-Lead konnte nicht übernommen werden.")
-            messages.error(
-                request,
-                "Der Lead konnte nicht übernommen werden. Bitte prüfe, ob die E-Mail-Adressen bereits verwendet werden.",
-            )
+            form.add_error(None, "Der Lead konnte nicht übernommen werden. Bitte prüfe, ob die E-Mail-Adressen bereits verwendet werden.")
         else:
-            failed_recipients = []
-            if result["parent_created"] and result["parent"].user.email:
-                try:
-                    _send_set_password_email(request, result["parent"].user)
-                except Exception:
-                    logger.exception("Passwort-Mail an neues Elternkonto fehlgeschlagen.")
-                    failed_recipients.append(result["parent"].user.email)
-            if result["student_user"].email:
-                try:
-                    _send_set_password_email(request, result["student_user"])
-                except Exception:
-                    logger.exception("Passwort-Mail an neues SchülerInnenkonto fehlgeschlagen.")
-                    failed_recipients.append(result["student_user"].email)
+            failed_recipients = _send_family_account_invitations(request, result)
 
             if failed_recipients:
                 messages.warning(

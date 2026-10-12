@@ -51,6 +51,8 @@ from ..access import (
     can_request_lesson_reschedule,
     can_view_lesson,
     has_admin_access as _has_admin_access,
+    is_learning_profile_user as _is_learning_profile_user,
+    is_independent_student_user as _is_independent_student_user,
     payer_invoice_qs,
 )
 from ..forms import (
@@ -63,9 +65,7 @@ from ..forms import (
     HolidaySurveyAnswerForm,
     FAQItemForm,
     FAQSubmissionForm,
-    ParentCreateForm,
-    StudentCreateForm,
-    IndependentStudentCreateForm,
+    FamilyAccountForm,
     TutorTemplateForm,
     TutorCreateForm,
     ParentProfileForm,
@@ -315,17 +315,6 @@ def _actor_label(user: CustomUser) -> str:
     if user.role == CustomUser.Roles.STUDENT:
         return f"SchülerIn {user.display_name}"
     return user.display_name
-
-
-def _is_learning_profile_user(user: CustomUser) -> bool:
-    return user.role in {
-        CustomUser.Roles.STUDENT,
-        CustomUser.Roles.INDEPENDENT_STUDENT,
-    }
-
-
-def _is_independent_student_user(user: CustomUser) -> bool:
-    return user.role == CustomUser.Roles.INDEPENDENT_STUDENT
 
 
 def _display_name(user: CustomUser) -> str:
@@ -1513,6 +1502,19 @@ def _send_set_password_email(request, user: CustomUser) -> None:
         raise RuntimeError("email_send_failed")
 
 
+def _send_family_account_invitations(request, result):
+    failed_recipients = []
+    for user in result["new_users"]:
+        if not user.email:
+            continue
+        try:
+            _send_set_password_email(request, user)
+        except Exception:
+            logger.exception("Passwort-Mail an neues Familienkonto fehlgeschlagen.")
+            failed_recipients.append(user.email)
+    return failed_recipients
+
+
 def _email_change_token(user: CustomUser, email: str) -> str:
     return signing.dumps(
         {"user_id": user.pk, "email": email},
@@ -1903,10 +1905,6 @@ def _faq_items_for_target(target: str):
     if target_filter is None:
         return FAQItem.objects.none()
     return FAQItem.objects.filter(is_published=True).filter(target_filter).order_by("question")
-
-
-def _has_faq_admin_access(user: CustomUser) -> bool:
-    return _has_admin_access(user)
 
 
 def _build_progress_chart_data(entries, include_student_name: bool = False) -> dict:

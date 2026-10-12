@@ -1,0 +1,6 @@
+<div class="admin-field{% if 'address' in field.name %} admin-field--wide{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.name == 'student_email' %}<span data-student-email-required{% if not field.field.required %} hidden{% endif %}> *</span>{% elif field.field.required or parent_field %} *{% endif %}</label>
+    {{ field }}
+    {% if field.help_text %}<span class="admin-field__help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}
+    {% if field.errors %}<div id="{{ field.auto_id }}_error">{% for error in field.errors %}<span class="admin-field__error">{{ error }}</span>{% endfor %}</div>{% endif %}
+</div>

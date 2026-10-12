@@ -5,7 +5,7 @@ from django.views.decorators.http import require_GET
 @login_required
 def dashboard(request):
     _ensure_profile_for_user(request.user)
-    context = {"show_faq_target_filters": _has_faq_admin_access(request.user)}
+    context = {"show_faq_target_filters": _has_admin_access(request.user)}
     if _is_learning_profile_user(request.user):
         template = "dashboard_student.html"
         if hasattr(request.user, "student_profile"):
@@ -122,8 +122,7 @@ def dashboard(request):
             context["tutor_can_create_accounts"] = can_create_accounts
             context["tutor_onboarding_steps"] = _tutor_onboarding_steps(tutor_profile)
             context["can_send_broadcast_email"] = _has_admin_access(request.user)
-            context["can_manage_faq"] = _has_faq_admin_access(request.user)
-            context["has_parent_profiles"] = ParentProfile.objects.exists()
+            context["can_manage_faq"] = _has_admin_access(request.user)
             context["news_items"] = _tutor_news_items(tutor_profile)
             context["faq_items"] = _faq_items_for_target("tutor")
             bbb_students = assigned_students
@@ -344,7 +343,7 @@ def faq_submit(request):
         return redirect("dashboard")
 
     form_data = request.POST.copy()
-    if not _has_faq_admin_access(request.user):
+    if not _has_admin_access(request.user):
         form_data["audience_all"] = ""
         form_data["show_on_landing"] = ""
         if request.user.role == CustomUser.Roles.PARENT:
@@ -371,7 +370,7 @@ def faq_submit(request):
 @login_required
 def faq_admin(request):
     _ensure_profile_for_user(request.user)
-    if not _has_faq_admin_access(request.user):
+    if not _has_admin_access(request.user):
         return redirect("dashboard")
 
     if request.method == "POST":

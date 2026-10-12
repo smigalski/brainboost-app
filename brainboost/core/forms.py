@@ -1021,11 +1021,15 @@ class HolidaySurveyForm(forms.ModelForm):
 
 
 class HolidaySurveyAnswerForm(forms.ModelForm):
+    answer = forms.ChoiceField(
+        choices=HolidaySurveyResponse.Answer.choices,
+        label="Antwort",
+        widget=forms.RadioSelect,
+    )
+
     class Meta:
         model = HolidaySurveyResponse
         fields = ["answer"]
-        labels = {"answer": "Antwort"}
-        widgets = {"answer": forms.RadioSelect}
 
 
 class FAQItemForm(forms.ModelForm):
@@ -1272,485 +1276,223 @@ class BaseUserCreateForm(forms.Form):
         )
 
 
-class ParentCreateForm(BaseUserCreateForm):
-    email = forms.EmailField(required=False, label="E-Mail")
-    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
-    address = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Adresse",
-        widget=forms.TextInput(
-            attrs={
-                "class": "address-autocomplete",
-                "autocomplete": "off",
-                "placeholder": "Wohnadresse eingeben",
-            }
-        ),
-    )
-    role_display = forms.CharField(
-        initial=CustomUser.Roles.PARENT.label,
-        required=False,
-        disabled=True,
-        label="Rolle",
-    )
+class FamilyAccountForm(forms.Form):
+    """Shared account creation and validation for tutors and lead conversion."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["password1"].required = False
-        self.fields["password2"].required = False
-        self.fields["email"].help_text = "Optional. Wenn leer, wird nur ein Platzhalter-Eintrag ohne E-Mail-Versand angelegt."
-        self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
-        self.order_fields(
-            [
-                "first_name",
-                "last_name",
-                "email",
-                "phone_number",
-                "address",
-                "password1",
-                "password2",
-                "is_active",
-                "role_display",
-            ]
-        )
-
-    def save(self) -> CustomUser:
-        with transaction.atomic():
-            user = self._build_user(CustomUser.Roles.PARENT)
-            if self.cleaned_data.get("password1"):
-                user.set_password(self.cleaned_data["password1"])
-            else:
-                user.set_unusable_password()
-            user.save()
-            ParentProfile.objects.create(
-                user=user,
-                phone_number=self.cleaned_data.get("phone_number", ""),
-                address=self.cleaned_data.get("address", ""),
-            )
-        return user
-
-
-class StudentCreateForm(BaseUserCreateForm):
-    email = forms.EmailField(required=False, label="E-Mail")
-    create_without_parents = forms.BooleanField(
-        required=False,
-        widget=forms.HiddenInput,
-    )
-    role_display = forms.CharField(
-        initial=CustomUser.Roles.STUDENT.label,
-        required=False,
-        disabled=True,
-        label="Rolle",
-    )
-    address = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Adresse",
-        widget=forms.TextInput(
-            attrs={
-                "class": "address-autocomplete",
-                "autocomplete": "off",
-                "placeholder": "Wohnadresse eingeben",
-            }
-        ),
-    )
-    phone_number = forms.CharField(max_length=50, required=False, label="Telefonnummer")
-    school = forms.CharField(max_length=255, required=False, label="Schule")
-    grade_level = forms.CharField(max_length=120, required=False, label="Klassenstufe")
-    birth_date = forms.DateField(
-        required=False,
-        label="Geburtsdatum",
-        widget=forms.DateInput(attrs={"type": "date"}),
-        input_formats=["%Y-%m-%d"],
-    )
-    zoom_link = forms.URLField(required=False, label="BBB-Link")
-    zumpad_link = forms.URLField(required=False, label="ZUMPad-Link")
-    parents = forms.ModelMultipleChoiceField(
-        queryset=ParentProfile.objects.all(),
-        required=False,
-        label="Eltern",
-        widget=forms.SelectMultiple(attrs={"size": 6}),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["password1"].required = False
-        self.fields["password2"].required = False
-        self.fields["email"].help_text = "Optional. Wenn leer, wird nur ein Platzhalter-Eintrag ohne E-Mail-Versand angelegt."
-        self.fields["password1"].help_text = "Optional. Leer lassen fuer einen Platzhalter ohne Login."
-        self.order_fields(
-            [
-                "first_name",
-                "last_name",
-                "email",
-                "phone_number",
-                "password1",
-                "password2",
-                "is_active",
-                "role_display",
-                "address",
-                "zoom_link",
-                "zumpad_link",
-                "create_without_parents",
-                "parents",
-            ]
-        )
-
-    def clean(self):
-        cleaned = super().clean()
-        create_without_parents = cleaned.get("create_without_parents")
-        parents = cleaned.get("parents")
-        if "parents" in self.fields and not create_without_parents and not parents:
-            self.add_error("parents", "Bitte wähle mindestens ein Elternteil aus oder nutze „ohne Eltern anlegen“.")
-        return cleaned
-
-    def save(self) -> CustomUser:
-        with transaction.atomic():
-            create_without_parents = self.cleaned_data.get("create_without_parents")
-            role = (
-                CustomUser.Roles.INDEPENDENT_STUDENT
-                if create_without_parents
-                else CustomUser.Roles.STUDENT
-            )
-            user = self._build_user(role)
-            if self.cleaned_data.get("password1"):
-                user.set_password(self.cleaned_data["password1"])
-            else:
-                user.set_unusable_password()
-            user.save()
-            profile = StudentProfile.objects.create(
-                user=user,
-                address=self.cleaned_data.get("address", ""),
-                phone_number=self.cleaned_data.get("phone_number", ""),
-                school=self.cleaned_data.get("school", ""),
-                grade_level=self.cleaned_data.get("grade_level", ""),
-                birth_date=self.cleaned_data.get("birth_date"),
-                zoom_link=self.cleaned_data.get("zoom_link", ""),
-                zumpad_link=self.cleaned_data.get("zumpad_link", ""),
-            )
-            parents = self.cleaned_data.get("parents")
-            if parents and not create_without_parents:
-                profile.parents.set(parents)
-        return user
-
-
-class IndependentStudentCreateForm(StudentCreateForm):
-    role_display = forms.CharField(
-        initial=CustomUser.Roles.INDEPENDENT_STUDENT.label,
-        required=False,
-        disabled=True,
-        label="Rolle",
-    )
-    degree_program = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Studiengang",
-    )
-    affected_courses = forms.CharField(
-        required=False,
-        label="Betroffene Veranstaltungen/Kurse",
-        widget=forms.Textarea(attrs={"rows": 3}),
-    )
-    tutoring_goal = forms.CharField(
-        required=False,
-        label="Ziel der Nachhilfe/des Privatunterrichts",
-        widget=forms.Textarea(attrs={"rows": 3}),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields.pop("parents", None)
-        self.fields.pop("create_without_parents", None)
-        self.order_fields(
-            [
-                "username",
-                "first_name",
-                "last_name",
-                "email",
-                "phone_number",
-                "password1",
-                "password2",
-                "is_active",
-                "role_display",
-                "address",
-                "birth_date",
-                "degree_program",
-                "affected_courses",
-                "tutoring_goal",
-                "zoom_link",
-                "zumpad_link",
-            ]
-        )
-
-    def save(self) -> CustomUser:
-        with transaction.atomic():
-            user = self._build_user(CustomUser.Roles.INDEPENDENT_STUDENT)
-            if self.cleaned_data.get("password1"):
-                user.set_password(self.cleaned_data["password1"])
-            else:
-                user.set_unusable_password()
-            user.save()
-            StudentProfile.objects.create(
-                user=user,
-                address=self.cleaned_data.get("address", ""),
-                phone_number=self.cleaned_data.get("phone_number", ""),
-                birth_date=self.cleaned_data.get("birth_date"),
-                degree_program=self.cleaned_data.get("degree_program", ""),
-                affected_courses=self.cleaned_data.get("affected_courses", ""),
-                tutoring_goal=self.cleaned_data.get("tutoring_goal", ""),
-                zoom_link=self.cleaned_data.get("zoom_link", ""),
-                zumpad_link=self.cleaned_data.get("zumpad_link", ""),
-            )
-        return user
-
-
-class LeadFamilyConversionForm(forms.Form):
     WITH_PARENT = "with_parent"
     INDEPENDENT = "independent"
-    STUDENT_KIND_CHOICES = (
-        (WITH_PARENT, "SchülerIn mit Elternkonto"),
-        (INDEPENDENT, "Selbstständige StudentIn/SchülerIn"),
+    STUDENT_FIELDS = (
+        "student_first_name", "student_last_name", "student_email", "student_phone",
+        "student_address", "birth_year", "school_type", "school_state", "grade_level",
+        "degree_program", "affected_courses", "tutoring_goal", "zoom_link", "zumpad_link",
     )
-
+    PARENT_FIELDS = (
+        "parent_first_name", "parent_last_name", "parent_email", "parent_phone", "parent_address",
+    )
     student_kind = forms.ChoiceField(
-        choices=STUDENT_KIND_CHOICES,
-        label="Kontotyp",
-        widget=forms.RadioSelect,
+        choices=((WITH_PARENT, "SchülerIn mit Elternkonto"),
+                 (INDEPENDENT, "Selbstständige StudentIn/SchülerIn")),
+        label="Kontotyp", widget=forms.RadioSelect, initial=WITH_PARENT,
     )
     student_first_name = forms.CharField(max_length=150, label="Vorname SchülerIn/StudentIn")
     student_last_name = forms.CharField(max_length=150, label="Nachname SchülerIn/StudentIn")
-    student_email = forms.EmailField(required=False, label="E-Mail SchülerIn/StudentIn")
-    student_phone = forms.CharField(max_length=50, required=False, label="Telefon SchülerIn/StudentIn")
-    student_address = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Adresse SchülerIn/StudentIn",
-        widget=forms.TextInput(
-            attrs={
-                "class": "address-autocomplete",
-                "autocomplete": "off",
-                "placeholder": "Wohnadresse eingeben",
-            }
-        ),
-    )
-    birth_year = forms.IntegerField(
-        required=False,
-        label="Geburtsjahr",
-        min_value=1900,
-        validators=[MaxValueValidator(current_year)],
-        widget=forms.NumberInput(attrs={"placeholder": "z. B. 2012"}),
-    )
-    school_type = forms.CharField(
-        max_length=120,
-        required=False,
-        label="Schulform",
-        widget=forms.TextInput(attrs={"placeholder": "z. B. Gymnasium, Gesamtschule"}),
-    )
-    school_state = forms.ChoiceField(
-        required=False,
-        label="Bundesland der Schule",
-        choices=[("", "Bitte auswählen"), *StudentProfile.SchoolState.choices],
-    )
+    student_email = forms.EmailField(required=False, label="E-Mail SchülerIn/StudentIn",
+        help_text="Mit Elternkonto optional. Ohne E-Mail wird kein eigener WebApp-Zugang eingerichtet.")
+    student_phone = forms.CharField(max_length=50, label="Telefon SchülerIn/StudentIn",
+        help_text="Eigene Nummer oder eine erreichbare Telefonnummer des Elternteils.",
+        widget=forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}))
+    student_address = forms.CharField(max_length=255, label="Unterrichtsadresse SchülerIn/StudentIn",
+        help_text="Vollständige Adresse mit Straße, Hausnummer, PLZ und Ort. Grundlage für die Fahrtstrecke bei Unterricht zu Hause.",
+        widget=forms.TextInput(attrs={"class": "address-autocomplete", "autocomplete": "street-address", "data-address-mode": "admin"}))
+    birth_year = forms.IntegerField(required=False, label="Geburtsjahr", min_value=1900,
+        validators=[MaxValueValidator(current_year)], widget=forms.NumberInput(attrs={"placeholder": "z. B. 2012"}))
+    school_type = forms.CharField(max_length=120, required=False, label="Schulform")
+    school_state = forms.ChoiceField(required=False, label="Bundesland der Schule",
+        choices=[("", "Bitte auswählen"), *StudentProfile.SchoolState.choices])
     grade_level = forms.CharField(max_length=120, required=False, label="Klassenstufe")
     degree_program = forms.CharField(max_length=255, required=False, label="Studiengang")
-    existing_parent = forms.ModelChoiceField(
-        queryset=ParentProfile.objects.none(),
-        required=False,
-        label="Vorhandenes Elternkonto",
-        empty_label="Neues Elternkonto anlegen",
-        help_text="Falls das Elternkonto bereits existiert, hier auswählen.",
-    )
-    parent_first_name = forms.CharField(max_length=150, required=False, label="Vorname Elternteil")
-    parent_last_name = forms.CharField(max_length=150, required=False, label="Nachname Elternteil")
-    parent_email = forms.EmailField(required=False, label="E-Mail Elternteil")
-    parent_phone = forms.CharField(max_length=50, required=False, label="Telefon Elternteil")
-    parent_address = forms.CharField(
-        max_length=255,
-        required=False,
-        label="Adresse Elternteil",
-        widget=forms.TextInput(
-            attrs={
-                "class": "address-autocomplete",
-                "autocomplete": "off",
-                "placeholder": "Wohnadresse eingeben",
-            }
-        ),
-    )
-    assigned_tutor = forms.ModelChoiceField(
-        queryset=TutorProfile.objects.none(),
-        label="Zuständige TutorIn",
-        help_text="Die SchülerIn wird dieser aktiven TutorIn direkt zugewiesen.",
-    )
+    affected_courses = forms.CharField(required=False, label="Fächer / betroffene Kurse",
+        widget=forms.Textarea(attrs={"rows": 2}))
+    tutoring_goal = forms.CharField(required=False, label="Ziel der Nachhilfe",
+        widget=forms.Textarea(attrs={"rows": 2}))
+    zoom_link = forms.URLField(required=False, label="BBB-Link")
+    zumpad_link = forms.URLField(required=False, label="ZUMPad-Link")
+    existing_parents = forms.ModelMultipleChoiceField(
+        queryset=ParentProfile.objects.none(), required=False, label="Vorhandene Elternkonten",
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Ein oder mehrere Elternteile auswählen. Zusätzlich kann ein neues Elternkonto angelegt werden.")
+    create_parent = forms.BooleanField(required=False, initial=True, label="Neues Elternkonto anlegen")
+    parent_first_name = forms.CharField(max_length=150, label="Vorname Elternteil")
+    parent_last_name = forms.CharField(max_length=150, label="Nachname Elternteil")
+    parent_email = forms.EmailField(label="E-Mail Elternteil")
+    parent_phone = forms.CharField(max_length=50, label="Telefon Elternteil",
+        widget=forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}))
+    parent_address = forms.CharField(max_length=255, label="Adresse Elternteil",
+        help_text="Vollständige Adresse mit Straße, Hausnummer, PLZ und Ort.",
+        widget=forms.TextInput(attrs={"class": "address-autocomplete", "autocomplete": "street-address", "data-address-mode": "admin"}))
+    assigned_tutor = forms.ModelChoiceField(queryset=TutorProfile.objects.none(), label="Zuständige TutorIn")
 
-    def __init__(self, *args, lead: Lead, **kwargs):
+    def __init__(self, *args, lead=None, tutor=None, parent_only=False, independent=False, **kwargs):
         self.lead = lead
+        self.tutor = tutor
+        self.parent_only = parent_only
         initial = kwargs.setdefault("initial", {})
-        first_name, last_name = self._split_name(lead.name)
-        initial.setdefault("student_kind", self.WITH_PARENT)
-        initial.setdefault("grade_level", lead.grade)
-        if lead.role == Lead.Role.PARENT:
-            initial.setdefault("parent_first_name", first_name)
-            initial.setdefault("parent_last_name", last_name)
-            initial.setdefault("parent_email", lead.email)
-            initial.setdefault("parent_phone", lead.phone)
-        else:
-            initial.setdefault("student_first_name", first_name)
-            initial.setdefault("student_last_name", last_name)
-            initial.setdefault("student_email", lead.email)
-            initial.setdefault("student_phone", lead.phone)
+        if independent:
+            initial.setdefault("student_kind", self.INDEPENDENT)
+        if lead:
+            first_name, last_name = self._split_name(lead.name)
+            prefix = "parent" if lead.role == Lead.Role.PARENT else "student"
+            initial.update({f"{prefix}_first_name": first_name, f"{prefix}_last_name": last_name,
+                            f"{prefix}_email": lead.email, f"{prefix}_phone": lead.phone})
+            initial.setdefault("grade_level", lead.grade)
+            initial.setdefault("affected_courses", lead.subject)
+            initial.setdefault("tutoring_goal", lead.goal)
+        if not parent_only:
+            initial.setdefault("create_parent", not ParentProfile.objects.exists())
+            if lead and lead.role == Lead.Role.PARENT:
+                matching_parents = list(ParentProfile.objects.filter(user__email__iexact=lead.email))
+                if len(matching_parents) == 1:
+                    initial.setdefault("existing_parents", matching_parents)
+                    initial["create_parent"] = False
+                else:
+                    initial["create_parent"] = True
         super().__init__(*args, **kwargs)
         self.fields["birth_year"].widget.attrs["max"] = current_year()
-        if lead.role == Lead.Role.PARENT:
-            self.fields["student_kind"].choices = (
-                (self.WITH_PARENT, "SchülerIn mit Elternkonto"),
-            )
-        self.fields["existing_parent"].queryset = ParentProfile.objects.select_related(
-            "user"
-        ).order_by("user__last_name", "user__first_name", "user__email")
-        self.fields["assigned_tutor"].queryset = TutorProfile.objects.select_related(
-            "user"
-        ).filter(status=TutorProfile.Status.ACTIVE).order_by(
-            "user__last_name", "user__first_name", "user__email"
+        self.fields["existing_parents"].queryset = ParentProfile.objects.select_related("user").order_by(
+            "user__last_name", "user__first_name", "user__email")
+        self.fields["existing_parents"].label_from_instance = lambda parent: (
+            f"{parent.user.display_name} ({parent.user.email or 'ohne E-Mail'})"
         )
+        self.fields["assigned_tutor"].queryset = TutorProfile.objects.select_related("user").filter(
+            status=TutorProfile.Status.ACTIVE, user__is_active=True).order_by("user__last_name", "user__first_name")
+        if lead and lead.role == Lead.Role.PARENT:
+            self.fields["student_kind"].choices = ((self.WITH_PARENT, "SchülerIn mit Elternkonto"),)
+        if tutor or parent_only:
+            self.fields.pop("assigned_tutor")
+        if parent_only:
+            for name in (*self.STUDENT_FIELDS, "student_kind", "existing_parents", "create_parent"):
+                self.fields.pop(name)
+        else:
+            # Hidden, irrelevant data must not prevent switching account type or
+            # reusing existing parents after a validation error.
+            kind = self.data.get("student_kind") if self.is_bound else initial.get("student_kind", self.WITH_PARENT)
+            independent_mode = kind == self.INDEPENDENT and not (lead and lead.role == Lead.Role.PARENT)
+            if independent_mode:
+                self.fields["student_email"].required = True
+                for name in (*self.PARENT_FIELDS, "existing_parents", "create_parent"):
+                    self.fields[name].required = False
+                    self.fields[name].disabled = self.is_bound
+            elif self.is_bound and not self.data.get("create_parent"):
+                for name in self.PARENT_FIELDS:
+                    self.fields[name].required = False
+                    self.fields[name].disabled = True
+
+    @property
+    def student_fields(self):
+        return [self[name] for name in self.STUDENT_FIELDS if name in self.fields]
+
+    @property
+    def parent_fields(self):
+        return [self[name] for name in self.PARENT_FIELDS if name in self.fields]
 
     @staticmethod
-    def _split_name(value: str) -> tuple[str, str]:
+    def _split_name(value):
         parts = (value or "").strip().split()
-        if not parts:
-            return "", ""
-        if len(parts) == 1:
-            return parts[0], ""
-        return parts[0], " ".join(parts[1:])
+        return (parts[0], " ".join(parts[1:])) if parts else ("", "")
 
     @staticmethod
-    def _user_for_email(email: str):
-        if not email:
-            return None
-        return CustomUser.objects.filter(
-            Q(email__iexact=email) | Q(pending_email__iexact=email)
-        ).first()
+    def _users_for_email(email):
+        return CustomUser.objects.filter(Q(email__iexact=email) | Q(pending_email__iexact=email))
 
     def clean(self):
         cleaned = super().clean()
         kind = cleaned.get("student_kind")
-        if self.lead.role == Lead.Role.PARENT and kind != self.WITH_PARENT:
-            self.add_error("student_kind", "Ein Eltern-Lead muss mit einem Elternkonto übernommen werden.")
-        student_email = (cleaned.get("student_email") or "").strip()
-        existing_student_user = self._user_for_email(student_email)
-        if kind == self.INDEPENDENT and not student_email:
-            self.add_error("student_email", "Für ein selbstständiges Konto ist eine E-Mail-Adresse erforderlich.")
-        if existing_student_user:
-            self.add_error("student_email", "Diese E-Mail-Adresse wird bereits für ein WebApp-Konto verwendet.")
-
-        if kind == self.WITH_PARENT:
-            parent = cleaned.get("existing_parent")
-            if not parent:
-                parent_email = (cleaned.get("parent_email") or "").strip()
-                existing_parent_user = self._user_for_email(parent_email)
-                if existing_parent_user:
-                    if hasattr(existing_parent_user, "parent_profile"):
-                        cleaned["existing_parent"] = existing_parent_user.parent_profile
-                    else:
-                        self.add_error("parent_email", "Diese E-Mail-Adresse gehört bereits zu einem anderen Konto.")
-                else:
-                    for field_name in ("parent_first_name", "parent_last_name", "parent_email"):
-                        if not (cleaned.get(field_name) or "").strip():
-                            self.add_error(field_name, "Dieses Feld ist für ein neues Elternkonto erforderlich.")
-            parent_email = ""
-            if cleaned.get("existing_parent"):
-                parent_email = cleaned["existing_parent"].user.email
-            else:
-                parent_email = (cleaned.get("parent_email") or "").strip()
-            if student_email and parent_email and student_email.casefold() == parent_email.casefold():
-                self.add_error(
-                    "student_email",
-                    "Elternteil und SchülerIn benötigen unterschiedliche E-Mail-Adressen. Die SchülerInnen-E-Mail kann leer bleiben.",
-                )
+        if self.tutor and not TutorProfile.objects.filter(
+            pk=self.tutor.pk, status=TutorProfile.Status.ACTIVE, user__is_active=True,
+        ).exists():
+            raise ValidationError("Konten können nur von aktiven TutorInnen angelegt werden.")
+        if not self.parent_only:
+            if self.lead and self.lead.role == Lead.Role.PARENT and kind != self.WITH_PARENT:
+                self.add_error("student_kind", "Ein Eltern-Lead muss mit einem Elternkonto übernommen werden.")
+            email = cleaned.get("student_email", "")
+            if kind == self.INDEPENDENT and not email:
+                self.add_error("student_email", "Für ein selbstständiges Konto ist eine E-Mail-Adresse erforderlich.")
+            if email and self._users_for_email(email).exists():
+                self.add_error("student_email", "Diese E-Mail-Adresse wird bereits für ein WebApp-Konto verwendet.")
+        if self.parent_only or kind == self.WITH_PARENT:
+            parents = list(cleaned.get("existing_parents", []))
+            create_parent = self.parent_only or cleaned.get("create_parent", False)
+            if not parents and not create_parent:
+                self.add_error("existing_parents", "Bitte wähle mindestens ein Elternteil aus oder lege ein neues Elternkonto an.")
+            if create_parent:
+                email = cleaned.get("parent_email", "")
+                if email and self._users_for_email(email).exists():
+                    self.add_error("parent_email", "Diese E-Mail-Adresse wird bereits verwendet. Wähle das vorhandene Elternkonto aus.")
+                if email and email.casefold() == cleaned.get("student_email", "").casefold():
+                    self.add_error("student_email", "Elternteil und SchülerIn benötigen unterschiedliche E-Mail-Adressen. Die SchülerInnen-E-Mail kann leer bleiben.")
         return cleaned
 
     def save(self):
         if not self.is_valid():
             raise ValueError("invalid_form")
         with transaction.atomic():
-            lead = Lead.objects.select_for_update().get(pk=self.lead.pk)
-            if lead.converted_student_id:
-                raise ValueError("already_converted")
-
-            kind = self.cleaned_data["student_kind"]
-            parent = None
-            parent_created = False
-            if kind == self.WITH_PARENT:
-                parent = self.cleaned_data.get("existing_parent")
-                if parent is None:
+            lead = None
+            if self.lead:
+                lead = Lead.objects.select_for_update().get(pk=self.lead.pk)
+                if lead.converted_student_id:
+                    raise ValueError("already_converted")
+            kind = self.cleaned_data.get("student_kind")
+            parents = []
+            new_users = []
+            new_parent = None
+            if self.parent_only or kind == self.WITH_PARENT:
+                parents = list(self.cleaned_data.get("existing_parents", []))
+                if self.parent_only or self.cleaned_data.get("create_parent"):
                     parent_user = CustomUser(
                         username=BaseUserCreateForm._technical_username(),
-                        first_name=self.cleaned_data["parent_first_name"].strip(),
-                        last_name=self.cleaned_data["parent_last_name"].strip(),
-                        email=self.cleaned_data["parent_email"].strip(),
-                        role=CustomUser.Roles.PARENT,
-                        is_active=True,
-                    )
+                        first_name=self.cleaned_data["parent_first_name"], last_name=self.cleaned_data["parent_last_name"],
+                        email=self.cleaned_data["parent_email"], role=CustomUser.Roles.PARENT, is_active=True)
                     parent_user.set_unusable_password()
                     parent_user.save()
-                    parent = ParentProfile.objects.create(
-                        user=parent_user,
-                        phone_number=(self.cleaned_data.get("parent_phone") or "").strip(),
-                        address=(self.cleaned_data.get("parent_address") or "").strip(),
-                    )
-                    parent_created = True
+                    new_users.append(parent_user)
+                    new_parent = ParentProfile.objects.create(user=parent_user,
+                        phone_number=self.cleaned_data["parent_phone"], address=self.cleaned_data["parent_address"])
+                    parents.append(new_parent)
+            student_user = student = None
+            tutor = self.tutor or self.cleaned_data.get("assigned_tutor")
+            if not self.parent_only:
+                student_user = CustomUser(
+                    username=BaseUserCreateForm._technical_username(),
+                    first_name=self.cleaned_data["student_first_name"], last_name=self.cleaned_data["student_last_name"],
+                    email=self.cleaned_data.get("student_email", ""),
+                    role=CustomUser.Roles.INDEPENDENT_STUDENT if kind == self.INDEPENDENT else CustomUser.Roles.STUDENT,
+                    is_active=True)
+                student_user.set_unusable_password()
+                student_user.save()
+                new_users.append(student_user)
+                profile_fields = {name: self.cleaned_data.get(name) for name in (
+                    "birth_year", "school_type", "school_state", "grade_level", "degree_program",
+                    "affected_courses", "tutoring_goal", "zoom_link", "zumpad_link")}
+                student = StudentProfile.objects.create(user=student_user,
+                    address=self.cleaned_data["student_address"], phone_number=self.cleaned_data["student_phone"],
+                    created_by_tutor=tutor, **profile_fields)
+                student.assigned_tutors.add(tutor)
+                student.parents.set(parents)
+            if lead:
+                # The lead has a legacy primary-parent FK; all parents are kept
+                # on the student's many-to-many relation.
+                lead.converted_parent = new_parent or next(iter(parents), None)
+                lead.converted_student = student
+                lead.status = Lead.Status.WON
+                lead.follow_up_done = True
+                lead.save(update_fields=["converted_parent", "converted_student", "status", "follow_up_done", "updated_at"])
+        return {"student_user": student_user, "student": student, "parent": new_parent or next(iter(parents), None),
+                "parents": parents, "parent_created": new_parent is not None, "tutor": tutor,
+                "new_users": new_users}
 
-            student_user = CustomUser(
-                username=BaseUserCreateForm._technical_username(),
-                first_name=self.cleaned_data["student_first_name"].strip(),
-                last_name=self.cleaned_data["student_last_name"].strip(),
-                email=(self.cleaned_data.get("student_email") or "").strip(),
-                role=(
-                    CustomUser.Roles.INDEPENDENT_STUDENT
-                    if kind == self.INDEPENDENT
-                    else CustomUser.Roles.STUDENT
-                ),
-                is_active=True,
-            )
-            student_user.set_unusable_password()
-            student_user.save()
-            tutor = self.cleaned_data["assigned_tutor"]
-            student = StudentProfile.objects.create(
-                user=student_user,
-                address=(self.cleaned_data.get("student_address") or "").strip(),
-                phone_number=(self.cleaned_data.get("student_phone") or "").strip(),
-                school_type=(self.cleaned_data.get("school_type") or "").strip(),
-                school_state=self.cleaned_data.get("school_state", ""),
-                grade_level=(self.cleaned_data.get("grade_level") or "").strip(),
-                birth_year=self.cleaned_data.get("birth_year"),
-                degree_program=(self.cleaned_data.get("degree_program") or "").strip(),
-                affected_courses=(lead.subject or "").strip(),
-                tutoring_goal=(lead.goal or "").strip(),
-                created_by_tutor=tutor,
-            )
-            student.assigned_tutors.add(tutor)
-            if parent:
-                student.parents.add(parent)
 
-            lead.converted_parent = parent
-            lead.converted_student = student
-            lead.status = Lead.Status.WON
-            lead.follow_up_done = True
-            lead.save(
-                update_fields=[
-                    "converted_parent",
-                    "converted_student",
-                    "status",
-                    "follow_up_done",
-                    "updated_at",
-                ]
-            )
-        return {
-            "student_user": student_user,
-            "student": student,
-            "parent": parent,
-            "parent_created": parent_created,
-            "tutor": tutor,
-        }
+class LeadFamilyConversionForm(FamilyAccountForm):
+    """Lead conversion uses the same fields and save process as tutor creation."""
 
 
 class TutorCreateForm(BaseUserCreateForm):

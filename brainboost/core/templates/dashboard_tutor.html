@@ -216,7 +216,7 @@
                     <div class="muted" style="font-size:0.82rem;">Nur fuer AdministratorInnen verfuegbar.</div>
                 {% endif %}
                 <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
-                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Schritt 1</div>
+                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Elternkonto</div>
                     {% if tutor_can_create_accounts %}
                         <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'parent_create' %}">Eltern anlegen</a>
                     {% else %}
@@ -225,13 +225,13 @@
                     {% endif %}
                 </div>
                 <div style="padding:12px; border-radius:14px; background:rgba(255,255,255,0.55); border:1px solid rgba(0,0,0,0.06);">
-                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Schritt 2</div>
-                    {% if tutor_can_create_accounts and has_parent_profiles %}
-                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">SchülerIn anlegen</a>
+                    <div style="font-size:0.78rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#2f5f1e; margin-bottom:8px;">Lernprofil</div>
+                    {% if tutor_can_create_accounts %}
+                        <a class="button" style="background:#6fa94b; color:#10210a;" href="{% url 'student_create' %}">Elternteil + SchülerIn anlegen</a>
                     {% else %}
-                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">SchülerIn anlegen</span>
+                        <span class="button" aria-disabled="true" style="background:#cbd5e1; color:#64748b; cursor:not-allowed; pointer-events:none;">Elternteil + SchülerIn anlegen</span>
                         <div class="muted" style="font-size:0.82rem; margin-top:8px;">
-                            {% if tutor_can_create_accounts %}Erst nach dem ersten Elternteil verfuegbar.{% else %}Freigeschaltet, sobald dein TutorInnen-Status aktiv ist.{% endif %}
+                            Freigeschaltet, sobald dein TutorInnen-Status aktiv ist.
                         </div>
                     {% endif %}
                     {% if tutor_can_create_accounts %}

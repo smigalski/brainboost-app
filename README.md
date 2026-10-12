@@ -292,3 +292,29 @@ Vor Bereitstellung mit dem echten, eingeschränkten Browser-Key auf Staging prü
 PLZ-Vorschläge, Straßen in derselben und einer anderen PLZ, PLZ-Wechsel während
 der Suche, Tastaturbedienung sowie blockierte Google-Anfragen. Lokale Tests können
 die Freischaltung, Abrechnung und tatsächliche Google-Datenabdeckung nicht prüfen.
+
+## Gemeinsame Anlage von Familienkonten
+
+Die Lead-Übernahme und die Kontoanlage im Tutor-Dashboard verwenden
+`FamilyAccountForm` und dasselbe Template `lead_family_convert.html`.
+Neue Felder, Validierungen und Speicherschritte dort gemeinsam pflegen;
+`LeadFamilyConversionForm` ergänzt keinen eigenen Feldsatz.
+
+Neue Elternkonten und Lernprofile benötigen Namen, Telefon und vollständige
+Adresse. Neue Elternkonten benötigen eine E-Mail-Adresse; beim Lernprofil mit
+Elternkonto bleibt die E-Mail optional. Selbstständige Lernprofile benötigen
+für den eigenen Zugang eine E-Mail-Adresse. Passwörter werden per Einladungslink
+vergeben. BBB- und ZUMPad-Links sind optional.
+
+Ein Lernprofil kann mehrere vorhandene Elternkonten und zusätzlich ein neues
+Elternkonto erhalten. Bestehende Konten werden weder verändert noch erneut
+eingeladen. Die Unterrichtsadresse liegt direkt am Lernprofil und wird für
+Fahrtstrecken bei Unterricht zu Hause verwendet. In der Leadzentrale wird eine
+aktive TutorIn ausgewählt, im Tutor-Dashboard ist die angemeldete aktive TutorIn
+fest zugewiesen. Alle Konten und Verknüpfungen werden in einer Transaktion
+angelegt; E-Mail-Fehler nach dem Speichern werden gesondert gemeldet.
+
+```bash
+python brainboost/manage.py test core.test_family_accounts --noinput
+node --test scripts/tests/family_accounts.test.cjs
+```

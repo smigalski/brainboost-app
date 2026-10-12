@@ -61,84 +61,56 @@ def holiday_surveys(request):
             },
         )
 
-    if request.user.role == CustomUser.Roles.PARENT and hasattr(request.user, "parent_profile"):
-        parent_profile = request.user.parent_profile
-        responses = HolidaySurveyResponse.objects.filter(
+    is_parent = request.user.role == CustomUser.Roles.PARENT and hasattr(request.user, "parent_profile")
+    is_independent_student = _is_independent_student_user(request.user) and hasattr(
+        request.user, "student_profile"
+    )
+    if not (is_parent or is_independent_student):
+        return redirect("dashboard")
+
+    parent_profile = request.user.parent_profile if is_parent else None
+    responses = HolidaySurveyResponse.objects.select_related(
+        "student__user",
+        "survey__tutor__user",
+        "parent__user",
+    )
+    if is_parent:
+        responses = responses.filter(
             student__in=parent_profile.students.all(),
-        ).select_related(
-            "student__user",
-            "survey__tutor__user",
-            "parent__user",
         ).order_by("-survey__created_at", "student__user__last_name")
+    else:
+        responses = responses.filter(student=request.user.student_profile).order_by("-survey__created_at")
 
-        if request.method == "POST":
-            response = get_object_or_404(
-                responses,
-                pk=request.POST.get("response_id"),
-            )
-            form = HolidaySurveyAnswerForm(request.POST, instance=response)
-            if form.is_valid():
-                updated = form.save(commit=False)
-                updated.parent = parent_profile
-                updated.answered_at = timezone.now()
-                updated.save()
-                messages.success(request, "Deine Antwort wurde gespeichert.")
-                return redirect("holiday_surveys")
-        response_items = [
-            {
-                "response": response,
-                "form": HolidaySurveyAnswerForm(instance=response),
-            }
-            for response in responses
-        ]
-        return render(
-            request,
-            "holiday_surveys_parent.html",
-            {
-                "response_items": response_items,
-            },
+    submitted_response = None
+    form = None
+    if request.method == "POST":
+        submitted_response = get_object_or_404(
+            responses,
+            pk=request.POST.get("response_id"),
         )
-
-    if _is_independent_student_user(request.user) and hasattr(request.user, "student_profile"):
-        student_profile = request.user.student_profile
-        responses = HolidaySurveyResponse.objects.filter(
-            student=student_profile,
-        ).select_related(
-            "student__user",
-            "survey__tutor__user",
-            "parent__user",
-        ).order_by("-survey__created_at")
-
-        if request.method == "POST":
-            response = get_object_or_404(
-                responses,
-                pk=request.POST.get("response_id"),
-            )
-            form = HolidaySurveyAnswerForm(request.POST, instance=response)
-            if form.is_valid():
-                updated = form.save(commit=False)
-                updated.parent = None
-                updated.answered_at = timezone.now()
-                updated.save()
-                messages.success(request, "Deine Antwort wurde gespeichert.")
-                return redirect("holiday_surveys")
-        response_items = [
-            {
-                "response": response,
-                "form": HolidaySurveyAnswerForm(instance=response),
-            }
-            for response in responses
-        ]
-        return render(
-            request,
-            "holiday_surveys_parent.html",
-            {
-                "response_items": response_items,
-                "is_independent_student": True,
-            },
-        )
-
-    return redirect("dashboard")
+        form = HolidaySurveyAnswerForm(request.POST, instance=submitted_response)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            updated.parent = parent_profile
+            updated.answered_at = timezone.now()
+            updated.save()
+            messages.success(request, "Deine Antwort wurde gespeichert.")
+            return redirect("holiday_surveys")
+    response_items = [
+        {
+            "response": response,
+            "form": form if response == submitted_response else HolidaySurveyAnswerForm(instance=response),
+        }
+        for response in responses
+    ]
+    return render(
+        request,
+        "holiday_surveys_parent.html",
+        {
+            "response_items": response_items,
+            "is_independent_student": is_independent_student,
+        },
+    )
 
 
 @login_required
@@ -382,43 +354,40 @@ def resend_set_password_email(request, user_id):
     return redirect(next_url)
 
 
-@login_required
-def parent_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
-        request.user, "tutor_profile"
-    ):
+def _create_family_accounts(request, *, parent_only=False, independent=False):
+    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(request.user, "tutor_profile"):
         return redirect("dashboard")
-    if not _tutor_can_create_accounts(request.user.tutor_profile):
+    tutor = request.user.tutor_profile
+    if not _tutor_can_create_accounts(tutor):
         messages.error(request, "Konten können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
         return redirect("dashboard")
-    if request.method == "POST":
-        form = ParentCreateForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            if not user.email:
-                messages.success(
-                    request,
-                    "Elternteil wurde als Platzhalter ohne WebApp-Zugang angelegt.",
-                )
+    form = FamilyAccountForm(
+        request.POST if request.method == "POST" else None,
+        tutor=tutor, parent_only=parent_only, independent=independent,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            result = form.save()
+        except (IntegrityError, ValueError):
+            logger.exception("Familienkonten konnten nicht angelegt werden.")
+            form.add_error(None, "Die Konten konnten nicht angelegt werden. Bitte prüfe die Angaben und versuche es erneut.")
+        else:
+            failed = _send_family_account_invitations(request, result)
+            if failed:
+                messages.warning(request, "Die Konten wurden angelegt, aber die Passwort-Mail konnte nicht an alle versendet werden: " + ", ".join(failed))
             else:
-                try:
-                    _send_set_password_email(request, user)
-                except Exception as exc:
-                    logger.exception("E-Mail Versand fehlgeschlagen (Elternteil)")
-                    messages.error(
-                        request,
-                        "Elternteil wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
-                        f"Fehler: {exc.__class__.__name__} ({exc})",
-                    )
-                else:
-                    messages.success(
-                        request,
-                        "Elternteil wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
-                    )
+                messages.success(request, "Die Konten wurden angelegt. Passwort-Mails wurden an die neuen Konten mit E-Mail-Adresse versendet.")
             return redirect("dashboard")
-    else:
-        form = ParentCreateForm()
-    return render(request, "parent_create.html", {"form": form})
+    return render(request, "lead_family_convert.html", {
+        "form": form, "parent_only": parent_only,
+        "heading": "Elternteil anlegen" if parent_only else "Elternteil + SchülerIn / StudentIn anlegen",
+        "next_url": reverse("dashboard"),
+    })
+
+
+@login_required
+def parent_create(request):
+    return _create_family_accounts(request, parent_only=True)
 
 
 @login_required
@@ -465,99 +434,9 @@ def tutor_create(request):
 
 @login_required
 def student_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
-        request.user, "tutor_profile"
-    ):
-        return redirect("dashboard")
-    if not _tutor_can_create_accounts(request.user.tutor_profile):
-        messages.error(request, "SchülerInnen können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
-        return redirect("dashboard")
-    if request.method == "POST":
-        form = StudentCreateForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            user.student_profile.assigned_tutors.add(request.user.tutor_profile)
-            user.student_profile.created_by_tutor = request.user.tutor_profile
-            user.student_profile.save(update_fields=["created_by_tutor"])
-            account_label = (
-                "StudentIn"
-                if user.role == CustomUser.Roles.INDEPENDENT_STUDENT
-                else "SchülerIn"
-            )
-            if not user.email:
-                messages.success(
-                    request,
-                    f"{account_label} wurde als Platzhalter ohne WebApp-Zugang angelegt.",
-                )
-            else:
-                try:
-                    _send_set_password_email(request, user)
-                except Exception as exc:
-                    logger.exception("E-Mail Versand fehlgeschlagen (%s)", account_label)
-                    messages.error(
-                        request,
-                        f"{account_label} wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
-                        f"Fehler: {exc.__class__.__name__} ({exc})",
-                    )
-                else:
-                    messages.success(
-                        request,
-                        f"{account_label} wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
-                    )
-            return redirect("dashboard")
-    else:
-        form = StudentCreateForm()
-    return render(request, "student_create.html", {"form": form})
+    return _create_family_accounts(request)
 
 
 @login_required
 def independent_student_create(request):
-    if request.user.role != CustomUser.Roles.TUTOR or not hasattr(
-        request.user, "tutor_profile"
-    ):
-        return redirect("dashboard")
-    if not _tutor_can_create_accounts(request.user.tutor_profile):
-        messages.error(request, "StudentInnen können erst angelegt werden, wenn dein TutorInnen-Status aktiv ist.")
-        return redirect("dashboard")
-    if request.method == "POST":
-        form = IndependentStudentCreateForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            user.student_profile.assigned_tutors.add(request.user.tutor_profile)
-            user.student_profile.created_by_tutor = request.user.tutor_profile
-            user.student_profile.save(update_fields=["created_by_tutor"])
-            if not user.email:
-                messages.success(
-                    request,
-                    "StudentIn wurde als Platzhalter ohne WebApp-Zugang angelegt.",
-                )
-            else:
-                try:
-                    _send_set_password_email(request, user)
-                except Exception as exc:
-                    logger.exception("E-Mail Versand fehlgeschlagen (StudentIn)")
-                    messages.error(
-                        request,
-                        "StudentIn wurde angelegt, die Bestätigungs-Mail konnte jedoch nicht gesendet werden. "
-                        f"Fehler: {exc.__class__.__name__} ({exc})",
-                    )
-                else:
-                    messages.success(
-                        request,
-                        "StudentIn wurde angelegt. Eine Bestätigungs-Mail wurde versendet.",
-                    )
-            return redirect("dashboard")
-    else:
-        form = IndependentStudentCreateForm()
-    return render(
-        request,
-        "student_create.html",
-        {
-            "form": form,
-            "heading": "StudentIn anlegen",
-            "description": (
-                "Lege eine selbständige StudentIn ohne Elternkonto an. "
-                "E-Mail und Passwort koennen fuer Platzhalter leer bleiben."
-            ),
-        },
-    )
+    return _create_family_accounts(request, independent=True)

@@ -453,8 +453,14 @@ def stripe_webhook(request):
     except Exception:
         return HttpResponse(status=400)
 
-    if event["type"] == "checkout.session.completed":
+    if event["type"] in {
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+    }:
         session = event["data"]["object"]
+        # Completing Checkout alone does not confirm receipt of payment.
+        if session.get("payment_status") != "paid":
+            return HttpResponse(status=200)
         invoice_id = session.get("metadata", {}).get("invoice_id")
         if invoice_id:
             invoice = Invoice.objects.filter(pk=invoice_id).first()

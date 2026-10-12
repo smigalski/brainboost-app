@@ -333,13 +333,13 @@ class IndependentStudentAccountTests(TestCase):
         response = self.client.post(
             reverse("independent_student_create"),
             data={
-                "username": "studentin",
-                "first_name": "Sina",
-                "last_name": "Studiert",
-                "email": "sina.studiert@example.com",
-                "phone_number": "0176 123",
+                "student_kind": "independent",
+                "student_first_name": "Sina",
+                "student_last_name": "Studiert",
+                "student_email": "sina.studiert@example.com",
+                "student_phone": "0176 123",
                 "is_active": "on",
-                "address": "Campus 1",
+                "student_address": "Campus 1",
                 "degree_program": "Informatik",
                 "affected_courses": "Analysis I\nAlgorithmen",
                 "tutoring_goal": "Klausurvorbereitung",
@@ -363,13 +363,13 @@ class IndependentStudentAccountTests(TestCase):
         response = self.client.post(
             reverse("student_create"),
             data={
-                "username": "schuelerin",
-                "first_name": "Sina",
-                "last_name": "Schule",
-                "email": "",
-                "phone_number": "",
+                "student_kind": "with_parent",
+                "student_first_name": "Sina",
+                "student_last_name": "Schule",
+                "student_email": "",
+                "student_phone": "0176 123456",
                 "is_active": "on",
-                "address": "",
+                "student_address": "Campus 1, 38100 Braunschweig",
                 "zoom_link": "",
                 "zumpad_link": "",
                 "create_without_parents": "",
@@ -377,7 +377,7 @@ class IndependentStudentAccountTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ohne Eltern anlegen")
+        self.assertContains(response, "Selbstständige StudentIn/SchülerIn")
         self.assertContains(response, "Bitte wähle mindestens ein Elternteil aus")
         self.assertEqual(StudentProfile.objects.count(), 0)
 
@@ -387,13 +387,13 @@ class IndependentStudentAccountTests(TestCase):
         response = self.client.post(
             reverse("student_create"),
             data={
-                "username": "ohneeltern",
-                "first_name": "Sina",
-                "last_name": "Solo",
-                "email": "sina.solo@example.com",
-                "phone_number": "",
+                "student_kind": "independent",
+                "student_first_name": "Sina",
+                "student_last_name": "Solo",
+                "student_email": "sina.solo@example.com",
+                "student_phone": "0176 123456",
                 "is_active": "on",
-                "address": "",
+                "student_address": "Campus 1, 38100 Braunschweig",
                 "zoom_link": "",
                 "zumpad_link": "",
                 "create_without_parents": "on",
@@ -1371,14 +1371,14 @@ class LeadAdminToolsTests(TestCase):
                 "student_first_name": "Sina",
                 "student_last_name": "Muster",
                 "student_email": "sina.family@example.com",
-                "student_phone": "",
+                "student_phone": "0176 123456",
                 "student_address": "Kindweg 1",
                 "birth_year": "2012",
                 "school_type": "Gymnasium",
                 "school_state": "NI",
                 "grade_level": "8. Klasse",
                 "degree_program": "",
-                "existing_parent": "",
+                "create_parent": "on",
                 "parent_first_name": "Maria",
                 "parent_last_name": "Muster",
                 "parent_email": "maria.family@example.com",
@@ -1436,6 +1436,11 @@ class LeadAdminToolsTests(TestCase):
             "parent_first_name": "Maria",
             "parent_last_name": "Muster",
             "parent_email": lead.email,
+            "create_parent": "on",
+            "student_phone": "0176 123456",
+            "student_address": "Kindweg 1, 38100 Braunschweig",
+            "parent_phone": "0176 123456",
+            "parent_address": "Elternweg 2, 38100 Braunschweig",
             "assigned_tutor": str(tutor.pk),
             "birth_year": "2012",
             "school_type": "Gesamtschule",
@@ -2794,6 +2799,7 @@ class StripeWebhookSecurityTests(TestCase):
             "data": {
                 "object": {
                     "id": "cs_test_123",
+                    "payment_status": "paid",
                     "payment_intent": "pi_test_123",
                     "metadata": {"invoice_id": str(self.invoice.id)},
                 }
@@ -2824,6 +2830,83 @@ class StripeWebhookSecurityTests(TestCase):
         self.assertEqual(self.invoice.payment_method, Invoice.PaymentMethod.ONLINE)
         self.assertEqual(self.invoice.stripe_checkout_session_id, "cs_test_123")
         self.assertEqual(self.invoice.stripe_payment_intent_id, "pi_test_123")
+        mocked_notify.assert_called_once()
+
+    @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test_123")
+    @patch("core.views.invoices.notify_invoice_payment_received_tutor")
+    @patch("core.views.invoices._stripe_client")
+    def test_completed_checkout_without_confirmed_payment_keeps_invoice_open(
+        self, mocked_stripe_client, mocked_notify,
+    ):
+        for payment_status in ("unpaid", "no_payment_required", None):
+            with self.subTest(payment_status=payment_status):
+                session = {"metadata": {"invoice_id": str(self.invoice.id)}}
+                if payment_status is not None:
+                    session["payment_status"] = payment_status
+                event = {
+                    "type": "checkout.session.completed",
+                    "data": {"object": session},
+                }
+                mocked_stripe_client.return_value = SimpleNamespace(
+                    Webhook=SimpleNamespace(construct_event=Mock(return_value=event)),
+                )
+
+                response = self.client.post(
+                    reverse("stripe_webhook"),
+                    data=json.dumps(event),
+                    content_type="application/json",
+                )
+
+                self.assertEqual(response.status_code, 200)
+                self.invoice.refresh_from_db()
+                self.assertEqual(self.invoice.payment_status, Invoice.PaymentStatus.OPEN)
+                self.assertIsNone(self.invoice.paid_at)
+                mocked_notify.assert_not_called()
+
+    @override_settings(STRIPE_WEBHOOK_SECRET="whsec_test_123")
+    @patch("core.views.invoices.notify_invoice_payment_received_tutor")
+    @patch("core.views.invoices._stripe_client")
+    def test_delayed_payment_is_recorded_once_after_unpaid_checkout(
+        self, mocked_stripe_client, mocked_notify,
+    ):
+        session = {
+            "id": "cs_test_delayed",
+            "payment_intent": "pi_test_delayed",
+            "payment_status": "unpaid",
+            "metadata": {"invoice_id": str(self.invoice.id)},
+        }
+        event = {"type": "checkout.session.completed", "data": {"object": session}}
+        mocked_stripe_client.return_value = SimpleNamespace(
+            Webhook=SimpleNamespace(construct_event=Mock(return_value=event)),
+        )
+
+        response = self.client.post(
+            reverse("stripe_webhook"), data=json.dumps(event),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.payment_status, Invoice.PaymentStatus.OPEN)
+        mocked_notify.assert_not_called()
+
+        session["payment_status"] = "paid"
+        for event_type in (
+            "checkout.session.async_payment_succeeded",
+            "checkout.session.async_payment_succeeded",
+            "checkout.session.completed",
+        ):
+            event["type"] = event_type
+            response = self.client.post(
+                reverse("stripe_webhook"), data=json.dumps(event),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 200)
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.payment_status, Invoice.PaymentStatus.PAID)
+        self.assertEqual(self.invoice.payment_method, Invoice.PaymentMethod.ONLINE)
+        self.assertIsNotNone(self.invoice.paid_at)
+        self.assertEqual(self.invoice.stripe_checkout_session_id, "cs_test_delayed")
+        self.assertEqual(self.invoice.stripe_payment_intent_id, "pi_test_delayed")
         mocked_notify.assert_called_once()
 
 
